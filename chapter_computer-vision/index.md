@@ -1,27 +1,17 @@
-# Computer Vision
+# Thị giác máy tính
 :label:`chap_cv`
 
-Whether it is medical diagnosis, self-driving vehicles, camera monitoring, or smart filters, many applications in the field of computer vision are closely related to our current and future lives. 
-In recent years, deep learning has been
-the transformative power for advancing the performance of computer vision systems.
-It can be said that the most advanced computer vision applications are almost inseparable from deep learning.
-In view of this, this chapter will focus on the field of computer vision, and investigate methods and applications that have recently been influential in academia and industry.
+Dù là chẩn đoán y khoa, phương tiện tự lái, giám sát bằng camera hay các bộ lọc thông minh, nhiều ứng dụng trong lĩnh vực thị giác máy tính đều gắn bó mật thiết với cuộc sống hiện tại và tương lai của chúng ta.  
+Trong những năm gần đây, deep learning đã trở thành động lực mang tính chuyển đổi, thúc đẩy hiệu năng của các hệ thống thị giác máy tính.  
+Có thể nói rằng những ứng dụng thị giác máy tính tiên tiến nhất hầu như không thể tách rời khỏi deep learning.  
+Vì vậy, chương này sẽ tập trung vào lĩnh vực thị giác máy tính, đồng thời tìm hiểu các phương pháp và ứng dụng gần đây có ảnh hưởng trong giới học thuật và công nghiệp.
 
 
-In :numref:`chap_cnn` and :numref:`chap_modern_cnn`, we studied various convolutional neural networks that are
-commonly used in computer vision, and applied them
-to simple image classification tasks. 
-At the beginning of this chapter, we will describe
-two methods that 
-may improve model generalization, namely *image augmentation* and *fine-tuning*,
-and apply them to image classification. 
-Since deep neural networks can effectively represent images in multiple levels, 
-such layerwise representations have been successfully 
-used in various computer vision tasks such as *object detection*, *semantic segmentation*, and *style transfer*. 
-Following the key idea of leveraging layerwise representations in computer vision,
-we will begin with major components and techniques for object detection. Next, we will show how to use *fully convolutional networks* for semantic segmentation of images. Then we will explain how to use style transfer techniques to generate images like the cover of this book.
-In the end, we conclude this chapter
-by applying the materials of this chapter and several previous chapters on two popular computer vision benchmark datasets.
+Trong :numref:`chap_cnn` và :numref:`chap_modern_cnn`, chúng ta đã nghiên cứu nhiều mạng neural tích chập thường được sử dụng trong thị giác máy tính và áp dụng chúng vào các tác vụ phân loại hình ảnh đơn giản.  
+Ở phần đầu chương này, chúng ta sẽ trình bày hai phương pháp có thể cải thiện khả năng khái quát hóa của mô hình, đó là *image augmentation* và *fine-tuning*, đồng thời áp dụng chúng vào việc phân loại hình ảnh.  
+Vì các mạng neural sâu có thể biểu diễn hình ảnh ở nhiều cấp độ, những biểu diễn theo từng lớp như vậy đã được sử dụng thành công trong nhiều tác vụ thị giác máy tính khác nhau, chẳng hạn như *object detection*, *semantic segmentation* và *style transfer*.  
+Tiếp nối ý tưởng cốt lõi về việc tận dụng các biểu diễn theo từng lớp trong thị giác máy tính, trước tiên chúng ta sẽ bắt đầu với các thành phần và kỹ thuật chính của *object detection*. Tiếp theo, chúng ta sẽ trình bày cách sử dụng *fully convolutional networks* để thực hiện *semantic segmentation* hình ảnh. Sau đó, chúng ta sẽ giải thích cách sử dụng các kỹ thuật *style transfer* để tạo ra những hình ảnh giống như bìa của cuốn sách này.  
+Cuối cùng, chúng ta sẽ khép lại chương này bằng cách áp dụng nội dung của chương này và một số chương trước vào hai bộ dữ liệu benchmark phổ biến trong lĩnh vực thị giác máy tính.
 
 ```toc
 :maxdepth: 2
@@ -41,4 +31,3 @@ neural-style
 kaggle-cifar10
 kaggle-dog
 ```
-

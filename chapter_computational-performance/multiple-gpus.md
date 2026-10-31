@@ -1,85 +1,84 @@
-# Training on Multiple GPUs
+# Huấn luyện trên nhiều GPU
 :label:`sec_multi_gpu`
 
-So far we discussed how to train models efficiently on CPUs and GPUs. We even showed how deep learning frameworks allow one to parallelize computation and communication automatically between them in :numref:`sec_auto_para`. We also showed in :numref:`sec_use_gpu` how to list all the available GPUs on a computer using the `nvidia-smi` command.
-What we did *not* discuss is how to actually parallelize deep learning training.
-Instead, we implied in passing that one would somehow split the data across multiple devices and make it work. The present section fills in the details and shows how to train a network in parallel when starting from scratch. Details on how to take advantage of functionality in high-level APIs is relegated to :numref:`sec_multi_gpu_concise`.
-We assume that you are familiar with minibatch stochastic gradient descent algorithms such as the ones described in :numref:`sec_minibatch_sgd`.
+Cho đến nay, chúng ta đã thảo luận về cách huấn luyện mô hình hiệu quả trên CPU và GPU. Chúng ta thậm chí đã trình bày cách các framework deep learning cho phép tự động song song hóa việc tính toán và giao tiếp giữa chúng trong :numref:`sec_auto_para`. Chúng ta cũng đã trình bày trong :numref:`sec_use_gpu` cách liệt kê tất cả GPU khả dụng trên máy tính bằng lệnh `nvidia-smi`.
+Điều chúng ta *chưa* thảo luận là cách thực sự song song hóa quá trình huấn luyện deep learning.
+Thay vào đó, chúng ta ngầm giả định rằng bằng cách nào đó dữ liệu sẽ được chia trên nhiều thiết bị và mọi thứ sẽ hoạt động. Phần này trình bày chi tiết vấn đề đó và chỉ ra cách huấn luyện song song một mạng từ đầu. Chi tiết về cách tận dụng chức năng trong các API cấp cao được trình bày trong :numref:`sec_multi_gpu_concise`.
+Chúng tôi giả định rằng bạn đã quen thuộc với các thuật toán stochastic gradient descent trên minibatch, chẳng hạn như những thuật toán được mô tả trong :numref:`sec_minibatch_sgd`.
 
 
-## Splitting the Problem
+## Chia nhỏ bài toán
 
-Let's start with a simple computer vision problem and a slightly archaic network, e.g., with multiple layers of convolutions, pooling, and possibly a few fully connected layers in the end.
-That is, let's start with a network that looks quite similar to LeNet :cite:`LeCun.Bottou.Bengio.ea.1998` or AlexNet :cite:`Krizhevsky.Sutskever.Hinton.2012`.
-Given multiple GPUs (2 if it is a desktop server, 4 on an AWS g4dn.12xlarge instance, 8 on a p3.16xlarge, or 16 on a p2.16xlarge), we want to partition training in a manner as to achieve good speedup while simultaneously benefitting from simple and reproducible design choices. Multiple GPUs, after all, increase both *memory* and *computation* ability. In a nutshell, we have the following choices, given a minibatch of training data that we want to classify.
+Hãy bắt đầu với một bài toán thị giác máy tính đơn giản và một mạng hơi lỗi thời, chẳng hạn gồm nhiều lớp convolution, pooling và có thể thêm một vài lớp fully connected ở cuối.
+Nói cách khác, hãy bắt đầu với một mạng khá giống LeNet :cite:`LeCun.Bottou.Bengio.ea.1998` hoặc AlexNet :cite:`Krizhevsky.Sutskever.Hinton.2012`.
+Với nhiều GPU (2 nếu là máy chủ desktop, 4 trên một instance AWS g4dn.12xlarge, 8 trên p3.16xlarge hoặc 16 trên p2.16xlarge), chúng ta muốn phân chia quá trình huấn luyện sao cho đạt được mức tăng tốc tốt, đồng thời hưởng lợi từ các lựa chọn thiết kế đơn giản và có thể tái lập. Xét cho cùng, nhiều GPU làm tăng cả khả năng *bộ nhớ* lẫn *tính toán*. Tóm lại, với một minibatch dữ liệu huấn luyện mà chúng ta muốn phân loại, chúng ta có các lựa chọn sau.
 
-First, we could partition the network across multiple GPUs. That is, each GPU takes as input the data flowing into a particular layer, processes data across a number of subsequent layers and then sends the data to the next GPU.
-This allows us to process data with larger networks when compared with what a single GPU could handle.
-Besides,
-memory footprint per GPU can be well controlled (it is a fraction of the total network footprint).
+Trước tiên, chúng ta có thể phân chia mạng trên nhiều GPU. Nghĩa là mỗi GPU nhận làm đầu vào dữ liệu truyền vào một lớp cụ thể, xử lý dữ liệu qua một số lớp tiếp theo rồi gửi dữ liệu đến GPU kế tiếp.
+Cách này cho phép chúng ta xử lý các mạng lớn hơn so với khả năng của một GPU đơn lẻ.
+Ngoài ra,
+dung lượng bộ nhớ trên mỗi GPU có thể được kiểm soát tốt (đó là một phần của tổng dung lượng bộ nhớ của mạng).
 
-However, the interface between layers (and thus GPUs) requires tight synchronization. This can be tricky, in particular if the computational workloads are not properly matched between layers. The problem is exacerbated for large numbers of GPUs.
-The interface between layers also
-requires large amounts of data transfer,
-such as activations and gradients.
-This may overwhelm the bandwidth of the GPU buses.
-Moreover, compute-intensive, yet sequential operations are nontrivial to partition. See e.g., :citet:`Mirhoseini.Pham.Le.ea.2017` for a best effort in this regard. It remains a difficult problem and it is unclear whether it is possible to achieve good (linear) scaling on nontrivial problems. We do not recommend it unless there is excellent framework or operating system support for chaining together multiple GPUs.
+Tuy nhiên, interface giữa các lớp (và do đó giữa các GPU) yêu cầu đồng bộ hóa chặt chẽ. Điều này có thể khó xử lý, đặc biệt khi khối lượng tính toán giữa các lớp không được phân bổ phù hợp. Vấn đề trở nên nghiêm trọng hơn khi có nhiều GPU.
+Interface giữa các lớp cũng
+yêu cầu truyền một lượng lớn dữ liệu,
+chẳng hạn như activations và gradients.
+Điều này có thể làm quá tải băng thông của các bus GPU.
+Hơn nữa, việc phân chia các phép toán tuần tự nhưng cần nhiều tính toán là không hề đơn giản. Xem :citet:`Mirhoseini.Pham.Le.ea.2017` để biết một nỗ lực tối ưu theo hướng này. Đây vẫn là một bài toán khó và chưa rõ liệu có thể đạt được mức scaling tốt (tuyến tính) trên các bài toán không tầm thường hay không. Chúng tôi không khuyến nghị cách này trừ khi framework hoặc hệ điều hành có hỗ trợ tuyệt vời cho việc kết nối nhiều GPU.
 
 
-Second, we could split the work layerwise. For instance, rather than computing 64 channels on a single GPU we could split up the problem across 4 GPUs, each of which generates data for 16 channels.
-Likewise, for a fully connected layer we could split the number of output units. :numref:`fig_alexnet_original` (taken from :citet:`Krizhevsky.Sutskever.Hinton.2012`)
-illustrates this design, where this strategy was used to deal with GPUs that had a very small memory footprint (2 GB at the time).
-This allows for good scaling in terms of computation, provided that the number of channels (or units) is not too small.
-Besides,
-multiple GPUs can process increasingly larger networks since the available memory scales linearly.
+Thứ hai, chúng ta có thể chia công việc theo từng lớp. Chẳng hạn, thay vì tính toán 64 channels trên một GPU duy nhất, chúng ta có thể chia bài toán cho 4 GPU, mỗi GPU tạo dữ liệu cho 16 channels.
+Tương tự, đối với một lớp fully connected, chúng ta có thể chia số lượng output units. :numref:`fig_alexnet_original` (lấy từ :citet:`Krizhevsky.Sutskever.Hinton.2012`) minh họa thiết kế này, trong đó chiến lược được sử dụng để xử lý các GPU có dung lượng bộ nhớ rất nhỏ (2 GB vào thời điểm đó).
+Cách này cho phép scaling tốt về mặt tính toán, miễn là số lượng channels (hoặc units) không quá nhỏ.
+Ngoài ra,
+nhiều GPU có thể xử lý các mạng ngày càng lớn hơn, vì bộ nhớ khả dụng tăng tuyến tính.
 
-![Model parallelism in the original AlexNet design due to limited GPU memory.](../img/alexnet-original.svg)
+![Tính song song theo model trong thiết kế AlexNet ban đầu do bộ nhớ GPU bị giới hạn.](../img/alexnet-original.svg)
 :label:`fig_alexnet_original`
 
-However,
-we need a *very large* number of synchronization or barrier operations since each layer depends on the results from all the other layers.
-Moreover, the amount of data that needs to be transferred is potentially even larger than when distributing layers across GPUs. Thus, we do not recommend this approach due to its bandwidth cost and complexity.
+Tuy nhiên,
+chúng ta cần một *số lượng rất lớn* các thao tác đồng bộ hóa hoặc barrier, vì mỗi lớp phụ thuộc vào kết quả từ tất cả các lớp khác.
+Hơn nữa, lượng dữ liệu cần truyền có thể còn lớn hơn so với việc phân phối các lớp trên nhiều GPU. Vì vậy, chúng tôi không khuyến nghị cách tiếp cận này do chi phí băng thông và độ phức tạp của nó.
 
-Last, we could partition data across multiple GPUs. This way all GPUs perform the same type of work, albeit on different observations. Gradients are aggregated across GPUs after each minibatch of training data.
-This is the simplest approach and it can be applied in any situation.
-We only need to synchronize after each minibatch. That said, it is highly desirable to start exchanging gradients parameters already while others are still being computed.
-Moreover, larger numbers of GPUs lead to larger minibatch sizes, thus increasing training efficiency.
-However, adding more GPUs does not allow us to train larger models.
+Cuối cùng, chúng ta có thể phân chia dữ liệu trên nhiều GPU. Theo cách này, tất cả GPU thực hiện cùng một loại công việc, nhưng trên các mẫu dữ liệu khác nhau. Các gradients được tổng hợp trên các GPU sau mỗi minibatch dữ liệu huấn luyện.
+Đây là cách tiếp cận đơn giản nhất và có thể áp dụng trong mọi tình huống.
+Chúng ta chỉ cần đồng bộ hóa sau mỗi minibatch. Tuy nhiên, sẽ rất hữu ích nếu bắt đầu trao đổi các gradient parameters trong khi những gradient khác vẫn đang được tính toán.
+Hơn nữa, số lượng GPU lớn hơn dẫn đến minibatch lớn hơn, qua đó nâng cao hiệu quả huấn luyện.
+Tuy nhiên, việc bổ sung thêm GPU không cho phép chúng ta huấn luyện các mô hình lớn hơn.
 
 
-![Parallelization on multiple GPUs. From left to right: original problem, network partitioning, layerwise partitioning, data parallelism.](../img/splitting.svg)
+![Tính song song trên nhiều GPU. Từ trái sang phải: bài toán ban đầu, phân chia mạng, phân chia theo lớp, tính song song dữ liệu.](../img/splitting.svg)
 :label:`fig_splitting`
 
 
-A comparison of different ways of parallelization on multiple GPUs is depicted in :numref:`fig_splitting`.
-By and large, data parallelism is the most convenient way to proceed, provided that we have access to GPUs with sufficiently large memory. See also :cite:`Li.Andersen.Park.ea.2014` for a detailed description of partitioning for distributed training. GPU memory used to be a problem in the early days of deep learning. By now this issue has been resolved for all but the most unusual cases. We focus on data parallelism in what follows.
+:numref:`fig_splitting` mô tả sự so sánh giữa các cách song song hóa khác nhau trên nhiều GPU.
+Nhìn chung, tính song song dữ liệu là cách thuận tiện nhất, với điều kiện chúng ta có GPU sở hữu dung lượng bộ nhớ đủ lớn. Xem thêm :cite:`Li.Andersen.Park.ea.2014` để biết mô tả chi tiết về việc phân chia cho distributed training. Bộ nhớ GPU từng là một vấn đề trong những ngày đầu của deep learning. Đến nay, vấn đề này đã được giải quyết trong hầu hết các trường hợp, ngoại trừ những trường hợp bất thường nhất. Trong phần tiếp theo, chúng ta tập trung vào tính song song dữ liệu.
 
-## Data Parallelism
+## Tính song song dữ liệu
 
-Assume that there are $k$ GPUs on a machine. Given the model to be trained, each GPU will maintain a complete set of model parameters independently though parameter values across the GPUs are identical and synchronized.
-As an example,
-:numref:`fig_data_parallel` illustrates
-training with
-data parallelism when $k=2$.
+Giả sử một máy có $k$ GPU. Với model cần huấn luyện, mỗi GPU sẽ duy trì độc lập một bộ đầy đủ các model parameters, mặc dù các giá trị parameters trên các GPU là giống nhau và được đồng bộ hóa.
+Ví dụ,
+:numref:`fig_data_parallel` minh họa
+việc huấn luyện bằng
+tính song song dữ liệu khi $k=2$.
 
 
-![Calculation of minibatch stochastic gradient descent using data parallelism on two GPUs.](../img/data-parallel.svg)
+![Tính toán stochastic gradient descent trên minibatch bằng tính song song dữ liệu trên hai GPU.](../img/data-parallel.svg)
 :label:`fig_data_parallel`
 
-In general, the training proceeds as follows:
+Nhìn chung, quá trình huấn luyện diễn ra như sau:
 
-* In any iteration of training, given a random minibatch, we split the examples in the batch into $k$ portions and distribute them evenly across the GPUs.
-* Each GPU calculates loss and gradient of the model parameters based on the minibatch subset it was assigned.
-* The local gradients of each of the $k$ GPUs are aggregated to obtain the current minibatch stochastic gradient.
-* The aggregate gradient is re-distributed to each GPU.
-* Each GPU uses this minibatch stochastic gradient to update the complete set of model parameters that it maintains.
-
-
+* Trong mỗi iteration của quá trình huấn luyện, với một minibatch ngẫu nhiên, chúng ta chia các mẫu trong batch thành $k$ phần và phân phối đều chúng trên các GPU.
+* Mỗi GPU tính loss và gradient của model parameters dựa trên phần minibatch được giao.
+* Các gradients cục bộ từ mỗi GPU trong số $k$ GPU được tổng hợp để thu được stochastic gradient trên minibatch hiện tại.
+* Gradient tổng hợp được phân phối lại đến từng GPU.
+* Mỗi GPU sử dụng stochastic gradient trên minibatch này để cập nhật toàn bộ model parameters mà nó duy trì.
 
 
-Note that in practice we *increase* the minibatch size $k$-fold when training on $k$ GPUs such that each GPU has the same amount of work to do as if we were training on a single GPU only. On a 16-GPU server this can increase the minibatch size considerably and we may have to increase the learning rate accordingly.
-Also note that batch normalization in :numref:`sec_batch_norm` needs to be adjusted, e.g., by keeping a separate batch normalization coefficient per GPU.
-In what follows we will use a toy network to illustrate multi-GPU training.
+
+
+Lưu ý rằng trong thực tế, chúng ta *tăng* kích thước minibatch lên $k$ lần khi huấn luyện trên $k$ GPU, sao cho mỗi GPU có cùng lượng công việc phải thực hiện như khi chỉ huấn luyện trên một GPU. Trên một máy chủ 16 GPU, điều này có thể làm kích thước minibatch tăng đáng kể và chúng ta có thể phải tăng learning rate tương ứng.
+Cũng lưu ý rằng batch normalization trong :numref:`sec_batch_norm` cần được điều chỉnh, chẳng hạn bằng cách duy trì một batch normalization coefficient riêng cho mỗi GPU.
+Trong phần tiếp theo, chúng ta sẽ sử dụng một mạng toy để minh họa quá trình huấn luyện trên nhiều GPU.
 
 ```{.python .input}
 #@tab mxnet
@@ -98,9 +97,9 @@ from torch import nn
 from torch.nn import functional as F
 ```
 
-## [**A Toy Network**]
+## [**Một mạng toy**]
 
-We use LeNet as introduced in :numref:`sec_lenet` (with slight modifications). We define it from scratch to illustrate parameter exchange and synchronization in detail.
+Chúng ta sử dụng LeNet như được giới thiệu trong :numref:`sec_lenet` (với một vài sửa đổi nhỏ). Chúng ta định nghĩa mạng này từ đầu để minh họa chi tiết việc trao đổi parameters và đồng bộ hóa.
 
 ```{.python .input}
 #@tab mxnet
@@ -170,11 +169,11 @@ def lenet(X, params):
 loss = nn.CrossEntropyLoss(reduction='none')
 ```
 
-## Data Synchronization
+## Đồng bộ hóa dữ liệu
 
-For efficient multi-GPU training we need two basic operations.
-First we need to have the ability to [**distribute a list of parameters to multiple devices**] and to attach gradients (`get_params`). Without parameters it is impossible to evaluate the network on a GPU.
-Second, we need the ability to sum parameters across multiple devices, i.e., we need an `allreduce` function.
+Để huấn luyện hiệu quả trên nhiều GPU, chúng ta cần hai thao tác cơ bản.
+Trước tiên, chúng ta cần có khả năng [**phân phối một danh sách parameters đến nhiều thiết bị**] và gắn gradients (`get_params`). Nếu không có parameters, chúng ta không thể đánh giá mạng trên GPU.
+Thứ hai, chúng ta cần có khả năng cộng các parameters trên nhiều thiết bị, tức là cần một hàm `allreduce`.
 
 ```{.python .input}
 #@tab mxnet
@@ -194,7 +193,7 @@ def get_params(params, device):
     return new_params
 ```
 
-Let's try it out by copying the model parameters to one GPU.
+Hãy thử bằng cách sao chép model parameters sang một GPU.
 
 ```{.python .input}
 #@tab all
@@ -203,8 +202,8 @@ print('b1 weight:', new_params[1])
 print('b1 grad:', new_params[1].grad)
 ```
 
-Since we did not perform any computation yet, the gradient with regard to the bias parameter is still zero.
-Now let's assume that we have a vector distributed across multiple GPUs. The following [**`allreduce` function adds up all vectors and broadcasts the result back to all GPUs**]. Note that for this to work we need to copy the data to the device accumulating the results.
+Vì chúng ta chưa thực hiện bất kỳ phép tính nào nên gradient liên quan đến bias parameter vẫn bằng không.
+Bây giờ, giả sử chúng ta có một vector được phân phối trên nhiều GPU. Hàm [**`allreduce` cộng tất cả các vector và broadcast kết quả trở lại cho tất cả GPU**] sau đây thực hiện việc đó. Lưu ý rằng để thao tác này hoạt động, chúng ta cần sao chép dữ liệu đến thiết bị thực hiện việc tích lũy kết quả.
 
 ```{.python .input}
 #@tab mxnet
@@ -224,7 +223,7 @@ def allreduce(data):
         data[i][:] = data[0].to(data[i].device)
 ```
 
-Let's test this by creating vectors with different values on different devices and aggregate them.
+Hãy kiểm thử bằng cách tạo các vector có giá trị khác nhau trên các thiết bị khác nhau rồi tổng hợp chúng.
 
 ```{.python .input}
 #@tab mxnet
@@ -242,10 +241,10 @@ allreduce(data)
 print('after allreduce:\n', data[0], '\n', data[1])
 ```
 
-## Distributing Data
+## Phân phối dữ liệu
 
-We need a simple utility function to [**distribute a minibatch evenly across multiple GPUs**]. For instance, on two GPUs we would like to have half of the data to be copied to either of the GPUs.
-Since it is more convenient and more concise, we use the built-in function from the deep learning framework to try it out on a $4 \times 5$ matrix.
+Chúng ta cần một utility function đơn giản để [**phân phối đều một minibatch trên nhiều GPU**]. Chẳng hạn, với hai GPU, chúng ta muốn sao chép một nửa dữ liệu đến mỗi GPU.
+Vì thuận tiện và ngắn gọn hơn, chúng ta sử dụng built-in function từ deep learning framework để thử nghiệm trên một ma trận $4 \times 5$.
 
 ```{.python .input}
 #@tab mxnet
@@ -267,7 +266,7 @@ print('load into', devices)
 print('output:', split)
 ```
 
-For later reuse we define a `split_batch` function that splits both data and labels.
+Để tái sử dụng sau này, chúng ta định nghĩa một hàm `split_batch` để chia cả dữ liệu và labels.
 
 ```{.python .input}
 #@tab mxnet
@@ -289,9 +288,9 @@ def split_batch(X, y, devices):
             nn.parallel.scatter(y, devices))
 ```
 
-## Training
+## Huấn luyện
 
-Now we can implement [**multi-GPU training on a single minibatch**]. Its implementation is primarily based on the data parallelism approach described in this section. We will use the auxiliary functions we just discussed, `allreduce` and `split_and_load`, to synchronize the data among multiple GPUs. Note that we do not need to write any specific code to achieve parallelism. Since the computational graph does not have any dependencies across devices within a minibatch, it is executed in parallel *automatically*.
+Bây giờ chúng ta có thể triển khai [**huấn luyện multi-GPU trên một minibatch duy nhất**]. Việc triển khai này chủ yếu dựa trên phương pháp song song hóa dữ liệu được mô tả trong phần này. Chúng ta sẽ sử dụng các hàm phụ trợ vừa thảo luận, `allreduce` và `split_and_load`, để đồng bộ hóa dữ liệu giữa nhiều GPU. Lưu ý rằng chúng ta không cần viết bất kỳ mã cụ thể nào để đạt được tính song song. Vì computational graph không có bất kỳ dependency nào giữa các device trong một minibatch, nó được thực thi song song *tự động*.
 
 ```{.python .input}
 #@tab mxnet
@@ -330,8 +329,8 @@ def train_batch(X, y, device_params, devices, lr):
         d2l.sgd(param, lr, X.shape[0]) # Here, we use a full-size batch
 ```
 
-Now, we can define [**the training function**]. It is slightly different from the ones used in the previous chapters: we need to allocate the GPUs and copy all the model parameters to all the devices.
-Obviously each batch is processed using the `train_batch` function to deal with multiple GPUs. For convenience (and conciseness of code) we compute the accuracy on a single GPU, though this is *inefficient* since the other GPUs are idle.
+Bây giờ, chúng ta có thể định nghĩa [**hàm training**]. Hàm này hơi khác so với các hàm được sử dụng trong những chương trước: chúng ta cần cấp phát các GPU và sao chép tất cả tham số của model lên mọi device.
+Rõ ràng, mỗi batch được xử lý bằng hàm `train_batch` để làm việc với nhiều GPU. Để thuận tiện (và giúp mã ngắn gọn hơn), chúng ta tính accuracy trên một GPU duy nhất, mặc dù cách này *không hiệu quả* vì các GPU khác không hoạt động.
 
 ```{.python .input}
 #@tab mxnet
@@ -381,42 +380,42 @@ def train(num_gpus, batch_size, lr):
           f'on {str(devices)}')
 ```
 
-Let's see how well this works [**on a single GPU**].
-We first use a batch size of 256 and a learning rate of 0.2.
+Hãy xem cách này hoạt động tốt đến đâu [**trên một GPU duy nhất**].
+Trước tiên, chúng ta sử dụng batch size là 256 và learning rate là 0.2.
 
 ```{.python .input}
 #@tab all
 train(num_gpus=1, batch_size=256, lr=0.2)
 ```
 
-By keeping the batch size and learning rate unchanged and [**increasing the number of GPUs to 2**], we can see that the test accuracy roughly stays the same compared with
-the previous experiment.
-In terms of the optimization algorithms, they are identical. Unfortunately there is no meaningful speedup to be gained here: the model is simply too small; moreover we only have a small dataset, where our slightly unsophisticated approach to implementing multi-GPU training suffered from significant Python overhead. We will encounter more complex models and more sophisticated ways of parallelization going forward.
-Let's see what happens nonetheless for Fashion-MNIST.
+Bằng cách giữ nguyên batch size và learning rate, đồng thời [**tăng số GPU lên 2**], chúng ta có thể thấy rằng test accuracy nhìn chung vẫn gần như không đổi so với
+thí nghiệm trước.
+Xét về các thuật toán optimization, chúng giống hệt nhau. Đáng tiếc là ở đây không đạt được mức tăng tốc đáng kể nào: model đơn giản là quá nhỏ; hơn nữa, chúng ta chỉ có một dataset nhỏ, trong đó cách triển khai multi-GPU training hơi thiếu tinh gọn của chúng ta phải chịu overhead đáng kể từ Python. Trong các phần tiếp theo, chúng ta sẽ gặp những model phức tạp hơn và các phương pháp parallelization tinh vi hơn.
+Dù vậy, hãy xem điều gì xảy ra với Fashion-MNIST.
 
 ```{.python .input}
 #@tab all
 train(num_gpus=2, batch_size=256, lr=0.2)
 ```
 
-## Summary
+## Tóm tắt
 
-* There are multiple ways to split deep network training over multiple GPUs. We could split them between layers, across layers, or across data. The former two require tightly choreographed data transfers. Data parallelism is the simplest strategy.
-* Data parallel training is straightforward. However, it increases the effective minibatch size to be efficient.
-* In data parallelism, data is split across multiple GPUs, where each GPU executes its own forward and backward operation and subsequently gradients are aggregated and results are broadcast back to the GPUs.
-* We may use slightly increased learning rates for larger minibatches.
+* Có nhiều cách để phân chia quá trình training deep network trên nhiều GPU. Chúng ta có thể phân chia giữa các layer, trên các layer hoặc theo data. Hai cách đầu tiên yêu cầu việc truyền data được phối hợp chặt chẽ. Data parallelism là chiến lược đơn giản nhất.
+* Data parallel training khá đơn giản. Tuy nhiên, để đạt hiệu quả, nó làm tăng minibatch size thực tế.
+* Trong data parallelism, data được phân chia trên nhiều GPU, mỗi GPU thực hiện forward operation và backward operation riêng, sau đó các gradient được tổng hợp và kết quả được broadcast trở lại các GPU.
+* Chúng ta có thể sử dụng learning rate cao hơn một chút cho các minibatch lớn hơn.
 
-## Exercises
+## Bài tập
 
-1. When training on $k$ GPUs, change the minibatch size from $b$ to $k \cdot b$, i.e., scale it up by the number of GPUs.
-1. Compare accuracy for different learning rates. How does it scale with the number of GPUs?
-1. Implement a more efficient `allreduce` function that aggregates different parameters on different GPUs? Why is it more efficient?
-1. Implement multi-GPU test accuracy computation.
+1. Khi training trên $k$ GPU, thay đổi minibatch size từ $b$ thành $k \cdot b$, tức là tăng nó theo số lượng GPU.
+1. So sánh accuracy với các learning rate khác nhau. Nó thay đổi như thế nào theo số lượng GPU?
+1. Triển khai hàm `allreduce` hiệu quả hơn để tổng hợp các parameter khác nhau trên các GPU khác nhau? Tại sao cách này hiệu quả hơn?
+1. Triển khai việc tính test accuracy trên nhiều GPU.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/364)
+[Thảo luận](https://discuss.d2l.ai/t/364)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1669)
+[Thảo luận](https://discuss.d2l.ai/t/1669)
 :end_tab:

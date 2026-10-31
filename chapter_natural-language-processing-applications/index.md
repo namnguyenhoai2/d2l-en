@@ -1,54 +1,54 @@
-# Natural Language Processing: Applications
+# Các ứng dụng của Xử lý ngôn ngữ tự nhiên
 :label:`chap_nlp_app`
 
-We have seen how to represent tokens in text sequences and train their representations in :numref:`chap_nlp_pretrain`.
-Such pretrained text representations can be fed to various models for different downstream natural language processing tasks.
+Chúng ta đã tìm hiểu cách biểu diễn các token trong các chuỗi văn bản và huấn luyện các biểu diễn của chúng trong :numref:`chap_nlp_pretrain`.
+Các biểu diễn văn bản được pretrained này có thể được đưa vào nhiều mô hình khác nhau cho các tác vụ xử lý ngôn ngữ tự nhiên downstream.
 
-In fact,
-earlier chapters have already discussed some natural language processing applications
-*without pretraining*,
-just for explaining deep learning architectures.
-For instance, in :numref:`chap_rnn`,
-we have relied on RNNs to design language models to generate novella-like text.
-In :numref:`chap_modern_rnn` and :numref:`chap_attention-and-transformers`,
-we have also designed models based on RNNs and attention mechanisms for machine translation.
+Trên thực tế,
+các chương trước đã thảo luận một số ứng dụng xử lý ngôn ngữ tự nhiên
+*không sử dụng pretraining*,
+chỉ nhằm giải thích các kiến trúc deep learning.
+Chẳng hạn, trong :numref:`chap_rnn`,
+chúng ta đã sử dụng RNN để thiết kế các language model nhằm sinh văn bản giống tiểu thuyết.
+Trong :numref:`chap_modern_rnn` và :numref:`chap_attention-and-transformers`,
+chúng ta cũng đã thiết kế các mô hình dựa trên RNN và cơ chế attention cho machine translation.
 
-However, this book does not intend to cover all such applications in a comprehensive manner.
-Instead,
-our focus is on *how to apply (deep) representation learning of languages to addressing natural language processing problems*.
-Given pretrained text representations,
-this chapter will explore two 
-popular and representative
-downstream natural language processing tasks:
-sentiment analysis and natural language inference,
-which analyze single text and relationships of text pairs, respectively.
+Tuy nhiên, cuốn sách này không nhằm trình bày toàn diện tất cả các ứng dụng như vậy.
+Thay vào đó,
+trọng tâm của chúng ta là *cách áp dụng việc học biểu diễn (sâu) cho ngôn ngữ để giải quyết các bài toán xử lý ngôn ngữ tự nhiên*.
+Với các biểu diễn văn bản được pretrained,
+chương này sẽ tìm hiểu hai
+tác vụ xử lý ngôn ngữ tự nhiên downstream
+phổ biến và tiêu biểu:
+phân tích cảm xúc và suy luận ngôn ngữ tự nhiên,
+lần lượt phân tích một văn bản đơn lẻ và mối quan hệ giữa các cặp văn bản.
 
-![Pretrained text representations can be fed to various deep learning architectures for different downstream natural language processing applications. This chapter focuses on how to design models for different downstream natural language processing applications.](../img/nlp-map-app.svg)
+![Các biểu diễn văn bản được pretrained có thể được đưa vào nhiều kiến trúc deep learning khác nhau cho các ứng dụng xử lý ngôn ngữ tự nhiên downstream khác nhau. Chương này tập trung vào cách thiết kế mô hình cho các ứng dụng xử lý ngôn ngữ tự nhiên downstream khác nhau.](../img/nlp-map-app.svg)
 :label:`fig_nlp-map-app`
 
-As depicted in :numref:`fig_nlp-map-app`,
-this chapter focuses on describing the basic ideas of designing natural language processing models using different types of deep learning architectures, such as MLPs, CNNs, RNNs, and attention.
-Though it is possible to combine any pretrained text representations with any architecture for either application in :numref:`fig_nlp-map-app`,
-we select a few representative combinations.
-Specifically, we will explore popular architectures based on RNNs and CNNs for sentiment analysis.
-For natural language inference, we choose attention and MLPs to demonstrate how to analyze text pairs.
-In the end, we introduce how to fine-tune a pretrained BERT model
-for a wide range of natural language processing applications,
-such as on a sequence level (single text classification and text pair classification)
-and a token level (text tagging and question answering).
-As a concrete empirical case,
-we will fine-tune BERT for natural language inference.
+Như được minh họa trong :numref:`fig_nlp-map-app`,
+chương này tập trung trình bày những ý tưởng cơ bản trong việc thiết kế các mô hình xử lý ngôn ngữ tự nhiên bằng nhiều loại kiến trúc deep learning khác nhau, chẳng hạn như MLP, CNN, RNN và attention.
+Mặc dù có thể kết hợp bất kỳ biểu diễn văn bản được pretrained nào với bất kỳ kiến trúc nào cho mỗi ứng dụng trong :numref:`fig_nlp-map-app`,
+chúng ta chọn một vài tổ hợp tiêu biểu.
+Cụ thể, chúng ta sẽ tìm hiểu các kiến trúc phổ biến dựa trên RNN và CNN cho bài toán phân tích cảm xúc.
+Đối với suy luận ngôn ngữ tự nhiên, chúng ta chọn attention và MLP để minh họa cách phân tích các cặp văn bản.
+Cuối cùng, chúng ta giới thiệu cách fine-tune một mô hình BERT được pretrained
+cho nhiều ứng dụng xử lý ngôn ngữ tự nhiên,
+chẳng hạn như ở cấp độ chuỗi (phân loại văn bản đơn lẻ và phân loại cặp văn bản)
+và ở cấp độ token (gắn thẻ văn bản và trả lời câu hỏi).
+Là một trường hợp thực nghiệm cụ thể,
+chúng ta sẽ fine-tune BERT cho bài toán suy luận ngôn ngữ tự nhiên.
 
-As we have introduced in :numref:`sec_bert`,
-BERT requires minimal architecture changes
-for a wide range of natural language processing applications.
-However, this benefit comes at the cost of fine-tuning
-a huge number of BERT parameters for the downstream applications.
-When space or time is limited,
-those crafted models based on MLPs, CNNs, RNNs, and attention
-are more feasible.
-In the following, we start by the sentiment analysis application
-and illustrate the model design based on RNNs and CNNs, respectively.
+Như đã giới thiệu trong :numref:`sec_bert`,
+BERT yêu cầu thay đổi kiến trúc ở mức tối thiểu
+cho nhiều ứng dụng xử lý ngôn ngữ tự nhiên.
+Tuy nhiên, lợi ích này đi kèm với chi phí fine-tune
+một số lượng khổng lồ tham số BERT cho các ứng dụng downstream.
+Khi tài nguyên về không gian hoặc thời gian bị giới hạn,
+những mô hình được thiết kế riêng dựa trên MLP, CNN, RNN và attention
+sẽ khả thi hơn.
+Sau đây, chúng ta bắt đầu với ứng dụng phân tích cảm xúc
+và lần lượt minh họa cách thiết kế mô hình dựa trên RNN và CNN.
 
 ```toc
 :maxdepth: 2
@@ -61,4 +61,3 @@ natural-language-inference-attention
 finetuning-bert
 natural-language-inference-bert
 ```
-

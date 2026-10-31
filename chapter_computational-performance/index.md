@@ -1,14 +1,14 @@
-# Computational Performance
+# Hiệu năng tính toán
 :label:`chap_performance`
 
-In deep learning, 
-datasets and models are usually large,
-which involves heavy computation.
-Therefore, computational performance matters a lot.
-This chapter will focus on the major factors that affect computational performance:
-imperative programming, symbolic programming, asynchronous computing, automatic parallelism, and multi-GPU computation.
-By studying this chapter, you may further improve computational performance of those models implemented in the previous chapters,
-for example, by reducing training time without affecting accuracy.
+Trong deep learning,  
+các dataset và model thường có quy mô lớn,  
+đòi hỏi nhiều phép tính.  
+Vì vậy, hiệu năng tính toán đóng vai trò rất quan trọng.  
+Chương này sẽ tập trung vào những yếu tố chính ảnh hưởng đến hiệu năng tính toán:  
+lập trình mệnh lệnh, lập trình ký hiệu, tính toán bất đồng bộ, tính song song tự động và tính toán trên nhiều GPU.  
+Qua việc học chương này, bạn có thể tiếp tục cải thiện hiệu năng tính toán của các model được triển khai trong những chương trước,  
+chẳng hạn như giảm thời gian huấn luyện mà không ảnh hưởng đến độ chính xác.
 
 ```toc
 :maxdepth: 2
@@ -21,4 +21,3 @@ multiple-gpus
 multiple-gpus-concise
 parameterserver
 ```
-

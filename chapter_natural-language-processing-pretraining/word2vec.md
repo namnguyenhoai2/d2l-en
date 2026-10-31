@@ -1,196 +1,196 @@
-# Word Embedding (word2vec)
+# Nhúng từ (word2vec)
 :label:`sec_word2vec`
 
 
-Natural language is a complex system used to express meanings.
-In this system, words are the basic unit of the meaning.
-As the name implies,
-*word vectors* are vectors used to represent words,
-and can also be considered as feature vectors or representations of words.
-The technique of mapping words to real vectors
-is called *word embedding*.
-In recent years,
-word embedding has gradually become
-the basic knowledge of natural language processing.
+Ngôn ngữ tự nhiên là một hệ thống phức tạp được sử dụng để biểu đạt ý nghĩa.
+Trong hệ thống này, từ là đơn vị cơ bản của ý nghĩa.
+Đúng như tên gọi,
+*vector từ* là các vector được sử dụng để biểu diễn từ,
+và cũng có thể được xem là các vector đặc trưng hoặc các biểu diễn của từ.
+Kỹ thuật ánh xạ từ vào các vector thực
+được gọi là *nhúng từ*.
+Trong những năm gần đây,
+nhúng từ đã dần trở thành
+kiến thức cơ bản của xử lý ngôn ngữ tự nhiên.
 
 
-## One-Hot Vectors Are a Bad Choice
+## Vector One-Hot Là Một Lựa Chọn Không Tốt
 
-We used one-hot vectors to represent words (characters are words) in :numref:`sec_rnn-scratch`.
-Suppose that the number of different words in the dictionary (the dictionary size) is $N$,
-and each word corresponds to
-a different integer (index) from $0$ to $N-1$.
-To obtain the one-hot vector representation
-for any word with index $i$,
-we create a length-$N$ vector with all 0s
-and set the element at position $i$ to 1.
-In this way, each word is represented as a vector of length $N$, and it
-can be used directly by neural networks.
+Chúng ta đã sử dụng vector one-hot để biểu diễn các từ (ký tự cũng được xem là từ) trong :numref:`sec_rnn-scratch`.
+Giả sử số lượng từ khác nhau trong từ điển (kích thước từ điển) là $N$,
+và mỗi từ tương ứng với
+một số nguyên khác nhau (chỉ số) từ $0$ đến $N-1$.
+Để thu được biểu diễn vector one-hot
+cho bất kỳ từ nào có chỉ số $i$,
+chúng ta tạo một vector có độ dài $N$ với tất cả các phần tử bằng 0
+và đặt phần tử ở vị trí $i$ thành 1.
+Theo cách này, mỗi từ được biểu diễn bởi một vector có độ dài $N$, và nó
+có thể được sử dụng trực tiếp bởi các mạng neural.
 
 
-Although one-hot word vectors are easy to construct,
-they are usually not a good choice.
-A main reason is that one-hot word vectors cannot accurately express the similarity between different words, such as the *cosine similarity* that we often use.
-For vectors $\mathbf{x}, \mathbf{y} \in \mathbb{R}^d$, their cosine similarity is the cosine of the angle between them:
+Mặc dù vector từ one-hot dễ xây dựng,
+chúng thường không phải là một lựa chọn tốt.
+Một lý do chính là vector từ one-hot không thể biểu đạt chính xác mức độ tương đồng giữa các từ khác nhau, chẳng hạn như *độ tương đồng cosine* mà chúng ta thường sử dụng.
+Với các vector $\mathbf{x}, \mathbf{y} \in \mathbb{R}^d$, độ tương đồng cosine của chúng là cosin của góc giữa hai vector:
 
 
 $$\frac{\mathbf{x}^\top \mathbf{y}}{\|\mathbf{x}\| \|\mathbf{y}\|} \in [-1, 1].$$
 
 
-Since the cosine similarity between one-hot vectors of any two different words is 0,
-one-hot vectors cannot encode similarities among words.
+Vì độ tương đồng cosine giữa vector one-hot của bất kỳ hai từ khác nhau nào cũng bằng 0,
+vector one-hot không thể mã hóa sự tương đồng giữa các từ.
 
 
-## Self-Supervised word2vec
+## word2vec Tự Giám sát
 
-The [word2vec](https://code.google.com/archive/p/word2vec/) tool was proposed to address the above issue.
-It maps each word to a fixed-length vector, and  these vectors can better express the similarity and analogy relationship among different words.
-The word2vec tool contains two models, namely *skip-gram* :cite:`Mikolov.Sutskever.Chen.ea.2013`  and *continuous bag of words* (CBOW) :cite:`Mikolov.Chen.Corrado.ea.2013`.
-For semantically meaningful representations,
-their training relies on
-conditional probabilities
-that can be viewed as predicting
-some words using some of their surrounding words
-in corpora.
-Since supervision comes from the data without labels,
-both skip-gram and continuous bag of words
-are self-supervised models.
+Công cụ [word2vec](https://code.google.com/archive/p/word2vec/) được đề xuất để giải quyết vấn đề trên.
+Công cụ này ánh xạ mỗi từ vào một vector có độ dài cố định, và các vector này có thể biểu đạt tốt hơn mối quan hệ tương đồng và tương tự giữa các từ khác nhau.
+Công cụ word2vec bao gồm hai mô hình, đó là *skip-gram* :cite:`Mikolov.Sutskever.Chen.ea.2013` và *continuous bag of words* (CBOW) :cite:`Mikolov.Chen.Corrado.ea.2013`.
+Để tạo ra các biểu diễn có ý nghĩa về mặt ngữ nghĩa,
+việc huấn luyện các mô hình này dựa trên
+các xác suất có điều kiện
+có thể được xem là việc dự đoán
+một số từ bằng cách sử dụng một số từ xung quanh chúng
+trong các corpus.
+Vì sự giám sát đến từ dữ liệu không có nhãn,
+cả skip-gram và continuous bag of words
+đều là các mô hình tự giám sát.
 
-In the following, we will introduce these two models and their training methods.
+Sau đây, chúng ta sẽ giới thiệu hai mô hình này cùng các phương pháp huấn luyện chúng.
 
 
-## The Skip-Gram Model
+## Mô hình Skip-Gram
 :label:`subsec_skip-gram`
 
-The *skip-gram* model assumes that a word can be used to generate its surrounding words in a text sequence.
-Take the text sequence "the", "man", "loves", "his", "son" as an example.
-Let's choose "loves" as the *center word* and set the context window size to 2.
-As shown in :numref:`fig_skip_gram`,
-given the center word "loves",
-the skip-gram model considers
-the conditional probability for generating the *context words*: "the", "man", "his", and "son",
-which are no more than 2 words away from the center word:
+Mô hình *skip-gram* giả định rằng một từ có thể được sử dụng để sinh ra các từ xung quanh nó trong một chuỗi văn bản.
+Hãy lấy chuỗi văn bản "the", "man", "loves", "his", "son" làm ví dụ.
+Chúng ta chọn "loves" làm *từ trung tâm* và đặt kích thước cửa sổ ngữ cảnh là 2.
+Như được minh họa trong :numref:`fig_skip_gram`,
+với từ trung tâm "loves",
+mô hình skip-gram xét
+xác suất có điều kiện để sinh ra các *từ ngữ cảnh*: "the", "man", "his" và "son",
+là những từ cách từ trung tâm không quá 2 từ:
 
 $$P(\textrm{"the"},\textrm{"man"},\textrm{"his"},\textrm{"son"}\mid\textrm{"loves"}).$$
 
-Assume that
-the context words are independently generated
-given the center word (i.e., conditional independence).
-In this case, the above conditional probability
-can be rewritten as
+Giả sử rằng
+các từ ngữ cảnh được sinh độc lập
+khi biết từ trung tâm (tức là độc lập có điều kiện).
+Trong trường hợp này, xác suất có điều kiện trên
+có thể được viết lại thành
 
 $$P(\textrm{"the"}\mid\textrm{"loves"})\cdot P(\textrm{"man"}\mid\textrm{"loves"})\cdot P(\textrm{"his"}\mid\textrm{"loves"})\cdot P(\textrm{"son"}\mid\textrm{"loves"}).$$
 
-![The skip-gram model considers the conditional probability of generating the surrounding context words given a center word.](../img/skip-gram.svg)
+![Mô hình skip-gram xét xác suất có điều kiện để sinh ra các từ ngữ cảnh xung quanh khi biết một từ trung tâm.](../img/skip-gram.svg)
 :label:`fig_skip_gram`
 
-In the skip-gram model, each word
-has two $d$-dimensional-vector representations
-for calculating conditional probabilities.
-More concretely,
-for any word with index $i$ in the dictionary,
-denote by $\mathbf{v}_i\in\mathbb{R}^d$
-and $\mathbf{u}_i\in\mathbb{R}^d$
-its two vectors
-when used as a *center* word and a *context* word, respectively.
-The conditional probability of generating any
-context word $w_o$ (with index $o$ in the dictionary) given the center word $w_c$ (with index $c$ in the dictionary) can be modeled by
-a softmax operation on vector dot products:
+Trong mô hình skip-gram, mỗi từ
+có hai biểu diễn dạng vector $d$ chiều
+để tính các xác suất có điều kiện.
+Cụ thể hơn,
+với bất kỳ từ nào có chỉ số $i$ trong từ điển,
+ký hiệu $\mathbf{v}_i\in\mathbb{R}^d$
+và $\mathbf{u}_i\in\mathbb{R}^d$
+là hai vector của từ đó
+khi được sử dụng lần lượt như một từ *trung tâm* và một từ *ngữ cảnh*.
+Xác suất có điều kiện để sinh ra bất kỳ
+từ ngữ cảnh $w_o$ nào (có chỉ số $o$ trong từ điển) khi biết từ trung tâm $w_c$ (có chỉ số $c$ trong từ điển) có thể được mô hình hóa bằng
+phép toán softmax trên các tích vô hướng của vector:
 
 
 $$P(w_o \mid w_c) = \frac{\exp(\mathbf{u}_o^\top \mathbf{v}_c)}{ \sum_{i \in \mathcal{V}} \exp(\mathbf{u}_i^\top \mathbf{v}_c)},$$
 :eqlabel:`eq_skip-gram-softmax`
 
-where the vocabulary index set $\mathcal{V} = \{0, 1, \ldots, |\mathcal{V}|-1\}$.
-Given a text sequence of length $T$, where the word at time step $t$ is denoted as $w^{(t)}$.
-Assume that
-context words are independently generated
-given any center word.
-For context window size $m$,
-the likelihood function of the skip-gram model
-is the probability of generating all context words
-given any center word:
+trong đó tập chỉ số của từ vựng $\mathcal{V} = \{0, 1, \ldots, |\mathcal{V}|-1\}$.
+Cho một chuỗi văn bản có độ dài $T$, trong đó từ ở bước thời gian $t$ được ký hiệu là $w^{(t)}$.
+Giả sử rằng
+các từ ngữ cảnh được sinh độc lập
+khi biết bất kỳ từ trung tâm nào.
+Với kích thước cửa sổ ngữ cảnh là $m$,
+hàm hợp lý của mô hình skip-gram
+là xác suất sinh ra tất cả các từ ngữ cảnh
+khi biết bất kỳ từ trung tâm nào:
 
 
 $$ \prod_{t=1}^{T} \prod_{-m \leq j \leq m,\ j \neq 0} P(w^{(t+j)} \mid w^{(t)}),$$
 
-where any time step that is less than $1$ or greater than $T$ can be omitted.
+trong đó có thể bỏ qua mọi bước thời gian nhỏ hơn $1$ hoặc lớn hơn $T$.
 
-### Training
+### Huấn luyện
 
-The skip-gram model parameters are the center word vector and context word vector for each word in the vocabulary.
-In training, we learn the model parameters by maximizing the likelihood function (i.e., maximum likelihood estimation). This is equivalent to minimizing the following loss function:
+Các tham số của mô hình skip-gram là vector từ trung tâm và vector từ ngữ cảnh cho mỗi từ trong từ vựng.
+Trong quá trình huấn luyện, chúng ta học các tham số mô hình bằng cách cực đại hóa hàm hợp lý (tức là ước lượng hợp lý cực đại). Điều này tương đương với việc cực tiểu hóa hàm mất mát sau:
 
 $$ - \sum_{t=1}^{T} \sum_{-m \leq j \leq m,\ j \neq 0} \textrm{log}\, P(w^{(t+j)} \mid w^{(t)}).$$
 
-When using stochastic gradient descent to minimize the loss,
-in each iteration
-we can
-randomly sample a shorter subsequence to calculate the (stochastic) gradient for this subsequence to update the model parameters.
-To calculate this (stochastic) gradient,
-we need to obtain
-the gradients of
-the log conditional probability with respect to the center word vector and the context word vector.
-In general, according to :eqref:`eq_skip-gram-softmax`
-the log conditional probability
-involving any pair of the center word $w_c$ and
-the context word $w_o$ is
+Khi sử dụng gradient descent ngẫu nhiên để cực tiểu hóa hàm mất mát,
+ở mỗi vòng lặp
+chúng ta có thể
+lấy mẫu ngẫu nhiên một chuỗi con ngắn hơn để tính gradient (ngẫu nhiên) cho chuỗi con này và cập nhật các tham số mô hình.
+Để tính gradient (ngẫu nhiên) này,
+chúng ta cần thu được
+các gradient của
+logarit của xác suất có điều kiện đối với vector từ trung tâm và vector từ ngữ cảnh.
+Nói chung, theo :eqref:`eq_skip-gram-softmax`
+logarit của xác suất có điều kiện
+liên quan đến bất kỳ cặp từ trung tâm $w_c$ và
+từ ngữ cảnh $w_o$ nào là
 
 
 $$\log P(w_o \mid w_c) =\mathbf{u}_o^\top \mathbf{v}_c - \log\left(\sum_{i \in \mathcal{V}} \exp(\mathbf{u}_i^\top \mathbf{v}_c)\right).$$
 :eqlabel:`eq_skip-gram-log`
 
-Through differentiation, we can obtain its gradient
-with respect to the center word vector $\mathbf{v}_c$ as
+Bằng phép lấy đạo hàm, chúng ta có thể thu được gradient của nó
+theo vector từ trung tâm $\mathbf{v}_c$ như sau
 
 $$\begin{aligned}\frac{\partial \textrm{log}\, P(w_o \mid w_c)}{\partial \mathbf{v}_c}&= \mathbf{u}_o - \frac{\sum_{j \in \mathcal{V}} \exp(\mathbf{u}_j^\top \mathbf{v}_c)\mathbf{u}_j}{\sum_{i \in \mathcal{V}} \exp(\mathbf{u}_i^\top \mathbf{v}_c)}\\&= \mathbf{u}_o - \sum_{j \in \mathcal{V}} \left(\frac{\exp(\mathbf{u}_j^\top \mathbf{v}_c)}{ \sum_{i \in \mathcal{V}} \exp(\mathbf{u}_i^\top \mathbf{v}_c)}\right) \mathbf{u}_j\\&= \mathbf{u}_o - \sum_{j \in \mathcal{V}} P(w_j \mid w_c) \mathbf{u}_j.\end{aligned}$$
 :eqlabel:`eq_skip-gram-grad`
 
 
-Note that the calculation in :eqref:`eq_skip-gram-grad` requires the conditional probabilities of all words in the dictionary with $w_c$ as the center word.
-The gradients for the other word vectors can be obtained in the same way.
+Lưu ý rằng phép tính trong :eqref:`eq_skip-gram-grad` yêu cầu các xác suất có điều kiện của tất cả các từ trong từ điển khi $w_c$ là từ trung tâm.
+Gradient của các vector từ còn lại có thể được thu được theo cách tương tự.
 
 
-After training, for any word with index $i$ in the dictionary, we obtain both word vectors
-$\mathbf{v}_i$ (as the center word) and $\mathbf{u}_i$ (as the context word).
-In natural language processing applications, the center word vectors of the skip-gram model are typically
-used as the word representations.
+Sau khi huấn luyện, với bất kỳ từ nào có chỉ số $i$ trong từ điển, chúng ta thu được cả hai vector từ
+$\mathbf{v}_i$ (với vai trò từ trung tâm) và $\mathbf{u}_i$ (với vai trò từ ngữ cảnh).
+Trong các ứng dụng xử lý ngôn ngữ tự nhiên, các vector từ trung tâm của mô hình skip-gram thường được
+sử dụng làm biểu diễn từ.
 
 
-## The Continuous Bag of Words (CBOW) Model
+## Mô hình Continuous Bag of Words (CBOW)
 
 
-The *continuous bag of words* (CBOW) model is similar to the skip-gram model.
-The major difference
-from the skip-gram model is that
-the continuous bag of words model
-assumes that a center word is generated
-based on its surrounding context words in the text sequence.
-For example,
-in the same text sequence "the", "man", "loves", "his", and "son", with "loves" as the center word and the context window size being 2,
-the continuous bag of words model
-considers
-the conditional probability of generating the center word "loves" based on the context words "the", "man", "his" and "son" (as shown in :numref:`fig_cbow`), which is
+Mô hình *continuous bag of words* (CBOW) tương tự mô hình skip-gram.
+Điểm khác biệt chính
+so với mô hình skip-gram là
+mô hình continuous bag of words
+giả định rằng một từ trung tâm được sinh ra
+dựa trên các từ ngữ cảnh xung quanh nó trong chuỗi văn bản.
+Ví dụ,
+trong cùng chuỗi văn bản "the", "man", "loves", "his" và "son", với "loves" là từ trung tâm và kích thước cửa sổ ngữ cảnh bằng 2,
+mô hình continuous bag of words
+xét
+xác suất có điều kiện để sinh ra từ trung tâm "loves" dựa trên các từ ngữ cảnh "the", "man", "his" và "son" (như được minh họa trong :numref:`fig_cbow`), đó là
 
 $$P(\textrm{"loves"}\mid\textrm{"the"},\textrm{"man"},\textrm{"his"},\textrm{"son"}).$$
 
-![The continuous bag of words model considers the conditional probability of generating the center word given its surrounding context words.](../img/cbow.svg)
+![Mô hình continuous bag of words xét xác suất có điều kiện để sinh ra từ trung tâm khi biết các từ ngữ cảnh xung quanh nó.](../img/cbow.svg)
 :label:`fig_cbow`
 
 
-Since there are multiple context words
-in the continuous bag of words model,
-these context word vectors are averaged
-in the calculation of the conditional probability.
-Specifically,
-for any word with index $i$ in the dictionary,
-denote by $\mathbf{v}_i\in\mathbb{R}^d$
-and $\mathbf{u}_i\in\mathbb{R}^d$
-its two vectors
-when used as a *context* word and a *center* word
-(meanings are switched in the skip-gram model), respectively.
-The conditional probability of generating any
-center word $w_c$ (with index $c$ in the dictionary) given its surrounding context words $w_{o_1}, \ldots, w_{o_{2m}}$ (with index $o_1, \ldots, o_{2m}$ in the dictionary) can be modeled by
+Vì có nhiều từ ngữ cảnh
+trong mô hình continuous bag of words,
+các vector của những từ ngữ cảnh này được lấy trung bình
+trong phép tính xác suất có điều kiện.
+Cụ thể,
+với mọi từ có chỉ số $i$ trong từ điển,
+ký hiệu $\mathbf{v}_i\in\mathbb{R}^d$
+và $\mathbf{u}_i\in\mathbb{R}^d$
+là hai vector của từ đó
+khi được dùng làm từ *ngữ cảnh* và từ *trung tâm*
+(ý nghĩa được hoán đổi trong mô hình skip-gram), tương ứng.
+Xác suất có điều kiện để sinh ra bất kỳ
+từ *trung tâm* $w_c$ nào (có chỉ số $c$ trong từ điển) khi biết các từ ngữ cảnh xung quanh $w_{o_1}, \ldots, w_{o_{2m}}$ (có các chỉ số $o_1, \ldots, o_{2m}$ trong từ điển) có thể được mô hình hóa như sau:
 
 
 
@@ -198,65 +198,65 @@ $$P(w_c \mid w_{o_1}, \ldots, w_{o_{2m}}) = \frac{\exp\left(\frac{1}{2m}\mathbf{
 :eqlabel:`fig_cbow-full`
 
 
-For brevity, let $\mathcal{W}_o= \{w_{o_1}, \ldots, w_{o_{2m}}\}$ and $\bar{\mathbf{v}}_o = \left(\mathbf{v}_{o_1} + \ldots + \mathbf{v}_{o_{2m}} \right)/(2m)$. Then :eqref:`fig_cbow-full` can be simplified as
+Để viết ngắn gọn, đặt $\mathcal{W}_o= \{w_{o_1}, \ldots, w_{o_{2m}}\}$ và $\bar{\mathbf{v}}_o = \left(\mathbf{v}_{o_1} + \ldots + \mathbf{v}_{o_{2m}} \right)/(2m)$. Khi đó, :eqref:`fig_cbow-full` có thể được đơn giản hóa thành
 
 $$P(w_c \mid \mathcal{W}_o) = \frac{\exp\left(\mathbf{u}_c^\top \bar{\mathbf{v}}_o\right)}{\sum_{i \in \mathcal{V}} \exp\left(\mathbf{u}_i^\top \bar{\mathbf{v}}_o\right)}.$$
 
-Given a text sequence of length $T$, where the word at time step $t$ is denoted as $w^{(t)}$.
-For context window size $m$,
-the likelihood function of the continuous bag of words model
-is the probability of generating all center words
-given their context words:
+Xét một chuỗi văn bản có độ dài $T$, trong đó từ tại bước thời gian $t$ được ký hiệu là $w^{(t)}$.
+Với kích thước cửa sổ ngữ cảnh là $m$,
+hàm likelihood của mô hình continuous bag of words
+là xác suất sinh ra tất cả các từ trung tâm
+khi biết các từ ngữ cảnh tương ứng:
 
 
 $$ \prod_{t=1}^{T}  P(w^{(t)} \mid  w^{(t-m)}, \ldots, w^{(t-1)}, w^{(t+1)}, \ldots, w^{(t+m)}).$$
 
-### Training
+### Huấn luyện
 
-Training continuous bag of words models
-is almost the same as
-training skip-gram models.
-The maximum likelihood estimation of the
-continuous bag of words model is equivalent to minimizing the following loss function:
+Việc huấn luyện các mô hình continuous bag of words
+gần như giống hệt
+việc huấn luyện các mô hình skip-gram.
+Ước lượng hợp lý cực đại của
+mô hình continuous bag of words tương đương với việc tối thiểu hóa hàm mất mát sau:
 
 
 
 $$  -\sum_{t=1}^T  \textrm{log}\, P(w^{(t)} \mid  w^{(t-m)}, \ldots, w^{(t-1)}, w^{(t+1)}, \ldots, w^{(t+m)}).$$
 
-Notice that
+Lưu ý rằng
 
 $$\log\,P(w_c \mid \mathcal{W}_o) = \mathbf{u}_c^\top \bar{\mathbf{v}}_o - \log\,\left(\sum_{i \in \mathcal{V}} \exp\left(\mathbf{u}_i^\top \bar{\mathbf{v}}_o\right)\right).$$
 
-Through differentiation, we can obtain its gradient
-with respect to any context word vector $\mathbf{v}_{o_i}$($i = 1, \ldots, 2m$)
-as
+Bằng phép vi phân, ta có thể thu được gradient
+theo bất kỳ vector từ ngữ cảnh nào $\mathbf{v}_{o_i}$($i = 1, \ldots, 2m$)
+như sau:
 
 
 $$\frac{\partial \log\, P(w_c \mid \mathcal{W}_o)}{\partial \mathbf{v}_{o_i}} = \frac{1}{2m} \left(\mathbf{u}_c - \sum_{j \in \mathcal{V}} \frac{\exp(\mathbf{u}_j^\top \bar{\mathbf{v}}_o)\mathbf{u}_j}{ \sum_{i \in \mathcal{V}} \exp(\mathbf{u}_i^\top \bar{\mathbf{v}}_o)} \right) = \frac{1}{2m}\left(\mathbf{u}_c - \sum_{j \in \mathcal{V}} P(w_j \mid \mathcal{W}_o) \mathbf{u}_j \right).$$
 :eqlabel:`eq_cbow-gradient`
 
 
-The gradients for the other word vectors can be obtained in the same way.
-Unlike the skip-gram model,
-the continuous bag of words model
-typically
-uses context word vectors as the word representations.
+Các gradient của những vector từ khác có thể được tính theo cách tương tự.
+Khác với mô hình skip-gram,
+mô hình continuous bag of words
+thường
+sử dụng các vector từ ngữ cảnh làm biểu diễn từ.
 
 
 
 
-## Summary
+## Tóm tắt
 
-* Word vectors are vectors used to represent words, and can also be considered as feature vectors or representations of words. The technique of mapping words to real vectors is called word embedding.
-* The word2vec tool contains both the skip-gram  and continuous bag of words models.
-* The skip-gram model assumes that a word can be used to generate its surrounding words in a text sequence; while the continuous bag of words model assumes that a center word is generated based on its surrounding context words.
+* Vector từ là các vector được dùng để biểu diễn từ, đồng thời cũng có thể được xem là các vector đặc trưng hoặc các biểu diễn của từ. Kỹ thuật ánh xạ từ sang các vector thực được gọi là word embedding.
+* Công cụ word2vec chứa cả mô hình skip-gram và continuous bag of words.
+* Mô hình skip-gram giả định rằng một từ có thể được dùng để sinh ra các từ xung quanh nó trong một chuỗi văn bản; trong khi mô hình continuous bag of words giả định rằng một từ trung tâm được sinh ra dựa trên các từ ngữ cảnh xung quanh nó.
 
 
 
-## Exercises
+## Bài tập
 
-1. What is the computational complexity for calculating each gradient? What could be the issue if the dictionary size is huge?
-1. Some fixed phrases in English consist of multiple words, such as "new york". How to train their word vectors? Hint: see Section 4 in the word2vec paper :cite:`Mikolov.Sutskever.Chen.ea.2013`.
-1. Let's reflect on the word2vec design by taking the skip-gram model as an example. What is the relationship between the dot product of two word vectors in the skip-gram model and the cosine similarity? For a pair of words with similar semantics, why may the cosine similarity of their word vectors (trained by the skip-gram model) be high?
+1. Độ phức tạp tính toán để tính mỗi gradient là bao nhiêu? Vấn đề có thể xảy ra nếu kích thước từ điển rất lớn là gì?
+1. Một số cụm từ cố định trong tiếng Anh gồm nhiều từ, chẳng hạn như "new york". Làm thế nào để huấn luyện các vector từ của chúng? Gợi ý: xem Mục 4 trong bài báo word2vec :cite:`Mikolov.Sutskever.Chen.ea.2013`.
+1. Hãy cùng suy ngẫm về thiết kế của word2vec bằng cách lấy mô hình skip-gram làm ví dụ. Mối quan hệ giữa tích vô hướng của hai vector từ trong mô hình skip-gram và độ tương đồng cosine là gì? Với một cặp từ có ngữ nghĩa tương tự nhau, tại sao độ tương đồng cosine của các vector từ của chúng (được huấn luyện bằng mô hình skip-gram) có thể cao?
 
-[Discussions](https://discuss.d2l.ai/t/381)
+[Thảo luận](https://discuss.d2l.ai/t/381)

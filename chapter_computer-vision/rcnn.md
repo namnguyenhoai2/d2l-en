@@ -1,136 +1,136 @@
-# Region-based CNNs (R-CNNs)
+# CNN dựa trên vùng (R-CNN)
 :label:`sec_rcnn`
 
-Besides single shot multibox detection
-described in :numref:`sec_ssd`,
-region-based CNNs or regions with CNN features (R-CNNs)
-are also among many pioneering
-approaches of
-applying
-deep learning to object detection
+Bên cạnh phương pháp phát hiện đa hộp một lần
+được mô tả trong :numref:`sec_ssd`,
+CNN dựa trên vùng hoặc các vùng với đặc trưng CNN (R-CNN)
+cũng nằm trong số nhiều
+phương pháp tiên phong
+áp dụng
+deep learning cho bài toán phát hiện đối tượng
 :cite:`Girshick.Donahue.Darrell.ea.2014`.
-In this section, we will introduce
-the R-CNN and its series of improvements: the fast R-CNN
-:cite:`Girshick.2015`, the faster R-CNN :cite:`Ren.He.Girshick.ea.2015`, and the mask R-CNN
+Trong phần này, chúng ta sẽ giới thiệu
+R-CNN và chuỗi cải tiến của nó: fast R-CNN
+:cite:`Girshick.2015`, faster R-CNN :cite:`Ren.He.Girshick.ea.2015`, và mask R-CNN
 :cite:`He.Gkioxari.Dollar.ea.2017`.
-Due to limited space, we will only
-focus on the design of these models.
+Do giới hạn về dung lượng, chúng ta sẽ chỉ
+tập trung vào thiết kế của các mô hình này.
 
 
 
-## R-CNNs
+## R-CNN
 
 
-The *R-CNN* first extracts
-many (e.g., 2000) *region proposals*
-from the input image
-(e.g., anchor boxes can also be considered
-as region proposals),
-labeling their classes and bounding boxes (e.g., offsets).
+*R-CNN* trước tiên trích xuất
+nhiều *đề xuất vùng*
+(ví dụ: 2000) từ ảnh đầu vào
+(ví dụ: các anchor box cũng có thể được xem
+là các đề xuất vùng),
+gán nhãn lớp và bounding box (ví dụ: các độ lệch) cho chúng.
 :cite:`Girshick.Donahue.Darrell.ea.2014`
-Then a CNN is used to
-perform forward propagation on each region proposal
-to extract its features.
-Next, features of each region proposal
-are used for
-predicting the class and bounding box
-of this region proposal.
+Sau đó, một CNN được sử dụng để
+thực hiện forward propagation trên từng đề xuất vùng
+nhằm trích xuất các đặc trưng của nó.
+Tiếp theo, các đặc trưng của từng đề xuất vùng
+được sử dụng để
+dự đoán lớp và bounding box
+của đề xuất vùng đó.
 
 
-![The R-CNN model.](../img/r-cnn.svg)
+![Mô hình R-CNN.](../img/r-cnn.svg)
 :label:`fig_r-cnn`
 
-:numref:`fig_r-cnn` shows the R-CNN model. More concretely, the R-CNN consists of the following four steps:
+:numref:`fig_r-cnn` minh họa mô hình R-CNN. Cụ thể hơn, R-CNN gồm bốn bước sau:
 
-1. Perform *selective search* to extract multiple high-quality region proposals on the input image :cite:`Uijlings.Van-De-Sande.Gevers.ea.2013`. These proposed regions are usually selected at multiple scales with different shapes and sizes. Each region proposal will be labeled with a class and a ground-truth bounding box.
-1. Choose a pretrained CNN and truncate it before the output layer. Resize each region proposal to the input size required by the network, and output the extracted features for the region proposal through forward propagation.
-1. Take the extracted features and labeled class of each region proposal as an example. Train multiple support vector machines to classify objects, where each support vector machine individually determines whether the example contains a specific class.
-1. Take the extracted features and labeled bounding box of each region proposal as an example. Train a linear regression model to predict the ground-truth bounding box.
+1. Thực hiện *selective search* để trích xuất nhiều đề xuất vùng chất lượng cao trên ảnh đầu vào :cite:`Uijlings.Van-De-Sande.Gevers.ea.2013`. Các vùng được đề xuất này thường được chọn ở nhiều scale với các hình dạng và kích thước khác nhau. Mỗi đề xuất vùng sẽ được gán một lớp và một bounding box ground-truth.
+1. Chọn một CNN đã được pretrained và cắt bỏ nó trước lớp đầu ra. Resize từng đề xuất vùng về kích thước đầu vào mà mạng yêu cầu, rồi xuất các đặc trưng đã trích xuất của đề xuất vùng đó thông qua forward propagation.
+1. Lấy các đặc trưng đã trích xuất và lớp đã gán nhãn của từng đề xuất vùng làm một mẫu. Huấn luyện nhiều support vector machine để phân loại đối tượng, trong đó mỗi support vector machine xác định riêng liệu mẫu có chứa một lớp cụ thể hay không.
+1. Lấy các đặc trưng đã trích xuất và bounding box đã gán nhãn của từng đề xuất vùng làm một mẫu. Huấn luyện một mô hình hồi quy tuyến tính để dự đoán bounding box ground-truth.
 
 
-Although the R-CNN model uses pretrained CNNs to effectively extract image features,
-it is slow.
-Imagine that we select
-thousands of region proposals from a single input image:
-this requires thousands of
-CNN forward propagations to perform object detection.
-This massive
-computing load makes it infeasible to
-widely use R-CNNs in real-world applications.
+Mặc dù mô hình R-CNN sử dụng các CNN đã pretrained để trích xuất đặc trưng ảnh một cách hiệu quả,
+nó lại chậm.
+Hãy hình dung chúng ta chọn
+hàng nghìn đề xuất vùng từ một ảnh đầu vào duy nhất:
+điều này yêu cầu hàng nghìn lần
+forward propagation qua CNN để thực hiện phát hiện đối tượng.
+Khối lượng tính toán khổng lồ này khiến việc
+sử dụng rộng rãi R-CNN trong các ứng dụng thực tế
+trở nên không khả thi.
 
 ## Fast R-CNN
 
-The main performance bottleneck of
-an R-CNN lies in
-the independent CNN forward propagation
-for each region proposal,
-without sharing computation.
-Since these regions usually have
-overlaps,
-independent feature extractions lead to
-much repeated computation.
-One of the major improvements of
-the *fast R-CNN* from the
-R-CNN is that
-the CNN forward propagation
-is only performed on
-the entire image :cite:`Girshick.2015`.
+Nút thắt hiệu năng chính của
+R-CNN nằm ở
+việc thực hiện forward propagation qua CNN độc lập
+cho từng đề xuất vùng,
+mà không chia sẻ phép tính.
+Vì các vùng này thường
+chồng lấn lên nhau,
+việc trích xuất đặc trưng độc lập dẫn đến
+rất nhiều phép tính lặp lại.
+Một trong những cải tiến lớn của
+*fast R-CNN* so với
+R-CNN là
+forward propagation qua CNN
+chỉ được thực hiện trên
+toàn bộ ảnh :cite:`Girshick.2015`.
 
-![The fast R-CNN model.](../img/fast-rcnn.svg)
+![Mô hình fast R-CNN.](../img/fast-rcnn.svg)
 :label:`fig_fast_r-cnn`
 
-:numref:`fig_fast_r-cnn` describes the fast R-CNN model. Its major computations are as follows:
+:numref:`fig_fast_r-cnn` mô tả mô hình fast R-CNN. Các phép tính chính của mô hình gồm:
+
+1. So với R-CNN, trong fast R-CNN, đầu vào của CNN để trích xuất đặc trưng là toàn bộ ảnh thay vì từng đề xuất vùng riêng lẻ. Ngoài ra, CNN này có thể được train. Với một ảnh đầu vào, giả sử đầu ra của CNN có shape là $1 \times c \times h_1  \times w_1$.
+1. Giả sử selective search tạo ra $n$ đề xuất vùng. Các đề xuất vùng này (có hình dạng khác nhau) đánh dấu các vùng quan tâm (có hình dạng khác nhau) trên đầu ra của CNN. Sau đó, các vùng quan tâm này tiếp tục trích xuất các đặc trưng có cùng hình dạng (giả sử chiều cao $h_2$ và chiều rộng $w_2$ được chỉ định) để dễ dàng nối với nhau. Để thực hiện điều này, fast R-CNN giới thiệu lớp *region of interest (RoI) pooling*: đầu ra của CNN và các đề xuất vùng được đưa vào lớp này, tạo ra các đặc trưng đã nối có shape $n \times c \times h_2 \times w_2$, sau đó được dùng để trích xuất thêm đặc trưng cho tất cả các đề xuất vùng.
+1. Sử dụng một lớp fully connected, biến đổi các đặc trưng đã nối thành đầu ra có shape $n \times d$, trong đó $d$ phụ thuộc vào thiết kế của mô hình.
+1. Dự đoán lớp và bounding box cho từng trong số $n$ đề xuất vùng. Cụ thể hơn, trong phép dự đoán lớp và bounding box, biến đổi đầu ra của lớp fully connected thành một đầu ra có shape $n \times q$ ($q$ là số lớp) và một đầu ra có shape $n \times 4$, tương ứng. Phép dự đoán lớp sử dụng hồi quy softmax.
 
 
-1. Compared with the R-CNN, in the fast R-CNN the input of the CNN for feature extraction is the entire image, rather than individual region proposals. Moreover, this CNN is trainable. Given an input image, let the shape of the CNN output be $1 \times c \times h_1  \times w_1$.
-1. Suppose that selective search generates $n$ region proposals. These region proposals (of different shapes) mark regions of interest (of different shapes) on the CNN output. Then these regions of interest further extract features of the same shape (say height $h_2$ and width $w_2$ are specified) in order to be easily concatenated. To achieve this, the fast R-CNN introduces the *region of interest (RoI) pooling* layer: the CNN output and region proposals are input into this layer, outputting concatenated features of shape $n \times c \times h_2 \times w_2$ that are further extracted for all the region proposals.
-1. Using a fully connected layer, transform the concatenated features into an output of shape $n \times d$, where $d$ depends on the model design.
-1. Predict the class and bounding box for each of the $n$ region proposals. More concretely, in class and bounding box prediction, transform the fully connected layer output into an output of shape $n \times q$ ($q$ is the number of classes) and an output of shape $n \times 4$, respectively. The class prediction uses softmax regression.
+Lớp region of interest pooling được đề xuất trong fast R-CNN khác với lớp pooling được giới thiệu trong :numref:`sec_pooling`.
+Trong lớp pooling,
+chúng ta gián tiếp kiểm soát shape đầu ra
+bằng cách chỉ định kích thước
+của cửa sổ pooling, padding và stride.
+Ngược lại,
+chúng ta có thể chỉ định trực tiếp shape đầu ra
+trong lớp region of interest pooling.
 
-
-The region of interest pooling layer proposed in the fast R-CNN is different from the pooling layer introduced in :numref:`sec_pooling`.
-In the pooling layer,
-we indirectly control the output shape
-by specifying sizes of
-the pooling window, padding, and stride.
-In contrast,
-we can directly specify the output shape
-in the region of interest pooling layer.
-
-For example, let's specify
-the output height and width
-for each region as $h_2$ and $w_2$, respectively.
-For any region of interest window
-of shape $h \times w$,
-this window is divided into a $h_2 \times w_2$ grid
-of subwindows,
-where the shape of each subwindow is approximately
+Ví dụ, hãy chỉ định
+chiều cao và chiều rộng đầu ra
+cho mỗi vùng lần lượt là $h_2$ và $w_2$.
+Với bất kỳ cửa sổ vùng quan tâm nào
+có shape $h \times w$,
+cửa sổ này được chia thành một lưới $h_2 \times w_2$
+gồm các cửa sổ con,
+trong đó shape của mỗi cửa sổ con xấp xỉ
 $(h/h_2) \times (w/w_2)$.
-In practice,
-the height and width of any subwindow shall be rounded up, and the largest element shall be used as output of the subwindow.
-Therefore, the region of interest pooling layer can extract features of the same shape
-even when regions of interest have different shapes.
+Trong thực tế,
+chiều cao và chiều rộng của mỗi cửa sổ con sẽ được làm tròn lên, và phần tử lớn nhất sẽ được sử dụng làm đầu ra của cửa sổ con.
+Do đó,
+lớp region of interest pooling có thể trích xuất các đặc trưng có cùng shape
+ngay cả khi các vùng quan tâm có hình dạng khác nhau.
 
 
-As an illustrative example,
-in :numref:`fig_roi`,
-the upper-left $3\times 3$ region of interest
-is selected on a $4 \times 4$ input.
-For this region of interest,
-we use a $2\times 2$ region of interest pooling layer to obtain
-a $2\times 2$ output.
-Note that
-each of the four divided subwindows
-contains elements
-0, 1, 4, and 5 (5 is the maximum);
-2 and 6 (6 is the maximum);
-8 and 9 (9 is the maximum);
-and 10.
+Lấy một ví dụ minh họa,
+trong :numref:`fig_roi`,
+vùng quan tâm $3\times 3$ ở góc trên bên trái
+được chọn trên đầu vào $4 \times 4$.
+Với vùng quan tâm này,
+chúng ta sử dụng lớp region of interest pooling $2\times 2$ để thu được
+đầu ra $2\times 2$.
+Lưu ý rằng
+mỗi trong bốn cửa sổ con được chia
+chứa các phần tử
+0, 1, 4 và 5 (5 là lớn nhất);
+2 và 6 (6 là lớn nhất);
+8 và 9 (9 là lớn nhất);
+và 10.
 
-![A $2\times 2$ region of interest pooling layer.](../img/roi.svg)
+![Một lớp region of interest pooling $2\times 2$.](../img/roi.svg)
 :label:`fig_roi`
 
-Below we demonstrate the computation of the region of interest pooling layer. Suppose that the height and width of the CNN-extracted features `X` are both 4, and there is only a single channel.
+Dưới đây, chúng ta minh họa phép tính của lớp region of interest pooling. Giả sử chiều cao và chiều rộng của các đặc trưng do CNN trích xuất `X` đều bằng 4, và chỉ có một channel.
 
 ```{.python .input}
 #@tab mxnet
@@ -151,11 +151,12 @@ X = torch.arange(16.).reshape(1, 1, 4, 4)
 X
 ```
 
-Let's further suppose
-that  the height and width of the input image are both 40 pixels and that selective search generates two region proposals on this image.
-Each region proposal
-is expressed as five elements:
-its object class followed by the $(x, y)$-coordinates of its upper-left and lower-right corners.
+Giả sử thêm
+rằng chiều cao và chiều rộng của ảnh đầu vào đều là 40 pixel và selective search tạo ra hai đề xuất vùng trên ảnh này.
+Mỗi đề xuất vùng
+được biểu diễn bằng năm phần tử:
+lớp đối tượng của nó, theo sau là các tọa độ $(x, y)$
+của góc trên bên trái và góc dưới bên phải.
 
 ```{.python .input}
 #@tab mxnet
@@ -167,14 +168,14 @@ rois = np.array([[0, 0, 0, 20, 20], [0, 0, 10, 30, 30]])
 rois = torch.Tensor([[0, 0, 0, 20, 20], [0, 0, 10, 30, 30]])
 ```
 
-Because the height and width of `X` are $1/10$ of the height and width of the input image,
-the coordinates of the two region proposals
-are multiplied by 0.1 according to the specified `spatial_scale` argument.
-Then the two regions of interest are marked on `X` as `X[:, :, 0:3, 0:3]` and `X[:, :, 1:4, 0:4]`, respectively.
-Finally in the $2\times 2$ region of interest pooling,
-each region of interest is divided
-into a grid of sub-windows to
-further extract features of the same shape $2\times 2$.
+Vì chiều cao và chiều rộng của `X` bằng $1/10$ chiều cao và chiều rộng của ảnh đầu vào,
+các tọa độ của hai đề xuất vùng
+được nhân với 0.1 theo đối số `spatial_scale` đã chỉ định.
+Sau đó, hai vùng quan tâm được đánh dấu trên `X` lần lượt là `X[:, :, 0:3, 0:3]` và `X[:, :, 1:4, 0:4]`.
+Cuối cùng, trong lớp region of interest pooling $2\times 2$,
+mỗi vùng quan tâm được chia
+thành một lưới các cửa sổ con để
+tiếp tục trích xuất các đặc trưng có cùng shape $2\times 2$.
 
 ```{.python .input}
 #@tab mxnet
@@ -188,113 +189,112 @@ torchvision.ops.roi_pool(X, rois, output_size=(2, 2), spatial_scale=0.1)
 
 ## Faster R-CNN
 
-To be more accurate in object detection,
-the fast R-CNN model
-usually has to generate
-a lot of region proposals in selective search.
-To reduce region proposals
-without loss of accuracy,
-the *faster R-CNN*
-proposes to replace selective search with a *region proposal network* :cite:`Ren.He.Girshick.ea.2015`.
+Để phát hiện đối tượng chính xác hơn,
+mô hình fast R-CNN
+thường phải tạo ra
+rất nhiều đề xuất vùng trong selective search.
+Để giảm số lượng đề xuất vùng
+mà không làm giảm độ chính xác,
+*faster R-CNN*
+đề xuất thay thế selective search bằng một *region proposal network* :cite:`Ren.He.Girshick.ea.2015`.
 
 
 
-![The faster R-CNN model.](../img/faster-rcnn.svg)
+![Mô hình faster R-CNN.](../img/faster-rcnn.svg)
 :label:`fig_faster_r-cnn`
 
 
-:numref:`fig_faster_r-cnn` shows the faster R-CNN model. Compared with the fast R-CNN,
-the faster R-CNN only changes
-the region proposal method
-from selective search to a region proposal network.
-The rest of the model remain
-unchanged.
-The region proposal network
-works in the following steps:
+:numref:`fig_faster_r-cnn` minh họa mô hình faster R-CNN. So với fast R-CNN,
+faster R-CNN chỉ thay đổi
+phương pháp tạo đề xuất vùng
+từ selective search thành một region proposal network.
+Phần còn lại của mô hình
+giữ nguyên.
+Region proposal network
+hoạt động theo các bước sau:
 
-1. Use a $3\times 3$ convolutional layer with padding of 1 to transform the CNN output to a new output with $c$ channels. In this way, each unit along the spatial dimensions of the CNN-extracted feature maps gets a new feature vector of length $c$.
-1. Centered on each pixel of the feature maps, generate multiple anchor boxes of different scales and aspect ratios and label them.
-1. Using the length-$c$ feature vector at the center of each anchor box, predict the binary class (background or objects) and bounding box for this anchor box.
-1. Consider those predicted bounding boxes whose  predicted classes are objects. Remove overlapped results using non-maximum suppression. The remaining  predicted bounding boxes for objects are the region proposals required by the region of interest pooling layer.
+1. Sử dụng một lớp convolution $3\times 3$ với padding bằng 1 để biến đổi đầu ra của CNN thành một đầu ra mới có $c$ channel. Theo cách này, mỗi unit dọc theo các chiều không gian của feature map do CNN trích xuất sẽ nhận được một vector đặc trưng mới có độ dài $c$.
+1. Lấy mỗi pixel trên feature map làm tâm, tạo ra nhiều anchor box có scale và aspect ratio khác nhau rồi gán nhãn cho chúng.
+1. Sử dụng vector đặc trưng độ dài $c$ tại tâm của mỗi anchor box, dự đoán lớp nhị phân (background hoặc đối tượng) và bounding box cho anchor box đó.
+1. Xét các bounding box được dự đoán có lớp dự đoán là đối tượng. Loại bỏ các kết quả chồng lấn bằng non-maximum suppression. Các bounding box đối tượng được dự đoán còn lại là những đề xuất vùng mà lớp region of interest pooling yêu cầu.
 
 
 
-It is worth noting that,
-as part of the faster R-CNN model,
-the region
-proposal network is jointly trained
-with the rest of the model.
-In other words, the objective function of
-the faster R-CNN includes
-not only the class and bounding box prediction
-in object detection,
-but also the binary class and bounding box prediction
-of anchor boxes in the region proposal network.
-As a result of the end-to-end training,
-the region proposal network learns
-how to generate high-quality region proposals,
-so as to stay accurate in object detection
-with a reduced number of region proposals
-that are learned from data.
+Cần lưu ý rằng,
+với tư cách là một phần của mô hình faster R-CNN,
+region proposal network
+được train joint
+với phần còn lại của mô hình.
+Nói cách khác, hàm mục tiêu của
+faster R-CNN bao gồm
+không chỉ phép dự đoán lớp và bounding box
+trong phát hiện đối tượng,
+mà còn cả phép dự đoán lớp nhị phân và bounding box
+của các anchor box trong region proposal network.
+Nhờ quá trình train end-to-end,
+region proposal network học cách
+tạo ra các đề xuất vùng chất lượng cao,
+nhờ đó duy trì độ chính xác trong phát hiện đối tượng
+với số lượng đề xuất vùng giảm xuống,
+được học từ dữ liệu.
 
 
 
 
 ## Mask R-CNN
 
-In the training dataset,
-if pixel-level positions of object
-are also labeled on images,
-the *mask R-CNN* can effectively leverage
-such detailed labels
-to further improve the accuracy of object detection :cite:`He.Gkioxari.Dollar.ea.2017`.
+Trong tập dữ liệu huấn luyện,
+nếu vị trí của đối tượng ở cấp pixel
+cũng được gán nhãn trên ảnh,
+*mask R-CNN* có thể tận dụng hiệu quả
+các nhãn chi tiết như vậy
+để tiếp tục cải thiện độ chính xác của việc phát hiện đối tượng :cite:`He.Gkioxari.Dollar.ea.2017`.
 
 
-![The mask R-CNN model.](../img/mask-rcnn.svg)
+![Mô hình mask R-CNN.](../img/mask-rcnn.svg)
 :label:`fig_mask_r-cnn`
 
-As shown in :numref:`fig_mask_r-cnn`,
-the mask R-CNN
-is modified based on the faster R-CNN.
-Specifically,
-the mask R-CNN replaces the
-region of interest pooling layer with the
-*region of interest (RoI) alignment* layer.
-This region of interest alignment layer
-uses bilinear interpolation
-to preserve the spatial information on the feature maps, which is more suitable for pixel-level prediction.
-The output of this layer
-contains feature maps of the same shape
-for all the regions of interest.
-They are used
-to predict
-not only the class and bounding box for each region of interest,
-but also the pixel-level position of the object through an additional fully convolutional network.
-More details on using a fully convolutional network to predict pixel-level semantics of an image
-will be provided
-in subsequent sections of this chapter.
+Như được minh họa trong :numref:`fig_mask_r-cnn`,
+mask R-CNN
+được sửa đổi dựa trên faster R-CNN.
+Cụ thể,
+mask R-CNN thay thế
+lớp region of interest pooling bằng
+lớp *region of interest (RoI) alignment*.
+Lớp region of interest alignment này
+sử dụng phép nội suy song tuyến tính
+để bảo toàn thông tin không gian trên các feature map, phù hợp hơn với việc dự đoán ở cấp độ pixel.
+Đầu ra của lớp này
+chứa các feature map có cùng hình dạng
+cho tất cả các vùng quan tâm.
+Chúng được sử dụng
+để dự đoán
+không chỉ lớp và bounding box cho mỗi vùng quan tâm,
+mà còn cả vị trí của đối tượng ở cấp độ pixel thông qua một mạng tích chập đầy đủ bổ sung.
+Các phần tiếp theo của chương này sẽ cung cấp
+thêm chi tiết về việc sử dụng mạng tích chập đầy đủ để dự đoán ngữ nghĩa ở cấp độ pixel của một ảnh.
 
 
 
 
-## Summary
+## Tóm tắt
 
 
-* The R-CNN extracts many region proposals from the input image, uses a CNN to perform forward propagation on each region proposal to extract its features, then uses these features to predict the class and bounding box of this region proposal.
-* One of the major improvements of  the fast R-CNN from the R-CNN is that the CNN forward propagation is only performed on  the entire image. It also introduces the region of interest pooling layer, so that features of the same shape can be further extracted for regions of interest that have different shapes.
-* The faster R-CNN replaces the selective search used in the fast R-CNN with a jointly trained region proposal network, so that the former can stay accurate in object detection with a reduced number of region proposals.
-* Based on the faster R-CNN, the mask R-CNN additionally introduces a fully convolutional network, so as to leverage pixel-level labels to further improve the accuracy of object detection.
+* R-CNN trích xuất nhiều region proposal từ ảnh đầu vào, sử dụng CNN để thực hiện forward propagation trên từng region proposal nhằm trích xuất các đặc trưng của chúng, sau đó sử dụng các đặc trưng này để dự đoán lớp và bounding box của region proposal đó.
+* Một trong những cải tiến chính của fast R-CNN so với R-CNN là CNN chỉ thực hiện forward propagation trên toàn bộ ảnh. Mô hình này cũng giới thiệu lớp region of interest pooling, nhờ đó có thể tiếp tục trích xuất các đặc trưng có cùng hình dạng cho những vùng quan tâm có hình dạng khác nhau.
+* faster R-CNN thay thế selective search được sử dụng trong fast R-CNN bằng một region proposal network được huấn luyện đồng thời, nhờ đó phương pháp này vẫn duy trì độ chính xác trong việc phát hiện đối tượng với số lượng region proposal giảm xuống.
+* Dựa trên faster R-CNN, mask R-CNN bổ sung một mạng tích chập đầy đủ nhằm tận dụng các nhãn ở cấp độ pixel để tiếp tục cải thiện độ chính xác của việc phát hiện đối tượng.
 
 
-## Exercises
+## Bài tập
 
-1. Can we frame object detection as a single regression problem, such as predicting bounding boxes and class probabilities? You may refer to the design of the YOLO model :cite:`Redmon.Divvala.Girshick.ea.2016`.
-1. Compare single shot multibox detection with the methods introduced in this section. What are their major differences? You may refer to Figure 2 of :citet:`Zhao.Zheng.Xu.ea.2019`.
+1. Có thể xây dựng bài toán phát hiện đối tượng dưới dạng một bài toán hồi quy đơn, chẳng hạn như dự đoán bounding box và xác suất lớp, hay không? Bạn có thể tham khảo thiết kế của mô hình YOLO :cite:`Redmon.Divvala.Girshick.ea.2016`.
+1. Hãy so sánh single shot multibox detection với các phương pháp được giới thiệu trong phần này. Những điểm khác biệt chính của chúng là gì? Bạn có thể tham khảo Hình 2 trong :citet:`Zhao.Zheng.Xu.ea.2019`.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/374)
+[Thảo luận](https://discuss.d2l.ai/t/374)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1409)
+[Thảo luận](https://discuss.d2l.ai/t/1409)
 :end_tab:

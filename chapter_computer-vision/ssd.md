@@ -1,132 +1,133 @@
-# Single Shot Multibox Detection
+# Phát hiện đa hộp một lần
 :label:`sec_ssd`
 
-In :numref:`sec_bbox`--:numref:`sec_object-detection-dataset`,
-we introduced bounding boxes, anchor boxes,
-multiscale object detection, and the dataset for object detection.
-Now we are ready to use such background
-knowledge to design an object detection model:
-single shot multibox detection
+Trong :numref:`sec_bbox`--:numref:`sec_object-detection-dataset`,
+chúng ta đã giới thiệu các hộp giới hạn, các hộp neo,
+phát hiện đối tượng đa tỷ lệ và tập dữ liệu cho việc phát hiện đối tượng.
+Bây giờ chúng ta đã sẵn sàng sử dụng những kiến thức nền tảng đó
+để thiết kế một mô hình phát hiện đối tượng:
+phát hiện đa hộp một lần
 (SSD) :cite:`Liu.Anguelov.Erhan.ea.2016`.
-This model is simple, fast, and widely used.
-Although this is just one of vast amounts of
-object detection models,
-some of the design principles
-and implementation details in this section
-are also applicable to other models.
+Mô hình này đơn giản, nhanh và được sử dụng rộng rãi.
+Mặc dù đây chỉ là một trong vô số
+mô hình phát hiện đối tượng,
+một số nguyên tắc thiết kế
+và chi tiết triển khai
+trong phần này
+cũng có thể áp dụng cho các mô hình khác.
 
 
-## Model
+## Mô hình
 
-:numref:`fig_ssd` provides an overview of
-the design of single-shot multibox detection.
-This model mainly consists of
-a base network
-followed by
-several multiscale feature map blocks.
-The base network
-is for extracting features from the input image,
-so it can use a deep CNN.
-For example,
-the original single-shot multibox detection paper
-adopts a VGG network truncated before the
-classification layer :cite:`Liu.Anguelov.Erhan.ea.2016`,
-while ResNet has also been commonly used.
-Through our design
-we can make the base network output
-larger feature maps
-so as to generate more anchor boxes
-for detecting smaller objects.
-Subsequently,
-each multiscale feature map block
-reduces (e.g., by half)
-the height and width of the feature maps
-from the previous block,
-and enables each unit
-of the feature maps
-to increase its receptive field on the input image.
-
-
-Recall the design
-of multiscale object detection
-through layerwise representations of images by
-deep neural networks
-in :numref:`sec_multiscale-object-detection`.
-Since
-multiscale feature maps closer to the top of :numref:`fig_ssd`
-are smaller but have larger receptive fields,
-they are suitable for detecting
-fewer but larger objects.
-
-In a nutshell,
-via its base network and several multiscale feature map blocks,
-single-shot multibox detection
-generates a varying number of anchor boxes with different sizes,
-and detects varying-size objects
-by predicting classes and offsets
-of these anchor boxes (thus the bounding boxes);
-thus, this is a multiscale object detection model.
+:numref:`fig_ssd` cung cấp tổng quan về
+thiết kế của mô hình phát hiện đa hộp một lần.
+Mô hình này chủ yếu gồm
+một mạng cơ sở
+theo sau bởi
+một số block feature map đa tỷ lệ.
+Mạng cơ sở
+dùng để trích xuất đặc trưng từ ảnh đầu vào,
+vì vậy nó có thể sử dụng một CNN sâu.
+Ví dụ,
+bài báo gốc về phát hiện đa hộp một lần
+sử dụng một mạng VGG được cắt bỏ trước
+lớp phân loại :cite:`Liu.Anguelov.Erhan.ea.2016`,
+trong khi ResNet cũng thường được sử dụng.
+Thông qua thiết kế của chúng ta,
+chúng ta có thể khiến mạng cơ sở tạo ra
+các feature map lớn hơn
+để sinh ra nhiều hộp neo hơn
+nhằm phát hiện các đối tượng nhỏ hơn.
+Sau đó,
+mỗi block feature map đa tỷ lệ
+giảm (ví dụ, giảm một nửa)
+chiều cao và chiều rộng của các feature map
+từ block trước đó,
+đồng thời cho phép mỗi unit
+của các feature map
+tăng receptive field trên ảnh đầu vào.
 
 
-![As a multiscale object detection model, single-shot multibox detection mainly consists of a base network followed by several multiscale feature map blocks.](../img/ssd.svg)
+Hãy nhớ lại thiết kế
+của việc phát hiện đối tượng đa tỷ lệ
+thông qua các biểu diễn ảnh theo từng lớp của
+mạng nơ-ron sâu
+trong :numref:`sec_multiscale-object-detection`.
+Vì
+các feature map đa tỷ lệ gần phía trên của :numref:`fig_ssd`
+nhỏ hơn nhưng có receptive field lớn hơn,
+chúng phù hợp để phát hiện
+ít đối tượng hơn nhưng có kích thước lớn hơn.
+
+Tóm lại,
+thông qua mạng cơ sở và một số block feature map đa tỷ lệ,
+mô hình phát hiện đa hộp một lần
+sinh ra số lượng hộp neo khác nhau với các kích thước khác nhau,
+và phát hiện các đối tượng có kích thước khác nhau
+bằng cách dự đoán các lớp và offset
+của những hộp neo này (do đó là các hộp giới hạn);
+vì vậy, đây là một mô hình phát hiện đối tượng đa tỷ lệ.
+
+
+![Là một mô hình phát hiện đối tượng đa tỷ lệ, mô hình phát hiện đa hộp một lần chủ yếu gồm một mạng cơ sở theo sau bởi một số block feature map đa tỷ lệ.](../img/ssd.svg)
 :label:`fig_ssd`
 
 
-In the following,
-we will describe the implementation details
-of different blocks in :numref:`fig_ssd`. To begin with, we discuss how to implement
-the class and bounding box prediction.
+Trong phần tiếp theo,
+chúng ta sẽ mô tả các chi tiết triển khai
+của những block khác nhau trong :numref:`fig_ssd`. Trước hết, chúng ta thảo luận
+cách triển khai
+việc dự đoán lớp và hộp giới hạn.
 
 
 
-### [**Class Prediction Layer**]
+### [**Lớp dự đoán lớp**]
 
-Let the number of object classes be $q$.
-Then anchor boxes have $q+1$ classes,
-where class 0 is background.
-At some scale,
-suppose that the height and width of feature maps
-are $h$ and $w$, respectively.
-When $a$ anchor boxes
-are generated with
-each spatial position of these feature maps as their center,
-a total of $hwa$ anchor boxes need to be classified.
-This often makes classification with fully connected layers infeasible due to likely
-heavy parametrization costs.
-Recall how we used channels of
-convolutional layers
-to predict classes in :numref:`sec_nin`.
-Single-shot multibox detection uses the
-same technique to reduce model complexity.
+Gọi số lớp đối tượng là $q$.
+Khi đó các hộp neo có $q+1$ lớp,
+trong đó lớp 0 là nền.
+Ở một tỷ lệ nào đó,
+giả sử chiều cao và chiều rộng của các feature map
+lần lượt là $h$ và $w$.
+Khi có $a$ hộp neo
+được sinh ra với
+mỗi vị trí không gian của các feature map này làm tâm,
+tổng cộng cần phân loại $hwa$ hộp neo.
+Điều này thường khiến việc phân loại bằng các lớp fully connected không khả thi do có khả năng
+phải trả chi phí tham số hóa rất lớn.
+Hãy nhớ lại cách chúng ta sử dụng các channel của
+các lớp convolution
+để dự đoán các lớp trong :numref:`sec_nin`.
+Mô hình phát hiện đa hộp một lần sử dụng
+cùng kỹ thuật đó để giảm độ phức tạp của mô hình.
 
-Specifically,
-the class prediction layer uses a convolutional layer
-without altering width or height of feature maps.
-In this way,
-there can be a one-to-one correspondence
-between outputs and inputs
-at the same spatial dimensions (width and height)
-of feature maps.
-More concretely,
-channels of the output feature maps
-at any spatial position ($x$, $y$)
-represent class predictions
-for all the anchor boxes centered on
-($x$, $y$) of the input feature maps.
-To produce valid predictions,
-there must be $a(q+1)$ output channels,
-where for the same spatial position
-the output channel with index $i(q+1) + j$
-represents the prediction of
-the class $j$ ($0 \leq j \leq q$)
-for the anchor box $i$ ($0 \leq i < a$).
+Cụ thể,
+lớp dự đoán lớp sử dụng một lớp convolution
+mà không thay đổi chiều rộng hoặc chiều cao của các feature map.
+Theo cách này,
+có thể tạo ra sự tương ứng một-một
+giữa đầu ra và đầu vào
+tại cùng các chiều không gian (chiều rộng và chiều cao)
+của các feature map.
+Cụ thể hơn,
+các channel của feature map đầu ra
+tại bất kỳ vị trí không gian nào ($x$, $y$)
+biểu diễn các dự đoán lớp
+cho tất cả các hộp neo có tâm tại
+($x$, $y$) của các feature map đầu vào.
+Để tạo ra các dự đoán hợp lệ,
+phải có $a(q+1)$ channel đầu ra,
+trong đó tại cùng một vị trí không gian, channel đầu ra có chỉ số $i(q+1) + j$
+biểu diễn dự đoán của
+lớp $j$ ($0 \leq j \leq q$)
+cho hộp neo $i$ ($0 \leq i < a$).
 
-Below we define such a class prediction layer,
-specifying $a$ and $q$ via arguments `num_anchors` and `num_classes`, respectively.
-This layer uses a $3\times3$ convolutional layer with a
-padding of 1.
-The width and height of the input and output of this
-convolutional layer remain unchanged.
+Dưới đây, chúng ta định nghĩa một lớp dự đoán lớp như vậy,
+xác định $a$ và $q$ lần lượt thông qua các đối số `num_anchors` và `num_classes`.
+Lớp này sử dụng một lớp convolution $3\times3$ với
+padding bằng 1.
+Chiều rộng và chiều cao của đầu vào và đầu ra của
+lớp convolution này vẫn không thay đổi.
 
 ```{.python .input}
 #@tab mxnet
@@ -156,11 +157,11 @@ def cls_predictor(num_inputs, num_anchors, num_classes):
                      kernel_size=3, padding=1)
 ```
 
-### (**Bounding Box Prediction Layer**)
+### (**Lớp dự đoán hộp giới hạn**)
 
-The design of the bounding box prediction layer is similar to that of the class prediction layer.
-The only difference lies in the number of outputs for each anchor box:
-here we need to predict four offsets rather than $q+1$ classes.
+Thiết kế của lớp dự đoán hộp giới hạn tương tự như lớp dự đoán lớp.
+Điểm khác biệt duy nhất nằm ở số lượng đầu ra cho mỗi hộp neo:
+ở đây, chúng ta cần dự đoán bốn offset thay vì $q+1$ lớp.
 
 ```{.python .input}
 #@tab mxnet
@@ -174,35 +175,35 @@ def bbox_predictor(num_inputs, num_anchors):
     return nn.Conv2d(num_inputs, num_anchors * 4, kernel_size=3, padding=1)
 ```
 
-### [**Concatenating Predictions for Multiple Scales**]
+### [**Nối các dự đoán cho nhiều tỷ lệ**]
 
-As we mentioned, single-shot multibox detection
-uses multiscale feature maps to generate anchor boxes and predict their classes and offsets.
-At different scales,
-the shapes of feature maps
-or the numbers of anchor boxes centered on the same unit
-may vary.
-Therefore,
-shapes of the prediction outputs
-at different scales may vary.
+Như đã đề cập, mô hình phát hiện đa hộp một lần
+sử dụng các feature map đa tỷ lệ để sinh ra các hộp neo và dự đoán lớp cùng offset của chúng.
+Ở các tỷ lệ khác nhau,
+shape của các feature map
+hoặc số lượng hộp neo có tâm tại cùng một unit
+có thể khác nhau.
+Do đó,
+shape của các đầu ra dự đoán
+ở các tỷ lệ khác nhau cũng có thể khác nhau.
 
-In the following example,
-we construct feature maps at two different scales,
-`Y1` and `Y2`,
-for the same minibatch,
-where the height and width of `Y2`
-are half of those of `Y1`.
-Let's take class prediction as an example.
-Suppose that
-5 and 3 anchor boxes
-are generated for every unit in `Y1` and `Y2`, respectively.
-Suppose further that
-the number of object classes is 10.
-For feature maps `Y1` and `Y2`
-the numbers of channels in the class prediction outputs
-are $5\times(10+1)=55$ and $3\times(10+1)=33$, respectively,
-where either output shape is
-(batch size, number of channels, height, width).
+Trong ví dụ sau,
+chúng ta xây dựng các feature map ở hai tỷ lệ khác nhau,
+`Y1` và `Y2`,
+cho cùng một minibatch,
+trong đó chiều cao và chiều rộng của `Y2`
+bằng một nửa chiều cao và chiều rộng của `Y1`.
+Hãy lấy dự đoán lớp làm ví dụ.
+Giả sử có
+5 và 3 hộp neo
+được sinh ra cho mỗi unit trong `Y1` và `Y2`, tương ứng.
+Ngoài ra, giả sử
+số lớp đối tượng là 10.
+Đối với các feature map `Y1` và `Y2`,
+số channel trong các đầu ra dự đoán lớp
+lần lượt là $5\times(10+1)=55$ và $3\times(10+1)=33$,
+trong đó mỗi shape đầu ra là
+(batch size, số channel, chiều cao, chiều rộng).
 
 ```{.python .input}
 #@tab mxnet
@@ -225,22 +226,22 @@ Y2 = forward(torch.zeros((2, 16, 10, 10)), cls_predictor(16, 3, 10))
 Y1.shape, Y2.shape
 ```
 
-As we can see, except for the batch size dimension,
-the other three dimensions all have different sizes.
-To concatenate these two prediction outputs for more efficient computation,
-we will transform these tensors into a more consistent format.
+Như chúng ta có thể thấy, ngoại trừ chiều batch size,
+ba chiều còn lại đều có kích thước khác nhau.
+Để nối hai đầu ra dự đoán này nhằm tính toán hiệu quả hơn,
+chúng ta sẽ chuyển đổi các tensor này sang một định dạng nhất quán hơn.
 
-Note that
-the channel dimension holds the predictions for
-anchor boxes with the same center.
-We first move this dimension to the innermost.
-Since the batch size remains the same for different scales,
-we can transform the prediction output
-into a two-dimensional tensor
-with shape (batch size, height $\times$ width $\times$ number of channels).
-Then we can concatenate
-such outputs at different scales
-along dimension 1.
+Lưu ý rằng
+chiều channel chứa các dự đoán cho
+các hộp neo có cùng tâm.
+Trước tiên, chúng ta di chuyển chiều này vào trong cùng.
+Vì batch size vẫn giữ nguyên ở các tỷ lệ khác nhau,
+chúng ta có thể chuyển đổi đầu ra dự đoán
+thành một tensor hai chiều
+có shape (batch size, height $\times$ width $\times$ number of channels).
+Sau đó, chúng ta có thể nối
+các đầu ra như vậy ở những tỷ lệ khác nhau
+dọc theo chiều 1.
 
 ```{.python .input}
 #@tab mxnet
@@ -260,35 +261,35 @@ def concat_preds(preds):
     return torch.cat([flatten_pred(p) for p in preds], dim=1)
 ```
 
-In this way,
-even though `Y1` and `Y2` have different sizes
-in channels, heights, and widths,
-we can still concatenate these two prediction outputs at two different scales for the same minibatch.
+Theo cách này,
+mặc dù `Y1` và `Y2` có kích thước khác nhau
+ở các chiều channel, chiều cao và chiều rộng,
+chúng ta vẫn có thể nối hai đầu ra dự đoán này ở hai tỷ lệ khác nhau cho cùng một minibatch.
 
 ```{.python .input}
 #@tab all
 concat_preds([Y1, Y2]).shape
 ```
 
-### [**Downsampling Block**]
+### [**Block downsampling**]
 
-In order to detect objects at multiple scales,
-we define the following downsampling block `down_sample_blk` that
-halves the height and width of input feature maps.
-In fact,
-this block applies the design of VGG blocks
-in :numref:`subsec_vgg-blocks`.
-More concretely,
-each downsampling block consists of
-two $3\times3$ convolutional layers with padding of 1
-followed by a $2\times2$ max-pooling layer with stride of 2.
-As we know, $3\times3$ convolutional layers with padding of 1 do not change the shape of feature maps.
-However, the subsequent $2\times2$ max-pooling  reduces the height and width of input feature maps by half.
-For both input and output feature maps of this downsampling block,
-because $1\times 2+(3-1)+(3-1)=6$,
-each unit in the output
-has a $6\times6$ receptive field on the input.
-Therefore, the downsampling block enlarges the receptive field of each unit in its output feature maps.
+Để phát hiện các đối tượng ở nhiều tỷ lệ,
+chúng ta định nghĩa block downsampling `down_sample_blk` sau đây, block này
+giảm một nửa chiều cao và chiều rộng của các feature map đầu vào.
+Trên thực tế,
+block này áp dụng thiết kế của các block VGG
+trong :numref:`subsec_vgg-blocks`.
+Cụ thể hơn,
+mỗi block downsampling gồm
+hai lớp convolution $3\times3$ với padding bằng 1,
+theo sau bởi một lớp max-pooling $2\times2$ với stride bằng 2.
+Như chúng ta đã biết, các lớp convolution $3\times3$ với padding bằng 1 không thay đổi shape của các feature map.
+Tuy nhiên, max-pooling $2\times2$ theo sau đó làm giảm chiều cao và chiều rộng của các feature map đầu vào xuống một nửa.
+Đối với cả feature map đầu vào và đầu ra của block downsampling này,
+vì $1\times 2+(3-1)+(3-1)=6$,
+mỗi unit trong đầu ra
+có receptive field $6\times6$ trên đầu vào.
+Do đó, block downsampling mở rộng receptive field của mỗi unit trong các feature map đầu ra của nó.
 
 ```{.python .input}
 #@tab mxnet
@@ -316,7 +317,7 @@ def down_sample_blk(in_channels, out_channels):
     return nn.Sequential(*blk)
 ```
 
-In the following example, our constructed downsampling block changes the number of input channels and halves the height and width of the input feature maps.
+Trong ví dụ sau, block downsampling do chúng ta xây dựng thay đổi số channel đầu vào và giảm một nửa chiều cao cùng chiều rộng của các feature map đầu vào.
 
 ```{.python .input}
 #@tab mxnet
@@ -328,15 +329,15 @@ forward(np.zeros((2, 3, 20, 20)), down_sample_blk(10)).shape
 forward(torch.zeros((2, 3, 20, 20)), down_sample_blk(3, 10)).shape
 ```
 
-### [**Base Network Block**]
+### [**Block mạng cơ sở**]
 
-The base network block is used to extract features from input images.
-For simplicity,
-we construct a small base network
-consisting of three downsampling blocks
-that double the number of channels at each block.
-Given a $256\times256$ input image,
-this base network block outputs $32 \times 32$ feature maps ($256/2^3=32$).
+Block mạng cơ sở được dùng để trích xuất đặc trưng từ ảnh đầu vào.
+Để đơn giản,
+chúng ta xây dựng một mạng cơ sở nhỏ
+gồm ba block downsampling,
+mỗi block tăng gấp đôi số channel.
+Với một ảnh đầu vào $256\times256$,
+block mạng cơ sở này tạo ra các feature map $32 \times 32$ ($256/2^3=32$).
 
 ```{.python .input}
 #@tab mxnet
@@ -361,30 +362,29 @@ def base_net():
 forward(torch.zeros((2, 3, 256, 256)), base_net()).shape
 ```
 
-### The Complete Model
+### Mô hình hoàn chỉnh
 
 
-[**The complete
-single shot multibox detection model
-consists of five blocks.**]
-The feature maps produced by each block
-are used for both
-(i) generating anchor boxes
-and (ii) predicting classes and offsets of these anchor boxes.
-Among these five blocks,
-the first one
-is the base network block,
-the second to the fourth are
-downsampling blocks,
-and the last block
-uses global max-pooling
-to reduce both the height and width to 1.
-Technically,
-the second to the fifth blocks
-are all
-those
-multiscale feature map blocks
-in :numref:`fig_ssd`.
+[**Mô hình
+phát hiện đa hộp một lần
+hoàn chỉnh gồm năm block.**]
+Các feature map do mỗi block tạo ra
+được sử dụng cho cả
+(i) việc sinh các hộp neo và (ii) việc dự đoán các lớp cùng offset của những hộp neo này.
+Trong năm block này,
+block thứ nhất
+là block mạng cơ sở,
+block thứ hai đến thứ tư là
+các block downsampling,
+và block cuối cùng
+sử dụng global max-pooling
+để giảm cả chiều cao và chiều rộng xuống 1.
+Về mặt kỹ thuật,
+block thứ hai đến thứ năm
+đều là
+những
+block feature map đa tỷ lệ
+trong :numref:`fig_ssd`.
 
 ```{.python .input}
 #@tab mxnet
@@ -412,15 +412,15 @@ def get_blk(i):
     return blk
 ```
 
-Now we [**define the forward propagation**]
-for each block.
-Different from
-in image classification tasks,
-outputs here include
-(i) CNN feature maps `Y`,
-(ii) anchor boxes generated using `Y` at the current scale,
-and (iii) classes and offsets predicted (based on `Y`)
-for these anchor boxes.
+Bây giờ chúng ta [**định nghĩa quá trình lan truyền tiến**]
+cho mỗi block.
+Khác với
+các tác vụ phân loại ảnh,
+các đầu ra ở đây bao gồm
+(i) các feature map CNN `Y`,
+(ii) các hộp neo được sinh ra bằng `Y` ở tỷ lệ hiện tại,
+và (iii) các lớp cùng offset được dự đoán (dựa trên `Y`)
+cho những hộp neo này.
 
 ```{.python .input}
 #@tab mxnet
@@ -442,27 +442,27 @@ def blk_forward(X, blk, size, ratio, cls_predictor, bbox_predictor):
     return (Y, anchors, cls_preds, bbox_preds)
 ```
 
-Recall that
-in :numref:`fig_ssd`
-a multiscale feature map block
-that is closer to the top
-is for detecting larger objects;
-thus, it needs to generate larger anchor boxes.
-In the above forward propagation,
-at each multiscale feature map block
-we pass in a list of two scale values
-via the `sizes` argument
-of the invoked `multibox_prior` function (described in :numref:`sec_anchor`).
-In the following,
-the interval between 0.2 and 1.05
-is split evenly
-into five sections to determine the
-smaller scale values at the five blocks: 0.2, 0.37, 0.54, 0.71, and 0.88.
-Then their larger scale values
-are given by
-$\sqrt{0.2 \times 0.37} = 0.272$, $\sqrt{0.37 \times 0.54} = 0.447$, and so on.
+Hãy nhớ rằng
+trong :numref:`fig_ssd`,
+một block feature map đa tỷ lệ
+ở gần phía trên hơn
+dùng để phát hiện các đối tượng lớn hơn;
+do đó, nó cần tạo ra các anchor box lớn hơn.
+Trong quá trình lan truyền tiến ở trên,
+tại mỗi block feature map đa tỷ lệ,
+chúng ta truyền vào một danh sách gồm hai giá trị tỷ lệ
+thông qua đối số `sizes`
+của hàm `multibox_prior` được gọi (mô tả trong :numref:`sec_anchor`).
+Sau đây,
+khoảng từ 0.2 đến 1.05
+được chia đều
+thành năm phần để xác định các
+giá trị tỷ lệ nhỏ hơn tại năm block: 0.2, 0.37, 0.54, 0.71 và 0.88.
+Sau đó, các giá trị tỷ lệ lớn hơn của chúng
+được xác định bởi
+$\sqrt{0.2 \times 0.37} = 0.272$, $\sqrt{0.37 \times 0.54} = 0.447$, và tương tự.
 
-[~~Hyperparameters for each block~~]
+[~~Siêu tham số cho mỗi block~~]
 
 ```{.python .input}
 #@tab all
@@ -472,7 +472,7 @@ ratios = [[1, 2, 0.5]] * 5
 num_anchors = len(sizes[0]) + len(ratios[0]) - 1
 ```
 
-Now we can [**define the complete model**] `TinySSD` as follows.
+Bây giờ chúng ta có thể [**định nghĩa mô hình hoàn chỉnh**] `TinySSD` như sau.
 
 ```{.python .input}
 #@tab mxnet
@@ -531,21 +531,22 @@ class TinySSD(nn.Module):
         return anchors, cls_preds, bbox_preds
 ```
 
-We [**create a model instance
-and use it to perform forward propagation**]
-on a minibatch of $256 \times 256$ images `X`.
+Chúng ta [**tạo một instance của mô hình
+và sử dụng nó để thực hiện lan truyền tiến**]
+trên một minibatch gồm các ảnh kích thước $256 \times 256$ `X`.
 
-As shown earlier in this section,
-the first block outputs $32 \times 32$ feature maps.
-Recall that
-the second to fourth downsampling blocks
-halve the height and width
-and the fifth block uses global pooling.
-Since 4 anchor boxes
-are generated for each unit along spatial dimensions
-of feature maps,
-at all the five scales
-a total of $(32^2 + 16^2 + 8^2 + 4^2 + 1)\times 4 = 5444$ anchor boxes are generated for each image.
+Như đã trình bày ở phần trước,
+block đầu tiên tạo ra các feature map kích thước $32 \times 32$.
+Hãy nhớ rằng
+các block downsampling thứ hai đến thứ tư
+giảm một nửa chiều cao
+và chiều rộng,
+còn block thứ năm sử dụng global pooling.
+Vì có 4 anchor box
+được tạo cho mỗi đơn vị theo các chiều không gian
+của feature map,
+ở cả năm tỷ lệ
+tổng cộng $(32^2 + 16^2 + 8^2 + 4^2 + 1)\times 4 = 5444$ anchor box được tạo cho mỗi ảnh.
 
 ```{.python .input}
 #@tab mxnet
@@ -570,19 +571,19 @@ print('output class preds:', cls_preds.shape)
 print('output bbox preds:', bbox_preds.shape)
 ```
 
-## Training
+## Huấn luyện
 
-Now we will explain
-how to train the single shot multibox detection model
-for object detection.
+Bây giờ chúng ta sẽ giải thích
+cách huấn luyện mô hình single-shot multibox detection
+để phát hiện đối tượng.
 
 
-### Reading the Dataset and Initializing the Model
+### Đọc Dataset và Khởi tạo Mô hình
 
-To begin with,
-let's [**read
-the banana detection dataset**]
-described in :numref:`sec_object-detection-dataset`.
+Trước tiên,
+hãy [**đọc
+dataset phát hiện chuối**]
+được mô tả trong :numref:`sec_object-detection-dataset`.
 
 ```{.python .input}
 #@tab all
@@ -590,9 +591,9 @@ batch_size = 32
 train_iter, _ = d2l.load_data_bananas(batch_size)
 ```
 
-There is only one class in the banana detection dataset. After defining the model,
-we need to (**initialize its parameters and define
-the optimization algorithm**).
+Dataset phát hiện chuối chỉ có một class. Sau khi định nghĩa mô hình,
+chúng ta cần (**khởi tạo các tham số của mô hình và định nghĩa
+thuật toán tối ưu hóa**).
 
 ```{.python .input}
 #@tab mxnet
@@ -608,32 +609,31 @@ device, net = d2l.try_gpu(), TinySSD(num_classes=1)
 trainer = torch.optim.SGD(net.parameters(), lr=0.2, weight_decay=5e-4)
 ```
 
-### [**Defining Loss and Evaluation Functions**]
+### [**Định nghĩa các Hàm Loss và Đánh giá**]
 
-Object detection has two types of losses.
-The first loss concerns classes of anchor boxes:
-its computation
-can simply reuse
-the cross-entropy loss function
-that we used for image classification.
-The second loss
-concerns offsets of positive (non-background) anchor boxes:
-this is a regression problem.
-For this regression problem,
-however,
-here we do not use the squared loss
-described in :numref:`subsec_normal_distribution_and_squared_loss`.
-Instead,
-we use the $\ell_1$ norm loss,
-the absolute value of the difference between
-the prediction and the ground-truth.
-The mask variable `bbox_masks` filters out
-negative anchor boxes and illegal (padded)
-anchor boxes in the loss calculation.
-In the end, we sum up
-the anchor box class loss
-and the anchor box offset loss
-to obtain the loss function for the model.
+Bài toán phát hiện đối tượng có hai loại loss.
+Loss thứ nhất liên quan đến các class của anchor box:
+việc tính loss này
+có thể đơn giản sử dụng lại
+hàm cross-entropy loss
+mà chúng ta đã dùng cho bài toán phân loại ảnh.
+Loss thứ hai
+liên quan đến các offset của các anchor box dương (không phải background):
+đây là một bài toán regression.
+Tuy nhiên, đối với bài toán regression này,
+ở đây chúng ta không sử dụng squared loss
+được mô tả trong :numref:`subsec_normal_distribution_and_squared_loss`.
+Thay vào đó,
+chúng ta sử dụng loss theo chuẩn $\ell_1$,
+là giá trị tuyệt đối của hiệu giữa
+dự đoán và ground-truth.
+Biến mask `bbox_masks` loại bỏ
+các anchor box âm và các anchor box không hợp lệ (được đệm)
+trong quá trình tính loss.
+Cuối cùng, chúng ta cộng
+class loss của anchor box
+và offset loss của anchor box
+để thu được hàm loss cho mô hình.
 
 ```{.python .input}
 #@tab mxnet
@@ -660,13 +660,13 @@ def calc_loss(cls_preds, cls_labels, bbox_preds, bbox_labels, bbox_masks):
     return cls + bbox
 ```
 
-We can use accuracy to evaluate the classification results.
-Due to the used $\ell_1$ norm loss for the offsets,
-we use the *mean absolute error* to evaluate the
-predicted bounding boxes.
-These prediction results are obtained
-from the generated anchor boxes and the
-predicted offsets for them.
+Chúng ta có thể sử dụng accuracy để đánh giá kết quả phân loại.
+Do sử dụng loss theo chuẩn $\ell_1$ cho các offset,
+chúng ta sử dụng *mean absolute error* để đánh giá
+các bounding box được dự đoán.
+Các kết quả dự đoán này được thu được
+từ các anchor box đã tạo và
+các offset được dự đoán cho chúng.
 
 ```{.python .input}
 #@tab mxnet
@@ -692,18 +692,18 @@ def bbox_eval(bbox_preds, bbox_labels, bbox_masks):
     return float((torch.abs((bbox_labels - bbox_preds) * bbox_masks)).sum())
 ```
 
-### [**Training the Model**]
+### [**Huấn luyện Mô hình**]
 
-When training the model,
-we need to generate multiscale anchor boxes (`anchors`)
-and predict their classes (`cls_preds`) and offsets (`bbox_preds`) in the forward propagation.
-Then we label the classes (`cls_labels`) and offsets (`bbox_labels`) of such generated anchor boxes
-based on the label information `Y`.
-Finally, we calculate the loss function
-using the predicted and labeled values
-of the classes and offsets.
-For concise implementations,
-evaluation of the test dataset is omitted here.
+Khi huấn luyện mô hình,
+chúng ta cần tạo các anchor box đa tỷ lệ (`anchors`)
+và dự đoán class (`cls_preds`) cùng các offset (`bbox_preds`) của chúng trong quá trình lan truyền tiến.
+Sau đó, chúng ta gán nhãn class (`cls_labels`) và offset (`bbox_labels`) cho các anchor box được tạo như vậy
+dựa trên thông tin nhãn `Y`.
+Cuối cùng, chúng ta tính hàm loss
+bằng cách sử dụng các giá trị được dự đoán và được gán nhãn
+của class và offset.
+Để triển khai ngắn gọn,
+phần đánh giá trên test dataset được lược bỏ ở đây.
 
 ```{.python .input}
 #@tab mxnet
@@ -777,16 +777,16 @@ print(f'{len(train_iter.dataset) / timer.stop():.1f} examples/sec on '
       f'{str(device)}')
 ```
 
-## [**Prediction**]
+## [**Dự đoán**]
 
-During prediction,
-the goal is to detect all the objects of interest
-on the image.
-Below
-we read and resize a test image,
-converting it to
-a four-dimensional tensor that is
-required by convolutional layers.
+Trong quá trình dự đoán,
+mục tiêu là phát hiện tất cả các đối tượng cần quan tâm
+trên ảnh.
+Bên dưới,
+chúng ta đọc và thay đổi kích thước một ảnh test,
+chuyển ảnh này thành
+một tensor bốn chiều
+cần thiết cho các convolutional layer.
 
 ```{.python .input}
 #@tab mxnet
@@ -801,12 +801,12 @@ X = torchvision.io.read_image('../img/banana.jpg').unsqueeze(0).float()
 img = X.squeeze(0).permute(1, 2, 0).long()
 ```
 
-Using the `multibox_detection` function below,
-the predicted bounding boxes
-are obtained
-from the anchor boxes and their predicted offsets.
-Then non-maximum suppression is used
-to remove similar predicted bounding boxes.
+Sử dụng hàm `multibox_detection` bên dưới,
+các bounding box được dự đoán
+được thu được
+từ các anchor box và các offset được dự đoán của chúng.
+Sau đó, non-maximum suppression được sử dụng
+để loại bỏ các bounding box được dự đoán tương tự nhau.
 
 ```{.python .input}
 #@tab mxnet
@@ -833,10 +833,10 @@ def predict(X):
 output = predict(X)
 ```
 
-Finally, we [**display
-all the predicted bounding boxes with
-confidence 0.9 or above**]
-as output.
+Cuối cùng, chúng ta [**hiển thị
+tất cả các bounding box được dự đoán có
+độ tin cậy từ 0.9 trở lên**]
+làm kết quả đầu ra.
 
 ```{.python .input}
 #@tab mxnet
@@ -870,16 +870,16 @@ def display(img, output, threshold):
 display(img, output.cpu(), threshold=0.9)
 ```
 
-## Summary
+## Tóm tắt
 
-* Single shot multibox detection is a multiscale object detection model. Via its base network and several multiscale feature map blocks, single-shot multibox detection generates a varying number of anchor boxes with different sizes, and detects varying-size objects by predicting classes and offsets of these anchor boxes (thus the bounding boxes).
-* When training the single-shot multibox detection model, the loss function is calculated based on the predicted and labeled values of the anchor box classes and offsets.
+* Single-shot multibox detection là một mô hình phát hiện đối tượng đa tỷ lệ. Thông qua base network và một số block feature map đa tỷ lệ, single-shot multibox detection tạo ra số lượng anchor box khác nhau với các kích thước khác nhau, đồng thời phát hiện các đối tượng có kích thước khác nhau bằng cách dự đoán class và offset của các anchor box này (từ đó thu được các bounding box).
+* Khi huấn luyện mô hình single-shot multibox detection, hàm loss được tính dựa trên các giá trị được dự đoán và được gán nhãn của class và offset của anchor box.
 
 
 
-## Exercises
+## Bài tập
 
-1. Can you improve the single-shot multibox detection by improving the loss function? For example, replace $\ell_1$ norm loss with smooth $\ell_1$ norm loss for the predicted offsets. This loss function uses a square function around zero for smoothness, which is controlled by the hyperparameter $\sigma$:
+1. Bạn có thể cải thiện single-shot multibox detection bằng cách cải thiện hàm loss không? Ví dụ, thay loss theo chuẩn $\ell_1$ bằng loss theo chuẩn smooth $\ell_1$ cho các offset được dự đoán. Hàm loss này sử dụng một hàm bình phương quanh số 0 để tạo độ trơn, được điều khiển bởi siêu tham số $\sigma$:
 
 $$
 f(x) =
@@ -889,7 +889,7 @@ f(x) =
     \end{cases}
 $$
 
-When $\sigma$ is very large, this loss is similar to the $\ell_1$ norm loss. When its value is smaller, the loss function is smoother.
+Khi $\sigma$ rất lớn, loss này tương tự loss theo chuẩn $\ell_1$. Khi giá trị của nó nhỏ hơn, hàm loss sẽ trơn hơn.
 
 ```{.python .input}
 #@tab mxnet
@@ -926,18 +926,18 @@ for l, s in zip(lines, sigmas):
 d2l.plt.legend();
 ```
 
-Besides, in the experiment we used cross-entropy loss for class prediction:
-denoting by $p_j$ the predicted probability for the ground-truth class $j$, the cross-entropy loss is $-\log p_j$. We can also use the focal loss
-:cite:`Lin.Goyal.Girshick.ea.2017`: given hyperparameters $\gamma > 0$
-and $\alpha > 0$, this loss is defined as:
+Ngoài ra, trong thí nghiệm, chúng ta sử dụng cross-entropy loss cho việc dự đoán class:
+gọi $p_j$ là xác suất được dự đoán cho class ground-truth $j$, cross-entropy loss là $-\log p_j$. Chúng ta cũng có thể sử dụng focal loss
+:cite:`Lin.Goyal.Girshick.ea.2017`: với các siêu tham số $\gamma > 0$
+và $\alpha > 0$, loss này được định nghĩa như sau:
 
 $$ - \alpha (1-p_j)^{\gamma} \log p_j.$$
 
-As we can see, increasing $\gamma$
-can effectively reduce the relative loss
-for well-classified examples (e.g., $p_j > 0.5$)
-so the training
-can focus more on those difficult examples that are misclassified.
+Như chúng ta có thể thấy, việc tăng $\gamma$
+có thể làm giảm hiệu quả loss tương đối
+đối với các mẫu được phân loại chính xác (ví dụ: $p_j > 0.5$)
+để quá trình huấn luyện
+có thể tập trung nhiều hơn vào những mẫu khó bị phân loại sai.
 
 ```{.python .input}
 #@tab mxnet
@@ -962,18 +962,18 @@ for l, gamma in zip(lines, [0, 1, 5]):
 d2l.plt.legend();
 ```
 
-2. Due to space limitations, we have omitted some implementation details of the single shot multibox detection model in this section. Can you further improve the model in the following aspects:
-    1. When an object is much smaller compared with the image, the model could resize the input image bigger.
-    1. There are typically a vast number of negative anchor boxes. To make the class distribution more balanced, we could downsample negative anchor boxes.
-    1. In the loss function, assign different weight hyperparameters to the class loss and the offset loss.
-    1. Use other methods to evaluate the object detection model, such as those in the single shot multibox detection paper :cite:`Liu.Anguelov.Erhan.ea.2016`.
+2. Do giới hạn về dung lượng, chúng ta đã lược bỏ một số chi tiết triển khai của mô hình single-shot multibox detection trong phần này. Bạn có thể tiếp tục cải thiện mô hình ở các khía cạnh sau không:
+    1. Khi một đối tượng nhỏ hơn rất nhiều so với ảnh, mô hình có thể thay đổi kích thước ảnh đầu vào lớn hơn.
+    1. Thông thường có rất nhiều anchor box âm. Để phân phối class cân bằng hơn, chúng ta có thể downsample các anchor box âm.
+    1. Trong hàm loss, gán các siêu tham số trọng số khác nhau cho class loss và offset loss.
+    1. Sử dụng các phương pháp khác để đánh giá mô hình phát hiện đối tượng, chẳng hạn như các phương pháp trong bài báo về single-shot multibox detection :cite:`Liu.Anguelov.Erhan.ea.2016`.
 
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/373)
+[Thảo luận](https://discuss.d2l.ai/t/373)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1604)
+[Thảo luận](https://discuss.d2l.ai/t/1604)
 :end_tab:

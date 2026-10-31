@@ -1,32 +1,32 @@
-# Sentiment Analysis: Using Recurrent Neural Networks
+# Phân tích cảm xúc: Sử dụng mạng nơ-ron hồi quy
 :label:`sec_sentiment_rnn` 
 
 
-Like word similarity and analogy tasks,
-we can also apply pretrained word vectors
-to sentiment analysis.
-Since the IMDb review dataset
-in :numref:`sec_sentiment`
-is not very big,
-using text representations
-that were pretrained
-on large-scale corpora
-may reduce overfitting of the model.
-As a specific example
-illustrated in :numref:`fig_nlp-map-sa-rnn`,
-we will represent each token
-using the pretrained GloVe model,
-and feed these token representations
-into a multilayer bidirectional RNN
-to obtain the text sequence representation,
-which will
-be transformed into 
-sentiment analysis outputs :cite:`Maas.Daly.Pham.ea.2011`.
-For the same downstream application,
-we will consider a different architectural
-choice later.
+Tương tự như các tác vụ về độ tương đồng và phép loại suy từ,
+chúng ta cũng có thể áp dụng các vector từ được huấn luyện trước
+cho việc phân tích cảm xúc.
+Vì tập dữ liệu đánh giá IMDb
+trong :numref:`sec_sentiment`
+không quá lớn,
+việc sử dụng các biểu diễn văn bản
+được huấn luyện trước
+trên các kho ngữ liệu quy mô lớn
+có thể làm giảm hiện tượng overfitting của mô hình.
+Cụ thể như được minh họa
+trong :numref:`fig_nlp-map-sa-rnn`,
+chúng ta sẽ biểu diễn mỗi token
+bằng mô hình GloVe được huấn luyện trước,
+và đưa các biểu diễn token này
+vào một RNN hai chiều nhiều lớp
+để thu được biểu diễn của chuỗi văn bản,
+biểu diễn này sẽ
+được chuyển đổi thành
+các đầu ra phân tích cảm xúc :cite:`Maas.Daly.Pham.ea.2011`.
+Với cùng một ứng dụng downstream,
+sau đây chúng ta sẽ xem xét
+một lựa chọn kiến trúc khác.
 
-![This section feeds pretrained GloVe to an RNN-based architecture for sentiment analysis.](../img/nlp-map-sa-rnn.svg)
+![Phần này đưa GloVe được huấn luyện trước vào một kiến trúc dựa trên RNN để phân tích cảm xúc.](../img/nlp-map-sa-rnn.svg)
 :label:`fig_nlp-map-sa-rnn`
 
 ```{.python .input}
@@ -50,30 +50,30 @@ batch_size = 64
 train_iter, test_iter, vocab = d2l.load_data_imdb(batch_size)
 ```
 
-## Representing Single Text with RNNs
+## Biểu diễn một văn bản đơn bằng RNN
 
-In text classifications tasks,
-such as sentiment analysis,
-a varying-length text sequence 
-will be transformed into fixed-length categories.
-In the following `BiRNN` class,
-while each token of a text sequence
-gets its individual
-pretrained GloVe
-representation via the embedding layer
+Trong các tác vụ phân loại văn bản,
+chẳng hạn như phân tích cảm xúc,
+một chuỗi văn bản có độ dài thay đổi
+sẽ được chuyển đổi thành các nhãn có độ dài cố định.
+Trong lớp `BiRNN` sau đây,
+mỗi token của một chuỗi văn bản
+nhận được biểu diễn GloVe
+được huấn luyện trước của riêng nó
+thông qua lớp embedding
 (`self.embedding`),
-the entire sequence
-is encoded by a bidirectional RNN (`self.encoder`).
-More concretely,
-the hidden states (at the last layer)
-of the bidirectional LSTM
-at both the initial and final time steps
-are concatenated 
-as the representation of the text sequence.
-This single text representation
-is then transformed into output categories
-by a fully connected layer (`self.decoder`)
-with two outputs ("positive" and "negative").
+còn toàn bộ chuỗi
+được mã hóa bởi một RNN hai chiều (`self.encoder`).
+Cụ thể hơn,
+các trạng thái ẩn (ở lớp cuối)
+của LSTM hai chiều
+tại cả bước thời gian đầu tiên và cuối cùng
+được nối với nhau
+để làm biểu diễn của chuỗi văn bản.
+Biểu diễn văn bản đơn này
+sau đó được chuyển đổi thành các nhãn đầu ra
+bởi một lớp fully connected (`self.decoder`)
+với hai đầu ra ("positive" và "negative").
 
 ```{.python .input}
 #@tab mxnet
@@ -138,7 +138,7 @@ class BiRNN(nn.Module):
         return outs
 ```
 
-Let's construct a bidirectional RNN with two hidden layers to represent single text for sentiment analysis.
+Hãy xây dựng một RNN hai chiều với hai lớp ẩn để biểu diễn một văn bản đơn cho việc phân tích cảm xúc.
 
 ```{.python .input}
 #@tab all
@@ -163,17 +163,17 @@ def init_weights(module):
 net.apply(init_weights);
 ```
 
-## Loading Pretrained Word Vectors
+## Tải các vector từ được huấn luyện trước
 
-Below we load the pretrained 100-dimensional (needs to be consistent with `embed_size`) GloVe embeddings for tokens in the vocabulary.
+Bên dưới, chúng ta tải các embedding GloVe 100 chiều được huấn luyện trước (cần nhất quán với `embed_size`) cho các token trong vocabulary.
 
 ```{.python .input}
 #@tab all
 glove_embedding = d2l.TokenEmbedding('glove.6b.100d')
 ```
 
-Print the shape of the vectors
-for all the tokens in the vocabulary.
+In hình dạng của các vector
+cho tất cả token trong vocabulary.
 
 ```{.python .input}
 #@tab all
@@ -181,11 +181,11 @@ embeds = glove_embedding[vocab.idx_to_token]
 embeds.shape
 ```
 
-We use these pretrained
-word vectors
-to represent tokens in the reviews
-and will not update
-these vectors during training.
+Chúng ta sử dụng các vector từ
+được huấn luyện trước này
+để biểu diễn các token trong các bài đánh giá
+và sẽ không cập nhật
+các vector này trong quá trình huấn luyện.
 
 ```{.python .input}
 #@tab mxnet
@@ -199,9 +199,9 @@ net.embedding.weight.data.copy_(embeds)
 net.embedding.weight.requires_grad = False
 ```
 
-## Training and Evaluating the Model
+## Huấn luyện và đánh giá mô hình
 
-Now we can train the bidirectional RNN for sentiment analysis.
+Bây giờ chúng ta có thể huấn luyện RNN hai chiều để phân tích cảm xúc.
 
 ```{.python .input}
 #@tab mxnet
@@ -219,7 +219,7 @@ loss = nn.CrossEntropyLoss(reduction="none")
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-We define the following function to predict the sentiment of a text sequence using the trained model `net`.
+Chúng ta định nghĩa hàm sau để dự đoán cảm xúc của một chuỗi văn bản bằng mô hình đã huấn luyện `net`.
 
 ```{.python .input}
 #@tab mxnet
@@ -241,7 +241,7 @@ def predict_sentiment(net, vocab, sequence):
     return 'positive' if label == 1 else 'negative'
 ```
 
-Finally, let's use the trained model to predict the sentiment for two simple sentences.
+Cuối cùng, hãy sử dụng mô hình đã huấn luyện để dự đoán cảm xúc cho hai câu đơn giản.
 
 ```{.python .input}
 #@tab all
@@ -253,23 +253,23 @@ predict_sentiment(net, vocab, 'this movie is so great')
 predict_sentiment(net, vocab, 'this movie is so bad')
 ```
 
-## Summary
+## Tóm tắt
 
-* Pretrained word vectors can represent individual tokens in a text sequence.
-* Bidirectional RNNs can represent a text sequence, such as via the concatenation of its hidden states at the initial and final time steps. This single text representation can be transformed into categories using a fully connected layer.
+* Các vector từ được huấn luyện trước có thể biểu diễn từng token riêng lẻ trong một chuỗi văn bản.
+* RNN hai chiều có thể biểu diễn một chuỗi văn bản, chẳng hạn bằng cách nối các trạng thái ẩn của chuỗi tại bước thời gian đầu tiên và cuối cùng. Biểu diễn văn bản đơn này có thể được chuyển đổi thành các nhãn bằng một lớp fully connected.
 
 
 
-## Exercises
+## Bài tập
 
-1. Increase the number of epochs. Can you improve the training and testing accuracies? How about tuning other hyperparameters?
-1. Use larger pretrained word vectors, such as 300-dimensional GloVe embeddings. Does it improve classification accuracy?
-1. Can we improve the classification accuracy by using the spaCy tokenization? You need to install spaCy (`pip install spacy`) and install the English package (`python -m spacy download en`). In the code, first, import spaCy (`import spacy`). Then, load the spaCy English package (`spacy_en = spacy.load('en')`). Finally, define the function `def tokenizer(text): return [tok.text for tok in spacy_en.tokenizer(text)]` and replace the original `tokenizer` function. Note the different forms of phrase tokens in GloVe and spaCy. For example, the phrase token "new york" takes the form of "new-york" in GloVe and the form of "new york" after the spaCy tokenization.
+1. Tăng số epoch. Bạn có thể cải thiện độ chính xác trên tập huấn luyện và tập kiểm thử không? Còn việc tinh chỉnh các hyperparameter khác thì sao?
+1. Sử dụng các vector từ được huấn luyện trước lớn hơn, chẳng hạn embedding GloVe 300 chiều. Điều này có cải thiện độ chính xác phân loại không?
+1. Chúng ta có thể cải thiện độ chính xác phân loại bằng cách sử dụng tokenization của spaCy không? Bạn cần cài đặt spaCy (`pip install spacy`) và cài đặt gói tiếng Anh (`python -m spacy download en`). Trong code, trước tiên hãy import spaCy (`import spacy`). Sau đó, tải gói tiếng Anh của spaCy (`spacy_en = spacy.load('en')`). Cuối cùng, định nghĩa hàm `def tokenizer(text): return [tok.text for tok in spacy_en.tokenizer(text)]` và thay thế hàm `tokenizer` ban đầu. Lưu ý các dạng khác nhau của token cụm từ trong GloVe và spaCy. Ví dụ, token cụm từ "new york" có dạng "new-york" trong GloVe và có dạng "new york" sau khi tokenization bằng spaCy.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/392)
+[Thảo luận](https://discuss.d2l.ai/t/392)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1424)
+[Thảo luận](https://discuss.d2l.ai/t/1424)
 :end_tab:

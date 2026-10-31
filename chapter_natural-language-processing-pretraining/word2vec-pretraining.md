@@ -2,17 +2,17 @@
 :label:`sec_word2vec_pretraining`
 
 
-We go on to implement the skip-gram
-model defined in
+Tiếp tục triển khai mô hình skip-gram
+được định nghĩa trong
 :numref:`sec_word2vec`.
-Then
-we will pretrain word2vec using negative sampling
-on the PTB dataset.
-First of all,
-let's obtain the data iterator
-and the vocabulary for this dataset
-by calling the `d2l.load_data_ptb`
-function, which was described in :numref:`sec_word2vec_data`
+Sau đó,
+chúng ta sẽ pretrain word2vec bằng phương pháp lấy mẫu âm
+trên tập dữ liệu PTB.
+Trước hết,
+hãy lấy data iterator
+và vocabulary cho tập dữ liệu này
+bằng cách gọi hàm `d2l.load_data_ptb`,
+được mô tả trong :numref:`sec_word2vec_data`
 
 ```{.python .input}
 #@tab mxnet
@@ -39,26 +39,26 @@ data_iter, vocab = d2l.load_data_ptb(batch_size, max_window_size,
                                      num_noise_words)
 ```
 
-## The Skip-Gram Model
+## Mô hình Skip-Gram
 
-We implement the skip-gram model
-by using embedding layers and batch matrix multiplications.
-First, let's review
-how embedding layers work.
+Chúng ta triển khai mô hình skip-gram
+bằng cách sử dụng các embedding layer và phép nhân ma trận theo batch.
+Trước tiên, hãy ôn lại
+cách embedding layer hoạt động.
 
 
 ### Embedding Layer
 
-As described in :numref:`sec_seq2seq`,
-an embedding layer
-maps a token's index to its feature vector.
-The weight of this layer
-is a matrix whose number of rows equals to
-the dictionary size (`input_dim`) and
-number of columns equals to
-the vector dimension for each token (`output_dim`).
-After a word embedding model is trained,
-this weight is what we need.
+Như được mô tả trong :numref:`sec_seq2seq`,
+embedding layer
+ánh xạ chỉ mục của một token thành vector đặc trưng của token đó.
+Trọng số của layer này
+là một ma trận có số hàng bằng
+kích thước của từ điển (`input_dim`) và
+số cột bằng
+số chiều của vector cho mỗi token (`output_dim`).
+Sau khi một mô hình word embedding được huấn luyện,
+đây chính là trọng số chúng ta cần.
 
 ```{.python .input}
 #@tab mxnet
@@ -74,18 +74,18 @@ print(f'Parameter embedding_weight ({embed.weight.shape}, '
       f'dtype={embed.weight.dtype})')
 ```
 
-The input of an embedding layer is the
-index of a token (word).
-For any token index $i$,
-its vector representation
-can be obtained from
-the $i^\textrm{th}$ row of the weight matrix
-in the embedding layer.
-Since the vector dimension (`output_dim`)
-was set to 4,
-the embedding layer
-returns vectors with shape (2, 3, 4)
-for a minibatch of token indices with shape
+Đầu vào của một embedding layer là
+chỉ mục của một token (từ).
+Với mọi chỉ mục token $i$,
+biểu diễn vector của token đó
+có thể được lấy từ
+hàng thứ $i^\textrm{th}$ của ma trận trọng số
+trong embedding layer.
+Vì số chiều của vector (`output_dim`)
+được đặt là 4,
+embedding layer
+trả về các vector có shape (2, 3, 4)
+cho một minibatch gồm các chỉ mục token có shape
 (2, 3).
 
 ```{.python .input}
@@ -94,27 +94,27 @@ x = d2l.tensor([[1, 2, 3], [4, 5, 6]])
 embed(x)
 ```
 
-### Defining the Forward Propagation
+### Định nghĩa Lan truyền tiến
 
-In the forward propagation,
-the input of the skip-gram model
-includes
-the center word indices `center`
-of shape (batch size, 1)
-and
-the concatenated context and noise word indices `contexts_and_negatives`
-of shape (batch size, `max_len`),
-where `max_len`
-is defined
-in :numref:`subsec_word2vec-minibatch-loading`.
-These two variables are first transformed from the
-token indices into vectors via the embedding layer,
-then their batch matrix multiplication
-(described in :numref:`subsec_batch_dot`)
-returns
-an output of shape (batch size, 1, `max_len`).
-Each element in the output is the dot product of
-a center word vector and a context or noise word vector.
+Trong quá trình lan truyền tiến,
+đầu vào của mô hình skip-gram
+bao gồm
+các chỉ mục của từ trung tâm `center`
+có shape (batch size, 1)
+và
+các chỉ mục được nối của từ ngữ cảnh và từ nhiễu `contexts_and_negatives`
+có shape (batch size, `max_len`),
+trong đó `max_len`
+được định nghĩa
+trong :numref:`subsec_word2vec-minibatch-loading`.
+Hai biến này trước tiên được chuyển từ
+chỉ mục token thành các vector thông qua embedding layer,
+sau đó phép nhân ma trận theo batch của chúng
+(được mô tả trong :numref:`subsec_batch_dot`)
+trả về
+một đầu ra có shape (batch size, 1, `max_len`).
+Mỗi phần tử trong đầu ra là tích vô hướng của
+một vector từ trung tâm và một vector từ ngữ cảnh hoặc từ nhiễu.
 
 ```{.python .input}
 #@tab mxnet
@@ -134,7 +134,7 @@ def skip_gram(center, contexts_and_negatives, embed_v, embed_u):
     return pred
 ```
 
-Let's print the output shape of this `skip_gram` function for some example inputs.
+Hãy in shape đầu ra của hàm `skip_gram` này với một số đầu vào mẫu.
 
 ```{.python .input}
 #@tab mxnet
@@ -147,18 +147,18 @@ skip_gram(torch.ones((2, 1), dtype=torch.long),
           torch.ones((2, 4), dtype=torch.long), embed, embed).shape
 ```
 
-## Training
+## Huấn luyện
 
-Before training the skip-gram model with negative sampling,
-let's first define its loss function.
+Trước khi huấn luyện mô hình skip-gram bằng phương pháp lấy mẫu âm,
+trước hết hãy định nghĩa hàm mất mát của mô hình.
 
 
 ### Binary Cross-Entropy Loss
 
-According to the definition of the loss function
-for negative sampling in :numref:`subsec_negative-sampling`, 
-we will use 
-the binary cross-entropy loss.
+Theo định nghĩa của hàm mất mát
+cho phương pháp lấy mẫu âm trong :numref:`subsec_negative-sampling`, 
+chúng ta sẽ sử dụng 
+binary cross-entropy loss.
 
 ```{.python .input}
 #@tab mxnet
@@ -180,14 +180,14 @@ class SigmoidBCELoss(nn.Module):
 loss = SigmoidBCELoss()
 ```
 
-Recall our descriptions
-of the mask variable
-and the label variable in
+Hãy nhớ lại phần mô tả
+về biến mask
+và biến label trong
 :numref:`subsec_word2vec-minibatch-loading`.
-The following
-calculates the 
+Đoạn mã sau
+tính toán
 binary cross-entropy loss
-for the given variables.
+cho các biến đã cho.
 
 ```{.python .input}
 #@tab all
@@ -197,16 +197,16 @@ mask = d2l.tensor([[1, 1, 1, 1], [1, 1, 0, 0]])
 loss(pred, label, mask) * mask.shape[1] / mask.sum(axis=1)
 ```
 
-Below shows
-how the above results are calculated
-(in a less efficient way)
-using the
-sigmoid activation function
-in the binary cross-entropy loss.
-We can consider 
-the two outputs as
-two normalized losses
-that are averaged over non-masked predictions.
+Dưới đây cho thấy
+cách tính các kết quả trên
+(theo cách kém hiệu quả hơn)
+bằng cách sử dụng
+hàm kích hoạt sigmoid
+trong binary cross-entropy loss.
+Chúng ta có thể xem
+hai đầu ra là
+hai loss đã chuẩn hóa
+được lấy trung bình trên các dự đoán không bị mask.
 
 ```{.python .input}
 #@tab all
@@ -217,14 +217,14 @@ print(f'{(sigmd(1.1) + sigmd(2.2) + sigmd(-3.3) + sigmd(4.4)) / 4:.4f}')
 print(f'{(sigmd(-1.1) + sigmd(-2.2)) / 2:.4f}')
 ```
 
-### Initializing Model Parameters
+### Khởi tạo Tham số Mô hình
 
-We define two embedding layers
-for all the words in the vocabulary
-when they are used as center words
-and context words, respectively.
-The word vector dimension
-`embed_size` is set to 100.
+Chúng ta định nghĩa hai embedding layer
+cho tất cả các từ trong vocabulary
+khi chúng lần lượt được dùng làm từ trung tâm
+và từ ngữ cảnh.
+Số chiều của vector từ
+`embed_size` được đặt là 100.
 
 ```{.python .input}
 #@tab mxnet
@@ -243,9 +243,9 @@ net = nn.Sequential(nn.Embedding(num_embeddings=len(vocab),
                                  embedding_dim=embed_size))
 ```
 
-### Defining the Training Loop
+### Định nghĩa Vòng lặp Huấn luyện
 
-The training loop is defined below. Because of the existence of padding, the calculation of the loss function is slightly different compared to the previous training functions.
+Vòng lặp huấn luyện được định nghĩa bên dưới. Do có padding, phép tính hàm mất mát hơi khác so với các hàm huấn luyện trước đó.
 
 ```{.python .input}
 #@tab mxnet
@@ -309,7 +309,7 @@ def train(net, data_iter, lr, num_epochs, device=d2l.try_gpu()):
           f'{metric[1] / timer.stop():.1f} tokens/sec on {str(device)}')
 ```
 
-Now we can train a skip-gram model using negative sampling.
+Bây giờ chúng ta có thể huấn luyện một mô hình skip-gram bằng phương pháp lấy mẫu âm.
 
 ```{.python .input}
 #@tab all
@@ -317,17 +317,17 @@ lr, num_epochs = 0.002, 5
 train(net, data_iter, lr, num_epochs)
 ```
 
-## Applying Word Embeddings
+## Áp dụng Word Embedding
 :label:`subsec_apply-word-embed`
 
 
-After training the word2vec model,
-we can use the cosine similarity
-of word vectors from the trained model
-to 
-find words from the dictionary
-that are most semantically similar
-to an input word.
+Sau khi huấn luyện mô hình word2vec,
+chúng ta có thể sử dụng độ tương đồng cosine
+của các vector từ trong mô hình đã huấn luyện
+để
+tìm những từ trong từ điển
+có ngữ nghĩa tương đồng nhất
+với một từ đầu vào.
 
 ```{.python .input}
 #@tab mxnet
@@ -358,21 +358,21 @@ def get_similar_tokens(query_token, k, embed):
 get_similar_tokens('chip', 3, net[0])
 ```
 
-## Summary
+## Tóm tắt
 
-* We can train a skip-gram model with negative sampling using embedding layers and the binary cross-entropy loss.
-* Applications of word embeddings include finding semantically similar words for a given word based on the cosine similarity of word vectors.
+* Chúng ta có thể huấn luyện mô hình skip-gram bằng phương pháp lấy mẫu âm sử dụng embedding layer và binary cross-entropy loss.
+* Các ứng dụng của word embedding bao gồm việc tìm những từ có ngữ nghĩa tương đồng với một từ cho trước dựa trên độ tương đồng cosine của các vector từ.
 
 
-## Exercises
+## Bài tập
 
-1. Using the trained model, find semantically similar words for other input words. Can you improve the results by tuning hyperparameters?
-1. When a training corpus is huge, we often sample context words and noise words for the center words in the current minibatch *when updating model parameters*. In other words, the same center word may have different context words or noise words in different training epochs. What are the benefits of this method? Try to implement this training method.
+1. Sử dụng mô hình đã huấn luyện, hãy tìm những từ có ngữ nghĩa tương đồng với các từ đầu vào khác. Bạn có thể cải thiện kết quả bằng cách tinh chỉnh các hyperparameter không?
+1. Khi corpus huấn luyện rất lớn, chúng ta thường lấy mẫu các từ ngữ cảnh và từ nhiễu cho các từ trung tâm trong minibatch hiện tại *khi cập nhật tham số mô hình*. Nói cách khác, cùng một từ trung tâm có thể có các từ ngữ cảnh hoặc từ nhiễu khác nhau trong những epoch huấn luyện khác nhau. Phương pháp này có những lợi ích gì? Hãy thử triển khai phương pháp huấn luyện này.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/384)
+[Thảo luận](https://discuss.d2l.ai/t/384)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1335)
+[Thảo luận](https://discuss.d2l.ai/t/1335)
 :end_tab:

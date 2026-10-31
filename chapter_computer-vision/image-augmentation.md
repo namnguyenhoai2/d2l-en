@@ -1,27 +1,27 @@
-# Image Augmentation
+# Tăng cường ảnh
 :label:`sec_image_augmentation`
 
-In :numref:`sec_alexnet`, 
-we mentioned that large datasets 
-are a prerequisite
-for the success of
-deep neural networks
-in various applications.
-*Image augmentation* 
-generates similar but distinct training examples
-after a series of random changes to the training images, thereby expanding the size of the training set.
-Alternatively,
-image augmentation can be motivated
-by the fact that 
-random tweaks of training examples 
-allow models to rely less on
-certain attributes, thereby improving their generalization ability.
-For example, we can crop an image in different ways to make the object of interest appear in different positions, thereby reducing the dependence of a model on the position of the object. 
-We can also adjust factors such as brightness and color to reduce a model's sensitivity to color.
-It is probably true
-that image augmentation was indispensable
-for the success of AlexNet at that time.
-In this section we will discuss this widely used technique in computer vision.
+Trong :numref:`sec_alexnet`, 
+chúng ta đã đề cập rằng các tập dữ liệu lớn
+là điều kiện tiên quyết
+cho sự thành công của
+mạng neural sâu
+trong nhiều ứng dụng khác nhau.
+*Tăng cường ảnh* 
+tạo ra các mẫu huấn luyện tương tự nhưng khác biệt
+sau một loạt thay đổi ngẫu nhiên đối với ảnh huấn luyện, qua đó mở rộng kích thước của tập huấn luyện.
+Một cách khác,
+tăng cường ảnh có thể được lý giải
+bởi thực tế rằng
+những điều chỉnh ngẫu nhiên đối với các mẫu huấn luyện
+cho phép mô hình ít phụ thuộc hơn vào
+một số thuộc tính nhất định, qua đó cải thiện khả năng khái quát hóa.
+Ví dụ, chúng ta có thể cắt ảnh theo nhiều cách khác nhau để đối tượng cần quan tâm xuất hiện ở những vị trí khác nhau, qua đó giảm sự phụ thuộc của mô hình vào vị trí của đối tượng.
+Chúng ta cũng có thể điều chỉnh các yếu tố như độ sáng và màu sắc để giảm độ nhạy của mô hình đối với màu sắc.
+Có lẽ đúng là
+tăng cường ảnh đóng vai trò không thể thiếu
+đối với sự thành công của AlexNet vào thời điểm đó.
+Trong phần này, chúng ta sẽ thảo luận về kỹ thuật được sử dụng rộng rãi này trong thị giác máy tính.
 
 ```{.python .input}
 #@tab mxnet
@@ -42,9 +42,9 @@ import torchvision
 from torch import nn
 ```
 
-## Common Image Augmentation Methods
+## Các phương pháp tăng cường ảnh phổ biến
 
-In our investigation of common image augmentation methods, we will use the following $400\times 500$ image an example.
+Trong quá trình tìm hiểu các phương pháp tăng cường ảnh phổ biến, chúng ta sẽ sử dụng ảnh $400\times 500$ sau đây làm ví dụ.
 
 ```{.python .input}
 #@tab mxnet
@@ -60,7 +60,7 @@ img = d2l.Image.open('../img/cat1.jpg')
 d2l.plt.imshow(img);
 ```
 
-Most image augmentation methods have a certain degree of randomness. To make it easier for us to observe the effect of image augmentation, next we define an auxiliary function `apply`. This function runs the image augmentation method `aug` multiple times on the input image `img` and shows all the results.
+Hầu hết các phương pháp tăng cường ảnh đều có một mức độ ngẫu nhiên nhất định. Để chúng ta dễ quan sát tác động của việc tăng cường ảnh hơn, tiếp theo chúng ta định nghĩa một hàm phụ `apply`. Hàm này chạy phương pháp tăng cường ảnh `aug` nhiều lần trên ảnh đầu vào `img` và hiển thị tất cả kết quả.
 
 ```{.python .input}
 #@tab all
@@ -69,20 +69,18 @@ def apply(img, aug, num_rows=2, num_cols=4, scale=1.5):
     d2l.show_images(Y, num_rows, num_cols, scale=scale)
 ```
 
-### Flipping and Cropping
+### Lật và cắt ảnh
 
 :begin_tab:`mxnet`
-[**Flipping the image left and right**] usually does not change the category of the object. 
-This is one of the earliest and most widely used methods of image augmentation.
-Next, we use the `transforms` module to create the `RandomFlipLeftRight` instance, which flips
-an image left and right with a 50% chance.
+[**Lật ảnh từ trái sang phải**] thường không làm thay đổi phân loại của đối tượng.
+Đây là một trong những phương pháp tăng cường ảnh sớm nhất và được sử dụng rộng rãi nhất.
+Tiếp theo, chúng ta sử dụng module `transforms` để tạo instance `RandomFlipLeftRight`, instance này lật ảnh từ trái sang phải với xác suất 50%.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**Flipping the image left and right**] usually does not change the category of the object. 
-This is one of the earliest and most widely used methods of image augmentation.
-Next, we use the `transforms` module to create the `RandomHorizontalFlip` instance, which flips
-an image left and right with a 50% chance.
+[**Lật ảnh từ trái sang phải**] thường không làm thay đổi phân loại của đối tượng.
+Đây là một trong những phương pháp tăng cường ảnh sớm nhất và được sử dụng rộng rãi nhất.
+Tiếp theo, chúng ta sử dụng module `transforms` để tạo instance `RandomHorizontalFlip`, instance này lật ảnh từ trái sang phải với xác suất 50%.
 :end_tab:
 
 ```{.python .input}
@@ -96,15 +94,13 @@ apply(img, torchvision.transforms.RandomHorizontalFlip())
 ```
 
 :begin_tab:`mxnet`
-[**Flipping up and down**] is not as common as flipping left and right. But at least for this example image, flipping up and down does not hinder recognition.
-Next, we create a `RandomFlipTopBottom` instance to flip
-an image up and down with a 50% chance.
+[**Lật ảnh từ trên xuống dưới**] không phổ biến bằng lật từ trái sang phải. Tuy nhiên, ít nhất đối với ảnh ví dụ này, việc lật từ trên xuống dưới không cản trở khả năng nhận dạng.
+Tiếp theo, chúng ta tạo một instance `RandomFlipTopBottom` để lật ảnh từ trên xuống dưới với xác suất 50%.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**Flipping up and down**] is not as common as flipping left and right. But at least for this example image, flipping up and down does not hinder recognition.
-Next, we create a `RandomVerticalFlip` instance to flip
-an image up and down with a 50% chance.
+[**Lật ảnh từ trên xuống dưới**] không phổ biến bằng lật từ trái sang phải. Tuy nhiên, ít nhất đối với ảnh ví dụ này, việc lật từ trên xuống dưới không cản trở khả năng nhận dạng.
+Tiếp theo, chúng ta tạo một instance `RandomVerticalFlip` để lật ảnh từ trên xuống dưới với xác suất 50%.
 :end_tab:
 
 ```{.python .input}
@@ -117,12 +113,12 @@ apply(img, gluon.data.vision.transforms.RandomFlipTopBottom())
 apply(img, torchvision.transforms.RandomVerticalFlip())
 ```
 
-In the example image we used, the cat is in the middle of the image, but this may not be the case in general. 
-In :numref:`sec_pooling`, we explained that the pooling layer can reduce the sensitivity of a convolutional layer to the target position.
-In addition, we can also randomly crop the image to make objects appear in different positions in the image at different scales, which can also reduce the sensitivity of a model to the target position.
+Trong ảnh ví dụ mà chúng ta sử dụng, con mèo nằm ở giữa ảnh, nhưng nhìn chung không phải lúc nào cũng như vậy.
+Trong :numref:`sec_pooling`, chúng ta đã giải thích rằng lớp pooling có thể làm giảm độ nhạy của lớp tích chập đối với vị trí của đối tượng.
+Ngoài ra, chúng ta cũng có thể cắt ảnh ngẫu nhiên để làm cho các đối tượng xuất hiện ở những vị trí khác nhau và với các tỷ lệ khác nhau trong ảnh, điều này cũng có thể làm giảm độ nhạy của mô hình đối với vị trí của đối tượng.
 
-In the code below, we [**randomly crop**] an area with an area of $10\% \sim 100\%$ of the original area each time, and the ratio of width to height of this area is randomly selected from $0.5 \sim 2$. Then, the width and height of the region are both scaled to 200 pixels. 
-Unless otherwise specified, the random number between $a$ and $b$ in this section refers to a continuous value obtained by random and uniform sampling from the interval $[a, b]$.
+Trong đoạn code dưới đây, mỗi lần chúng ta [**cắt ngẫu nhiên**] một vùng có diện tích bằng $10\% \sim 100\%$ diện tích ban đầu, đồng thời tỷ lệ giữa chiều rộng và chiều cao của vùng này được chọn ngẫu nhiên trong khoảng $0.5 \sim 2$. Sau đó, cả chiều rộng và chiều cao của vùng đều được scale thành 200 pixel.
+Trừ khi có quy định khác, số ngẫu nhiên giữa $a$ và $b$ trong phần này là một giá trị liên tục thu được bằng cách lấy mẫu ngẫu nhiên và đồng đều từ khoảng $[a, b]$.
 
 ```{.python .input}
 #@tab mxnet
@@ -138,9 +134,9 @@ shape_aug = torchvision.transforms.RandomResizedCrop(
 apply(img, shape_aug)
 ```
 
-### Changing Colors
+### Thay đổi màu sắc
 
-Another augmentation method is changing colors. We can change four aspects of the image color: brightness, contrast, saturation, and hue. In the example below, we [**randomly change the brightness**] of the image to a value between 50% ($1-0.5$) and 150% ($1+0.5$) of the original image.
+Một phương pháp tăng cường khác là thay đổi màu sắc. Chúng ta có thể thay đổi bốn khía cạnh của màu ảnh: độ sáng, độ tương phản, độ bão hòa và sắc độ. Trong ví dụ dưới đây, chúng ta [**thay đổi ngẫu nhiên độ sáng**] của ảnh thành một giá trị trong khoảng từ 50% ($1-0.5$) đến 150% ($1+0.5$) so với ảnh gốc.
 
 ```{.python .input}
 #@tab mxnet
@@ -153,7 +149,7 @@ apply(img, torchvision.transforms.ColorJitter(
     brightness=0.5, contrast=0, saturation=0, hue=0))
 ```
 
-Similarly, we can [**randomly change the hue**] of the image.
+Tương tự, chúng ta có thể [**thay đổi ngẫu nhiên sắc độ**] của ảnh.
 
 ```{.python .input}
 #@tab mxnet
@@ -166,7 +162,7 @@ apply(img, torchvision.transforms.ColorJitter(
     brightness=0, contrast=0, saturation=0, hue=0.5))
 ```
 
-We can also create a `RandomColorJitter` instance and set how to [**randomly change the `brightness`, `contrast`, `saturation`, and `hue` of the image at the same time**].
+Chúng ta cũng có thể tạo một instance `RandomColorJitter` và thiết lập cách [**thay đổi ngẫu nhiên `brightness`, `contrast`, `saturation` và `hue` của ảnh cùng lúc**].
 
 ```{.python .input}
 #@tab mxnet
@@ -182,11 +178,11 @@ color_aug = torchvision.transforms.ColorJitter(
 apply(img, color_aug)
 ```
 
-### Combining Multiple Image Augmentation Methods
+### Kết hợp nhiều phương pháp tăng cường ảnh
 
-In practice, we will [**combine multiple image augmentation methods**]. 
-For example,
-we can combine the different image augmentation methods defined above and apply them to each image via a `Compose` instance.
+Trong thực tế, chúng ta sẽ [**kết hợp nhiều phương pháp tăng cường ảnh**].
+Ví dụ,
+chúng ta có thể kết hợp các phương pháp tăng cường ảnh khác nhau được định nghĩa ở trên và áp dụng chúng cho từng ảnh thông qua một instance `Compose`.
 
 ```{.python .input}
 #@tab mxnet
@@ -202,12 +198,12 @@ augs = torchvision.transforms.Compose([
 apply(img, augs)
 ```
 
-## [**Training with Image Augmentation**]
+## [**Huấn luyện với tăng cường ảnh**]
 
-Let's train a model with image augmentation.
-Here we use the CIFAR-10 dataset instead of the Fashion-MNIST dataset that we used before. 
-This is because the position and size of the objects in the Fashion-MNIST dataset have been normalized, while the color and size of the objects in the CIFAR-10 dataset have more significant differences. 
-The first 32 training images in the CIFAR-10 dataset are shown below.
+Hãy huấn luyện một mô hình với tăng cường ảnh.
+Ở đây, chúng ta sử dụng tập dữ liệu CIFAR-10 thay vì tập dữ liệu Fashion-MNIST đã sử dụng trước đó.
+Lý do là vị trí và kích thước của các đối tượng trong tập dữ liệu Fashion-MNIST đã được chuẩn hóa, trong khi màu sắc và kích thước của các đối tượng trong tập dữ liệu CIFAR-10 có sự khác biệt đáng kể hơn.
+32 ảnh huấn luyện đầu tiên trong tập dữ liệu CIFAR-10 được hiển thị bên dưới.
 
 ```{.python .input}
 #@tab mxnet
@@ -222,9 +218,8 @@ all_images = torchvision.datasets.CIFAR10(train=True, root="../data",
 d2l.show_images([all_images[i][0] for i in range(32)], 4, 8, scale=0.8);
 ```
 
-In order to obtain definitive results during prediction, we usually only apply image augmentation to training examples, and do not use image augmentation with random operations during prediction. 
-[**Here we only use the simplest random left-right flipping method**]. In addition, we use a `ToTensor` instance to convert a minibatch of images into the format required by the deep learning framework, i.e., 
-32-bit floating point numbers between 0 and 1 with the shape of (batch size, number of channels, height, width).
+Để thu được kết quả nhất quán trong quá trình dự đoán, chúng ta thường chỉ áp dụng tăng cường ảnh cho các mẫu huấn luyện và không sử dụng tăng cường ảnh với các phép toán ngẫu nhiên trong quá trình dự đoán.
+[**Ở đây, chúng ta chỉ sử dụng phương pháp lật ngẫu nhiên từ trái sang phải đơn giản nhất**]. Ngoài ra, chúng ta sử dụng một instance `ToTensor` để chuyển một minibatch ảnh sang định dạng mà deep learning framework yêu cầu, tức là các số dấu phẩy động 32-bit trong khoảng từ 0 đến 1 với shape là (batch size, number of channels, height, width).
 
 ```{.python .input}
 #@tab mxnet
@@ -247,22 +242,22 @@ test_augs = torchvision.transforms.Compose([
 ```
 
 :begin_tab:`mxnet`
-Next, we define an auxiliary function to facilitate reading the image and
-applying image augmentation. 
-The `transform_first` function provided by Gluon's
-datasets applies image augmentation to the first element of each training
-example (image and label), i.e., the image. 
-For
-a detailed introduction to `DataLoader`, please refer to :numref:`sec_fashion_mnist`.
+Tiếp theo, chúng ta định nghĩa một hàm phụ để thuận tiện cho việc đọc ảnh và
+áp dụng tăng cường ảnh.
+Hàm `transform_first` do Gluon cung cấp
+áp dụng tăng cường ảnh cho phần tử đầu tiên của mỗi mẫu huấn luyện
+(ảnh và nhãn), tức là ảnh.
+Để
+biết phần giới thiệu chi tiết về `DataLoader`, vui lòng tham khảo :numref:`sec_fashion_mnist`.
 :end_tab:
 
 :begin_tab:`pytorch`
-Next, we [**define an auxiliary function to facilitate reading the image and
-applying image augmentation**]. 
-The `transform` argument provided by PyTorch's
-dataset applies augmentation to transform the images.
-For
-a detailed introduction to `DataLoader`, please refer to :numref:`sec_fashion_mnist`.
+Tiếp theo, chúng ta [**định nghĩa một hàm phụ để thuận tiện cho việc đọc ảnh và
+áp dụng tăng cường ảnh**].
+Đối số `transform` do dataset của PyTorch cung cấp
+áp dụng augmentation để biến đổi ảnh.
+Để
+biết phần giới thiệu chi tiết về `DataLoader`, vui lòng tham khảo :numref:`sec_fashion_mnist`.
 :end_tab:
 
 ```{.python .input}
@@ -284,15 +279,15 @@ def load_cifar10(is_train, augs, batch_size):
     return dataloader
 ```
 
-### Multi-GPU Training
+### Huấn luyện Multi-GPU
 
-We train the ResNet-18 model from
-:numref:`sec_resnet` on the
-CIFAR-10 dataset.
-Recall the introduction to
-multi-GPU training in :numref:`sec_multi_gpu_concise`.
-In the following,
-[**we define a function to train and evaluate the model using multiple GPUs**].
+Chúng ta huấn luyện mô hình ResNet-18 từ
+:numref:`sec_resnet` trên
+tập dữ liệu CIFAR-10.
+Hãy nhớ lại phần giới thiệu về
+huấn luyện multi-GPU trong :numref:`sec_multi_gpu_concise`.
+Trong phần tiếp theo,
+[**chúng ta định nghĩa một hàm để huấn luyện và đánh giá mô hình bằng nhiều GPU**].
 
 ```{.python .input}
 #@tab mxnet
@@ -401,11 +396,11 @@ def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
           f'{str(devices)}')
 ```
 
-Now we can [**define the `train_with_data_aug` function to train the model with image augmentation**].
-This function gets all available GPUs, 
-uses Adam as the optimization algorithm,
-applies image augmentation to the training dataset,
-and finally calls the `train_ch13` function just defined to train and evaluate the model.
+Bây giờ chúng ta có thể [**định nghĩa hàm `train_with_data_aug` để huấn luyện mô hình với tăng cường ảnh**].
+Hàm này lấy tất cả GPU khả dụng,
+sử dụng Adam làm thuật toán tối ưu,
+áp dụng tăng cường ảnh cho tập dữ liệu huấn luyện,
+và cuối cùng gọi hàm `train_ch13` vừa định nghĩa để huấn luyện và đánh giá mô hình.
 
 ```{.python .input}
 #@tab mxnet
@@ -435,30 +430,30 @@ def train_with_data_aug(train_augs, test_augs, net, lr=0.001):
     train_ch13(net, train_iter, test_iter, loss, trainer, 10, devices)
 ```
 
-Let's [**train the model**] using image augmentation based on random left-right flipping.
+Hãy [**huấn luyện mô hình**] bằng cách sử dụng tăng cường ảnh dựa trên phép lật ngẫu nhiên từ trái sang phải.
 
 ```{.python .input}
 #@tab all
 train_with_data_aug(train_augs, test_augs, net)
 ```
 
-## Summary
+## Tóm tắt
 
-* Image augmentation generates random images based on existing training data to improve the generalization ability of models.
-* In order to obtain definitive results during prediction, we usually only apply image augmentation to training examples, and do not use image augmentation with random operations during prediction.
-* Deep learning frameworks provide many different image augmentation methods, which can be applied simultaneously.
+* Tăng cường ảnh tạo ra các ảnh ngẫu nhiên dựa trên dữ liệu huấn luyện hiện có để cải thiện khả năng khái quát hóa của mô hình.
+* Để thu được kết quả nhất quán trong quá trình dự đoán, chúng ta thường chỉ áp dụng tăng cường ảnh cho các mẫu huấn luyện và không sử dụng tăng cường ảnh với các phép toán ngẫu nhiên trong quá trình dự đoán.
+* Các deep learning framework cung cấp nhiều phương pháp tăng cường ảnh khác nhau, có thể được áp dụng đồng thời.
 
 
-## Exercises
+## Bài tập
 
-1. Train the model without using image augmentation: `train_with_data_aug(test_augs, test_augs)`. Compare training and testing accuracy when using and not using image augmentation. Can this comparative experiment support the argument that image augmentation can mitigate overfitting? Why?
-1. Combine multiple different image augmentation methods in model training on the CIFAR-10 dataset. Does it improve test accuracy? 
-1. Refer to the online documentation of the deep learning framework. What other image augmentation methods does it also provide?
+1. Huấn luyện mô hình mà không sử dụng tăng cường ảnh: `train_with_data_aug(test_augs, test_augs)`. So sánh độ chính xác huấn luyện và kiểm tra khi sử dụng và không sử dụng tăng cường ảnh. Thí nghiệm so sánh này có thể củng cố lập luận rằng tăng cường ảnh có thể giảm overfitting không? Tại sao?
+1. Kết hợp nhiều phương pháp tăng cường ảnh khác nhau trong quá trình huấn luyện mô hình trên tập dữ liệu CIFAR-10. Điều này có cải thiện độ chính xác kiểm tra không?
+1. Tham khảo tài liệu trực tuyến của deep learning framework. Framework đó còn cung cấp những phương pháp tăng cường ảnh nào khác?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/367)
+[Thảo luận](https://discuss.d2l.ai/t/367)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1404)
+[Thảo luận](https://discuss.d2l.ai/t/1404)
 :end_tab:

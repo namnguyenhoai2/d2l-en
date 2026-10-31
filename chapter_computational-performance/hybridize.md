@@ -1,7 +1,7 @@
-# Compilers and Interpreters
+# Trình biên dịch và trình thông dịch
 :label:`sec_hybridize`
 
-So far, this book has focused on imperative programming, which makes use of statements such as `print`, `+`, and `if` to change a program's state. Consider the following example of a simple imperative program.
+Cho đến nay, cuốn sách này tập trung vào lập trình mệnh lệnh (imperative programming), sử dụng các câu lệnh như `print`, `+` và `if` để thay đổi trạng thái của chương trình. Hãy xem ví dụ sau về một chương trình mệnh lệnh đơn giản.
 
 ```{.python .input}
 #@tab all
@@ -17,24 +17,25 @@ def fancy_func(a, b, c, d):
 print(fancy_func(1, 2, 3, 4))
 ```
 
-Python is an *interpreted language*. When evaluating the above `fancy_func` function it performs the operations making up the function's body *in sequence*. That is, it will evaluate `e = add(a, b)` and store the results as variable `e`, thereby changing the program's state. The next two statements `f = add(c, d)` and `g = add(e, f)` will be executed similarly, performing additions and storing the results as variables. :numref:`fig_compute_graph` illustrates the flow of data.
+Python là một *ngôn ngữ thông dịch*. Khi đánh giá hàm `fancy_func` ở trên, nó thực hiện các thao tác tạo nên phần thân của hàm *theo thứ tự*. Nghĩa là, nó sẽ đánh giá `e = add(a, b)` và lưu kết quả vào biến `e`, từ đó thay đổi trạng thái của chương trình. Hai câu lệnh tiếp theo, `f = add(c, d)` và `g = add(e, f)`, cũng sẽ được thực thi tương tự, thực hiện phép cộng và lưu kết quả vào các biến. :numref:`fig_compute_graph` minh họa luồng dữ liệu.
 
-![Data flow in an imperative program.](../img/computegraph.svg)
+![Luồng dữ liệu trong một chương trình mệnh lệnh.](../img/computegraph.svg)
 :label:`fig_compute_graph`
 
-Although imperative programming is convenient, it may be inefficient. On the one hand, even if the `add` function is repeatedly called throughout `fancy_func`, Python will execute the three function calls individually. If these are executed, say, on a GPU (or even on multiple GPUs), the overhead arising from the Python interpreter can become overwhelming. Moreover, it will need to save the variable values of `e` and `f` until all the statements in `fancy_func` have been executed. This is because we do not know whether the variables `e` and `f` will be used by other parts of the program after the statements `e = add(a, b)` and `f = add(c, d)` are executed.
+Mặc dù lập trình mệnh lệnh thuận tiện, nhưng nó có thể không hiệu quả. Một mặt, ngay cả khi hàm `add` được gọi lặp lại trong `fancy_func`, Python vẫn thực thi riêng lẻ ba lần gọi hàm. Nếu các thao tác này được thực hiện trên GPU (hoặc thậm chí trên nhiều GPU), chi phí phát sinh từ trình thông dịch Python có thể trở nên quá lớn. Hơn nữa, Python sẽ cần lưu các giá trị của biến `e` và `f` cho đến khi tất cả câu lệnh trong `fancy_func` được thực thi. Điều này là do chúng ta không biết liệu các biến `e` và `f` có được những phần khác của chương trình sử dụng sau khi các câu lệnh `e = add(a, b)` và `f = add(c, d)` được thực thi hay không.
 
-## Symbolic Programming
+## Lập trình ký hiệu
 
-Consider the alternative, *symbolic programming*, where computation is usually performed only once the process has been fully defined. This strategy is used by multiple deep learning frameworks, including Theano and TensorFlow (the latter has acquired imperative extensions). It usually involves the following steps:
+Hãy xem xét một lựa chọn khác là *lập trình ký hiệu* (symbolic programming), trong đó phép tính thường chỉ được thực hiện sau khi toàn bộ quy trình đã được định nghĩa. Chiến lược này được nhiều framework deep learning sử dụng, bao gồm Theano và TensorFlow (framework sau này đã bổ sung các phần mở rộng mệnh lệnh). Chiến lược này thường bao gồm các bước sau:
 
-1. Define the operations to be executed.
-1. Compile the operations into an executable program.
-1. Provide the required inputs and call the compiled program for execution.
+1. Xác định các thao tác cần thực hiện.
+1. Biên dịch các thao tác thành một chương trình có thể thực thi.
+1. Cung cấp các đầu vào cần thiết và gọi chương trình đã biên dịch để thực thi.
 
-This allows for a significant amount of optimization. First, we can skip the Python interpreter in many cases, thus removing a performance bottleneck that can become significant on multiple fast GPUs paired with a single Python thread on a CPU. 
-Second, a compiler might optimize and rewrite the above code into `print((1 + 2) + (3 + 4))` or even `print(10)`. This is possible since a compiler gets to see the full code before turning it into machine instructions. For instance, it can release memory (or never allocate it) whenever a variable is no longer needed. Or it can transform the code entirely into an equivalent piece.
-To get a better idea, consider the following simulation of imperative programming (it is Python after all) below.
+Cách này cho phép tối ưu hóa đáng kể. Trước hết, trong nhiều trường hợp, chúng ta có thể bỏ qua trình thông dịch Python, qua đó loại bỏ một nút thắt hiệu năng có thể trở nên đáng kể khi sử dụng nhiều GPU nhanh kết hợp với một thread Python duy nhất trên CPU.
+
+Thứ hai, một trình biên dịch có thể tối ưu hóa và viết lại đoạn mã trên thành `print((1 + 2) + (3 + 4))` hoặc thậm chí `print(10)`. Điều này khả thi vì trình biên dịch có thể xem toàn bộ mã trước khi chuyển nó thành các chỉ thị máy. Chẳng hạn, trình biên dịch có thể giải phóng bộ nhớ (hoặc không bao giờ cấp phát bộ nhớ) khi một biến không còn cần thiết. Hoặc nó có thể biến đổi hoàn toàn đoạn mã thành một đoạn mã tương đương.
+Để hiểu rõ hơn, hãy xem mô phỏng sau đây về lập trình mệnh lệnh (dù sao thì đây vẫn là Python).
 
 ```{.python .input}
 #@tab all
@@ -62,34 +63,34 @@ y = compile(prog, '', 'exec')
 exec(y)
 ```
 
-The differences between imperative (interpreted) programming and symbolic programming are as follows:
+Sự khác biệt giữa lập trình mệnh lệnh (được thông dịch) và lập trình ký hiệu như sau:
 
-* Imperative programming is easier. When imperative programming is used in Python, the majority of the code is straightforward and easy to write. It is also easier to debug imperative programming code. This is because it is easier to obtain and print all relevant intermediate variable values, or use Python's built-in debugging tools.
-* Symbolic programming is more efficient and easier to port. Symbolic programming makes it easier to optimize the code during compilation, while also having the ability to port the program into a format independent of Python. This allows the program to be run in a non-Python environment, thus avoiding any potential performance issues related to the Python interpreter.
+* Lập trình mệnh lệnh dễ hơn. Khi sử dụng lập trình mệnh lệnh trong Python, phần lớn mã nguồn rõ ràng và dễ viết. Việc debug mã lập trình mệnh lệnh cũng dễ hơn. Đó là vì việc lấy và in tất cả giá trị biến trung gian liên quan, hoặc sử dụng các công cụ debug tích hợp sẵn của Python, dễ thực hiện hơn.
+* Lập trình ký hiệu hiệu quả hơn và dễ chuyển đổi hơn. Lập trình ký hiệu giúp tối ưu hóa mã trong quá trình biên dịch dễ dàng hơn, đồng thời có khả năng chuyển chương trình sang một định dạng không phụ thuộc vào Python. Nhờ đó, chương trình có thể chạy trong môi trường không sử dụng Python, tránh các vấn đề hiệu năng tiềm ẩn liên quan đến trình thông dịch Python.
 
 
-## Hybrid Programming
+## Lập trình lai
 
-Historically most deep learning frameworks choose between an imperative or a symbolic approach. For example, Theano, TensorFlow (inspired by the former), Keras, and CNTK formulate models symbolically. Conversely, Chainer and PyTorch take an imperative approach. An imperative mode was added to TensorFlow 2.0 and Keras in later revisions.
+Trong lịch sử, hầu hết framework deep learning đều lựa chọn giữa cách tiếp cận mệnh lệnh và cách tiếp cận ký hiệu. Ví dụ, Theano, TensorFlow (lấy cảm hứng từ Theano), Keras và CNTK biểu diễn các model bằng ký hiệu. Ngược lại, Chainer và PyTorch sử dụng cách tiếp cận mệnh lệnh. TensorFlow 2.0 đã bổ sung chế độ mệnh lệnh, và Keras cũng bổ sung chế độ này trong các phiên bản sau.
 
 :begin_tab:`mxnet`
-When designing Gluon, developers considered whether it would be possible to combine the benefits of both programming paradigms. This led to a hybrid model that lets users develop and debug with pure imperative programming, while having the ability to convert most programs into symbolic programs to be run when product-level computing performance and deployment are required.
+Khi thiết kế Gluon, các nhà phát triển đã cân nhắc liệu có thể kết hợp những lợi ích của cả hai mô hình lập trình hay không. Điều này dẫn đến một model lai, cho phép người dùng phát triển và debug bằng lập trình mệnh lệnh thuần túy, đồng thời có khả năng chuyển đổi hầu hết chương trình thành chương trình ký hiệu để chạy khi cần hiệu năng tính toán và khả năng deploy ở cấp độ sản phẩm.
 
-In practice this means that we build models using the `HybridBlock` or `HybridSequential` class. By default, either of them is executed in the same way the `Block` or `Sequential` class is executed in imperative programming. 
-The `HybridSequential` class is a subclass of `HybridBlock` (just like `Sequential` subclasses `Block`). When the `hybridize` function is called, Gluon compiles the model into the form used in symbolic programming. This allows one to optimize the computation-intensive components without sacrifices in the way a model is implemented. We will illustrate the benefits below, focusing on sequential models and blocks.
+Trên thực tế, điều này có nghĩa là chúng ta xây dựng model bằng class `HybridBlock` hoặc `HybridSequential`. Theo mặc định, cả hai class đều được thực thi theo cách giống như class `Block` hoặc `Sequential` khi lập trình mệnh lệnh.
+Class `HybridSequential` là một subclass của `HybridBlock` (giống như `Sequential` là subclass của `Block`). Khi gọi hàm `hybridize`, Gluon biên dịch model sang dạng được sử dụng trong lập trình ký hiệu. Điều này cho phép tối ưu hóa các thành phần cần nhiều tính toán mà không phải hy sinh cách triển khai model. Chúng ta sẽ minh họa các lợi ích bên dưới, tập trung vào các model tuần tự và block.
 :end_tab:
 
 :begin_tab:`pytorch`
-As mentioned above, PyTorch is based on imperative programming and uses dynamic computation graphs. In an effort to leverage the portability and efficiency of symbolic programming, developers considered whether it would be possible to combine the benefits of both programming paradigms. This led to a torchscript that lets users develop and debug using pure imperative programming, while having the ability to convert most programs into symbolic programs to be run when product-level computing performance and deployment are required.
+Như đã đề cập ở trên, PyTorch dựa trên lập trình mệnh lệnh và sử dụng computational graph động. Để tận dụng tính khả chuyển và hiệu quả của lập trình ký hiệu, các nhà phát triển đã cân nhắc liệu có thể kết hợp những lợi ích của cả hai mô hình lập trình hay không. Điều này dẫn đến torchscript, cho phép người dùng phát triển và debug bằng lập trình mệnh lệnh thuần túy, đồng thời có khả năng chuyển đổi hầu hết chương trình thành chương trình ký hiệu để chạy khi cần hiệu năng tính toán và khả năng deploy ở cấp độ sản phẩm.
 :end_tab:
 
 :begin_tab:`tensorflow`
-The imperative programming paradigm is now the default in Tensorflow 2, a welcoming change for those new to the language. However, the same symbolic programming techniques and subsequent computational graphs still exist in TensorFlow, and can be accessed by the easy-to-use `tf.function` decorator. This brought the imperative programming paradigm to TensorFlow, allowed users to define more intuitive functions, then wrap them and compile them into computational graphs automatically using a feature the TensorFlow team refers to as [autograph](https://www.tensorflow.org/api_docs/python/tf/autograph).
+Mô hình lập trình mệnh lệnh hiện là mặc định trong Tensorflow 2, một thay đổi đáng hoan nghênh đối với những người mới làm quen với ngôn ngữ này. Tuy nhiên, các kỹ thuật lập trình ký hiệu và computational graph tương ứng vẫn tồn tại trong TensorFlow và có thể được truy cập thông qua decorator `tf.function` dễ sử dụng. Điều này đã đưa mô hình lập trình mệnh lệnh vào TensorFlow, cho phép người dùng định nghĩa các hàm trực quan hơn, sau đó bọc chúng và tự động biên dịch thành computational graph bằng tính năng mà nhóm TensorFlow gọi là [autograph](https://www.tensorflow.org/api_docs/python/tf/autograph).
 :end_tab:
 
-## Hybridizing the `Sequential` Class
+## Hybrid hóa class `Sequential`
 
-The easiest way to get a feel for how hybridization works is to consider deep networks with multiple layers. Conventionally the Python interpreter will need to execute the code for all layers to generate an instruction that can then be forwarded to a CPU or a GPU. For a single (fast) computing device this does not cause any major issues. On the other hand, if we use an advanced 8-GPU server such as an AWS P3dn.24xlarge instance Python will struggle to keep all GPUs busy. The single-threaded Python interpreter becomes the bottleneck here. Let's see how we can address this for significant parts of the code by replacing `Sequential` with `HybridSequential`. We begin by defining a simple MLP.
+Cách dễ nhất để hình dung cách hybridization hoạt động là xem xét các deep network có nhiều layer. Theo cách thông thường, trình thông dịch Python cần thực thi mã cho tất cả layer để tạo ra một chỉ thị, sau đó chuyển chỉ thị này đến CPU hoặc GPU. Với một thiết bị tính toán đơn lẻ (nhanh), điều này không gây ra vấn đề đáng kể. Mặt khác, nếu sử dụng một server 8-GPU hiện đại như instance AWS P3dn.24xlarge, Python sẽ khó giữ cho tất cả GPU luôn bận. Trình thông dịch Python đơn thread trở thành nút thắt ở đây. Hãy xem cách giải quyết vấn đề này đối với các phần đáng kể của mã bằng cách thay thế `Sequential` bằng `HybridSequential`. Trước tiên, chúng ta định nghĩa một MLP đơn giản.
 
 ```{.python .input}
 #@tab mxnet
@@ -152,16 +153,16 @@ net(x)
 ```
 
 :begin_tab:`mxnet`
-By calling the `hybridize` function, we are able to compile and optimize the computation in the MLP. The model's computation result remains unchanged.
+Bằng cách gọi hàm `hybridize`, chúng ta có thể biên dịch và tối ưu hóa phép tính trong MLP. Kết quả tính toán của model không thay đổi.
 :end_tab:
 
 :begin_tab:`pytorch`
-By converting the model using `torch.jit.script` function, we are able to compile and optimize the computation in the MLP. The model's computation result remains unchanged.
+Bằng cách chuyển đổi model bằng hàm `torch.jit.script`, chúng ta có thể biên dịch và tối ưu hóa phép tính trong MLP. Kết quả tính toán của model không thay đổi.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Formerly, all functions built in TensorFlow were built as a computational graph, and therefore JIT compiled by default. However, with the release of TensorFlow 2.X and EagerTensor, this is no longer the default behavor. 
-We cen re-enable this functionality with tf.function. tf.function is more commonly used as a function decorator, however it is possible to call it direcly as a normal python function, shown below. The model's computation result remains unchanged.
+Trước đây, tất cả hàm được xây dựng trong TensorFlow đều được tạo dưới dạng computational graph và do đó mặc định được JIT compile. Tuy nhiên, với sự ra mắt của TensorFlow 2.X và EagerTensor, đây không còn là hành vi mặc định.
+Chúng ta có thể bật lại chức năng này bằng tf.function. tf.function thường được sử dụng dưới dạng function decorator, nhưng cũng có thể được gọi trực tiếp như một hàm Python thông thường, như minh họa bên dưới. Kết quả tính toán của model không thay đổi.
 :end_tab:
 
 ```{.python .input}
@@ -183,21 +184,21 @@ net(x)
 ```
 
 :begin_tab:`mxnet`
-This seems almost too good to be true: simply designate a block to be `HybridSequential`, write the same code as before and invoke `hybridize`. Once this happens the network is optimized (we will benchmark the performance below). Unfortunately this does not work magically for every layer. That said, a layer will not be optimized if it inherits from the `Block` class instead of the `HybridBlock` class.
+Điều này dường như gần như quá tốt để là sự thật: chỉ cần chỉ định một block là `HybridSequential`, viết cùng đoạn mã như trước và gọi `hybridize`. Sau đó, network sẽ được tối ưu hóa (chúng ta sẽ benchmark hiệu năng bên dưới). Đáng tiếc là điều này không tự động hoạt động với mọi layer. Tuy vậy, một layer sẽ không được tối ưu hóa nếu nó kế thừa từ class `Block` thay vì class `HybridBlock`.
 :end_tab:
 
 :begin_tab:`pytorch`
-This seems almost too good to be true: write the same code as before and simply convert the model using `torch.jit.script`. Once this happens the network is optimized (we will benchmark the performance below).
+Điều này dường như gần như quá tốt để là sự thật: viết cùng đoạn mã như trước và chỉ cần chuyển đổi model bằng `torch.jit.script`. Sau đó, network sẽ được tối ưu hóa (chúng ta sẽ benchmark hiệu năng bên dưới).
 :end_tab:
 
 :begin_tab:`tensorflow`
-This seems almost too good to be true: write the same code as before and simply convert the model using `tf.function`. Once this happens the network is built as a computational graph in TensorFlow's MLIR intermediate representation and is heavily optimized at the compiler level for rapid execution (we will benchmark the performance below).
-Explicitly adding the `jit_compile = True` flag to the `tf.function()` call enables XLA (Accelerated Linear Algebra) functionality in TensorFlow. XLA can further optimize JIT compiled code in certain instances. Graph-mode execution is enabled without this explicit definition, however XLA can make certain large linear algebra operations (in the vein of those we see in deep learning applications) much faster, particularly in a GPU environment.
+Điều này dường như gần như quá tốt để trở thành sự thật: viết cùng đoạn mã như trước và chỉ cần chuyển đổi mô hình bằng `tf.function`. Sau khi hoàn tất, mạng được xây dựng dưới dạng một computational graph trong biểu diễn trung gian MLIR của TensorFlow và được tối ưu hóa mạnh ở cấp compiler để thực thi nhanh (chúng ta sẽ đánh giá hiệu năng bên dưới).
+Việc thêm tường minh cờ `jit_compile = True` vào lời gọi `tf.function()` sẽ bật chức năng XLA (Accelerated Linear Algebra) trong TensorFlow. Trong một số trường hợp, XLA có thể tối ưu thêm mã được biên dịch JIT. Chế độ thực thi graph được bật mà không cần định nghĩa tường minh này; tuy nhiên, XLA có thể làm cho một số phép toán đại số tuyến tính lớn (tương tự những phép toán thường thấy trong các ứng dụng deep learning) nhanh hơn đáng kể, đặc biệt trong môi trường GPU.
 :end_tab:
 
-### Acceleration by Hybridization
+### Tăng tốc bằng Hybridization
 
-To demonstrate the performance improvement gained by compilation we compare the time needed to evaluate `net(x)` before and after hybridization. Let's define a class to measure this time first. It will come handy throughout the chapter as we set out to measure (and improve) performance.
+Để minh họa mức cải thiện hiệu năng đạt được nhờ compilation, chúng ta sẽ so sánh thời gian cần để đánh giá `net(x)` trước và sau hybridization. Trước tiên, hãy định nghĩa một class để đo thời gian này. Class này sẽ hữu ích trong suốt chương khi chúng ta tiến hành đo lường (và cải thiện) hiệu năng.
 
 ```{.python .input}
 #@tab all
@@ -216,15 +217,15 @@ class Benchmark:
 ```
 
 :begin_tab:`mxnet`
-Now we can invoke the network twice, once with and once without hybridization.
+Bây giờ chúng ta có thể gọi network hai lần, một lần có hybridization và một lần không có hybridization.
 :end_tab:
 
 :begin_tab:`pytorch`
-Now we can invoke the network twice, once with and once without torchscript.
+Bây giờ chúng ta có thể gọi network hai lần, một lần có torchscript và một lần không có torchscript.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Now we can invoke the network three times, once executed eagerly, once with graph-mode execution, and again using JIT compiled XLA.
+Bây giờ chúng ta có thể gọi network ba lần: một lần thực thi eager, một lần với graph-mode execution và một lần nữa bằng XLA được biên dịch JIT.
 :end_tab:
 
 ```{.python .input}
@@ -263,31 +264,31 @@ with Benchmark('Graph Mode'):
 ```
 
 :begin_tab:`mxnet`
-As is observed in the above results, after a `HybridSequential` instance calls the `hybridize` function, computing performance is improved through the use of symbolic programming.
+Như có thể thấy từ các kết quả ở trên, sau khi một instance `HybridSequential` gọi hàm `hybridize`, hiệu năng tính toán được cải thiện nhờ sử dụng symbolic programming.
 :end_tab:
 
 :begin_tab:`pytorch`
-As is observed in the above results, after an `nn.Sequential` instance is scripted using the `torch.jit.script` function, computing performance is improved through the use of symbolic programming.
+Như có thể thấy từ các kết quả ở trên, sau khi một instance `nn.Sequential` được script hóa bằng hàm `torch.jit.script`, hiệu năng tính toán được cải thiện nhờ sử dụng symbolic programming.
 :end_tab:
 
 :begin_tab:`tensorflow`
-As is observed in the above results, after a `tf.keras.Sequential` instance is scripted using the `tf.function` function, computing performance is improved through the use of symbolic programming via graph-mode execution in tensorflow. 
+Như có thể thấy từ các kết quả ở trên, sau khi một instance `tf.keras.Sequential` được script hóa bằng hàm `tf.function`, hiệu năng tính toán được cải thiện nhờ sử dụng symbolic programming thông qua graph-mode execution trong tensorflow.
 :end_tab:
 
 ### Serialization
 
 :begin_tab:`mxnet`
-One of the benefits of compiling the models is that we can serialize (save) the model and its parameters to disk. This allows us to store a model in a manner that is independent of the front-end language of choice. This allows us to deploy trained models to other devices and easily use other front-end programming languages. At the same time the code is often faster than what can be achieved in imperative programming. Let's see the `export` function in action.
+Một trong những lợi ích của việc compile các model là chúng ta có thể serialize (lưu) model và các parameter của nó vào ổ đĩa. Điều này cho phép chúng ta lưu trữ một model theo cách độc lập với ngôn ngữ front-end được lựa chọn. Nhờ đó, chúng ta có thể deploy các model đã train lên những thiết bị khác và dễ dàng sử dụng các ngôn ngữ lập trình front-end khác. Đồng thời, code thường nhanh hơn so với những gì có thể đạt được bằng imperative programming. Hãy xem hàm `export` hoạt động.
 :end_tab:
 
 :begin_tab:`pytorch`
-One of the benefits of compiling the models is that we can serialize (save) the model and its parameters to disk. This allows us to store a model in a manner that is independent of the front-end language of choice. This allows us to deploy trained models to other devices and easily use other front-end programming languages. At the same time the code is often faster than what can be achieved in imperative programming. Let's see the `save` function in action.
+Một trong những lợi ích của việc compile các model là chúng ta có thể serialize (lưu) model và các parameter của nó vào ổ đĩa. Điều này cho phép chúng ta lưu trữ một model theo cách độc lập với ngôn ngữ front-end được lựa chọn. Nhờ đó, chúng ta có thể deploy các model đã train lên những thiết bị khác và dễ dàng sử dụng các ngôn ngữ lập trình front-end khác. Đồng thời, code thường nhanh hơn so với những gì có thể đạt được bằng imperative programming. Hãy xem hàm `save` hoạt động.
 :end_tab:
 
 :begin_tab:`tensorflow`
-One of the benefits of compiling the models is that we can serialize (save) the model and its parameters to disk. This allows us to store a model in a manner that is independent of the front-end language of choice. This allows us to deploy trained models to other devices and easily use other front-end programming languages or execute a trained model on a server. At the same time the code is often faster than what can be achieved in imperative programming. 
-The low-level API that allows us to save in tensorflow is `tf.saved_model`. 
-Let's see the `saved_model` instance in action.
+Một trong những lợi ích của việc compile các model là chúng ta có thể serialize (lưu) model và các parameter của nó vào ổ đĩa. Điều này cho phép chúng ta lưu trữ một model theo cách độc lập với ngôn ngữ front-end được lựa chọn. Nhờ đó, chúng ta có thể deploy các model đã train lên những thiết bị khác, dễ dàng sử dụng các ngôn ngữ lập trình front-end khác hoặc thực thi một model đã train trên server. Đồng thời, code thường nhanh hơn so với những gì có thể đạt được bằng imperative programming.
+API cấp thấp cho phép chúng ta lưu trong tensorflow là `tf.saved_model`.
+Hãy xem instance `saved_model` hoạt động.
 :end_tab:
 
 ```{.python .input}
@@ -310,7 +311,7 @@ tf.saved_model.save(net, 'my_mlp')
 ```
 
 :begin_tab:`mxnet`
-The model is decomposed into a (large binary) parameter file and a JSON description of the program required to execute the model computation. The files can be read by other front-end languages supported by Python or MXNet, such as C++, R, Scala, and Perl. Let's have a look at the first few lines in the model description.
+Model được phân tách thành một file parameter (binary lớn) và một mô tả JSON về chương trình cần thiết để thực thi phép tính của model. Các file này có thể được đọc bởi những ngôn ngữ front-end khác được Python hoặc MXNet hỗ trợ, chẳng hạn như C++, R, Scala và Perl. Hãy xem vài dòng đầu tiên trong phần mô tả model.
 :end_tab:
 
 ```{.python .input}
@@ -319,9 +320,9 @@ The model is decomposed into a (large binary) parameter file and a JSON descript
 ```
 
 :begin_tab:`mxnet`
-Earlier, we demonstrated that, after calling the `hybridize` function, the model is able to achieve superior computing performance and portability. Note, though that hybridization can affect model flexibility, in particular in terms of control flow. 
+Trước đó, chúng ta đã chứng minh rằng sau khi gọi hàm `hybridize`, model có thể đạt được hiệu năng tính toán và khả năng portability vượt trội. Tuy nhiên, cần lưu ý rằng hybridization có thể ảnh hưởng đến tính linh hoạt của model, đặc biệt là về control flow.
 
-Besides, contrary to the `Block` instance, which needs to use the `forward` function, for a `HybridBlock` instance we need to use the `hybrid_forward` function.
+Ngoài ra, trái với instance `Block`, vốn cần sử dụng hàm `forward`, với một instance `HybridBlock`, chúng ta cần sử dụng hàm `hybrid_forward`.
 :end_tab:
 
 ```{.python .input}
@@ -341,7 +342,7 @@ class HybridNet(nn.HybridBlock):
 ```
 
 :begin_tab:`mxnet`
-The code above implements a simple network with 4 hidden units and 2 outputs. The `hybrid_forward` function takes an additional argument `F`. This is needed since, depending on whether the code has been hybridized or not, it will use a slightly different library (`ndarray` or `symbol`) for processing. Both classes perform very similar functions and MXNet automatically determines the argument. To understand what is going on we print the arguments as part of the function invocation.
+Đoạn code trên triển khai một network đơn giản với 4 hidden unit và 2 output. Hàm `hybrid_forward` nhận thêm một argument là `F`. Điều này cần thiết vì tùy thuộc vào việc code đã được hybridize hay chưa, nó sẽ sử dụng một library hơi khác (`ndarray` hoặc `symbol`) để xử lý. Cả hai class đều thực hiện những chức năng rất tương tự và MXNet tự động xác định argument này. Để hiểu điều gì đang xảy ra, chúng ta in các argument trong lời gọi hàm.
 :end_tab:
 
 ```{.python .input}
@@ -353,7 +354,7 @@ net(x)
 ```
 
 :begin_tab:`mxnet`
-Repeating the forward computation will lead to the same output (we omit details). Now let's see what happens if we invoke the `hybridize` function.
+Việc lặp lại phép tính forward sẽ cho cùng một output (chúng ta lược bỏ chi tiết). Bây giờ hãy xem điều gì xảy ra nếu chúng ta gọi hàm `hybridize`.
 :end_tab:
 
 ```{.python .input}
@@ -363,7 +364,7 @@ net(x)
 ```
 
 :begin_tab:`mxnet`
-Instead of using `ndarray` we now use the `symbol` module for `F`. Moreover, even though the input is of `ndarray` type, the data flowing through the network is now converted to `symbol` type as part of the compilation process. Repeating the function call leads to a surprising outcome:
+Thay vì sử dụng `ndarray`, giờ đây chúng ta sử dụng module `symbol` cho `F`. Hơn nữa, mặc dù input có kiểu `ndarray`, dữ liệu chạy qua network giờ đây được chuyển đổi thành kiểu `symbol` trong quá trình compilation. Việc lặp lại lời gọi hàm dẫn đến một kết quả đáng ngạc nhiên:
 :end_tab:
 
 ```{.python .input}
@@ -372,45 +373,45 @@ net(x)
 ```
 
 :begin_tab:`mxnet` 
-This is quite different from what we saw previously. All print statements, as defined in `hybrid_forward`, are omitted. Indeed, after hybridization the execution of `net(x)` does not involve the Python interpreter any longer. This means that any spurious Python code is omitted (such as print statements) in favor of a much more streamlined execution and better performance. Instead, MXNet directly calls the C++ backend. Also note that some functions are not supported in the `symbol` module (e.g.,  `asnumpy`) and operations in-place such as `a += b` and `a[:] = a + b` must be rewritten as `a = a + b`. Nonetheless, compilation of models is worth the effort whenever speed matters. The benefit can range from small percentage points to more than twice the speed, depending on the complexity of the model, the speed of the CPU, and the speed and number of GPUs.
+Điều này khá khác so với những gì chúng ta đã thấy trước đó. Tất cả câu lệnh print, như được định nghĩa trong `hybrid_forward`, đều bị lược bỏ. Thật vậy, sau hybridization, việc thực thi `net(x)` không còn liên quan đến Python interpreter nữa. Điều này có nghĩa là mọi đoạn Python code thừa đều bị lược bỏ (chẳng hạn như các câu lệnh print) để ưu tiên việc thực thi hợp lý hơn và hiệu năng tốt hơn. Thay vào đó, MXNet gọi trực tiếp C++ backend. Cũng lưu ý rằng một số hàm không được module `symbol` hỗ trợ (ví dụ: `asnumpy`) và các operation in-place như `a += b` và `a[:] = a + b` phải được viết lại thành `a = a + b`. Tuy vậy, compilation model vẫn đáng để thực hiện bất cứ khi nào tốc độ là yếu tố quan trọng. Lợi ích có thể dao động từ vài phần trăm nhỏ đến tốc độ nhanh hơn hơn hai lần, tùy thuộc vào độ phức tạp của model, tốc độ CPU, cũng như tốc độ và số lượng GPU.
 :end_tab:
 
-## Summary
+## Tóm tắt
 
 
-* Imperative programming makes it easy to design new models since it is possible to write code with control flow and the ability to use a large amount of the Python software ecosystem.
-* Symbolic programming requires that we specify the program and compile it before executing it. The benefit is improved performance.
+* Imperative programming giúp dễ dàng thiết kế các model mới vì có thể viết code với control flow và sử dụng một lượng lớn hệ sinh thái phần mềm Python.
+* Symbolic programming yêu cầu chúng ta chỉ định chương trình và compile chương trình trước khi thực thi. Lợi ích là hiệu năng được cải thiện.
 
 :begin_tab:`mxnet` 
-* MXNet is able to combine the advantages of both approaches as needed.
-* Models constructed by the `HybridSequential` and `HybridBlock` classes are able to convert imperative programs into symbolic programs by calling the `hybridize` function.
+* MXNet có thể kết hợp các ưu điểm của cả hai phương pháp khi cần.
+* Các model được xây dựng bằng các class `HybridSequential` và `HybridBlock` có thể chuyển đổi imperative program thành symbolic program bằng cách gọi hàm `hybridize`.
 :end_tab:
 
 
-## Exercises
+## Bài tập
 
 
 :begin_tab:`mxnet` 
-1. Add `x.asnumpy()` to the first line of the `hybrid_forward` function of the `HybridNet` class in this section. Execute the code and observe the errors you encounter. Why do they happen?
-1. What happens if we add control flow, i.e., the Python statements `if` and `for` in the `hybrid_forward` function?
-1. Review the models that interest you in the previous chapters. Can you improve their computational performance by reimplementing them?
+1. Thêm `x.asnumpy()` vào dòng đầu tiên của hàm `hybrid_forward` thuộc class `HybridNet` trong phần này. Thực thi code và quan sát các lỗi gặp phải. Tại sao chúng xảy ra?
+1. Điều gì xảy ra nếu chúng ta thêm control flow, tức là các câu lệnh Python `if` và `for` vào hàm `hybrid_forward`?
+1. Xem lại các model mà bạn quan tâm trong những chương trước. Bạn có thể cải thiện hiệu năng tính toán của chúng bằng cách triển khai lại không?
 :end_tab:
 
 :begin_tab:`pytorch,tensorflow` 
-1. Review the models that interest you in the previous chapters. Can you improve their computational performance by reimplementing them?
+1. Xem lại các model mà bạn quan tâm trong những chương trước. Bạn có thể cải thiện hiệu năng tính toán của chúng bằng cách triển khai lại không?
 :end_tab:
 
 
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/360)
+[Thảo luận](https://discuss.d2l.ai/t/360)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/2490)
+[Thảo luận](https://discuss.d2l.ai/t/2490)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/2492)
+[Thảo luận](https://discuss.d2l.ai/t/2492)
 :end_tab:

@@ -1,16 +1,16 @@
-# Automatic Parallelism
+# Tự động song song hóa
 :label:`sec_auto_para`
 
 
-Deep learning frameworks (e.g., MXNet and PyTorch) automatically construct computational graphs at the backend. Using a
-computational graph, the system is aware of all the dependencies,
-and can selectively execute multiple non-interdependent tasks in parallel to
-improve speed. For instance, :numref:`fig_asyncgraph` in :numref:`sec_async` initializes two variables independently. Consequently the system can choose to execute them in parallel.
+Các framework deep learning (ví dụ: MXNet và PyTorch) tự động xây dựng các đồ thị tính toán ở backend. Bằng cách sử dụng một
+đồ thị tính toán, hệ thống biết được tất cả các phần phụ thuộc,
+và có thể chọn thực thi song song nhiều tác vụ không phụ thuộc lẫn nhau để
+tăng tốc độ. Chẳng hạn, :numref:`fig_asyncgraph` trong :numref:`sec_async` khởi tạo hai biến một cách độc lập. Do đó, hệ thống có thể chọn thực thi chúng song song.
 
 
-Typically, a single operator will use all the computational resources on all CPUs or on a single GPU. For example, the `dot` operator will use all cores (and threads) on all CPUs, even if there are multiple CPU processors on a single machine. The same applies to a single GPU. Hence parallelization is not quite so useful for single-device computers. With multiple devices things matter more. While parallelization is typically most relevant between multiple GPUs, adding the local CPU will increase performance slightly. For example, see :citet:`Hadjis.Zhang.Mitliagkas.ea.2016` that focuses on training computer vision models combining a GPU and a CPU. With the convenience of an automatically parallelizing framework we can accomplish the same goal in a few lines of Python code. More broadly, our discussion of automatic parallel computation focuses on parallel computation using both CPUs and GPUs, as well as the parallelization of computation and communication.
+Thông thường, một operator sẽ sử dụng toàn bộ tài nguyên tính toán trên tất cả CPU hoặc trên một GPU duy nhất. Ví dụ, operator `dot` sẽ sử dụng tất cả các core (và thread) trên mọi CPU, ngay cả khi một máy có nhiều bộ xử lý CPU. Điều tương tự cũng áp dụng cho một GPU duy nhất. Vì vậy, việc song song hóa không thực sự hữu ích đối với các máy tính chỉ có một device. Với nhiều device, điều này trở nên quan trọng hơn. Mặc dù song song hóa thường phù hợp nhất giữa nhiều GPU, việc bổ sung CPU cục bộ vẫn sẽ cải thiện hiệu năng đôi chút. Ví dụ, hãy xem :citet:`Hadjis.Zhang.Mitliagkas.ea.2016`, tập trung vào việc huấn luyện các model thị giác máy tính bằng cách kết hợp GPU và CPU. Với sự tiện lợi của một framework tự động song song hóa, chúng ta có thể đạt được mục tiêu tương tự chỉ với vài dòng code Python. Trên phạm vi rộng hơn, phần thảo luận về tính toán song song tự động của chúng ta tập trung vào tính toán song song bằng cả CPU và GPU, cũng như việc song song hóa tính toán và giao tiếp.
 
-Note that we need at least two GPUs to run the experiments in this section.
+Lưu ý rằng chúng ta cần ít nhất hai GPU để chạy các thử nghiệm trong phần này.
 
 ```{.python .input}
 #@tab mxnet
@@ -25,9 +25,9 @@ from d2l import torch as d2l
 import torch
 ```
 
-## Parallel Computation on GPUs
+## Tính toán song song trên GPU
 
-Let's start by defining a reference workload to test: the `run` function below performs 10 matrix-matrix multiplications on the device of our choice using data allocated into two variables: `x_gpu1` and `x_gpu2`.
+Hãy bắt đầu bằng cách xác định một workload tham chiếu để kiểm thử: hàm `run` bên dưới thực hiện 10 phép nhân ma trận-ma trận trên device do chúng ta chọn, bằng cách sử dụng dữ liệu được cấp phát vào hai biến: `x_gpu1` và `x_gpu2`.
 
 ```{.python .input}
 #@tab mxnet
@@ -50,11 +50,11 @@ x_gpu2 = torch.rand(size=(4000, 4000), device=devices[1])
 ```
 
 :begin_tab:`mxnet`
-Now we apply the function to the data. To ensure that caching does not play a role in the results we warm up the devices by performing a single pass on either of them prior to measuring.
+Bây giờ, chúng ta áp dụng hàm này cho dữ liệu. Để bảo đảm caching không ảnh hưởng đến kết quả, chúng ta làm nóng các device bằng cách thực hiện một lượt chạy duy nhất trên mỗi device trước khi đo.
 :end_tab:
 
 :begin_tab:`pytorch`
-Now we apply the function to the data. To ensure that caching does not play a role in the results we warm up the devices by performing a single pass on either of them prior to measuring. `torch.cuda.synchronize()` waits for all kernels in all streams on a CUDA device to complete. It takes in a `device` argument, the device for which we need to synchronize. It uses the current device, given by `current_device()`, if the device argument is `None` (default).
+Bây giờ, chúng ta áp dụng hàm này cho dữ liệu. Để bảo đảm caching không ảnh hưởng đến kết quả, chúng ta làm nóng các device bằng cách thực hiện một lượt chạy duy nhất trên mỗi device trước khi đo. `torch.cuda.synchronize()` chờ tất cả kernel trong mọi stream trên một device CUDA hoàn tất. Hàm này nhận một đối số `device`, là device mà chúng ta cần đồng bộ hóa. Hàm sử dụng device hiện tại, được xác định bởi `current_device()`, nếu đối số device là `None` (mặc định).
 :end_tab:
 
 ```{.python .input}
@@ -89,11 +89,11 @@ with d2l.Benchmark('GPU2 time'):
 ```
 
 :begin_tab:`mxnet`
-If we remove the `waitall` statement between both tasks the system is free to parallelize computation on both devices automatically.
+Nếu xóa câu lệnh `waitall` giữa hai tác vụ, hệ thống sẽ được tự do tự động song song hóa việc tính toán trên cả hai device.
 :end_tab:
 
 :begin_tab:`pytorch`
-If we remove the `synchronize` statement between both tasks the system is free to parallelize computation on both devices automatically.
+Nếu xóa câu lệnh `synchronize` giữa hai tác vụ, hệ thống sẽ được tự do tự động song song hóa việc tính toán trên cả hai device.
 :end_tab:
 
 ```{.python .input}
@@ -112,15 +112,15 @@ with d2l.Benchmark('GPU1 & GPU2'):
     torch.cuda.synchronize()
 ```
 
-In the above case the total execution time is less than the sum of its parts, since the deep learning framework automatically schedules computation on both GPU devices without the need for sophisticated code on behalf of the user.
+Trong trường hợp trên, tổng thời gian thực thi nhỏ hơn tổng thời gian của từng phần, vì framework deep learning tự động lập lịch tính toán trên cả hai device GPU mà người dùng không cần viết code phức tạp.
 
 
 
-## Parallel Computation and Communication
+## Tính toán và giao tiếp song song
 
-In many cases we need to move data between different devices, say between the CPU and GPU, or between different GPUs.
-For instance,
-this occurs when we want to perform distributed optimization where we need to aggregate the gradients over multiple accelerator cards. Let's simulate this by computing on the GPU and then copying the results back to the CPU.
+Trong nhiều trường hợp, chúng ta cần di chuyển dữ liệu giữa các device khác nhau, chẳng hạn giữa CPU và GPU, hoặc giữa các GPU khác nhau.
+Ví dụ,
+điều này xảy ra khi chúng ta muốn thực hiện tối ưu hóa phân tán, trong đó cần tổng hợp các gradient trên nhiều accelerator card. Hãy mô phỏng việc này bằng cách tính toán trên GPU rồi sao chép kết quả trở lại CPU.
 
 ```{.python .input}
 #@tab mxnet
@@ -151,11 +151,11 @@ with d2l.Benchmark('Copy to CPU'):
 ```
 
 :begin_tab:`mxnet`
-This is somewhat inefficient. Note that we could already start copying parts of `y` to the CPU while the remainder of the list is still being computed. This situation occurs, e.g., when we compute the gradient on a minibatch. The gradients of some of the parameters will be available earlier than that of others. Hence it works to our advantage to start using PCI-Express bus bandwidth while the GPU is still running. Removing `waitall` between both parts allows us to simulate this scenario.
+Cách này tương đối kém hiệu quả. Lưu ý rằng chúng ta có thể bắt đầu sao chép các phần của `y` sang CPU trong khi phần còn lại của danh sách vẫn đang được tính toán. Tình huống này xảy ra, chẳng hạn, khi chúng ta tính gradient trên một minibatch. Gradient của một số parameter sẽ có sẵn sớm hơn gradient của các parameter khác. Vì vậy, việc bắt đầu sử dụng băng thông của bus PCI-Express trong khi GPU vẫn đang chạy sẽ có lợi cho chúng ta. Việc xóa `waitall` giữa hai phần cho phép chúng ta mô phỏng tình huống này.
 :end_tab:
 
 :begin_tab:`pytorch`
-This is somewhat inefficient. Note that we could already start copying parts of `y` to the CPU while the remainder of the list is still being computed. This situation occurs, e.g., when we compute the (backprop) gradient on a minibatch. The gradients of some of the parameters will be available earlier than that of others. Hence it works to our advantage to start using PCI-Express bus bandwidth while the GPU is still running. In PyTorch, several functions such as `to()` and `copy_()` admit an explicit `non_blocking` argument, which lets the caller bypass synchronization when it is unnecessary. Setting `non_blocking=True` allows us to simulate this scenario.
+Cách này tương đối kém hiệu quả. Lưu ý rằng chúng ta có thể bắt đầu sao chép các phần của `y` sang CPU trong khi phần còn lại của danh sách vẫn đang được tính toán. Tình huống này xảy ra, chẳng hạn, khi chúng ta tính gradient (backprop) trên một minibatch. Gradient của một số parameter sẽ có sẵn sớm hơn gradient của các parameter khác. Vì vậy, việc bắt đầu sử dụng băng thông của bus PCI-Express trong khi GPU vẫn đang chạy sẽ có lợi cho chúng ta. Trong PyTorch, một số hàm như `to()` và `copy_()` hỗ trợ đối số `non_blocking` tường minh, cho phép caller bỏ qua việc đồng bộ hóa khi không cần thiết. Thiết lập `non_blocking=True` cho phép chúng ta mô phỏng tình huống này.
 :end_tab:
 
 ```{.python .input}
@@ -174,33 +174,33 @@ with d2l.Benchmark('Run on GPU1 and copy to CPU'):
     torch.cuda.synchronize()
 ```
 
-The total time required for both operations is (as expected) less than the sum of their parts.
-Note that this task is different from parallel computation as it uses a different resource: the bus between the CPU and GPUs. In fact, we could compute on both devices and communicate, all at the same time. As noted above, there is a dependency between computation and communication: `y[i]` must be computed before it can be copied to the CPU. Fortunately, the system can copy `y[i-1]` while computing `y[i]` to reduce the total running time.
+Tổng thời gian cần thiết cho cả hai thao tác (như dự kiến) nhỏ hơn tổng thời gian của từng thao tác.
+Lưu ý rằng tác vụ này khác với tính toán song song vì nó sử dụng một tài nguyên khác: bus giữa CPU và GPU. Trên thực tế, chúng ta có thể tính toán trên cả hai device và giao tiếp đồng thời. Như đã đề cập ở trên, tồn tại một phần phụ thuộc giữa tính toán và giao tiếp: `y[i]` phải được tính toán trước khi có thể sao chép nó sang CPU. May mắn là hệ thống có thể sao chép `y[i-1]` trong khi tính toán `y[i]` để giảm tổng thời gian chạy.
 
-We conclude with an illustration of the computational graph and its dependencies for a simple two-layer MLP when training on a CPU and two GPUs, as depicted in :numref:`fig_twogpu`. It would be quite painful to schedule the parallel program resulting from this manually. This is where it is advantageous to have a graph-based computing backend for optimization.
+Chúng ta kết thúc bằng một minh họa về đồ thị tính toán và các phần phụ thuộc của nó đối với một MLP hai lớp khi huấn luyện trên một CPU và hai GPU, như được minh họa trong :numref:`fig_twogpu`. Việc tự lập lịch cho chương trình song song tạo ra từ đó sẽ rất khó khăn. Đây là lúc backend tính toán dựa trên đồ thị trở nên hữu ích cho việc tối ưu hóa.
 
-![The computational graph and its dependencies of a two-layer MLP on a CPU and two GPUs.](../img/twogpu.svg)
+![Đồ thị tính toán và các phần phụ thuộc của một MLP hai lớp trên một CPU và hai GPU.](../img/twogpu.svg)
 :label:`fig_twogpu`
 
 
-## Summary
+## Tóm tắt
 
-* Modern systems have a variety of devices, such as multiple GPUs and CPUs. They can be used in parallel, asynchronously.
-* Modern systems also have a variety of resources for communication, such as PCI Express, storage (typically solid-state drives or via networks), and network bandwidth. They can be used in parallel for peak efficiency.
-* The backend can improve performance through automatic parallel computation and communication.
+* Các hệ thống hiện đại có nhiều loại device, chẳng hạn như nhiều GPU và CPU. Chúng có thể được sử dụng song song, không đồng bộ.
+* Các hệ thống hiện đại cũng có nhiều loại tài nguyên giao tiếp, chẳng hạn như PCI Express, bộ lưu trữ (thường là ổ đĩa thể rắn hoặc thông qua mạng), và băng thông mạng. Chúng có thể được sử dụng song song để đạt hiệu suất tối đa.
+* Backend có thể cải thiện hiệu năng thông qua tính toán và giao tiếp song song tự động.
 
-## Exercises
+## Bài tập
 
-1. Eight operations were performed in the `run` function defined in this section. There are no dependencies between them. Design an experiment to see if the deep learning framework will automatically execute them in parallel.
-1. When the workload of an individual operator is sufficiently small, parallelization can help even on a single CPU or GPU. Design an experiment to verify this.
-1. Design an experiment that uses parallel computation on CPUs, GPUs, and communication between both devices.
-1. Use a debugger such as NVIDIA's [Nsight](https://developer.nvidia.com/nsight-compute-2019_5) to verify that your code is efficient.
-1. Designing computation tasks that include more complex data dependencies, and run experiments to see if you can obtain the correct results while improving performance.
+1. Tám thao tác đã được thực hiện trong hàm `run` được định nghĩa trong phần này. Không có phần phụ thuộc nào giữa chúng. Hãy thiết kế một thử nghiệm để xem framework deep learning có tự động thực thi chúng song song hay không.
+1. Khi workload của một operator riêng lẻ đủ nhỏ, việc song song hóa có thể hữu ích ngay cả trên một CPU hoặc GPU duy nhất. Hãy thiết kế một thử nghiệm để kiểm chứng điều này.
+1. Hãy thiết kế một thử nghiệm sử dụng tính toán song song trên CPU, GPU và giao tiếp giữa cả hai device.
+1. Sử dụng một debugger như [Nsight](https://developer.nvidia.com/nsight-compute-2019_5) của NVIDIA để kiểm tra xem code của bạn có hiệu quả hay không.
+1. Thiết kế các tác vụ tính toán bao gồm những phần phụ thuộc dữ liệu phức tạp hơn, rồi chạy các thử nghiệm để xem liệu bạn có thể thu được kết quả chính xác đồng thời cải thiện hiệu năng hay không.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/362)
+[Thảo luận](https://discuss.d2l.ai/t/362)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1681)
+[Thảo luận](https://discuss.d2l.ai/t/1681)
 :end_tab:

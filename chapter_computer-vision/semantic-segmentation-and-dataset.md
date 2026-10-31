@@ -1,48 +1,48 @@
-# Semantic Segmentation and the Dataset
+# Phân đoạn ngữ nghĩa và tập dữ liệu
 :label:`sec_semantic_segmentation`
 
-When discussing object detection tasks
-in :numref:`sec_bbox`--:numref:`sec_rcnn`,
-rectangular bounding boxes
-are used to label and predict objects in images.
-This section will discuss the problem of *semantic segmentation*,
-which focuses on how to divide an image into regions belonging to different semantic classes.
-Different from object detection,
-semantic segmentation
-recognizes and understands
-what are in images in pixel level:
-its labeling and prediction of semantic regions are
-in pixel level.
-:numref:`fig_segmentation` shows the labels
-of the dog, cat, and background of the image in semantic segmentation.
-Compared with in object detection,
-the pixel-level borders labeled
-in semantic segmentation are obviously more fine-grained.
+Khi thảo luận về các tác vụ phát hiện đối tượng
+trong :numref:`sec_bbox`--:numref:`sec_rcnn`,
+các hộp giới hạn hình chữ nhật
+được sử dụng để gán nhãn và dự đoán các đối tượng trong ảnh.
+Phần này sẽ thảo luận về bài toán *phân đoạn ngữ nghĩa*,
+tập trung vào cách chia một ảnh thành các vùng thuộc những lớp ngữ nghĩa khác nhau.
+Khác với phát hiện đối tượng,
+phân đoạn ngữ nghĩa
+nhận diện và hiểu
+những gì có trong ảnh ở cấp độ pixel:
+việc gán nhãn và dự đoán các vùng ngữ nghĩa của nó đều được thực hiện
+ở cấp độ pixel.
+:numref:`fig_segmentation` cho thấy các nhãn
+của chó, mèo và nền trong ảnh khi phân đoạn ngữ nghĩa.
+So với phát hiện đối tượng,
+các đường biên ở cấp độ pixel được gán nhãn
+trong phân đoạn ngữ nghĩa rõ ràng có độ chi tiết cao hơn.
 
 
-![Labels of the dog, cat, and background of the image in semantic segmentation.](../img/segmentation.svg)
+![Nhãn của chó, mèo và nền trong ảnh khi phân đoạn ngữ nghĩa.](../img/segmentation.svg)
 :label:`fig_segmentation`
 
 
-## Image Segmentation and Instance Segmentation
+## Phân đoạn ảnh và phân đoạn thể hiện
 
-There are also two important tasks
-in the field of computer vision that are similar to semantic segmentation,
-namely image segmentation and instance segmentation.
-We will briefly
-distinguish them from semantic segmentation as follows.
+Ngoài ra còn có hai tác vụ quan trọng
+trong lĩnh vực thị giác máy tính tương tự như phân đoạn ngữ nghĩa,
+đó là phân đoạn ảnh và phân đoạn thể hiện.
+Sau đây, chúng ta sẽ
+phân biệt ngắn gọn chúng với phân đoạn ngữ nghĩa.
 
-* *Image segmentation* divides an image into several constituent regions. The methods for this type of problem usually make use of the correlation between pixels in the image. It does not need label information about image pixels during training, and it cannot guarantee that the segmented regions will have the semantics that we hope to obtain during prediction. Taking the image in :numref:`fig_segmentation` as input, image segmentation may divide the dog into two regions: one covers the mouth and eyes which are mainly black, and the other covers the rest of the body which is mainly yellow.
-* *Instance segmentation* is also called *simultaneous detection and segmentation*. It studies how to recognize the pixel-level regions of each object instance in an image. Different from semantic segmentation, instance segmentation needs to distinguish not only semantics, but also different object instances. For example, if there are two dogs in the image, instance segmentation needs to distinguish which of the two dogs a pixel belongs to.
+* *Phân đoạn ảnh* chia một ảnh thành một số vùng cấu thành. Các phương pháp cho loại bài toán này thường tận dụng mối tương quan giữa các pixel trong ảnh. Trong quá trình huấn luyện, phương pháp này không cần thông tin nhãn về các pixel của ảnh, và không thể đảm bảo rằng các vùng được phân đoạn sẽ có ngữ nghĩa mà chúng ta mong muốn trong quá trình dự đoán. Lấy ảnh trong :numref:`fig_segmentation` làm đầu vào, phân đoạn ảnh có thể chia chú chó thành hai vùng: một vùng bao phủ miệng và mắt, chủ yếu có màu đen, còn vùng kia bao phủ phần còn lại của cơ thể, chủ yếu có màu vàng.
+* *Phân đoạn thể hiện* còn được gọi là *phát hiện và phân đoạn đồng thời*. Phương pháp này nghiên cứu cách nhận diện các vùng ở cấp độ pixel của từng thể hiện đối tượng trong một ảnh. Khác với phân đoạn ngữ nghĩa, phân đoạn thể hiện không chỉ cần phân biệt các ngữ nghĩa mà còn phải phân biệt các thể hiện đối tượng khác nhau. Ví dụ, nếu trong ảnh có hai chú chó, phân đoạn thể hiện cần phân biệt một pixel thuộc về chú chó nào trong hai chú chó đó.
 
 
 
-## The Pascal VOC2012 Semantic Segmentation Dataset
+## Tập dữ liệu phân đoạn ngữ nghĩa Pascal VOC2012
 
-[**On of the most important semantic segmentation dataset
-is [Pascal VOC2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/).**]
-In the following,
-we will take a look at this dataset.
+[**Một trong những tập dữ liệu phân đoạn ngữ nghĩa quan trọng nhất
+là [Pascal VOC2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/).**]
+Sau đây,
+chúng ta sẽ tìm hiểu tập dữ liệu này.
 
 ```{.python .input}
 #@tab mxnet
@@ -63,9 +63,9 @@ import torchvision
 import os
 ```
 
-The tar file of the dataset is about 2 GB,
-so it may take a while to download the file.
-The extracted dataset is located at `../data/VOCdevkit/VOC2012`.
+Tệp tar của tập dữ liệu có dung lượng khoảng 2 GB,
+vì vậy có thể sẽ mất một khoảng thời gian để tải tệp xuống.
+Tập dữ liệu sau khi giải nén được đặt tại `../data/VOCdevkit/VOC2012`.
 
 ```{.python .input}
 #@tab all
@@ -76,18 +76,18 @@ d2l.DATA_HUB['voc2012'] = (d2l.DATA_URL + 'VOCtrainval_11-May-2012.tar',
 voc_dir = d2l.download_extract('voc2012', 'VOCdevkit/VOC2012')
 ```
 
-After entering the path `../data/VOCdevkit/VOC2012`,
-we can see the different components of the dataset.
-The `ImageSets/Segmentation` path contains text files
-that specify training and test samples,
-while the `JPEGImages` and `SegmentationClass` paths
-store the input image and label for each example, respectively.
-The label here is also in the image format,
-with the same size
-as its labeled input image.
-Besides,
-pixels with the same color in any label image belong to the same semantic class.
-The following defines the `read_voc_images` function to [**read all the input images and labels into the memory**].
+Sau khi truy cập đường dẫn `../data/VOCdevkit/VOC2012`,
+chúng ta có thể thấy các thành phần khác nhau của tập dữ liệu.
+Đường dẫn `ImageSets/Segmentation` chứa các tệp văn bản
+chỉ định các mẫu huấn luyện và kiểm tra,
+trong khi các đường dẫn `JPEGImages` và `SegmentationClass`
+lần lượt lưu trữ ảnh đầu vào và nhãn cho từng ví dụ.
+Nhãn ở đây cũng ở định dạng ảnh,
+với cùng kích thước
+như ảnh đầu vào được gán nhãn.
+Ngoài ra,
+các pixel có cùng màu trong bất kỳ ảnh nhãn nào đều thuộc cùng một lớp ngữ nghĩa.
+Sau đây định nghĩa hàm `read_voc_images` để [**đọc tất cả ảnh đầu vào và nhãn vào bộ nhớ**].
 
 ```{.python .input}
 #@tab mxnet
@@ -130,8 +130,8 @@ def read_voc_images(voc_dir, is_train=True):
 train_features, train_labels = read_voc_images(voc_dir, True)
 ```
 
-We [**draw the first five input images and their labels**].
-In the label images, white and black represent borders and  background, respectively, while the other colors correspond to different classes.
+Chúng ta [**vẽ năm ảnh đầu vào đầu tiên cùng với các nhãn của chúng**].
+Trong các ảnh nhãn, màu trắng và đen lần lượt biểu thị đường biên và nền, còn các màu khác tương ứng với những lớp khác nhau.
 
 ```{.python .input}
 #@tab mxnet
@@ -148,9 +148,9 @@ imgs = [img.permute(1,2,0) for img in imgs]
 d2l.show_images(imgs, 2, n);
 ```
 
-Next, we [**enumerate
-the RGB color values and class names**]
-for all the labels in this dataset.
+Tiếp theo, chúng ta [**liệt kê
+các giá trị màu RGB và tên lớp**]
+cho tất cả các nhãn trong tập dữ liệu này.
 
 ```{.python .input}
 #@tab all
@@ -169,14 +169,15 @@ VOC_CLASSES = ['background', 'aeroplane', 'bicycle', 'bird', 'boat',
                'potted plant', 'sheep', 'sofa', 'train', 'tv/monitor']
 ```
 
-With the two constants defined above,
-we can conveniently
-[**find the class index for each pixel in a label**].
-We define the `voc_colormap2label` function
-to build the mapping from the above RGB color values
-to class indices,
-and the `voc_label_indices` function
-to map any RGB values to their class indices in this Pascal VOC2012 dataset.
+Với hai hằng số được định nghĩa ở trên,
+chúng ta có thể thuận tiện
+[**tìm chỉ số lớp cho từng pixel trong một nhãn**].
+Chúng ta định nghĩa hàm `voc_colormap2label`
+để xây dựng ánh xạ từ các giá trị màu RGB ở trên
+sang các chỉ số lớp,
+và hàm `voc_label_indices`
+để ánh xạ bất kỳ giá trị RGB nào
+sang chỉ số lớp tương ứng trong tập dữ liệu Pascal VOC2012 này.
 
 ```{.python .input}
 #@tab mxnet
@@ -218,9 +219,9 @@ def voc_label_indices(colormap, colormap2label):
     return colormap2label[idx]
 ```
 
-[**For example**], in the first example image,
-the class index for the front part of the airplane is 1,
-while the background index is 0.
+[**Ví dụ**], trong ảnh ví dụ đầu tiên,
+chỉ số lớp của phần trước của máy bay là 1,
+trong khi chỉ số của nền là 0.
 
 ```{.python .input}
 #@tab all
@@ -228,20 +229,20 @@ y = voc_label_indices(train_labels[0], voc_colormap2label())
 y[105:115, 130:140], VOC_CLASSES[1]
 ```
 
-### Data Preprocessing
+### Tiền xử lý dữ liệu
 
-In previous experiments
-such as in :numref:`sec_alexnet`--:numref:`sec_googlenet`,
-images are rescaled
-to fit the model's required input shape.
-However, in semantic segmentation,
-doing so
-requires rescaling the predicted pixel classes
-back to the original shape of the input image.
-Such rescaling may be inaccurate,
-especially for segmented regions with different classes. To avoid this issue,
-we crop the image to a *fixed* shape instead of rescaling. Specifically, [**using random cropping from image augmentation, we crop the same area of
-the input image and the label**].
+Trong các thí nghiệm trước đây,
+chẳng hạn như trong :numref:`sec_alexnet`--:numref:`sec_googlenet`,
+ảnh được thay đổi tỷ lệ
+để phù hợp với hình dạng đầu vào mà mô hình yêu cầu.
+Tuy nhiên, trong phân đoạn ngữ nghĩa,
+việc này
+đòi hỏi phải thay đổi tỷ lệ các lớp pixel được dự đoán
+trở lại hình dạng ban đầu của ảnh đầu vào.
+Việc thay đổi tỷ lệ như vậy có thể không chính xác,
+đặc biệt đối với các vùng được phân đoạn thuộc những lớp khác nhau. Để tránh vấn đề này,
+chúng ta cắt ảnh về một hình dạng *cố định* thay vì thay đổi tỷ lệ. Cụ thể, [**sử dụng phép cắt ngẫu nhiên trong tăng cường ảnh, chúng ta cắt cùng một vùng của
+ảnh đầu vào và nhãn**].
 
 ```{.python .input}
 #@tab mxnet
@@ -283,19 +284,19 @@ imgs = [img.permute(1, 2, 0) for img in imgs]
 d2l.show_images(imgs[::2] + imgs[1::2], 2, n);
 ```
 
-### [**Custom Semantic Segmentation Dataset Class**]
+### [**Lớp tập dữ liệu phân đoạn ngữ nghĩa tùy chỉnh**]
 
-We define a custom semantic segmentation dataset class `VOCSegDataset` by inheriting the `Dataset` class provided by high-level APIs.
-By implementing the `__getitem__` function,
-we can arbitrarily access the input image indexed as `idx` in the dataset and the class index of each pixel in this image.
-Since some images in the dataset
-have a smaller size
-than the output size of random cropping,
-these examples are filtered out
-by a custom `filter` function.
-In addition, we also
-define the `normalize_image` function to
-standardize the values of the three RGB channels of input images.
+Chúng ta định nghĩa một lớp tập dữ liệu phân đoạn ngữ nghĩa tùy chỉnh `VOCSegDataset` bằng cách kế thừa lớp `Dataset` do các API cấp cao cung cấp.
+Bằng cách triển khai hàm `__getitem__`,
+chúng ta có thể tùy ý truy cập ảnh đầu vào có chỉ số `idx` trong tập dữ liệu và chỉ số lớp của từng pixel trong ảnh này.
+Do một số ảnh trong tập dữ liệu
+có kích thước nhỏ hơn
+kích thước đầu ra của phép cắt ngẫu nhiên,
+các ví dụ này được lọc bỏ
+bằng hàm `filter` tùy chỉnh.
+Ngoài ra, chúng ta cũng
+định nghĩa hàm `normalize_image` để
+chuẩn hóa giá trị của ba kênh RGB của ảnh đầu vào.
 
 ```{.python .input}
 #@tab mxnet
@@ -365,14 +366,14 @@ class VOCSegDataset(torch.utils.data.Dataset):
         return len(self.features)
 ```
 
-### [**Reading the Dataset**]
+### [**Đọc tập dữ liệu**]
 
-We use the custom `VOCSegDatase`t class to
-create instances of the training set and test set, respectively.
-Suppose that
-we specify that the output shape of randomly cropped images is $320\times 480$.
-Below we can view the number of examples
-that are retained in the training set and test set.
+Chúng ta sử dụng lớp `VOCSegDatase`t tùy chỉnh để
+tạo các thể hiện lần lượt cho tập huấn luyện và tập kiểm tra.
+Giả sử rằng
+chúng ta chỉ định hình dạng đầu ra của các ảnh được cắt ngẫu nhiên là $320\times 480$.
+Bên dưới, chúng ta có thể xem số lượng ví dụ
+được giữ lại trong tập huấn luyện và tập kiểm tra.
 
 ```{.python .input}
 #@tab all
@@ -381,10 +382,10 @@ voc_train = VOCSegDataset(True, crop_size, voc_dir)
 voc_test = VOCSegDataset(False, crop_size, voc_dir)
 ```
 
-Setting the batch size to 64,
-we define the data iterator for the training set.
-Let's print the shape of the first minibatch.
-Different from in image classification or object detection, labels here are three-dimensional tensors.
+Đặt kích thước batch là 64,
+chúng ta định nghĩa iterator dữ liệu cho tập huấn luyện.
+Hãy in hình dạng của minibatch đầu tiên.
+Khác với phân loại ảnh hoặc phát hiện đối tượng, các nhãn ở đây là các tensor ba chiều.
 
 ```{.python .input}
 #@tab mxnet
@@ -410,11 +411,11 @@ for X, Y in train_iter:
     break
 ```
 
-### [**Putting It All Together**]
+### [**Kết hợp tất cả**]
 
-Finally, we define the following `load_data_voc` function
-to download and read the Pascal VOC2012 semantic segmentation dataset.
-It returns data iterators for both the training and test datasets.
+Cuối cùng, chúng ta định nghĩa hàm `load_data_voc` sau đây
+để tải xuống và đọc tập dữ liệu phân đoạn ngữ nghĩa Pascal VOC2012.
+Hàm này trả về các iterator dữ liệu cho cả tập huấn luyện và tập kiểm tra.
 
 ```{.python .input}
 #@tab mxnet
@@ -450,23 +451,23 @@ def load_data_voc(batch_size, crop_size):
     return train_iter, test_iter
 ```
 
-## Summary
+## Tóm tắt
 
-* Semantic segmentation recognizes and understands what are in an image in pixel level by dividing the image into regions belonging to different semantic classes.
-* One of the most important semantic segmentation dataset is Pascal VOC2012.
-* In semantic segmentation, since the input image and  label correspond one-to-one on the pixel, the input image is randomly cropped to a fixed shape rather than rescaled.
+* Phân đoạn ngữ nghĩa nhận diện và hiểu những gì có trong một ảnh ở cấp độ pixel bằng cách chia ảnh thành các vùng thuộc những lớp ngữ nghĩa khác nhau.
+* Một trong những tập dữ liệu phân đoạn ngữ nghĩa quan trọng nhất là Pascal VOC2012.
+* Trong phân đoạn ngữ nghĩa, vì ảnh đầu vào và nhãn tương ứng một-một ở cấp độ pixel, ảnh đầu vào được cắt ngẫu nhiên về một hình dạng cố định thay vì thay đổi tỷ lệ.
 
 
-## Exercises
+## Bài tập
 
-1. How can semantic segmentation be applied in autonomous vehicles and medical image diagnostics? Can you think of other applications?
-1. Recall the descriptions of data augmentation in :numref:`sec_image_augmentation`. Which of the image augmentation methods used in image classification would be infeasible to be applied in semantic segmentation?
+1. Phân đoạn ngữ nghĩa có thể được áp dụng như thế nào trong xe tự hành và chẩn đoán hình ảnh y tế? Bạn có thể nghĩ đến những ứng dụng nào khác?
+1. Hãy nhớ lại phần mô tả về tăng cường dữ liệu trong :numref:`sec_image_augmentation`. Phương pháp tăng cường ảnh nào được sử dụng trong phân loại ảnh sẽ không khả thi khi áp dụng cho phân đoạn ngữ nghĩa?
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/375)
+[Thảo luận](https://discuss.d2l.ai/t/375)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1480)
+[Thảo luận](https://discuss.d2l.ai/t/1480)
 :end_tab:

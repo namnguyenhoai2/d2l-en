@@ -1,47 +1,47 @@
-# Multiscale Object Detection
+# Phát hiện đối tượng đa tỷ lệ
 :label:`sec_multiscale-object-detection`
 
 
-In :numref:`sec_anchor`,
-we generated multiple anchor boxes centered on each pixel of an input image. 
-Essentially these anchor boxes 
-represent samples of
-different regions of the image.
-However, 
-we may end up with too many anchor boxes to compute
-if they are generated for *every* pixel.
-Think of a $561 \times 728$ input image.
-If five anchor boxes 
-with varying shapes
-are generated for each pixel as their center,
-over two million anchor boxes ($561 \times 728 \times 5$) need to be labeled and predicted on the image.
+Trong :numref:`sec_anchor`,
+chúng ta đã tạo nhiều anchor box có tâm nằm trên mỗi pixel của ảnh đầu vào.
+Về cơ bản, các anchor box này
+đại diện cho các mẫu của
+những vùng khác nhau trong ảnh.
+Tuy nhiên,
+chúng ta có thể phải tính toán quá nhiều anchor box
+nếu tạo chúng cho *mọi* pixel.
+Hãy xét một ảnh đầu vào có kích thước $561 \times 728$.
+Nếu tạo năm anchor box
+có các hình dạng khác nhau
+cho mỗi pixel làm tâm,
+thì cần gán nhãn và dự đoán hơn hai triệu anchor box ($561 \times 728 \times 5$) trên ảnh.
 
-## Multiscale Anchor Boxes
+## Anchor box đa tỷ lệ
 :label:`subsec_multiscale-anchor-boxes`
 
-You may realize that
-it is not difficult to reduce anchor boxes on an image.
-For instance, we can just 
-uniformly sample a small portion of pixels
-from the input image
-to generate anchor boxes centered on them.
-In addition, 
-at different scales
-we can generate different numbers of anchor boxes
-of different sizes.
-Intuitively,
-smaller objects are more likely
-to appear on an image than larger ones.
-As an example,
-$1 \times 1$, $1 \times 2$, and $2 \times 2$ objects 
-can appear on a $2 \times 2$ image
-in 4, 2, and 1 possible ways, respectively.
-Therefore, when using smaller anchor boxes to detect smaller objects, we can sample more regions,
-while for larger objects we can sample fewer regions.
+Bạn có thể nhận thấy rằng
+việc giảm số lượng anchor box trên một ảnh không khó.
+Chẳng hạn, chúng ta chỉ cần
+lấy mẫu đồng đều một phần nhỏ các pixel
+từ ảnh đầu vào
+để tạo các anchor box có tâm nằm trên chúng.
+Ngoài ra,
+ở các tỷ lệ khác nhau,
+chúng ta có thể tạo số lượng anchor box khác nhau
+với các kích thước khác nhau.
+Theo trực giác,
+các đối tượng nhỏ
+có khả năng xuất hiện trên ảnh cao hơn các đối tượng lớn.
+Ví dụ,
+các đối tượng $1 \times 1$, $1 \times 2$ và $2 \times 2$
+có thể xuất hiện trên một ảnh $2 \times 2$
+theo lần lượt 4, 2 và 1 cách khác nhau.
+Do đó, khi sử dụng các anchor box nhỏ hơn để phát hiện các đối tượng nhỏ hơn, chúng ta có thể lấy mẫu nhiều vùng hơn,
+còn đối với các đối tượng lớn hơn, chúng ta có thể lấy mẫu ít vùng hơn.
 
-To demonstrate how to generate anchor boxes
-at multiple scales, let's read an image.
-Its height and width are 561 and 728 pixels, respectively.
+Để minh họa cách tạo anchor box
+ở nhiều tỷ lệ, hãy đọc một ảnh.
+Chiều cao và chiều rộng của ảnh lần lượt là 561 và 728 pixel.
 
 ```{.python .input}
 #@tab mxnet
@@ -67,34 +67,34 @@ h, w = img.shape[:2]
 h, w
 ```
 
-Recall that in :numref:`sec_conv_layer`
-we call a two-dimensional array output of 
-a convolutional layer a feature map.
-By defining the feature map shape,
-we can determine centers of uniformly sampled anchor boxes  on any image.
+Hãy nhớ rằng trong :numref:`sec_conv_layer`,
+chúng ta gọi một mảng hai chiều là đầu ra của
+một convolutional layer là một feature map.
+Bằng cách xác định hình dạng của feature map,
+chúng ta có thể xác định tâm của các anchor box được lấy mẫu đồng đều trên bất kỳ ảnh nào.
 
 
-The `display_anchors` function is defined below.
-[**We generate anchor boxes (`anchors`) on the feature map (`fmap`) with each unit (pixel) as the anchor box center.**]
-Since the $(x, y)$-axis coordinate values
-in the anchor boxes (`anchors`) have been divided by the width and height of the feature map (`fmap`),
-these values are between 0 and 1,
-which indicate the relative positions of
-anchor boxes in the feature map.
+Hàm `display_anchors` được định nghĩa bên dưới.
+[**Chúng ta tạo các anchor box (`anchors`) trên feature map (`fmap`) với mỗi unit (pixel) làm tâm của anchor box.**]
+Vì các giá trị tọa độ trên trục $(x, y)$
+trong các anchor box (`anchors`) đã được chia cho chiều rộng và chiều cao của feature map (`fmap`),
+các giá trị này nằm trong khoảng từ 0 đến 1,
+cho biết vị trí tương đối của
+các anchor box trên feature map.
 
-Since centers of the anchor boxes (`anchors`)
-are spread over all units on the feature map (`fmap`),
-these centers must be *uniformly* distributed
-on any input image
-in terms of their relative spatial positions.
-More concretely,
-given the width and height of the feature map `fmap_w` and `fmap_h`, respectively,
-the following function will *uniformly* sample
-pixels in `fmap_h` rows and `fmap_w` columns
-on any input image.
-Centered on these uniformly sampled pixels,
-anchor boxes of scale `s` (assuming the length of the list `s` is 1) and different aspect ratios (`ratios`)
-will be generated.
+Vì tâm của các anchor box (`anchors`)
+được phân bố trên tất cả các unit của feature map (`fmap`),
+các tâm này phải được *phân bố đồng đều*
+trên mọi ảnh đầu vào
+xét theo vị trí không gian tương đối của chúng.
+Cụ thể hơn,
+với chiều rộng và chiều cao của feature map `fmap_w` và `fmap_h` lần lượt,
+hàm sau sẽ *lấy mẫu đồng đều*
+các pixel trên `fmap_h` hàng và `fmap_w` cột
+trên mọi ảnh đầu vào.
+Lấy các pixel được lấy mẫu đồng đều này làm tâm,
+các anchor box có tỷ lệ `s` (giả sử độ dài của danh sách `s` là 1) và các aspect ratio khác nhau (`ratios`)
+sẽ được tạo.
 
 ```{.python .input}
 #@tab mxnet
@@ -120,119 +120,119 @@ def display_anchors(fmap_w, fmap_h, s):
                     anchors[0] * bbox_scale)
 ```
 
-First, let's [**consider
-detection of small objects**].
-In order to make it easier to distinguish when displayed, the anchor boxes with different centers here do not overlap:
-the anchor box scale is set to 0.15
-and the height and width of the feature map are set to 4. We can see
-that the centers of the anchor boxes in 4 rows and 4 columns on the image are uniformly distributed.
+Trước tiên, hãy [**xét
+việc phát hiện các đối tượng nhỏ**].
+Để dễ phân biệt khi hiển thị, các anchor box có các tâm khác nhau ở đây không chồng lấp:
+tỷ lệ của anchor box được đặt là 0.15
+và chiều cao, chiều rộng của feature map được đặt là 4. Chúng ta có thể thấy
+các tâm của anchor box trong 4 hàng và 4 cột trên ảnh được phân bố đồng đều.
 
 ```{.python .input}
 #@tab all
 display_anchors(fmap_w=4, fmap_h=4, s=[0.15])
 ```
 
-We move on to [**reduce the height and width of the feature map by half and use larger anchor boxes to detect larger objects**]. When the scale is set to 0.4, 
-some anchor boxes will overlap with each other.
+Tiếp theo, chúng ta [**giảm một nửa chiều cao và chiều rộng của feature map, đồng thời sử dụng các anchor box lớn hơn để phát hiện các đối tượng lớn hơn**]. Khi tỷ lệ được đặt là 0.4,
+một số anchor box sẽ chồng lấp lên nhau.
 
 ```{.python .input}
 #@tab all
 display_anchors(fmap_w=2, fmap_h=2, s=[0.4])
 ```
 
-Finally, we [**further reduce the height and width of the feature map by half and increase the anchor box scale to 0.8**]. Now the center of the anchor box is the center of the image.
+Cuối cùng, chúng ta [**tiếp tục giảm một nửa chiều cao và chiều rộng của feature map, đồng thời tăng tỷ lệ của anchor box lên 0.8**]. Lúc này, tâm của anchor box là tâm của ảnh.
 
 ```{.python .input}
 #@tab all
 display_anchors(fmap_w=1, fmap_h=1, s=[0.8])
 ```
 
-## Multiscale Detection
+## Phát hiện đa tỷ lệ
 
 
-Since we have generated multiscale anchor boxes,
-we will use them to detect objects of various sizes
-at different scales.
-In the following
-we introduce a CNN-based multiscale object detection
-method that we will implement
-in :numref:`sec_ssd`.
+Vì đã tạo các anchor box đa tỷ lệ,
+chúng ta sẽ sử dụng chúng để phát hiện các đối tượng có kích thước khác nhau
+ở các tỷ lệ khác nhau.
+Sau đây,
+chúng ta giới thiệu một phương pháp phát hiện đối tượng đa tỷ lệ dựa trên CNN
+mà chúng ta sẽ triển khai
+trong :numref:`sec_ssd`.
 
-At some scale,
-say that we have $c$ feature maps of shape $h \times w$.
-Using the method in :numref:`subsec_multiscale-anchor-boxes`,
-we generate $hw$ sets of anchor boxes,
-where each set has $a$ anchor boxes with the same center.
-For example, 
-at the first scale in the experiments in :numref:`subsec_multiscale-anchor-boxes`,
-given ten (number of channels) $4 \times 4$ feature maps,
-we generated 16 sets of anchor boxes,
-where each set contains 3 anchor boxes with the same center.
-Next, each anchor box is labeled with
-the class and offset based on ground-truth bounding boxes. At the current scale, the object detection model needs to predict the classes and offsets of $hw$ sets of anchor boxes on the input image, where different sets have different centers.
-
-
-Assume that the $c$ feature maps here
-are the intermediate outputs obtained
-by the CNN forward propagation based on the input image. Since there are $hw$ different spatial positions on each feature map,
-the same spatial position can be 
-thought of as having $c$ units.
-According to the
-definition of receptive field in :numref:`sec_conv_layer`,
-these $c$ units at the same spatial position
-of the feature maps
-have the same receptive field on the input image:
-they represent the input image information
-in the same receptive field.
-Therefore, we can transform the $c$ units
-of the feature maps at the same spatial position
-into the
-classes and offsets of the $a$ anchor boxes
-generated using this spatial position.
-In essence,
-we use the information of the input image in a certain receptive field
-to predict the classes and offsets of the anchor boxes
-that are
-close to that receptive field
-on the input image.
+Ở một tỷ lệ nào đó,
+giả sử chúng ta có $c$ feature map có hình dạng $h \times w$.
+Sử dụng phương pháp trong :numref:`subsec_multiscale-anchor-boxes`,
+chúng ta tạo $hw$ tập anchor box,
+trong đó mỗi tập có $a$ anchor box với cùng một tâm.
+Ví dụ,
+ở tỷ lệ đầu tiên trong các thí nghiệm tại :numref:`subsec_multiscale-anchor-boxes`,
+với mười feature map (số kênh) có kích thước $4 \times 4$,
+chúng ta đã tạo 16 tập anchor box,
+mỗi tập chứa 3 anchor box có cùng một tâm.
+Tiếp theo, mỗi anchor box được gán nhãn
+về class và offset dựa trên các bounding box ground-truth. Ở tỷ lệ hiện tại, mô hình object detection cần dự đoán class và offset của $hw$ tập anchor box trên ảnh đầu vào, trong đó các tập khác nhau có các tâm khác nhau.
 
 
-When the feature maps at different layers
-have varying-size receptive fields on the input image, they can be used to detect objects of different sizes.
-For example, we can design a neural network where
-units of feature maps that are closer to the output layer
-have wider receptive fields,
-so they can detect larger objects from the input image.
+Giả sử $c$ feature map ở đây
+là các đầu ra trung gian thu được
+bằng quá trình forward propagation của CNN dựa trên ảnh đầu vào. Vì có $hw$ vị trí không gian khác nhau trên mỗi feature map,
+ta có thể
+coi mỗi vị trí không gian là có $c$ unit.
+Theo
+định nghĩa về receptive field trong :numref:`sec_conv_layer`,
+$c$ unit này tại cùng một vị trí không gian
+của các feature map
+có cùng receptive field trên ảnh đầu vào:
+chúng biểu diễn thông tin của ảnh đầu vào
+trong cùng một receptive field.
+Do đó, chúng ta có thể biến đổi $c$ unit
+của các feature map tại cùng một vị trí không gian
+thành
+class và offset của $a$ anchor box
+được tạo bằng vị trí không gian này.
+Về bản chất,
+chúng ta sử dụng thông tin của ảnh đầu vào trong một receptive field nhất định
+để dự đoán class và offset của các anchor box
+nằm
+gần receptive field đó
+trên ảnh đầu vào.
 
-In a nutshell, we can leverage
-layerwise representations of images at multiple levels
-by deep neural networks
-for multiscale object detection.
-We will show how this works through a concrete example
-in :numref:`sec_ssd`.
+
+Khi các feature map ở các layer khác nhau
+có các receptive field với kích thước khác nhau trên ảnh đầu vào, chúng có thể được dùng để phát hiện các đối tượng có kích thước khác nhau.
+Ví dụ, chúng ta có thể thiết kế một neural network trong đó
+các unit của feature map gần output layer hơn
+có receptive field rộng hơn,
+do đó có thể phát hiện các đối tượng lớn hơn trong ảnh đầu vào.
+
+Tóm lại, chúng ta có thể tận dụng
+các biểu diễn ảnh theo từng layer ở nhiều cấp độ
+bằng deep neural network
+để phát hiện đối tượng đa tỷ lệ.
+Chúng ta sẽ trình bày cách thức hoạt động này qua một ví dụ cụ thể
+trong :numref:`sec_ssd`.
 
 
 
 
-## Summary
+## Tóm tắt
 
-* At multiple scales, we can generate anchor boxes with different sizes to detect objects with different sizes.
-* By defining the shape of feature maps, we can determine centers of uniformly sampled anchor boxes on any image.
-* We use the information of the input image in a certain receptive field to predict the classes and offsets of the anchor boxes that are close to that receptive field on the input image.
-* Through deep learning, we can leverage its layerwise representations of images at multiple levels for multiscale object detection.
+* Ở nhiều tỷ lệ, chúng ta có thể tạo các anchor box với kích thước khác nhau để phát hiện các đối tượng có kích thước khác nhau.
+* Bằng cách xác định hình dạng của feature map, chúng ta có thể xác định tâm của các anchor box được lấy mẫu đồng đều trên bất kỳ ảnh nào.
+* Chúng ta sử dụng thông tin của ảnh đầu vào trong một receptive field nhất định để dự đoán class và offset của các anchor box nằm gần receptive field đó trên ảnh đầu vào.
+* Thông qua deep learning, chúng ta có thể tận dụng các biểu diễn ảnh theo từng layer ở nhiều cấp độ để phát hiện đối tượng đa tỷ lệ.
 
 
-## Exercises
+## Bài tập
 
-1. According to our discussions in :numref:`sec_alexnet`, deep neural networks learn hierarchical features with increasing levels of abstraction for images. In multiscale object detection, do feature maps at different scales correspond to different levels of abstraction? Why or why not?
-1. At the first scale (`fmap_w=4, fmap_h=4`) in the experiments in :numref:`subsec_multiscale-anchor-boxes`, generate uniformly distributed anchor boxes that may overlap.
-1. Given a feature map variable with shape $1 \times c \times h \times w$, where $c$, $h$, and $w$ are the number of channels, height, and width of the feature maps, respectively. How can you transform this variable into the classes and offsets of anchor boxes? What is the shape of the output?
+1. Theo các thảo luận trong :numref:`sec_alexnet`, deep neural network học các đặc trưng phân cấp với mức độ trừu tượng ngày càng tăng cho ảnh. Trong phát hiện đối tượng đa tỷ lệ, các feature map ở các tỷ lệ khác nhau có tương ứng với các mức độ trừu tượng khác nhau không? Tại sao có hoặc tại sao không?
+1. Ở tỷ lệ đầu tiên (`fmap_w=4, fmap_h=4`) trong các thí nghiệm tại :numref:`subsec_multiscale-anchor-boxes`, hãy tạo các anchor box được phân bố đồng đều và có thể chồng lấp lên nhau.
+1. Cho một biến feature map có hình dạng $1 \times c \times h \times w$, trong đó $c$, $h$ và $w$ lần lượt là số kênh, chiều cao và chiều rộng của các feature map. Làm thế nào bạn có thể biến đổi biến này thành class và offset của các anchor box? Hình dạng của đầu ra là gì?
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/371)
+[Thảo luận](https://discuss.d2l.ai/t/371)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1607)
+[Thảo luận](https://discuss.d2l.ai/t/1607)
 :end_tab:

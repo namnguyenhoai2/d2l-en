@@ -1,11 +1,11 @@
-# Asynchronous Computation
+# Tính toán bất đồng bộ
 :label:`sec_async`
 
-Today's computers are highly parallel systems, consisting of multiple CPU cores (often multiple threads per core), multiple processing elements per GPU, and often multiple GPUs per device. In short, we can process many different things at the same time, often on different devices. Unfortunately Python is not a great way of writing parallel and asynchronous code, at least not without some extra help. After all, Python is single-threaded and this is unlikely to change in the future. Deep learning frameworks such as MXNet and TensorFlow adopt an *asynchronous programming* model to improve performance,
-while PyTorch uses Python's own scheduler leading to a different performance trade-off.
-For PyTorch, by default, GPU operations are asynchronous. When you call a function that uses the GPU, the operations are enqueued to the particular device, but not necessarily executed until later. This allows us to execute more computations in parallel, including operations on the CPU or other GPUs.
+Máy tính ngày nay là những hệ thống có tính song song cao, bao gồm nhiều lõi CPU (thường là nhiều thread trên mỗi lõi), nhiều phần tử xử lý trên mỗi GPU và thường có nhiều GPU trên mỗi thiết bị. Nói ngắn gọn, chúng ta có thể xử lý nhiều việc khác nhau cùng lúc, thường là trên các thiết bị khác nhau. Đáng tiếc là Python không phải là một cách tuyệt vời để viết mã song song và bất đồng bộ, ít nhất là nếu không có thêm một số hỗ trợ. Suy cho cùng, Python là single-threaded và điều này khó có khả năng thay đổi trong tương lai. Các deep learning framework như MXNet và TensorFlow áp dụng mô hình *lập trình bất đồng bộ* để cải thiện hiệu năng,
+trong khi PyTorch sử dụng scheduler của chính Python, dẫn đến một sự đánh đổi hiệu năng khác.
+Đối với PyTorch, theo mặc định, các thao tác trên GPU là bất đồng bộ. Khi bạn gọi một hàm sử dụng GPU, các thao tác sẽ được đưa vào hàng đợi của thiết bị cụ thể, nhưng không nhất thiết được thực thi ngay mà có thể được thực thi sau đó. Điều này cho phép chúng ta thực hiện nhiều phép tính song song hơn, bao gồm các thao tác trên CPU hoặc các GPU khác.
 
-Hence, understanding how asynchronous programming works helps us to develop more efficient programs, by proactively reducing computational requirements and mutual dependencies. This allows us to reduce memory overhead and increase processor utilization.
+Do đó, việc hiểu cách hoạt động của lập trình bất đồng bộ giúp chúng ta phát triển các chương trình hiệu quả hơn bằng cách chủ động giảm các yêu cầu tính toán và sự phụ thuộc lẫn nhau. Điều này cho phép chúng ta giảm overhead bộ nhớ và tăng mức sử dụng bộ xử lý.
 
 ```{.python .input}
 #@tab mxnet
@@ -24,15 +24,15 @@ import torch
 from torch import nn
 ```
 
-## Asynchrony via Backend
+## Tính bất đồng bộ thông qua Backend
 
 :begin_tab:`mxnet`
-For a warmup consider the following toy problem: we want to generate a random matrix and multiply it. Let's do that both in NumPy and in `mxnet.np` to see the difference.
+Để khởi động, hãy xem xét bài toán minh họa sau: chúng ta muốn tạo một ma trận ngẫu nhiên và nhân ma trận đó. Hãy thực hiện việc này bằng cả NumPy và `mxnet.np` để thấy sự khác biệt.
 :end_tab:
 
 :begin_tab:`pytorch`
-For a warmup consider the following toy problem: we want to generate a random matrix and multiply it. Let's do that both in NumPy and in PyTorch tensor to see the difference.
-Note that PyTorch `tensor` is defined on a GPU.
+Để khởi động, hãy xem xét bài toán minh họa sau: chúng ta muốn tạo một ma trận ngẫu nhiên và nhân ma trận đó. Hãy thực hiện việc này bằng cả NumPy và tensor PyTorch để thấy sự khác biệt.
+Lưu ý rằng `tensor` của PyTorch được định nghĩa trên GPU.
 :end_tab:
 
 ```{.python .input}
@@ -67,20 +67,20 @@ with d2l.Benchmark('torch'):
 ```
 
 :begin_tab:`mxnet`
-The benchmark output via MXNet is orders of magnitude faster. Since both are executed on the same processor something else must be going on.
-Forcing MXNet to finish all the backend computation prior to returning shows what happened previously: computation is executed by the backend while the frontend returns control to Python.
+Kết quả benchmark thông qua MXNet nhanh hơn nhiều bậc độ lớn. Vì cả hai đều được thực thi trên cùng một bộ xử lý, hẳn phải có điều gì khác đang diễn ra.
+Việc buộc MXNet hoàn tất mọi phép tính của backend trước khi trả về cho thấy điều gì đã xảy ra trước đó: phép tính được backend thực thi trong khi frontend trả quyền điều khiển về cho Python.
 :end_tab:
 
 :begin_tab:`pytorch`
-The benchmark output via PyTorch is orders of magnitude faster.
-NumPy dot product is executed on the CPU processor while
-PyTorch matrix multiplication is executed on GPU and hence the latter
-is expected to be much faster. But the huge time difference suggests something
-else must be going on.
-By default, GPU operations are asynchronous in PyTorch.
-Forcing PyTorch to finish all computation prior to returning shows
-what happened previously: computation is being executed by the backend
-while the frontend returns control to Python.
+Kết quả benchmark thông qua PyTorch nhanh hơn nhiều bậc độ lớn.
+Phép nhân vô hướng NumPy được thực thi trên bộ xử lý CPU, trong khi
+phép nhân ma trận PyTorch được thực thi trên GPU và do đó phép nhân sau
+được kỳ vọng sẽ nhanh hơn nhiều. Tuy nhiên, chênh lệch thời gian rất lớn cho thấy
+hẳn phải có điều gì khác đang diễn ra.
+Theo mặc định, các thao tác trên GPU trong PyTorch là bất đồng bộ.
+Việc buộc PyTorch hoàn tất mọi phép tính trước khi trả về cho thấy
+điều gì đã xảy ra trước đó: phép tính được backend thực thi
+trong khi frontend trả quyền điều khiển về cho Python.
 :end_tab:
 
 ```{.python .input}
@@ -102,25 +102,25 @@ with d2l.Benchmark():
 ```
 
 :begin_tab:`mxnet`
-Broadly speaking, MXNet has a frontend for direct interactions with users, e.g., via Python, as well as a backend used by the system to perform the computation. 
-As shown in :numref:`fig_frontends`, users can write MXNet programs in various frontend languages, such as Python, R, Scala, and C++. Regardless of the frontend programming language used, the execution of MXNet programs occurs primarily in the backend of C++ implementations. Operations issued by the frontend language are passed on to the backend for execution. 
-The backend manages its own threads that continuously collect and execute queued tasks. Note that for this to work the backend must be able to keep track of the dependencies between various steps in the computational graph. Hence, it is not possible to parallelize operations that depend on each other.
+Nói chung, MXNet có một frontend để tương tác trực tiếp với người dùng, chẳng hạn thông qua Python, cũng như một backend được hệ thống sử dụng để thực hiện phép tính.
+Như được minh họa trong :numref:`fig_frontends`, người dùng có thể viết các chương trình MXNet bằng nhiều ngôn ngữ frontend khác nhau, chẳng hạn như Python, R, Scala và C++. Bất kể sử dụng ngôn ngữ lập trình frontend nào, việc thực thi các chương trình MXNet chủ yếu diễn ra trong backend gồm các triển khai C++. Các thao tác do ngôn ngữ frontend phát hành được chuyển đến backend để thực thi.
+Backend quản lý các thread riêng của mình, liên tục thu thập và thực thi các tác vụ đang nằm trong hàng đợi. Lưu ý rằng để hoạt động được, backend phải có khả năng theo dõi các quan hệ phụ thuộc giữa nhiều bước khác nhau trong computational graph. Do đó, không thể song song hóa các thao tác phụ thuộc lẫn nhau.
 :end_tab:
 
 :begin_tab:`pytorch`
-Broadly speaking, PyTorch has a frontend for direct interaction with the users, e.g., via Python, as well as a backend used by the system to perform the computation. 
-As shown in :numref:`fig_frontends`, users can write PyTorch programs in various frontend languages, such as Python and C++. Regardless of the frontend programming language used, the execution of PyTorch programs occurs primarily in the backend of C++ implementations. Operations issued by the frontend language are passed on to the backend for execution.
-The backend manages its own threads that continuously collect and execute queued tasks.
-Note that for this to work the backend must be able to keep track of the
-dependencies between various steps in the computational graph.
-Hence, it is not possible to parallelize operations that depend on each other.
+Nói chung, PyTorch có một frontend để tương tác trực tiếp với người dùng, chẳng hạn thông qua Python, cũng như một backend được hệ thống sử dụng để thực hiện phép tính.
+Như được minh họa trong :numref:`fig_frontends`, người dùng có thể viết các chương trình PyTorch bằng nhiều ngôn ngữ frontend khác nhau, chẳng hạn như Python và C++. Bất kể sử dụng ngôn ngữ lập trình frontend nào, việc thực thi các chương trình PyTorch chủ yếu diễn ra trong backend gồm các triển khai C++. Các thao tác do ngôn ngữ frontend phát hành được chuyển đến backend để thực thi.
+Backend quản lý các thread riêng của mình, liên tục thu thập và thực thi các tác vụ đang nằm trong hàng đợi.
+Lưu ý rằng để hoạt động được, backend phải có khả năng theo dõi các
+quan hệ phụ thuộc giữa nhiều bước khác nhau trong computational graph.
+Do đó, không thể song song hóa các thao tác phụ thuộc lẫn nhau.
 :end_tab:
 
-![Programming language frontends and deep learning framework backends.](../img/frontends.png)
+![Frontend của ngôn ngữ lập trình và backend của deep learning framework.](../img/frontends.png)
 :width:`300px`
 :label:`fig_frontends`
 
-Let's look at another toy example to understand the dependency graph a bit better.
+Hãy xem một ví dụ minh họa khác để hiểu rõ hơn một chút về dependency graph.
 
 ```{.python .input}
 #@tab mxnet
@@ -138,29 +138,29 @@ z = x * y + 2
 z
 ```
 
-![The backend tracks dependencies between various steps in the computational graph.](../img/asyncgraph.svg)
+![Backend theo dõi các quan hệ phụ thuộc giữa nhiều bước khác nhau trong computational graph.](../img/asyncgraph.svg)
 :label:`fig_asyncgraph`
 
 
 
-The code snippet above is also illustrated in :numref:`fig_asyncgraph`.
-Whenever the Python frontend thread executes one of the first three statements, it simply returns the task to the backend queue. When the last statement's results need to be *printed*, the Python frontend thread will wait for the C++ backend thread to finish computing the result of the variable `z`. One benefit of this design is that the Python frontend thread does not need to perform actual computations. Thus, there is little impact on the program's overall performance, regardless of Python's performance. :numref:`fig_threading` illustrates how frontend and backend interact.
+Đoạn mã ở trên cũng được minh họa trong :numref:`fig_asyncgraph`.
+Mỗi khi thread frontend Python thực thi một trong ba câu lệnh đầu tiên, nó chỉ cần trả tác vụ về hàng đợi backend. Khi kết quả của câu lệnh cuối cùng cần được *in ra*, thread frontend Python sẽ chờ thread backend C++ hoàn tất việc tính toán kết quả của biến `z`. Một lợi ích của thiết kế này là thread frontend Python không cần thực hiện các phép tính thực tế. Vì vậy, hiệu năng tổng thể của chương trình hầu như không bị ảnh hưởng, bất kể hiệu năng của Python. :numref:`fig_threading` minh họa cách frontend và backend tương tác.
 
-![Interactions of the frontend and backend.](../img/threading.svg)
+![Tương tác giữa frontend và backend.](../img/threading.svg)
 :label:`fig_threading`
 
 
 
 
-## Barriers and Blockers
+## Rào cản và trình chặn
 
 :begin_tab:`mxnet`
-There are a number of operations that will force Python to wait for completion:
+Có một số thao tác sẽ buộc Python phải chờ hoàn tất:
 
-* Most obviously `npx.waitall()` waits until all computation has completed, regardless of when the compute instructions were issued. In practice it is a bad idea to use this operator unless absolutely necessary since it can lead to poor performance.
-* If we just want to wait until a specific variable is available we can call `z.wait_to_read()`. In this case MXNet blocks return to Python until the variable `z` has been computed. Other computation may well continue afterwards.
+* Rõ ràng nhất là `npx.waitall()` sẽ chờ cho đến khi mọi phép tính hoàn tất, bất kể các chỉ thị tính toán được phát hành vào thời điểm nào. Trên thực tế, không nên sử dụng toán tử này trừ khi thực sự cần thiết, vì nó có thể dẫn đến hiệu năng kém.
+* Nếu chỉ muốn chờ cho đến khi một biến cụ thể khả dụng, chúng ta có thể gọi `z.wait_to_read()`. Trong trường hợp này, MXNet sẽ chặn việc trả quyền điều khiển về Python cho đến khi biến `z` được tính xong. Các phép tính khác hoàn toàn có thể tiếp tục sau đó.
 
-Let's see how this works in practice.
+Hãy xem điều này hoạt động như thế nào trên thực tế.
 :end_tab:
 
 ```{.python .input}
@@ -175,9 +175,9 @@ with d2l.Benchmark('wait_to_read'):
 ```
 
 :begin_tab:`mxnet`
-Both operations take approximately the same time to complete. Besides the obvious blocking operations we recommend that you are aware of *implicit* blockers. Printing a variable clearly requires the variable to be available and is thus a blocker. Last, conversions to NumPy via `z.asnumpy()` and conversions to scalars via `z.item()` are blocking, since NumPy has no notion of asynchrony. It needs access to the values just like the `print` function. 
+Cả hai thao tác mất khoảng cùng một khoảng thời gian để hoàn tất. Ngoài các thao tác chặn rõ ràng, chúng tôi khuyến nghị bạn lưu ý đến những trình chặn *ngầm định*. Việc in một biến rõ ràng đòi hỏi biến đó phải khả dụng và do đó là một trình chặn. Cuối cùng, việc chuyển đổi sang NumPy thông qua `z.asnumpy()` và chuyển đổi sang scalar thông qua `z.item()` đều là các thao tác chặn, vì NumPy không có khái niệm về tính bất đồng bộ. Nó cần quyền truy cập vào các giá trị, giống như hàm `print`.
 
-Copying small amounts of data frequently from MXNet's scope to NumPy and back can destroy performance of an otherwise efficient code, since each such operation requires the computational graph to evaluate all intermediate results needed to get the relevant term *before* anything else can be done.
+Việc thường xuyên sao chép một lượng nhỏ dữ liệu từ phạm vi của MXNet sang NumPy rồi sao chép ngược lại có thể làm mất hiệu năng của một đoạn mã vốn hiệu quả, vì mỗi thao tác như vậy yêu cầu computational graph đánh giá tất cả các kết quả trung gian cần thiết để lấy được giá trị liên quan *trước khi* có thể thực hiện bất kỳ việc gì khác.
 :end_tab:
 
 ```{.python .input}
@@ -191,10 +191,10 @@ with d2l.Benchmark('scalar conversion'):
     b.sum().item()
 ```
 
-## Improving Computation
+## Cải thiện phép tính
 
 :begin_tab:`mxnet`
-On a heavily multithreaded system (even regular laptops have 4 threads or more and on multi-socket servers this number can exceed 256) the overhead of scheduling operations can become significant. This is why it is highly desirable to have computation and scheduling occur asynchronously and in parallel. To illustrate the benefit of doing so let's see what happens if we increment a variable by 1 multiple times, both in sequence or asynchronously. We simulate synchronous execution by inserting a `wait_to_read` barrier in between each addition.
+Trên một hệ thống có nhiều thread (ngay cả laptop thông thường cũng có từ 4 thread trở lên, còn trên các server nhiều socket, con số này có thể vượt quá 256), overhead của việc scheduling các thao tác có thể trở nên đáng kể. Vì vậy, việc thực hiện phép tính và scheduling một cách bất đồng bộ và song song là rất đáng mong muốn. Để minh họa lợi ích của cách làm này, hãy xem điều gì xảy ra nếu chúng ta tăng một biến lên 1 nhiều lần, lần lượt theo tuần tự hoặc bất đồng bộ. Chúng ta mô phỏng việc thực thi đồng bộ bằng cách chèn một rào cản `wait_to_read` giữa mỗi phép cộng.
 :end_tab:
 
 ```{.python .input}
@@ -211,41 +211,41 @@ with d2l.Benchmark('asynchronous'):
 ```
 
 :begin_tab:`mxnet`
-A slightly simplified interaction between the Python frontend thread and the C++ backend thread can be summarized as follows:
-1. The frontend orders the backend to insert the computation task `y = x + 1` into the queue.
-1. The backend then receives the computation tasks from the queue and performs the actual computations.
-1. The backend then returns the computation results to the frontend.
-Assume that the durations of these three stages are $t_1, t_2$ and $t_3$, respectively. If we do not use asynchronous programming, the total time taken to perform 10000 computations is approximately $10000 (t_1+ t_2 + t_3)$. If asynchronous programming is used, the total time taken to perform 10000 computations can be reduced to $t_1 + 10000 t_2 + t_3$ (assuming $10000 t_2 > 9999t_1$), since the frontend does not have to wait for the backend to return computation results for each loop.
+Có thể tóm tắt tương tác được đơn giản hóa một chút giữa thread frontend Python và thread backend C++ như sau:
+1. Frontend yêu cầu backend đưa tác vụ tính toán `y = x + 1` vào hàng đợi.
+1. Sau đó, backend nhận các tác vụ tính toán từ hàng đợi và thực hiện các phép tính thực tế.
+1. Sau đó, backend trả kết quả tính toán về frontend.
+Giả sử thời lượng của ba giai đoạn này lần lượt là $t_1$, $t_2$ và $t_3$. Nếu không sử dụng lập trình bất đồng bộ, tổng thời gian cần để thực hiện 10000 phép tính xấp xỉ bằng $10000 (t_1+ t_2 + t_3)$. Nếu sử dụng lập trình bất đồng bộ, tổng thời gian cần để thực hiện 10000 phép tính có thể giảm xuống còn $t_1 + 10000 t_2 + t_3$ (giả sử $10000 t_2 > 9999t_1$), vì frontend không phải chờ backend trả kết quả tính toán sau mỗi vòng lặp.
 :end_tab:
 
 
-## Summary
+## Tóm tắt
 
 
-* Deep learning frameworks may decouple the Python frontend from an execution backend. This allows for fast asynchronous insertion of commands into the backend and associated parallelism.
-* Asynchrony leads to a rather responsive frontend. However, use caution not to overfill the task queue since it may lead to excessive memory consumption. It is recommended to synchronize for each minibatch to keep frontend and backend approximately synchronized.
-* Chip vendors offer sophisticated performance analysis tools to obtain a much more fine-grained insight into the efficiency of deep learning.
+* Các deep learning framework có thể tách frontend Python khỏi backend thực thi. Điều này cho phép đưa các lệnh vào backend một cách bất đồng bộ với tốc độ cao và tận dụng tính song song đi kèm.
+* Tính bất đồng bộ giúp frontend có khả năng phản hồi khá tốt. Tuy nhiên, hãy cẩn thận không làm đầy hàng đợi tác vụ quá mức, vì điều đó có thể dẫn đến việc tiêu thụ quá nhiều bộ nhớ. Nên đồng bộ hóa sau mỗi minibatch để giữ frontend và backend gần như đồng bộ.
+* Các nhà cung cấp chip cung cấp những công cụ phân tích hiệu năng tinh vi, giúp thu được góc nhìn chi tiết hơn nhiều về hiệu quả của deep learning.
 
 :begin_tab:`mxnet`
-* Be aware of the fact that conversions from MXNet's memory management to Python will force the backend to wait until  the specific variable is ready. Functions such as `print`, `asnumpy` and `item` all have this effect. This can be desirable but a careless use of synchronization can ruin performance.
+* Lưu ý rằng việc chuyển đổi từ cơ chế quản lý bộ nhớ của MXNet sang Python sẽ buộc backend phải chờ cho đến khi biến cụ thể đó sẵn sàng. Các hàm như `print`, `asnumpy` và `item` đều có tác động này. Điều này có thể hữu ích, nhưng việc sử dụng đồng bộ hóa bất cẩn có thể làm giảm hiệu năng nghiêm trọng.
 :end_tab:
 
 
-## Exercises
+## Bài tập
 
 :begin_tab:`mxnet`
-1. We mentioned above that using asynchronous computation can reduce the total amount of time needed to perform 10000 computations to $t_1 + 10000 t_2 + t_3$. Why do we have to assume $10000 t_2 > 9999 t_1$ here?
-1. Measure the difference between `waitall` and `wait_to_read`. Hint: perform a number of instructions and synchronize for an intermediate result.
+1. Ở trên, chúng ta đã đề cập rằng việc sử dụng phép tính bất đồng bộ có thể giảm tổng thời gian cần thiết để thực hiện 10000 phép tính xuống còn $t_1 + 10000 t_2 + t_3$. Tại sao ở đây chúng ta phải giả định rằng $10000 t_2 > 9999 t_1$?
+1. Đo sự khác biệt giữa `waitall` và `wait_to_read`. Gợi ý: thực hiện một số lệnh rồi đồng bộ hóa để nhận kết quả trung gian.
 :end_tab:
 
 :begin_tab:`pytorch`
-1. On the CPU, benchmark the same matrix multiplication operations in this section. Can you still observe asynchrony via the backend?
+1. Trên CPU, hãy benchmark các phép nhân ma trận tương tự trong phần này. Bạn còn có thể quan sát tính bất đồng bộ thông qua backend không?
 :end_tab:
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/361)
+[Thảo luận](https://discuss.d2l.ai/t/361)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/2564)
+[Thảo luận](https://discuss.d2l.ai/t/2564)
 :end_tab:

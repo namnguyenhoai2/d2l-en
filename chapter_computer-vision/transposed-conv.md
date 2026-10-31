@@ -1,32 +1,31 @@
-# Transposed Convolution
+# Phép tích chập chuyển vị
 :label:`sec_transposed_conv`
 
-The CNN layers we have seen so far,
-such as convolutional layers (:numref:`sec_conv_layer`) and pooling layers (:numref:`sec_pooling`),
-typically reduce (downsample) the spatial dimensions (height and width) of the input,
-or keep them unchanged.
-In semantic segmentation
-that classifies at pixel-level,
-it will be convenient if
-the spatial dimensions of the
-input and output are the same.
-For example,
-the channel dimension at one output pixel 
-can hold the classification results
-for the input pixel at the same spatial position.
+Các lớp CNN mà chúng ta đã tìm hiểu cho đến nay,
+chẳng hạn như các lớp convolution (:numref:`sec_conv_layer`) và các lớp pooling (:numref:`sec_pooling`),
+thường làm giảm (downsample) các chiều không gian (chiều cao và chiều rộng) của đầu vào,
+hoặc giữ nguyên chúng.
+Trong semantic segmentation
+phân loại ở cấp độ pixel,
+sẽ rất thuận tiện nếu
+các chiều không gian của
+đầu vào và đầu ra giống nhau.
+Ví dụ,
+chiều kênh tại một pixel đầu ra
+có thể chứa các kết quả phân loại
+cho pixel đầu vào tại cùng vị trí không gian.
 
 
-To achieve this, especially after 
-the spatial dimensions are reduced by CNN layers,
-we can use another type
-of CNN layers
-that can increase (upsample) the spatial dimensions
-of intermediate feature maps.
-In this section,
-we will introduce 
-*transposed convolution*, which is also called *fractionally-strided convolution* :cite:`Dumoulin.Visin.2016`, 
-for reversing downsampling operations
-by the convolution.
+Để đạt được điều này, đặc biệt là sau khi
+các chiều không gian bị giảm bởi các lớp CNN,
+chúng ta có thể sử dụng một loại lớp CNN khác
+có khả năng tăng (upsample) các chiều không gian
+của các feature map trung gian.
+Trong phần này,
+chúng ta sẽ giới thiệu
+*phép tích chập chuyển vị* (transposed convolution), còn được gọi là *phép tích chập có stride phân số* (fractionally-strided convolution) :cite:`Dumoulin.Visin.2016`,
+để đảo ngược các phép downsampling
+do phép convolution thực hiện.
 
 ```{.python .input}
 #@tab mxnet
@@ -44,47 +43,47 @@ from torch import nn
 from d2l import torch as d2l
 ```
 
-## Basic Operation
+## Phép toán cơ bản
 
-Ignoring channels for now,
-let's begin with
-the basic transposed convolution operation
-with stride of 1 and no padding.
-Suppose that
-we are given a 
-$n_h \times n_w$ input tensor
-and a $k_h \times k_w$ kernel.
-Sliding the kernel window with stride of 1
-for $n_w$ times in each row
-and $n_h$ times in each column
-yields 
-a total of $n_h n_w$ intermediate results.
-Each intermediate result is
-a $(n_h + k_h - 1) \times (n_w + k_w - 1)$
-tensor that are initialized as zeros.
-To compute each intermediate tensor,
-each element in the input tensor
-is multiplied by the kernel
-so that the resulting $k_h \times k_w$ tensor
-replaces a portion in
-each intermediate tensor.
-Note that
-the position of the replaced portion in each
-intermediate tensor corresponds to the position of the element
-in the input tensor used for the computation.
-In the end, all the intermediate results
-are summed over to produce the output.
+Tạm thời bỏ qua các kênh,
+hãy bắt đầu với
+phép tích chập chuyển vị cơ bản
+có stride bằng 1 và không padding.
+Giả sử rằng
+chúng ta có một tensor đầu vào
+$n_h \times n_w$
+và một kernel $k_h \times k_w$.
+Trượt cửa sổ kernel với stride bằng 1
+$n_w$ lần trên mỗi hàng
+và $n_h$ lần trên mỗi cột
+sẽ tạo ra
+tổng cộng $n_h n_w$ kết quả trung gian.
+Mỗi kết quả trung gian là một tensor
+$(n_h + k_h - 1) \times (n_w + k_w - 1)$
+được khởi tạo bằng các số 0.
+Để tính từng tensor trung gian,
+mỗi phần tử trong tensor đầu vào
+được nhân với kernel
+sao cho tensor $k_h \times k_w$ thu được
+thay thế một phần
+trong từng tensor trung gian.
+Lưu ý rằng
+vị trí của phần được thay thế trong mỗi
+tensor trung gian tương ứng với vị trí của phần tử
+trong tensor đầu vào được sử dụng để tính toán.
+Cuối cùng, tất cả các kết quả trung gian
+được cộng lại để tạo ra đầu ra.
 
-As an example,
-:numref:`fig_trans_conv` illustrates
-how transposed convolution with a $2\times 2$ kernel is computed for a $2\times 2$ input tensor.
+Ví dụ,
+:numref:`fig_trans_conv` minh họa
+cách tính phép tích chập chuyển vị với kernel $2\times 2$ cho một tensor đầu vào $2\times 2$.
 
 
-![Transposed convolution with a $2\times 2$ kernel. The shaded portions are a portion of an intermediate tensor as well as the input and kernel tensor elements used for the  computation.](../img/trans_conv.svg)
+![Phép tích chập chuyển vị với kernel $2\times 2$. Các phần được tô bóng là một phần của tensor trung gian, đồng thời là các phần tử của tensor đầu vào và kernel được sử dụng để tính toán.](../img/trans_conv.svg)
 :label:`fig_trans_conv`
 
 
-We can (**implement this basic transposed convolution operation**) `trans_conv` for a input matrix `X` and a kernel matrix `K`.
+Chúng ta có thể (**triển khai phép tích chập chuyển vị cơ bản này**) `trans_conv` cho một ma trận đầu vào `X` và một ma trận kernel `K`.
 
 ```{.python .input}
 #@tab all
@@ -97,14 +96,14 @@ def trans_conv(X, K):
     return Y
 ```
 
-In contrast to the regular convolution (in :numref:`sec_conv_layer`) that *reduces* input elements
-via the kernel,
-the transposed convolution
-*broadcasts* input elements 
-via the kernel, thereby
-producing an output
-that is larger than the input.
-We can construct the input tensor `X` and the kernel tensor `K` from :numref:`fig_trans_conv` to [**validate the output of the above implementation**] of the basic two-dimensional transposed convolution operation.
+Khác với phép convolution thông thường (trong :numref:`sec_conv_layer`), vốn *làm giảm* các phần tử đầu vào
+thông qua kernel,
+phép tích chập chuyển vị
+*broadcast* các phần tử đầu vào
+thông qua kernel, từ đó
+tạo ra một đầu ra
+lớn hơn đầu vào.
+Chúng ta có thể tạo tensor đầu vào `X` và tensor kernel `K` từ :numref:`fig_trans_conv` để [**xác thực đầu ra của phần triển khai ở trên**] của phép tích chập chuyển vị hai chiều cơ bản.
 
 ```{.python .input}
 #@tab all
@@ -113,10 +112,10 @@ K = d2l.tensor([[0.0, 1.0], [2.0, 3.0]])
 trans_conv(X, K)
 ```
 
-Alternatively,
-when the input `X` and kernel `K` are both
-four-dimensional tensors,
-we can [**use high-level APIs to obtain the same results**].
+Ngoài ra,
+khi đầu vào `X` và kernel `K` đều là
+các tensor bốn chiều,
+chúng ta có thể [**sử dụng các API cấp cao để thu được cùng kết quả**].
 
 ```{.python .input}
 #@tab mxnet
@@ -134,18 +133,18 @@ tconv.weight.data = K
 tconv(X)
 ```
 
-## [**Padding, Strides, and Multiple Channels**]
+## [**Padding, Stride và nhiều kênh**]
 
-Different from in the regular convolution
-where padding is applied to input,
-it is applied to output
-in the transposed convolution.
-For example,
-when specifying the padding number
-on either side of the height and width 
-as 1,
-the first and last rows and columns
-will be removed from the transposed convolution output.
+Khác với phép convolution thông thường,
+trong đó padding được áp dụng cho đầu vào,
+padding được áp dụng cho đầu ra
+trong phép tích chập chuyển vị.
+Ví dụ,
+khi chỉ định số padding
+ở mỗi phía của chiều cao và chiều rộng
+là 1,
+hàng và cột đầu tiên cũng như cuối cùng
+sẽ bị loại bỏ khỏi đầu ra của phép tích chập chuyển vị.
 
 ```{.python .input}
 #@tab mxnet
@@ -161,22 +160,22 @@ tconv.weight.data = K
 tconv(X)
 ```
 
-In the transposed convolution,
-strides are specified for intermediate results (thus output), not for input.
-Using the same input and kernel tensors
-from :numref:`fig_trans_conv`,
-changing the stride from 1 to 2
-increases both the height and weight
-of intermediate tensors, hence the output tensor
-in :numref:`fig_trans_conv_stride2`.
+Trong phép tích chập chuyển vị,
+stride được chỉ định cho các kết quả trung gian (do đó là đầu ra), không phải cho đầu vào.
+Sử dụng cùng các tensor đầu vào và kernel
+từ :numref:`fig_trans_conv`,
+việc thay đổi stride từ 1 thành 2
+làm tăng cả chiều cao và chiều rộng
+của các tensor trung gian, do đó làm tăng tensor đầu ra
+trong :numref:`fig_trans_conv_stride2`.
 
 
-![Transposed convolution with a $2\times 2$ kernel with stride of 2. The shaded portions are a portion of an intermediate tensor as well as the input and kernel tensor elements used for the  computation.](../img/trans_conv_stride2.svg)
+![Phép tích chập chuyển vị với kernel $2\times 2$ có stride bằng 2. Các phần được tô bóng là một phần của tensor trung gian, đồng thời là các phần tử của tensor đầu vào và kernel được sử dụng để tính toán.](../img/trans_conv_stride2.svg)
 :label:`fig_trans_conv_stride2`
 
 
 
-The following code snippet can validate the transposed convolution output for stride of 2 in :numref:`fig_trans_conv_stride2`.
+Đoạn mã sau đây có thể dùng để xác thực đầu ra của phép tích chập chuyển vị với stride bằng 2 trong :numref:`fig_trans_conv_stride2`.
 
 ```{.python .input}
 #@tab mxnet
@@ -192,24 +191,23 @@ tconv.weight.data = K
 tconv(X)
 ```
 
-For multiple input and output channels,
-the transposed convolution
-works in the same way as the regular convolution.
-Suppose that
-the input has $c_i$ channels,
-and that the transposed convolution
-assigns a $k_h\times k_w$ kernel tensor
-to each input channel.
-When multiple output channels 
-are specified,
-we will have a $c_i\times k_h\times k_w$ kernel for each output channel.
+Đối với nhiều kênh đầu vào và đầu ra,
+phép tích chập chuyển vị
+hoạt động giống như phép convolution thông thường.
+Giả sử rằng
+đầu vào có $c_i$ kênh,
+và phép tích chập chuyển vị
+gán một tensor kernel $k_h\times k_w$
+cho mỗi kênh đầu vào.
+Khi chỉ định nhiều kênh đầu ra,
+chúng ta sẽ có một kernel $c_i\times k_h\times k_w$ cho mỗi kênh đầu ra.
 
 
-As in all, if we feed $\mathsf{X}$ into a convolutional layer $f$ to output $\mathsf{Y}=f(\mathsf{X})$ and create a transposed convolutional layer $g$ with the same hyperparameters as $f$ except 
-for the number of output channels 
-being the number of channels in $\mathsf{X}$,
-then $g(Y)$ will have the same shape as $\mathsf{X}$.
-This can be illustrated in the following example.
+Nói chung, nếu chúng ta đưa $\mathsf{X}$ vào một lớp convolution $f$ để tạo đầu ra $\mathsf{Y}=f(\mathsf{X})$ và tạo một lớp convolution chuyển vị $g$ với cùng các hyperparameter như $f$, ngoại trừ
+số kênh đầu ra
+bằng số kênh trong $\mathsf{X}$,
+thì $g(Y)$ sẽ có cùng shape với $\mathsf{X}$.
+Điều này có thể được minh họa trong ví dụ sau.
 
 ```{.python .input}
 #@tab mxnet
@@ -229,16 +227,16 @@ tconv = nn.ConvTranspose2d(20, 10, kernel_size=5, padding=2, stride=3)
 tconv(conv(X)).shape == X.shape
 ```
 
-## [**Connection to Matrix Transposition**]
+## [**Mối liên hệ với phép chuyển vị ma trận**]
 :label:`subsec-connection-to-mat-transposition`
 
-The transposed convolution is named after
-the matrix transposition.
-To explain,
-let's first
-see how to implement convolutions
-using matrix multiplications.
-In the example below, we define a $3\times 3$ input `X` and a $2\times 2$ convolution kernel `K`, and then use the `corr2d` function to compute the convolution output `Y`.
+Phép tích chập chuyển vị được đặt tên theo
+phép chuyển vị ma trận.
+Để giải thích,
+trước tiên hãy
+xem cách triển khai các phép convolution
+bằng phép nhân ma trận.
+Trong ví dụ dưới đây, chúng ta định nghĩa một đầu vào `X` $3\times 3$ và một kernel convolution `K` $2\times 2$, sau đó sử dụng hàm `corr2d` để tính đầu ra convolution `Y`.
 
 ```{.python .input}
 #@tab all
@@ -248,12 +246,12 @@ Y = d2l.corr2d(X, K)
 Y
 ```
 
-Next, we rewrite the convolution kernel `K` as
-a sparse weight matrix `W`
-containing a lot of zeros. 
-The shape of the weight matrix is ($4$, $9$),
-where the non-zero elements come from
-the convolution kernel `K`.
+Tiếp theo, chúng ta viết lại kernel convolution `K` dưới dạng
+một ma trận trọng số thưa `W`
+chứa rất nhiều số 0.
+Shape của ma trận trọng số là ($4$, $9$),
+trong đó các phần tử khác 0 đến từ
+kernel convolution `K`.
 
 ```{.python .input}
 #@tab all
@@ -267,25 +265,25 @@ W = kernel2matrix(K)
 W
 ```
 
-Concatenate the input `X` row by row to get a vector of length 9. Then the matrix multiplication of `W` and the vectorized `X` gives a vector of length 4.
-After reshaping it, we can obtain the same result `Y`
-from the original convolution operation above:
-we just implemented convolutions using matrix multiplications.
+Nối đầu vào `X` theo từng hàng để thu được một vector có độ dài 9. Sau đó, phép nhân ma trận giữa `W` và `X` đã vector hóa tạo ra một vector có độ dài 4.
+Sau khi reshape, chúng ta có thể thu được cùng kết quả `Y`
+từ phép convolution ban đầu ở trên:
+chúng ta vừa triển khai phép convolution bằng phép nhân ma trận.
 
 ```{.python .input}
 #@tab all
 Y == d2l.matmul(W, d2l.reshape(X, -1)).reshape(2, 2)
 ```
 
-Likewise, we can implement transposed convolutions using
-matrix multiplications.
-In the following example,
-we take the $2 \times 2$ output `Y` from the above
-regular convolution
-as input to the transposed convolution.
-To implement this operation by multiplying matrices,
-we only need to transpose the weight matrix `W`
-with the new shape $(9, 4)$.
+Tương tự, chúng ta có thể triển khai phép tích chập chuyển vị bằng
+phép nhân ma trận.
+Trong ví dụ sau,
+chúng ta lấy đầu ra `Y` $2 \times 2$ từ
+phép convolution thông thường ở trên
+làm đầu vào cho phép tích chập chuyển vị.
+Để triển khai phép toán này bằng cách nhân ma trận,
+chúng ta chỉ cần chuyển vị ma trận trọng số `W`
+thành shape mới $(9, 4)$.
 
 ```{.python .input}
 #@tab all
@@ -293,48 +291,48 @@ Z = trans_conv(Y, K)
 Z == d2l.matmul(W.T, d2l.reshape(Y, -1)).reshape(3, 3)
 ```
 
-Consider implementing the convolution
-by multiplying matrices.
-Given an input vector $\mathbf{x}$
-and a weight matrix $\mathbf{W}$,
-the forward propagation function of the convolution
-can be implemented
-by multiplying its input with the weight matrix
-and outputting a vector 
+Xét việc triển khai phép convolution
+bằng phép nhân ma trận.
+Với một vector đầu vào $\mathbf{x}$
+và một ma trận trọng số $\mathbf{W}$,
+hàm forward propagation của phép convolution
+có thể được triển khai
+bằng cách nhân đầu vào với ma trận trọng số
+và xuất ra một vector
 $\mathbf{y}=\mathbf{W}\mathbf{x}$.
-Since backpropagation
-follows the chain rule
-and $\nabla_{\mathbf{x}}\mathbf{y}=\mathbf{W}^\top$,
-the backpropagation function of the convolution
-can be implemented
-by multiplying its input with the 
-transposed weight matrix $\mathbf{W}^\top$.
-Therefore, 
-the transposed convolutional layer
-can just exchange the forward propagation function
-and the backpropagation function of the convolutional layer:
-its forward propagation 
-and backpropagation functions
-multiply their input vector with 
-$\mathbf{W}^\top$ and $\mathbf{W}$, respectively.
+Vì backpropagation
+tuân theo chain rule
+và $\nabla_{\mathbf{x}}\mathbf{y}=\mathbf{W}^\top$,
+hàm backpropagation của phép convolution
+có thể được triển khai
+bằng cách nhân đầu vào của nó với
+ma trận trọng số chuyển vị $\mathbf{W}^\top$.
+Do đó,
+lớp convolution chuyển vị
+chỉ cần hoán đổi hàm forward propagation
+và hàm backpropagation của lớp convolution:
+các hàm forward propagation
+và backpropagation của nó
+lần lượt nhân vector đầu vào của chúng với
+$\mathbf{W}^\top$ và $\mathbf{W}$.
 
 
-## Summary
+## Tóm tắt
 
-* In contrast to the regular convolution that reduces input elements via the kernel, the transposed convolution broadcasts input elements via the kernel, thereby producing an output that is larger than the input.
-* If we feed $\mathsf{X}$ into a convolutional layer $f$ to output $\mathsf{Y}=f(\mathsf{X})$ and create a transposed convolutional layer $g$ with the same hyperparameters as $f$ except for the number of output channels being the number of channels in $\mathsf{X}$, then $g(Y)$ will have the same shape as $\mathsf{X}$.
-* We can implement convolutions using matrix multiplications. The transposed convolutional layer can just exchange the forward propagation function and the backpropagation function of the convolutional layer.
+* Khác với phép convolution thông thường, vốn làm giảm các phần tử đầu vào thông qua kernel, phép tích chập chuyển vị broadcast các phần tử đầu vào thông qua kernel, từ đó tạo ra một đầu ra lớn hơn đầu vào.
+* Nếu chúng ta đưa $\mathsf{X}$ vào một lớp convolution $f$ để tạo đầu ra $\mathsf{Y}=f(\mathsf{X})$ và tạo một lớp convolution chuyển vị $g$ với cùng các hyperparameter như $f$, ngoại trừ số kênh đầu ra bằng số kênh trong $\mathsf{X}$, thì $g(Y)$ sẽ có cùng shape với $\mathsf{X}$.
+* Chúng ta có thể triển khai phép convolution bằng phép nhân ma trận. Lớp convolution chuyển vị chỉ cần hoán đổi hàm forward propagation và hàm backpropagation của lớp convolution.
 
 
-## Exercises
+## Bài tập
 
-1. In :numref:`subsec-connection-to-mat-transposition`, the convolution input `X` and the transposed convolution output `Z` have the same shape. Do they have the same value? Why?
-1. Is it efficient to use matrix multiplications to implement convolutions? Why?
+1. Trong :numref:`subsec-connection-to-mat-transposition`, đầu vào của phép convolution `X` và đầu ra của phép tích chập chuyển vị `Z` có cùng shape. Chúng có cùng giá trị không? Tại sao?
+1. Có hiệu quả không nếu sử dụng phép nhân ma trận để triển khai phép convolution? Tại sao?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/376)
+[Thảo luận](https://discuss.d2l.ai/t/376)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1450)
+[Thảo luận](https://discuss.d2l.ai/t/1450)
 :end_tab:

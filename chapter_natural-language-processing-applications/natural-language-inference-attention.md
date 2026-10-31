@@ -1,30 +1,30 @@
-# Natural Language Inference: Using Attention
+# Suy luận ngôn ngữ tự nhiên: Sử dụng Attention
 :label:`sec_natural-language-inference-attention`
 
-We introduced the natural language inference task and the SNLI dataset in :numref:`sec_natural-language-inference-and-dataset`. In view of many models that are based on complex and deep architectures, :citet:`Parikh.Tackstrom.Das.ea.2016` proposed to address natural language inference with attention mechanisms and called it a "decomposable attention model".
-This results in a model without recurrent or convolutional layers, achieving the best result at the time on the SNLI dataset with much fewer parameters.
-In this section, we will describe and implement this attention-based method (with MLPs) for natural language inference, as depicted in :numref:`fig_nlp-map-nli-attention`.
+Chúng ta đã giới thiệu tác vụ suy luận ngôn ngữ tự nhiên và bộ dữ liệu SNLI trong :numref:`sec_natural-language-inference-and-dataset`. Trước nhiều mô hình dựa trên các kiến trúc phức tạp và sâu, :citet:`Parikh.Tackstrom.Das.ea.2016` đã đề xuất giải quyết bài toán suy luận ngôn ngữ tự nhiên bằng các cơ chế attention và gọi đó là một “mô hình attention có thể phân rã”.
+Mô hình này không có các lớp recurrent hoặc convolutional, nhưng đạt kết quả tốt nhất tại thời điểm đó trên bộ dữ liệu SNLI với số lượng tham số ít hơn nhiều.
+Trong phần này, chúng ta sẽ mô tả và triển khai phương pháp dựa trên attention này (với các MLP) cho bài toán suy luận ngôn ngữ tự nhiên, như được minh họa trong :numref:`fig_nlp-map-nli-attention`.
 
-![This section feeds pretrained GloVe to an architecture based on attention and MLPs for natural language inference.](../img/nlp-map-nli-attention.svg)
+![Phần này đưa GloVe đã được pretrained vào một kiến trúc dựa trên attention và các MLP cho bài toán suy luận ngôn ngữ tự nhiên.](../img/nlp-map-nli-attention.svg)
 :label:`fig_nlp-map-nli-attention`
 
 
-## The Model
+## Mô hình
 
-Simpler than preserving the order of tokens in premises and hypotheses,
-we can just align tokens in one text sequence to every token in the other, and vice versa,
-then compare and aggregate such information to predict the logical relationships
-between premises and hypotheses.
-Similar to alignment of tokens between source and target sentences in machine translation,
-the alignment of tokens between premises and hypotheses
-can be neatly accomplished by attention mechanisms.
+Thay vì bảo toàn thứ tự của các token trong premise và hypothesis,
+chúng ta chỉ cần căn chỉnh các token trong một chuỗi văn bản với từng token trong chuỗi còn lại, và ngược lại,
+sau đó so sánh và tổng hợp thông tin đó để dự đoán các mối quan hệ logic
+giữa premise và hypothesis.
+Tương tự việc căn chỉnh các token giữa câu nguồn và câu đích trong machine translation,
+việc căn chỉnh các token giữa premise và hypothesis
+có thể được thực hiện dễ dàng bằng các cơ chế attention.
 
-![Natural language inference using attention mechanisms.](../img/nli-attention.svg)
+![Suy luận ngôn ngữ tự nhiên bằng các cơ chế attention.](../img/nli-attention.svg)
 :label:`fig_nli_attention`
 
-:numref:`fig_nli_attention` depicts the natural language inference method using attention mechanisms.
-At a high level, it consists of three jointly trained steps: attending, comparing, and aggregating.
-We will illustrate them step by step in the following.
+:numref:`fig_nli_attention` minh họa phương pháp suy luận ngôn ngữ tự nhiên sử dụng các cơ chế attention.
+Ở mức tổng quát, phương pháp này bao gồm ba bước được huấn luyện đồng thời: attending, comparing và aggregating.
+Sau đây, chúng ta sẽ minh họa từng bước.
 
 ```{.python .input}
 #@tab mxnet
@@ -45,29 +45,29 @@ from torch.nn import functional as F
 
 ### Attending
 
-The first step is to align tokens in one text sequence to each token in the other sequence.
-Suppose that the premise is "i do need sleep" and the hypothesis is "i am tired".
-Due to semantical similarity,
-we may wish to align "i" in the hypothesis with "i" in the premise,
-and align "tired" in the hypothesis with "sleep" in the premise.
-Likewise, we may wish to align "i" in the premise with "i" in the hypothesis,
-and align "need" and "sleep" in the premise with "tired" in the hypothesis.
-Note that such alignment is *soft* using weighted average,
-where ideally large weights are associated with the tokens to be aligned.
-For ease of demonstration, :numref:`fig_nli_attention` shows such alignment in a *hard* way.
+Bước đầu tiên là căn chỉnh các token trong một chuỗi văn bản với từng token trong chuỗi còn lại.
+Giả sử premise là “i do need sleep” và hypothesis là “i am tired”.
+Do có sự tương đồng về ngữ nghĩa,
+chúng ta có thể muốn căn chỉnh “i” trong hypothesis với “i” trong premise,
+và căn chỉnh “tired” trong hypothesis với “sleep” trong premise.
+Tương tự, chúng ta có thể muốn căn chỉnh “i” trong premise với “i” trong hypothesis,
+và căn chỉnh “need” cùng “sleep” trong premise với “tired” trong hypothesis.
+Lưu ý rằng việc căn chỉnh này là *mềm* bằng cách sử dụng trung bình có trọng số,
+trong đó lý tưởng nhất là các trọng số lớn được gán cho những token cần căn chỉnh.
+Để dễ minh họa, :numref:`fig_nli_attention` trình bày việc căn chỉnh theo cách *cứng*.
 
-Now we describe the soft alignment using attention mechanisms in more detail.
-Denote by $\mathbf{A} = (\mathbf{a}_1, \ldots, \mathbf{a}_m)$
-and $\mathbf{B} = (\mathbf{b}_1, \ldots, \mathbf{b}_n)$ the premise and hypothesis,
-whose number of tokens are $m$ and $n$, respectively,
-where $\mathbf{a}_i, \mathbf{b}_j \in \mathbb{R}^{d}$ ($i = 1, \ldots, m, j = 1, \ldots, n$) is a $d$-dimensional word vector.
-For soft alignment, we compute the attention weights $e_{ij} \in \mathbb{R}$ as
+Bây giờ, chúng ta mô tả chi tiết hơn việc căn chỉnh mềm bằng các cơ chế attention.
+Ký hiệu $\mathbf{A} = (\mathbf{a}_1, \ldots, \mathbf{a}_m)$
+và $\mathbf{B} = (\mathbf{b}_1, \ldots, \mathbf{b}_n)$ lần lượt là premise và hypothesis,
+có số lượng token lần lượt là $m$ và $n$,
+trong đó $\mathbf{a}_i, \mathbf{b}_j \in \mathbb{R}^{d}$ ($i = 1, \ldots, m, j = 1, \ldots, n$) là một vector từ có $d$ chiều.
+Để căn chỉnh mềm, chúng ta tính các trọng số attention $e_{ij} \in \mathbb{R}$ như sau
 
 $$e_{ij} = f(\mathbf{a}_i)^\top f(\mathbf{b}_j),$$
 :eqlabel:`eq_nli_e`
 
-where the function $f$ is an MLP defined in the following `mlp` function.
-The output dimension of $f$ is specified by the `num_hiddens` argument of `mlp`.
+trong đó hàm $f$ là một MLP được định nghĩa trong hàm `mlp` sau đây.
+Số chiều đầu ra của $f$ được chỉ định bởi đối số `num_hiddens` của `mlp`.
 
 ```{.python .input}
 #@tab mxnet
@@ -97,27 +97,27 @@ def mlp(num_inputs, num_hiddens, flatten):
     return nn.Sequential(*net)
 ```
 
-It should be highlighted that, in :eqref:`eq_nli_e`
-$f$ takes inputs $\mathbf{a}_i$ and $\mathbf{b}_j$ separately rather than takes a pair of them together as input.
-This *decomposition* trick leads to only $m + n$ applications (linear complexity) of $f$ rather than $mn$ applications
-(quadratic complexity).
+Cần nhấn mạnh rằng, trong :eqref:`eq_nli_e`,
+$f$ nhận các đầu vào $\mathbf{a}_i$ và $\mathbf{b}_j$ một cách riêng biệt, thay vì nhận cả hai dưới dạng một cặp đầu vào.
+Thủ thuật *phân rã* này chỉ cần $m + n$ lần áp dụng $f$ (độ phức tạp tuyến tính) thay vì $mn$ lần áp dụng
+(độ phức tạp bậc hai).
 
 
-Normalizing the attention weights in :eqref:`eq_nli_e`,
-we compute the weighted average of all the token vectors in the hypothesis
-to obtain representation of the hypothesis that is softly aligned with the token indexed by $i$ in the premise:
+Sau khi chuẩn hóa các trọng số attention trong :eqref:`eq_nli_e`,
+chúng ta tính trung bình có trọng số của tất cả các vector token trong hypothesis
+để thu được biểu diễn của hypothesis được căn chỉnh mềm với token có chỉ số $i$ trong premise:
 
 $$
 \boldsymbol{\beta}_i = \sum_{j=1}^{n}\frac{\exp(e_{ij})}{ \sum_{k=1}^{n} \exp(e_{ik})} \mathbf{b}_j.
 $$
 
-Likewise, we compute soft alignment of premise tokens for each token indexed by $j$ in the hypothesis:
+Tương tự, chúng ta tính sự căn chỉnh mềm của các token trong premise cho từng token có chỉ số $j$ trong hypothesis:
 
 $$
 \boldsymbol{\alpha}_j = \sum_{i=1}^{m}\frac{\exp(e_{ij})}{ \sum_{k=1}^{m} \exp(e_{kj})} \mathbf{a}_i.
 $$
 
-Below we define the `Attend` class to compute the soft alignment of hypotheses (`beta`) with input premises `A` and soft alignment of premises (`alpha`) with input hypotheses `B`.
+Dưới đây, chúng ta định nghĩa class `Attend` để tính sự căn chỉnh mềm của các hypothesis (`beta`) với các premise đầu vào `A` và sự căn chỉnh mềm của các premise (`alpha`) với các hypothesis đầu vào `B`.
 
 ```{.python .input}
 #@tab mxnet
@@ -177,21 +177,21 @@ class Attend(nn.Module):
 
 ### Comparing
 
-In the next step, we compare a token in one sequence with the other sequence that is softly aligned with that token.
-Note that in soft alignment, all the tokens from one sequence, though with probably different attention weights, will be compared with a token in the other sequence.
-For easy of demonstration, :numref:`fig_nli_attention` pairs tokens with aligned tokens in a *hard* way.
-For example, suppose that the attending step determines that "need" and "sleep" in the premise are both aligned with "tired" in the hypothesis, the pair "tired--need sleep" will be compared.
+Ở bước tiếp theo, chúng ta so sánh một token trong một chuỗi với chuỗi còn lại được căn chỉnh mềm với token đó.
+Lưu ý rằng trong căn chỉnh mềm, tất cả token từ một chuỗi, dù có thể có các trọng số attention khác nhau, đều sẽ được so sánh với một token trong chuỗi còn lại.
+Để dễ minh họa, :numref:`fig_nli_attention` ghép các token với những token được căn chỉnh theo cách *cứng*.
+Ví dụ, giả sử bước attending xác định rằng “need” và “sleep” trong premise đều được căn chỉnh với “tired” trong hypothesis, thì cặp “tired--need sleep” sẽ được so sánh.
 
-In the comparing step, we feed the concatenation (operator $[\cdot, \cdot]$) of tokens from one sequence and aligned tokens from the other sequence into a function $g$ (an MLP):
+Trong bước comparing, chúng ta đưa phép nối (toán tử $[\cdot, \cdot]$) giữa các token từ một chuỗi và các token được căn chỉnh từ chuỗi còn lại vào một hàm $g$ (một MLP):
 
 $$\mathbf{v}_{A,i} = g([\mathbf{a}_i, \boldsymbol{\beta}_i]), i = 1, \ldots, m\\ \mathbf{v}_{B,j} = g([\mathbf{b}_j, \boldsymbol{\alpha}_j]), j = 1, \ldots, n.$$
 
 :eqlabel:`eq_nli_v_ab`
 
 
-In :eqref:`eq_nli_v_ab`, $\mathbf{v}_{A,i}$ is the comparison between token $i$ in the premise and all the hypothesis tokens that are softly aligned with token $i$;
-while $\mathbf{v}_{B,j}$ is the comparison between token $j$ in the hypothesis and all the premise tokens that are softly aligned with token $j$.
-The following `Compare` class defines such as comparing step.
+Trong :eqref:`eq_nli_v_ab`, $\mathbf{v}_{A,i}$ là phép so sánh giữa token $i$ trong premise và tất cả các token trong hypothesis được căn chỉnh mềm với token $i$;
+còn $\mathbf{v}_{B,j}$ là phép so sánh giữa token $j$ trong hypothesis và tất cả các token trong premise được căn chỉnh mềm với token $j$.
+Class `Compare` sau đây định nghĩa bước comparing này.
 
 ```{.python .input}
 #@tab mxnet
@@ -221,21 +221,21 @@ class Compare(nn.Module):
 
 ### Aggregating
 
-With two sets of comparison vectors $\mathbf{v}_{A,i}$ ($i = 1, \ldots, m$) and $\mathbf{v}_{B,j}$ ($j = 1, \ldots, n$) on hand,
-in the last step we will aggregate such information to infer the logical relationship.
-We begin by summing up both sets:
+Với hai tập vector so sánh $\mathbf{v}_{A,i}$ ($i = 1, \ldots, m$) và $\mathbf{v}_{B,j}$ ($j = 1, \ldots, n$),
+ở bước cuối cùng, chúng ta sẽ tổng hợp thông tin này để suy ra mối quan hệ logic.
+Trước hết, chúng ta tính tổng của cả hai tập:
 
 $$
 \mathbf{v}_A = \sum_{i=1}^{m} \mathbf{v}_{A,i}, \quad \mathbf{v}_B = \sum_{j=1}^{n}\mathbf{v}_{B,j}.
 $$
 
-Next we feed the concatenation of both summarization results into function $h$ (an MLP) to obtain the classification result of the logical relationship:
+Tiếp theo, chúng ta đưa phép nối của hai kết quả tóm tắt vào hàm $h$ (một MLP) để thu được kết quả phân loại của mối quan hệ logic:
 
 $$
 \hat{\mathbf{y}} = h([\mathbf{v}_A, \mathbf{v}_B]).
 $$
 
-The aggregation step is defined in the following `Aggregate` class.
+Bước aggregating được định nghĩa trong class `Aggregate` sau đây.
 
 ```{.python .input}
 #@tab mxnet
@@ -271,10 +271,10 @@ class Aggregate(nn.Module):
         return Y_hat
 ```
 
-### Putting It All Together
+### Kết hợp tất cả
 
-By putting the attending, comparing, and aggregating steps together,
-we define the decomposable attention model to jointly train these three steps.
+Bằng cách kết hợp các bước attending, comparing và aggregating,
+chúng ta định nghĩa mô hình attention có thể phân rã để huấn luyện đồng thời cả ba bước này.
 
 ```{.python .input}
 #@tab mxnet
@@ -319,15 +319,15 @@ class DecomposableAttention(nn.Module):
         return Y_hat
 ```
 
-## Training and Evaluating the Model
+## Huấn luyện và đánh giá mô hình
 
-Now we will train and evaluate the defined decomposable attention model on the SNLI dataset.
-We begin by reading the dataset.
+Bây giờ, chúng ta sẽ huấn luyện và đánh giá mô hình attention có thể phân rã đã định nghĩa trên bộ dữ liệu SNLI.
+Chúng ta bắt đầu bằng việc đọc bộ dữ liệu.
 
 
-### Reading the dataset
+### Đọc bộ dữ liệu
 
-We download and read the SNLI dataset using the function defined in :numref:`sec_natural-language-inference-and-dataset`. The batch size and sequence length are set to $256$ and $50$, respectively.
+Chúng ta tải xuống và đọc bộ dữ liệu SNLI bằng hàm được định nghĩa trong :numref:`sec_natural-language-inference-and-dataset`. Kích thước batch và độ dài chuỗi lần lượt được đặt là $256$ và $50$.
 
 ```{.python .input}
 #@tab all
@@ -335,13 +335,13 @@ batch_size, num_steps = 256, 50
 train_iter, test_iter, vocab = d2l.load_data_snli(batch_size, num_steps)
 ```
 
-### Creating the Model
+### Tạo mô hình
 
-We use the pretrained 100-dimensional GloVe embedding to represent the input tokens.
-Thus, we predefine the dimension of vectors $\mathbf{a}_i$ and $\mathbf{b}_j$ in :eqref:`eq_nli_e` as 100.
-The output dimension of functions $f$ in :eqref:`eq_nli_e` and $g$ in :eqref:`eq_nli_v_ab` is set to 200.
-Then we create a model instance, initialize its parameters,
-and load the GloVe embedding to initialize vectors of input tokens.
+Chúng ta sử dụng embedding GloVe 100 chiều đã được pretrained để biểu diễn các token đầu vào.
+Do đó, trong :eqref:`eq_nli_e`, chúng ta định trước số chiều của các vector $\mathbf{a}_i$ và $\mathbf{b}_j$ là 100.
+Số chiều đầu ra của các hàm $f$ trong :eqref:`eq_nli_e` và $g$ trong :eqref:`eq_nli_v_ab` được đặt là 200.
+Sau đó, chúng ta tạo một instance của mô hình, khởi tạo các tham số của mô hình,
+và tải embedding GloVe để khởi tạo các vector của token đầu vào.
 
 ```{.python .input}
 #@tab mxnet
@@ -362,10 +362,10 @@ embeds = glove_embedding[vocab.idx_to_token]
 net.embedding.weight.data.copy_(embeds);
 ```
 
-### Training and Evaluating the Model
+### Huấn luyện và đánh giá mô hình
 
-In contrast to the `split_batch` function in :numref:`sec_multi_gpu` that takes single inputs such as text sequences (or images),
-we define a `split_batch_multi_inputs` function to take multiple inputs such as premises and hypotheses in minibatches.
+Không giống hàm `split_batch` trong :numref:`sec_multi_gpu` nhận các đầu vào đơn như các chuỗi văn bản (hoặc hình ảnh),
+chúng ta định nghĩa hàm `split_batch_multi_inputs` để nhận nhiều đầu vào như premise và hypothesis trong các minibatch.
 
 ```{.python .input}
 #@tab mxnet
@@ -377,7 +377,7 @@ def split_batch_multi_inputs(X, y, devices):
     return (X, gluon.utils.split_and_load(y, devices, even_split=False))
 ```
 
-Now we can train and evaluate the model on the SNLI dataset.
+Bây giờ, chúng ta có thể huấn luyện và đánh giá mô hình trên bộ dữ liệu SNLI.
 
 ```{.python .input}
 #@tab mxnet
@@ -396,9 +396,9 @@ loss = nn.CrossEntropyLoss(reduction="none")
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-### Using the Model
+### Sử dụng mô hình
 
-Finally, define the prediction function to output the logical relationship between a pair of premise and hypothesis.
+Cuối cùng, hãy định nghĩa hàm dự đoán để xuất ra mối quan hệ logic giữa một cặp premise và hypothesis.
 
 ```{.python .input}
 #@tab mxnet
@@ -427,31 +427,31 @@ def predict_snli(net, vocab, premise, hypothesis):
             else 'neutral'
 ```
 
-We can use the trained model to obtain the natural language inference result for a sample pair of sentences.
+Chúng ta có thể sử dụng mô hình đã huấn luyện để thu được kết quả suy luận ngôn ngữ tự nhiên cho một cặp câu mẫu.
 
 ```{.python .input}
 #@tab all
 predict_snli(net, vocab, ['he', 'is', 'good', '.'], ['he', 'is', 'bad', '.'])
 ```
 
-## Summary
+## Tóm tắt
 
-* The decomposable attention model consists of three steps for predicting the logical relationships between premises and hypotheses: attending, comparing, and aggregating.
-* With attention mechanisms, we can align tokens in one text sequence to every token in the other, and vice versa. Such alignment is soft using weighted average, where ideally large weights are associated with the tokens to be aligned.
-* The decomposition trick leads to a more desirable linear complexity than quadratic complexity when computing attention weights.
-* We can use pretrained word vectors as the input representation for downstream natural language processing task such as natural language inference.
+* Mô hình attention có thể phân rã gồm ba bước để dự đoán các mối quan hệ logic giữa tiền đề và giả thuyết: attending, comparing và aggregating.
+* Với các cơ chế attention, chúng ta có thể căn chỉnh các token trong một chuỗi văn bản với mọi token trong chuỗi còn lại và ngược lại. Kiểu căn chỉnh này là mềm, sử dụng trung bình có trọng số; trong đó, lý tưởng nhất là các trọng số lớn được gán cho những token cần được căn chỉnh.
+* Mẹo phân rã dẫn đến độ phức tạp tuyến tính phù hợp hơn so với độ phức tạp bậc hai khi tính các trọng số attention.
+* Chúng ta có thể sử dụng các vector từ được pretrained làm biểu diễn đầu vào cho các tác vụ xử lý ngôn ngữ tự nhiên downstream, chẳng hạn như suy luận ngôn ngữ tự nhiên.
 
 
-## Exercises
+## Bài tập
 
-1. Train the model with other combinations of hyperparameters. Can you get better accuracy on the test set?
-1. What are major drawbacks of the decomposable attention model for natural language inference?
-1. Suppose that we want to get the level of semantical similarity (e.g., a continuous value between 0 and 1) for any pair of sentences. How shall we collect and label the dataset? Can you design a model with attention mechanisms?
+1. Huấn luyện mô hình với các tổ hợp hyperparameter khác. Bạn có thể đạt được độ chính xác cao hơn trên tập kiểm tra không?
+1. Những nhược điểm chính của mô hình attention có thể phân rã đối với bài toán suy luận ngôn ngữ tự nhiên là gì?
+1. Giả sử chúng ta muốn xác định mức độ tương đồng về ngữ nghĩa (ví dụ: một giá trị liên tục từ 0 đến 1) cho mọi cặp câu. Chúng ta nên thu thập và gắn nhãn dataset như thế nào? Bạn có thể thiết kế một mô hình sử dụng các cơ chế attention không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/395)
+[Thảo luận](https://discuss.d2l.ai/t/395)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1530)
+[Thảo luận](https://discuss.d2l.ai/t/1530)
 :end_tab:

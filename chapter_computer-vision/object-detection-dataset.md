@@ -1,21 +1,21 @@
-# The Object Detection Dataset
+# Bộ dữ liệu phát hiện đối tượng
 :label:`sec_object-detection-dataset`
 
-There is no small dataset such as MNIST and Fashion-MNIST in the field of object detection.
-In order to quickly demonstrate object detection models,
-[**we collected and labeled a small dataset**].
-First, we took photos of free bananas from our office
-and generated
-1000 banana images with different rotations and sizes.
-Then we placed each banana image
-at a random position on some background image.
-In the end, we labeled bounding boxes for those bananas on the images.
+Không có bộ dữ liệu nhỏ nào như MNIST và Fashion-MNIST trong lĩnh vực phát hiện đối tượng.
+Để nhanh chóng minh họa các mô hình phát hiện đối tượng,
+[**chúng tôi đã thu thập và gắn nhãn một bộ dữ liệu nhỏ**].
+Đầu tiên, chúng tôi chụp ảnh những quả chuối miễn phí tại văn phòng
+và tạo ra
+1000 ảnh chuối với các góc xoay và kích thước khác nhau.
+Sau đó, chúng tôi đặt từng ảnh chuối
+ở một vị trí ngẫu nhiên trên một số ảnh nền.
+Cuối cùng, chúng tôi gắn nhãn các bounding box cho những quả chuối đó trên ảnh.
 
 
-## [**Downloading the Dataset**]
+## [**Tải xuống bộ dữ liệu**]
 
-The banana detection dataset with all the image and
-csv label files can be downloaded directly from the Internet.
+Bộ dữ liệu phát hiện chuối cùng với tất cả các tệp ảnh và
+tệp nhãn csv có thể được tải xuống trực tiếp từ Internet.
 
 ```{.python .input}
 #@tab mxnet
@@ -46,14 +46,14 @@ d2l.DATA_HUB['banana-detection'] = (
     '5de26c8fce5ccdea9f91267273464dc968d20d72')
 ```
 
-## Reading the Dataset
+## Đọc bộ dữ liệu
 
-We are going to [**read the banana detection dataset**] in the `read_data_bananas`
-function below.
-The dataset includes a csv file for
-object class labels and
-ground-truth bounding box coordinates
-at the upper-left and lower-right corners.
+Chúng ta sẽ [**đọc bộ dữ liệu phát hiện chuối**] trong hàm `read_data_bananas`
+bên dưới.
+Bộ dữ liệu bao gồm một tệp csv chứa
+nhãn lớp đối tượng và
+tọa độ bounding box ground-truth
+tại các góc trên bên trái và dưới bên phải.
 
 ```{.python .input}
 #@tab mxnet
@@ -99,10 +99,10 @@ def read_data_bananas(is_train=True):
     return images, torch.tensor(targets).unsqueeze(1) / 256
 ```
 
-By using the `read_data_bananas` function to read images and labels,
-the following `BananasDataset` class
-will allow us to [**create a customized `Dataset` instance**]
-for loading the banana detection dataset.
+Bằng cách sử dụng hàm `read_data_bananas` để đọc ảnh và nhãn,
+lớp `BananasDataset` sau đây
+sẽ cho phép chúng ta [**tạo một instance `Dataset` tùy chỉnh**]
+để tải bộ dữ liệu phát hiện chuối.
 
 ```{.python .input}
 #@tab mxnet
@@ -139,11 +139,11 @@ class BananasDataset(torch.utils.data.Dataset):
         return len(self.features)
 ```
 
-Finally, we define
-the `load_data_bananas` function to [**return two
-data iterator instances for both the training and test sets.**]
-For the test dataset,
-there is no need to read it in random order.
+Cuối cùng, chúng ta định nghĩa
+hàm `load_data_bananas` để [**trả về hai
+instance data iterator tương ứng với tập huấn luyện và tập kiểm tra.**]
+Đối với tập dữ liệu kiểm tra,
+không cần đọc dữ liệu theo thứ tự ngẫu nhiên.
 
 ```{.python .input}
 #@tab mxnet
@@ -169,37 +169,37 @@ def load_data_bananas(batch_size):
     return train_iter, val_iter
 ```
 
-Let's [**read a minibatch and print the shapes of
-both images and labels**] in this minibatch.
-The shape of the image minibatch,
-(batch size, number of channels, height, width),
-looks familiar:
-it is the same as in our earlier image classification tasks.
-The shape of the label minibatch is
-(batch size, $m$, 5),
-where $m$ is the largest possible number of bounding boxes
-that any image has in the dataset.
+Hãy [**đọc một minibatch và in shape của
+cả ảnh và nhãn**] trong minibatch này.
+Shape của minibatch ảnh,
+(kích thước batch, số kênh, chiều cao, chiều rộng),
+trông khá quen thuộc:
+nó giống với trong các tác vụ phân loại ảnh trước đây.
+Shape của minibatch nhãn là
+(kích thước batch, $m$, 5),
+trong đó $m$ là số lượng bounding box lớn nhất
+mà bất kỳ ảnh nào trong bộ dữ liệu có thể chứa.
 
-Although computation in minibatches is more efficient,
-it requires that all the image examples
-contain the same number of bounding boxes to form a minibatch via concatenation.
-In general,
-images may have a varying number of bounding boxes;
-thus,
-images with fewer than $m$ bounding boxes
-will be padded with illegal bounding boxes
-until $m$ is reached.
-Then
-the label of each bounding box is represented by an array of length 5.
-The first element in the array is the class of the object in the bounding box,
-where -1 indicates an illegal bounding box for padding.
-The remaining four elements of the array are
-the ($x$, $y$)-coordinate values
-of the upper-left corner and the lower-right corner
-of the bounding box (the range is between 0 and 1).
-For the banana dataset,
-since there is only one bounding box on each image,
-we have $m=1$.
+Mặc dù việc tính toán trên các minibatch hiệu quả hơn,
+nó yêu cầu tất cả các mẫu ảnh
+phải chứa cùng số lượng bounding box để tạo minibatch thông qua phép nối.
+Nói chung,
+các ảnh có thể có số lượng bounding box khác nhau;
+do đó,
+các ảnh có ít hơn $m$ bounding box
+sẽ được đệm bằng các bounding box không hợp lệ
+cho đến khi đạt $m$.
+Sau đó,
+nhãn của mỗi bounding box được biểu diễn bằng một mảng có độ dài 5.
+Phần tử đầu tiên trong mảng là lớp của đối tượng trong bounding box,
+trong đó -1 biểu thị một bounding box không hợp lệ dùng để đệm.
+Bốn phần tử còn lại của mảng là
+các giá trị tọa độ ($x$, $y$)
+của góc trên bên trái và góc dưới bên phải
+của bounding box (phạm vi nằm trong khoảng từ 0 đến 1).
+Đối với bộ dữ liệu chuối,
+vì mỗi ảnh chỉ có một bounding box,
+nên ta có $m=1$.
 
 ```{.python .input}
 #@tab all
@@ -209,12 +209,12 @@ batch = next(iter(train_iter))
 batch[0].shape, batch[1].shape
 ```
 
-## [**Demonstration**]
+## [**Minh họa**]
 
-Let's demonstrate ten images with their labeled ground-truth bounding boxes.
-We can see that the rotations, sizes, and positions of bananas vary across all these images.
-Of course, this is just a simple artificial dataset.
-In practice, real-world datasets are usually much more complicated.
+Hãy minh họa mười ảnh cùng với các bounding box ground-truth đã được gắn nhãn.
+Chúng ta có thể thấy rằng góc xoay, kích thước và vị trí của các quả chuối khác nhau giữa tất cả những ảnh này.
+Tất nhiên, đây chỉ là một bộ dữ liệu nhân tạo đơn giản.
+Trong thực tế, các bộ dữ liệu thế giới thực thường phức tạp hơn nhiều.
 
 ```{.python .input}
 #@tab mxnet
@@ -232,21 +232,21 @@ for ax, label in zip(axes, batch[1][:10]):
     d2l.show_bboxes(ax, [label[0][1:5] * edge_size], colors=['w'])
 ```
 
-## Summary
+## Tóm tắt
 
-* The banana detection dataset we collected can be used to demonstrate object detection models.
-* The data loading for object detection is similar to that for image classification. However, in object detection the labels also contain information of ground-truth bounding boxes, which is missing in image classification.
+* Bộ dữ liệu phát hiện chuối mà chúng tôi thu thập có thể được dùng để minh họa các mô hình phát hiện đối tượng.
+* Việc tải dữ liệu cho phát hiện đối tượng tương tự như đối với phân loại ảnh. Tuy nhiên, trong phát hiện đối tượng, các nhãn còn chứa thông tin về các bounding box ground-truth, vốn không có trong phân loại ảnh.
 
 
-## Exercises
+## Bài tập
 
-1. Demonstrate other images with ground-truth bounding boxes in the banana detection dataset. How do they differ with respect to bounding boxes and objects?
-1. Say that we want to apply data augmentation, such as random cropping, to object detection. How can it be different from that in image classification? Hint: what if a cropped image only contains a small portion of an object?
+1. Minh họa các ảnh khác có bounding box ground-truth trong bộ dữ liệu phát hiện chuối. Chúng khác nhau như thế nào xét về bounding box và đối tượng?
+1. Giả sử chúng ta muốn áp dụng data augmentation, chẳng hạn như random cropping, cho bài toán phát hiện đối tượng. Điều này có thể khác với trong phân loại ảnh như thế nào? Gợi ý: điều gì xảy ra nếu ảnh được crop chỉ chứa một phần nhỏ của đối tượng?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/372)
+[Thảo luận](https://discuss.d2l.ai/t/372)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1608)
+[Thảo luận](https://discuss.d2l.ai/t/1608)
 :end_tab:

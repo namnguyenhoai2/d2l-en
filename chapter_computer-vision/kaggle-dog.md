@@ -1,21 +1,21 @@
-# Dog Breed Identification (ImageNet Dogs) on Kaggle
+# Nhận diện giống chó (ImageNet Dogs) trên Kaggle
 
-In this section, we will practice
-the dog breed identification problem on
-Kaggle. (**The web address of this competition is https://www.kaggle.com/c/dog-breed-identification**)
+Trong phần này, chúng ta sẽ thực hành
+bài toán nhận diện giống chó trên
+Kaggle. (**Địa chỉ web của cuộc thi này là https://www.kaggle.com/c/dog-breed-identification**)
 
-In this competition,
-120 different breeds of dogs will be recognized.
-In fact,
-the dataset for this competition is
-a subset of the ImageNet dataset.
-Unlike the images in the CIFAR-10 dataset in :numref:`sec_kaggle_cifar10`,
-the images in the ImageNet dataset are both higher and wider in varying dimensions.
-:numref:`fig_kaggle_dog` shows the information on the competition's webpage. You need a Kaggle account
-to submit your results.
+Trong cuộc thi này,
+120 giống chó khác nhau sẽ được nhận diện.
+Trên thực tế,
+bộ dữ liệu cho cuộc thi này là
+một tập con của bộ dữ liệu ImageNet.
+Không giống như các hình ảnh trong bộ dữ liệu CIFAR-10 ở :numref:`sec_kaggle_cifar10`,
+các hình ảnh trong bộ dữ liệu ImageNet có chiều cao và chiều rộng lớn hơn, với kích thước thay đổi.
+:numref:`fig_kaggle_dog` hiển thị thông tin trên trang web của cuộc thi. Bạn cần có tài khoản Kaggle
+để gửi kết quả.
 
 
-![The dog breed identification competition website. The competition dataset can be obtained by clicking the "Data" tab.](../img/kaggle-dog.jpg)
+![Trang web của cuộc thi nhận diện giống chó. Có thể lấy bộ dữ liệu của cuộc thi bằng cách nhấp vào tab "Data".](../img/kaggle-dog.jpg)
 :width:`400px`
 :label:`fig_kaggle_dog`
 
@@ -38,32 +38,32 @@ from torch import nn
 import os
 ```
 
-## Obtaining and Organizing the Dataset
+## Lấy và tổ chức bộ dữ liệu
 
-The competition dataset is divided into a training set and a test set, which contain 10222 and 10357 JPEG images
-of three RGB (color) channels, respectively.
-Among the training dataset,
-there are 120 breeds of dogs
-such as Labradors, Poodles, Dachshunds, Samoyeds, Huskies, Chihuahuas, and Yorkshire Terriers.
+Bộ dữ liệu của cuộc thi được chia thành tập huấn luyện và tập kiểm tra, lần lượt chứa 10222 và 10357 ảnh JPEG
+với ba kênh RGB (màu).
+Trong bộ dữ liệu huấn luyện,
+có 120 giống chó
+như Labrador, Poodle, Dachshund, Samoyed, Husky, Chihuahua và Yorkshire Terrier.
 
 
-### Downloading the Dataset
+### Tải xuống bộ dữ liệu
 
-After logging into Kaggle,
-you can click on the "Data" tab on the
-competition webpage shown in :numref:`fig_kaggle_dog` and download the dataset by clicking the "Download All" button.
-After unzipping the downloaded file in `../data`, you will find the entire dataset in the following paths:
+Sau khi đăng nhập vào Kaggle,
+bạn có thể nhấp vào tab "Data" trên
+trang web của cuộc thi được hiển thị trong :numref:`fig_kaggle_dog` và tải xuống bộ dữ liệu bằng cách nhấp vào nút "Download All".
+Sau khi giải nén tệp đã tải xuống vào `../data`, bạn sẽ tìm thấy toàn bộ bộ dữ liệu tại các đường dẫn sau:
 
 * ../data/dog-breed-identification/labels.csv
 * ../data/dog-breed-identification/sample_submission.csv
 * ../data/dog-breed-identification/train
 * ../data/dog-breed-identification/test
 
-You may have noticed that the above structure is
-similar to that of the CIFAR-10 competition in :numref:`sec_kaggle_cifar10`, where folders `train/` and `test/` contain training and testing dog images, respectively, and `labels.csv` contains
-the labels for the training images.
-Similarly, to make it easier to get started, [**we provide a small sample of the dataset**] mentioned above: `train_valid_test_tiny.zip`.
-If you are going to use the full dataset for the Kaggle competition, you need to change the `demo` variable below to `False`.
+Có thể bạn đã nhận thấy rằng cấu trúc trên
+tương tự như cấu trúc của cuộc thi CIFAR-10 trong :numref:`sec_kaggle_cifar10`, trong đó các thư mục `train/` và `test/` lần lượt chứa ảnh chó dùng cho huấn luyện và kiểm tra, còn `labels.csv` chứa
+nhãn của các ảnh huấn luyện.
+Tương tự, để giúp bạn bắt đầu dễ dàng hơn, [**chúng tôi cung cấp một mẫu nhỏ của bộ dữ liệu**] nêu trên: `train_valid_test_tiny.zip`.
+Nếu bạn định sử dụng toàn bộ bộ dữ liệu cho cuộc thi Kaggle, bạn cần thay đổi biến `demo` bên dưới thành `False`.
 
 ```{.python .input}
 #@tab all
@@ -80,13 +80,13 @@ else:
     data_dir = os.path.join('..', 'data', 'dog-breed-identification')
 ```
 
-### [**Organizing the Dataset**]
+### [**Tổ chức bộ dữ liệu**]
 
-We can organize the dataset similarly to what we did in :numref:`sec_kaggle_cifar10`, namely splitting out
-a validation set from the original training set, and moving images into subfolders grouped by labels.
+Chúng ta có thể tổ chức bộ dữ liệu tương tự như cách đã thực hiện trong :numref:`sec_kaggle_cifar10`, cụ thể là tách
+một tập validation khỏi tập huấn luyện ban đầu và chuyển các ảnh vào những thư mục con được nhóm theo nhãn.
 
-The `reorg_dog_data` function below reads
-the training data labels, splits out the validation set, and organizes the training set.
+Hàm `reorg_dog_data` bên dưới đọc
+nhãn của dữ liệu huấn luyện, tách tập validation và tổ chức tập huấn luyện.
 
 ```{.python .input}
 #@tab all
@@ -101,16 +101,16 @@ valid_ratio = 0.1
 reorg_dog_data(data_dir, valid_ratio)
 ```
 
-## [**Image Augmentation**]
+## [**Tăng cường ảnh**]
 
-Recall that this dog breed dataset
-is a subset of the ImageNet dataset,
-whose images
-are larger than those of the CIFAR-10 dataset
-in :numref:`sec_kaggle_cifar10`.
-The following
-lists a few image augmentation operations
-that might be useful for relatively larger images.
+Hãy nhớ rằng bộ dữ liệu giống chó này
+là một tập con của bộ dữ liệu ImageNet,
+với các hình ảnh
+lớn hơn những hình ảnh trong bộ dữ liệu CIFAR-10
+ở :numref:`sec_kaggle_cifar10`.
+Dưới đây
+liệt kê một số phép toán tăng cường ảnh
+có thể hữu ích đối với các ảnh tương đối lớn.
 
 ```{.python .input}
 #@tab mxnet
@@ -153,9 +153,9 @@ transform_train = torchvision.transforms.Compose([
                                      [0.229, 0.224, 0.225])])
 ```
 
-During prediction,
-we only use image preprocessing operations
-without randomness.
+Trong quá trình dự đoán,
+chúng ta chỉ sử dụng các phép tiền xử lý ảnh
+không có tính ngẫu nhiên.
 
 ```{.python .input}
 #@tab mxnet
@@ -179,11 +179,11 @@ transform_test = torchvision.transforms.Compose([
                                      [0.229, 0.224, 0.225])])
 ```
 
-## [**Reading the Dataset**]
+## [**Đọc bộ dữ liệu**]
 
-As in :numref:`sec_kaggle_cifar10`,
-we can read the organized dataset
-consisting of raw image files.
+Tương tự như trong :numref:`sec_kaggle_cifar10`,
+chúng ta có thể đọc bộ dữ liệu đã được tổ chức
+gồm các tệp ảnh thô.
 
 ```{.python .input}
 #@tab mxnet
@@ -204,9 +204,9 @@ valid_ds, test_ds = [torchvision.datasets.ImageFolder(
     transform=transform_test) for folder in ['valid', 'test']]
 ```
 
-Below we create data iterator instances
-the same way
-as in :numref:`sec_kaggle_cifar10`.
+Bên dưới, chúng ta tạo các instance của data iterator
+theo cách giống
+như trong :numref:`sec_kaggle_cifar10`.
 
 ```{.python .input}
 #@tab mxnet
@@ -236,41 +236,41 @@ test_iter = torch.utils.data.DataLoader(test_ds, batch_size, shuffle=False,
                                         drop_last=False)
 ```
 
-## [**Fine-Tuning a Pretrained Model**]
+## [**Fine-tuning mô hình pretrained**]
 
-Again,
-the dataset for this competition is a subset of the ImageNet dataset.
-Therefore, we can use the approach discussed in
+Một lần nữa,
+bộ dữ liệu cho cuộc thi này là một tập con của bộ dữ liệu ImageNet.
+Do đó, chúng ta có thể sử dụng phương pháp được thảo luận trong
 :numref:`sec_fine_tuning`
-to select a model pretrained on the
-full ImageNet dataset and use it to extract image features to be fed into a
-custom small-scale output network.
-High-level APIs of deep learning frameworks
-provide a wide range of models
-pretrained on the ImageNet dataset.
-Here, we choose
-a pretrained ResNet-34 model,
-where we simply reuse
-the input of this model's output layer
-(i.e., the extracted
-features).
-Then we can replace the original output layer with a small custom
-output network that can be trained,
-such as stacking two
-fully connected layers.
-Different from the experiment in
+để chọn một mô hình được pretrained trên
+toàn bộ bộ dữ liệu ImageNet và sử dụng mô hình đó để trích xuất các đặc trưng ảnh, rồi đưa chúng vào một
+mạng output tùy chỉnh quy mô nhỏ.
+Các API cấp cao của các framework deep learning
+cung cấp nhiều mô hình
+được pretrained trên bộ dữ liệu ImageNet.
+Ở đây, chúng ta chọn
+một mô hình ResNet-34 pretrained,
+trong đó chúng ta chỉ đơn giản tái sử dụng
+đầu vào của output layer của mô hình này
+(tức là các
+đặc trưng đã trích xuất).
+Sau đó, chúng ta có thể thay output layer ban đầu bằng một mạng output tùy chỉnh nhỏ
+có thể được huấn luyện,
+chẳng hạn như xếp chồng hai
+fully connected layer.
+Khác với thí nghiệm trong
 :numref:`sec_fine_tuning`,
-the following does
-not retrain the pretrained model used for feature
-extraction. This reduces training time and
-memory for storing gradients.
+phần sau không
+retrain mô hình pretrained được dùng để trích xuất
+đặc trưng. Điều này làm giảm thời gian huấn luyện và
+dung lượng bộ nhớ cần để lưu gradient.
 
-Recall that we
-standardized images using
-the means and standard deviations of the three RGB channels for the full ImageNet dataset.
-In fact,
-this is also consistent with the standardization operation
-by the pretrained model on ImageNet.
+Hãy nhớ rằng chúng ta
+chuẩn hóa các ảnh bằng cách sử dụng
+giá trị trung bình và độ lệch chuẩn của ba kênh RGB trên toàn bộ bộ dữ liệu ImageNet.
+Trên thực tế,
+điều này cũng nhất quán với phép chuẩn hóa
+của mô hình pretrained trên ImageNet.
 
 ```{.python .input}
 #@tab mxnet
@@ -305,9 +305,9 @@ def get_net(devices):
     return finetune_net
 ```
 
-Before [**calculating the loss**],
-we first obtain the input of the pretrained model's output layer, i.e., the extracted feature.
-Then we use this feature as input for our small custom output network to calculate the loss.
+Trước khi [**tính loss**],
+trước tiên chúng ta lấy đầu vào của output layer của mô hình pretrained, tức là đặc trưng đã trích xuất.
+Sau đó, chúng ta sử dụng đặc trưng này làm đầu vào cho mạng output tùy chỉnh nhỏ để tính loss.
 
 ```{.python .input}
 #@tab mxnet
@@ -341,10 +341,10 @@ def evaluate_loss(data_iter, net, devices):
     return l_sum / n
 ```
 
-## Defining [**the Training Function**]
+## Định nghĩa [**hàm huấn luyện**]
 
-We will select the model and tune hyperparameters according to the model's performance on the validation set. The model training function `train` only
-iterates parameters of the small custom output network.
+Chúng ta sẽ chọn mô hình và điều chỉnh hyperparameter dựa trên hiệu suất của mô hình trên tập validation. Hàm huấn luyện mô hình `train` chỉ
+lặp qua các parameter của mạng output tùy chỉnh nhỏ.
 
 ```{.python .input}
 #@tab mxnet
@@ -432,11 +432,11 @@ def train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
           f' examples/sec on {str(devices)}')
 ```
 
-## [**Training and Validating the Model**]
+## [**Huấn luyện và validation mô hình**]
 
-Now we can train and validate the model.
-The following hyperparameters are all tunable.
-For example, the number of epochs can be increased. Because `lr_period` and `lr_decay` are set to 2 and 0.9, respectively, the learning rate of the optimization algorithm will be multiplied by 0.9 after every 2 epochs.
+Bây giờ chúng ta có thể huấn luyện và thực hiện validation cho mô hình.
+Tất cả hyperparameter sau đây đều có thể điều chỉnh.
+Ví dụ, có thể tăng số epoch. Vì `lr_period` và `lr_decay` lần lượt được đặt thành 2 và 0.9, learning rate của thuật toán tối ưu hóa sẽ được nhân với 0.9 sau mỗi 2 epoch.
 
 ```{.python .input}
 #@tab mxnet
@@ -455,13 +455,13 @@ train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
       lr_decay)
 ```
 
-## [**Classifying the Testing Set**] and Submitting Results on Kaggle
+## [**Phân loại tập kiểm tra**] và gửi kết quả lên Kaggle
 
 
-Similar to the final step in :numref:`sec_kaggle_cifar10`,
-in the end all the labeled data (including the validation set) are used for training the model and classifying the testing set.
-We will use the trained custom output network
-for classification.
+Tương tự như bước cuối cùng trong :numref:`sec_kaggle_cifar10`,
+cuối cùng, toàn bộ dữ liệu có nhãn (bao gồm cả tập validation) được sử dụng để huấn luyện mô hình và phân loại tập kiểm tra.
+Chúng ta sẽ sử dụng mạng output tùy chỉnh đã huấn luyện
+để phân loại.
 
 ```{.python .input}
 #@tab mxnet
@@ -503,28 +503,28 @@ with open('submission.csv', 'w') as f:
             [str(num) for num in output]) + '\n')
 ```
 
-The above code
-will generate a `submission.csv` file
-to be submitted
-to Kaggle in the same way described in :numref:`sec_kaggle_house`.
+Đoạn code trên
+sẽ tạo một tệp `submission.csv`
+để gửi
+lên Kaggle theo cách được mô tả trong :numref:`sec_kaggle_house`.
 
 
-## Summary
+## Tóm tắt
 
 
-* Images in the ImageNet dataset are larger (with varying dimensions) than CIFAR-10 images. We may modify image augmentation operations for tasks on a different dataset.
-* To classify a subset of the ImageNet dataset, we can leverage pre-trained models on the full ImageNet dataset to extract features and only train a custom small-scale output network. This will lead to less computational time and memory cost.
+* Các ảnh trong bộ dữ liệu ImageNet lớn hơn (với kích thước thay đổi) so với ảnh CIFAR-10. Chúng ta có thể điều chỉnh các phép toán tăng cường ảnh cho các tác vụ trên những bộ dữ liệu khác nhau.
+* Để phân loại một tập con của bộ dữ liệu ImageNet, chúng ta có thể tận dụng các mô hình pretrained trên toàn bộ bộ dữ liệu ImageNet để trích xuất đặc trưng và chỉ huấn luyện một mạng output tùy chỉnh quy mô nhỏ. Điều này sẽ giảm thời gian tính toán và chi phí bộ nhớ.
 
 
-## Exercises
+## Bài tập
 
-1. When using the full Kaggle competition dataset, what results can you achieve when you increase `batch_size` (batch size) and `num_epochs` (number of epochs) while setting some other hyperparameters as `lr = 0.01`, `lr_period = 10`, and `lr_decay = 0.1`?
-1. Do you get better results if you use a deeper pretrained model? How do you tune hyperparameters? Can you further improve the results?
+1. Khi sử dụng toàn bộ bộ dữ liệu của cuộc thi Kaggle, bạn có thể đạt được kết quả nào khi tăng `batch_size` (batch size) và `num_epochs` (số epoch), đồng thời đặt một số hyperparameter khác thành `lr = 0.01`, `lr_period = 10` và `lr_decay = 0.1`?
+1. Bạn có đạt được kết quả tốt hơn nếu sử dụng một mô hình pretrained sâu hơn không? Bạn điều chỉnh hyperparameter như thế nào? Bạn có thể tiếp tục cải thiện kết quả không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/380)
+[Thảo luận](https://discuss.d2l.ai/t/380)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1481)
+[Thảo luận](https://discuss.d2l.ai/t/1481)
 :end_tab:

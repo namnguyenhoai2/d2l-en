@@ -1,24 +1,24 @@
-# Natural Language Inference: Fine-Tuning BERT
+# Suy luận ngôn ngữ tự nhiên: Fine-Tuning BERT
 :label:`sec_natural-language-inference-bert`
 
-In earlier sections of this chapter,
-we have designed an attention-based architecture
-(in :numref:`sec_natural-language-inference-attention`)
-for the natural language inference task
-on the SNLI dataset (as described in :numref:`sec_natural-language-inference-and-dataset`).
-Now we revisit this task by fine-tuning BERT.
-As discussed in :numref:`sec_finetuning-bert`,
-natural language inference is a sequence-level text pair classification problem,
-and fine-tuning BERT only requires an additional MLP-based architecture,
-as illustrated in :numref:`fig_nlp-map-nli-bert`.
+Trong các phần trước của chương này,
+chúng ta đã thiết kế một kiến trúc dựa trên attention
+(trong :numref:`sec_natural-language-inference-attention`)
+cho tác vụ suy luận ngôn ngữ tự nhiên
+trên tập dữ liệu SNLI (như được mô tả trong :numref:`sec_natural-language-inference-and-dataset`).
+Bây giờ chúng ta xem xét lại tác vụ này bằng cách fine-tuning BERT.
+Như đã thảo luận trong :numref:`sec_finetuning-bert`,
+suy luận ngôn ngữ tự nhiên là một bài toán phân loại cặp văn bản ở cấp độ chuỗi,
+và để fine-tuning BERT chỉ cần thêm một kiến trúc dựa trên MLP,
+như minh họa trong :numref:`fig_nlp-map-nli-bert`.
 
-![This section feeds pretrained BERT to an MLP-based architecture for natural language inference.](../img/nlp-map-nli-bert.svg)
+![Phần này đưa BERT pretrained vào một kiến trúc dựa trên MLP để thực hiện suy luận ngôn ngữ tự nhiên.](../img/nlp-map-nli-bert.svg)
 :label:`fig_nlp-map-nli-bert`
 
-In this section,
-we will download a pretrained small version of BERT,
-then fine-tune it
-for natural language inference on the SNLI dataset.
+Trong phần này,
+chúng ta sẽ tải xuống một phiên bản nhỏ pretrained của BERT,
+sau đó fine-tuning nó
+cho tác vụ suy luận ngôn ngữ tự nhiên trên tập dữ liệu SNLI.
 
 ```{.python .input}
 #@tab mxnet
@@ -42,17 +42,17 @@ from torch import nn
 import os
 ```
 
-## [**Loading Pretrained BERT**]
+## [**Tải BERT Pretrained**]
 
-We have explained how to pretrain BERT on the WikiText-2 dataset in
-:numref:`sec_bert-dataset` and :numref:`sec_bert-pretraining`
-(note that the original BERT model is pretrained on much bigger corpora).
-As discussed in :numref:`sec_bert-pretraining`,
-the original BERT model has hundreds of millions of parameters.
-In the following,
-we provide two versions of pretrained BERT:
-"bert.base" is about as big as the original BERT base model that requires a lot of computational resources to fine-tune,
-while "bert.small" is a small version to facilitate demonstration.
+Chúng ta đã giải thích cách pretrain BERT trên tập dữ liệu WikiText-2 trong
+:numref:`sec_bert-dataset` và :numref:`sec_bert-pretraining`
+(lưu ý rằng mô hình BERT ban đầu được pretrained trên các corpora lớn hơn nhiều).
+Như đã thảo luận trong :numref:`sec_bert-pretraining`,
+mô hình BERT ban đầu có hàng trăm triệu tham số.
+Trong phần sau,
+chúng ta cung cấp hai phiên bản BERT pretrained:
+"bert.base" có kích thước gần bằng mô hình BERT base ban đầu và cần nhiều tài nguyên tính toán để fine-tuning,
+trong khi "bert.small" là một phiên bản nhỏ nhằm hỗ trợ việc minh họa.
 
 ```{.python .input}
 #@tab mxnet
@@ -70,9 +70,9 @@ d2l.DATA_HUB['bert.small'] = (d2l.DATA_URL + 'bert.small.torch.zip',
                               'c72329e68a732bef0452e4b96a1c341c8910f81f')
 ```
 
-Either pretrained BERT model contains a "vocab.json" file that defines the vocabulary set
-and a "pretrained.params" file of the pretrained parameters.
-We implement the following `load_pretrained_model` function to [**load pretrained BERT parameters**].
+Mỗi mô hình BERT pretrained đều chứa một tệp "vocab.json" xác định tập vocabulary
+và một tệp "pretrained.params" chứa các tham số pretrained.
+Chúng ta triển khai hàm `load_pretrained_model` sau đây để [**tải các tham số BERT pretrained**].
 
 ```{.python .input}
 #@tab mxnet
@@ -111,9 +111,9 @@ def load_pretrained_model(pretrained_model, num_hiddens, ffn_num_hiddens,
     return bert, vocab
 ```
 
-To facilitate demonstration on most of machines,
-we will load and fine-tune the small version ("bert.small") of the pretrained BERT in this section.
-In the exercise, we will show how to fine-tune the much larger "bert.base" to significantly improve the testing accuracy.
+Để thuận tiện cho việc minh họa trên hầu hết các máy,
+trong phần này chúng ta sẽ tải và fine-tuning phiên bản nhỏ ("bert.small") của BERT pretrained.
+Trong bài tập, chúng ta sẽ trình bày cách fine-tuning "bert.base" lớn hơn nhiều để cải thiện đáng kể độ chính xác kiểm tra.
 
 ```{.python .input}
 #@tab all
@@ -123,21 +123,21 @@ bert, vocab = load_pretrained_model(
     num_blks=2, dropout=0.1, max_len=512, devices=devices)
 ```
 
-## [**The Dataset for Fine-Tuning BERT**]
+## [**Tập dữ liệu để Fine-Tuning BERT**]
 
-For the downstream task natural language inference on the SNLI dataset,
-we define a customized dataset class `SNLIBERTDataset`.
-In each example,
-the premise and hypothesis form a pair of text sequence
-and is packed into one BERT input sequence as depicted in :numref:`fig_bert-two-seqs`.
-Recall :numref:`subsec_bert_input_rep` that segment IDs
-are used to distinguish the premise and the hypothesis in a BERT input sequence.
-With the predefined maximum length of a BERT input sequence (`max_len`),
-the last token of the longer of the input text pair keeps getting removed until
-`max_len` is met.
-To accelerate generation of the SNLI dataset
-for fine-tuning BERT,
-we use 4 worker processes to generate training or testing examples in parallel.
+Đối với tác vụ downstream là suy luận ngôn ngữ tự nhiên trên tập dữ liệu SNLI,
+chúng ta định nghĩa một lớp dataset tùy chỉnh `SNLIBERTDataset`.
+Trong mỗi ví dụ,
+premise và hypothesis tạo thành một cặp chuỗi văn bản
+và được đóng gói thành một chuỗi đầu vào BERT như minh họa trong :numref:`fig_bert-two-seqs`.
+Hãy nhớ lại từ :numref:`subsec_bert_input_rep` rằng segment ID
+được dùng để phân biệt premise và hypothesis trong một chuỗi đầu vào BERT.
+Với độ dài tối đa được định trước của một chuỗi đầu vào BERT (`max_len`),
+token cuối cùng của chuỗi dài hơn trong cặp văn bản đầu vào sẽ liên tục bị loại bỏ cho đến khi
+đạt `max_len`.
+Để tăng tốc việc tạo tập dữ liệu SNLI
+cho fine-tuning BERT,
+chúng ta sử dụng 4 tiến trình worker để tạo song song các ví dụ huấn luyện hoặc kiểm tra.
 
 ```{.python .input}
 #@tab mxnet
@@ -247,11 +247,11 @@ class SNLIBERTDataset(torch.utils.data.Dataset):
         return len(self.all_token_ids)
 ```
 
-After downloading the SNLI dataset,
-we [**generate training and testing examples**]
-by instantiating the `SNLIBERTDataset` class.
-Such examples will be read in minibatches during training and testing
-of natural language inference.
+Sau khi tải xuống tập dữ liệu SNLI,
+chúng ta [**tạo các ví dụ huấn luyện và kiểm tra**]
+bằng cách khởi tạo lớp `SNLIBERTDataset`.
+Các ví dụ này sẽ được đọc theo minibatch trong quá trình huấn luyện và kiểm tra
+mô hình suy luận ngôn ngữ tự nhiên.
 
 ```{.python .input}
 #@tab mxnet
@@ -283,15 +283,14 @@ test_iter = torch.utils.data.DataLoader(test_set, batch_size,
 
 ## Fine-Tuning BERT
 
-As :numref:`fig_bert-two-seqs` indicates,
-fine-tuning BERT for natural language inference
-requires only an extra MLP consisting of two fully connected layers
-(see `self.hidden` and `self.output` in the following `BERTClassifier` class).
-[**This MLP transforms the
-BERT representation of the special “&lt;cls&gt;” token**],
-which encodes the information of both the premise and the hypothesis,
-(**into three outputs of natural language inference**):
-entailment, contradiction, and neutral.
+Như :numref:`fig_bert-two-seqs` chỉ ra,
+việc fine-tuning BERT cho suy luận ngôn ngữ tự nhiên
+chỉ yêu cầu thêm một MLP gồm hai lớp fully connected
+(xem `self.hidden` và `self.output` trong lớp `BERTClassifier` sau đây).
+[**MLP này biến đổi biểu diễn BERT của token đặc biệt “&lt;cls&gt;”**],
+mã hóa thông tin của cả premise và hypothesis,
+(**thành ba đầu ra của suy luận ngôn ngữ tự nhiên**):
+entailment, contradiction và neutral.
 
 ```{.python .input}
 #@tab mxnet
@@ -323,12 +322,12 @@ class BERTClassifier(nn.Module):
         return self.output(self.hidden(encoded_X[:, 0, :]))
 ```
 
-In the following,
-the pretrained BERT model `bert` is fed into the `BERTClassifier` instance `net` for
-the downstream application.
-In common implementations of BERT fine-tuning,
-only the parameters of the output layer of the additional MLP (`net.output`) will be learned from scratch.
-All the parameters of the pretrained BERT encoder (`net.encoder`) and the hidden layer of the additional MLP (`net.hidden`) will be fine-tuned.
+Trong phần sau,
+mô hình BERT pretrained `bert` được đưa vào instance `BERTClassifier` `net` để
+phục vụ ứng dụng downstream.
+Trong các triển khai fine-tuning BERT thông thường,
+chỉ các tham số của output layer của MLP bổ sung (`net.output`) được học từ đầu.
+Tất cả tham số của BERT encoder pretrained (`net.encoder`) và hidden layer của MLP bổ sung (`net.hidden`) sẽ được fine-tuning.
 
 ```{.python .input}
 #@tab mxnet
@@ -341,26 +340,26 @@ net.output.initialize(ctx=devices)
 net = BERTClassifier(bert)
 ```
 
-Recall that
-in :numref:`sec_bert`
-both the `MaskLM` class and the `NextSentencePred` class
-have parameters in their employed MLPs.
-These parameters are part of those in the pretrained BERT model
-`bert`, and thus part of parameters in `net`.
-However, such parameters are only for computing
-the masked language modeling loss
-and the next sentence prediction loss
-during pretraining.
-These two loss functions are irrelevant to fine-tuning downstream applications,
-thus the parameters of the employed MLPs in 
-`MaskLM` and `NextSentencePred` are not updated (staled) when BERT is fine-tuned.
+Hãy nhớ rằng
+trong :numref:`sec_bert`
+cả lớp `MaskLM` và lớp `NextSentencePred`
+đều có các tham số trong những MLP mà chúng sử dụng.
+Các tham số này là một phần của các tham số trong mô hình BERT pretrained
+`bert`, và do đó là một phần của các tham số trong `net`.
+Tuy nhiên, các tham số này chỉ được dùng để tính toán
+loss masked language modeling
+và loss next sentence prediction
+trong quá trình pretraining.
+Hai hàm loss này không liên quan đến các ứng dụng downstream trong quá trình fine-tuning,
+do đó các tham số của những MLP được sử dụng trong
+`MaskLM` và `NextSentencePred` không được cập nhật (bị giữ gradient cũ) khi BERT được fine-tuning.
 
-To allow parameters with stale gradients,
-the flag `ignore_stale_grad=True` is set in the `step` function of `d2l.train_batch_ch13`.
-We use this function to train and evaluate the model `net` using the training set
-(`train_iter`) and the testing set (`test_iter`) of SNLI.
-Due to the limited computational resources, [**the training**] and testing accuracy
-can be further improved: we leave its discussions in the exercises.
+Để cho phép các tham số có gradient cũ,
+flag `ignore_stale_grad=True` được thiết lập trong hàm `step` của `d2l.train_batch_ch13`.
+Chúng ta sử dụng hàm này để huấn luyện và đánh giá mô hình `net` bằng tập huấn luyện
+(`train_iter`) và tập kiểm tra (`test_iter`) của SNLI.
+Do tài nguyên tính toán hạn chế, [**độ chính xác huấn luyện**] và độ chính xác kiểm tra
+có thể được cải thiện hơn nữa: chúng ta để phần thảo luận về vấn đề này trong các bài tập.
 
 ```{.python .input}
 #@tab mxnet
@@ -380,22 +379,22 @@ net(next(iter(train_iter))[0])
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-## Summary
+## Tóm tắt
 
-* We can fine-tune the pretrained BERT model for downstream applications, such as natural language inference on the SNLI dataset.
-* During fine-tuning, the BERT model becomes part of the model for the downstream application. Parameters that are only related to pretraining loss will not be updated during fine-tuning. 
+* Chúng ta có thể fine-tuning mô hình BERT pretrained cho các ứng dụng downstream, chẳng hạn như suy luận ngôn ngữ tự nhiên trên tập dữ liệu SNLI.
+* Trong quá trình fine-tuning, mô hình BERT trở thành một phần của mô hình dành cho ứng dụng downstream. Các tham số chỉ liên quan đến loss pretraining sẽ không được cập nhật trong quá trình fine-tuning.
 
 
 
-## Exercises
+## Bài tập
 
-1. Fine-tune a much larger pretrained BERT model that is about as big as the original BERT base model if your computational resource allows. Set arguments in the `load_pretrained_model` function as: replacing 'bert.small' with 'bert.base', increasing values of `num_hiddens=256`, `ffn_num_hiddens=512`, `num_heads=4`, and `num_blks=2` to 768, 3072, 12, and 12, respectively. By increasing fine-tuning epochs (and possibly tuning other hyperparameters), can you get a testing accuracy higher than 0.86?
-1. How to truncate a pair of sequences according to their ratio of length? Compare this pair truncation method and the one used in the `SNLIBERTDataset` class. What are their pros and cons?
+1. Fine-tuning một mô hình BERT pretrained lớn hơn nhiều, có kích thước gần bằng mô hình BERT base ban đầu, nếu tài nguyên tính toán của bạn cho phép. Thiết lập các đối số trong hàm `load_pretrained_model` như sau: thay 'bert.small' bằng 'bert.base', tăng các giá trị của `num_hiddens=256`, `ffn_num_hiddens=512`, `num_heads=4` và `num_blks=2` lần lượt lên 768, 3072, 12 và 12. Bằng cách tăng số epoch fine-tuning (và có thể điều chỉnh các hyperparameter khác), bạn có thể đạt độ chính xác kiểm tra cao hơn 0.86 không?
+1. Làm thế nào để truncate một cặp chuỗi theo tỷ lệ độ dài của chúng? Hãy so sánh phương pháp truncate cặp chuỗi này với phương pháp được sử dụng trong lớp `SNLIBERTDataset`. Ưu và nhược điểm của chúng là gì?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/397)
+[Thảo luận](https://discuss.d2l.ai/t/397)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1526)
+[Thảo luận](https://discuss.d2l.ai/t/1526)
 :end_tab:

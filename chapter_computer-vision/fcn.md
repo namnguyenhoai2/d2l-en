@@ -1,30 +1,30 @@
-# Fully Convolutional Networks
+# Mạng tích chập hoàn toàn
 :label:`sec_fcn`
 
-As discussed in :numref:`sec_semantic_segmentation`,
-semantic segmentation
-classifies images in pixel level.
-A fully convolutional network (FCN)
-uses a convolutional neural network to
-transform image pixels to pixel classes :cite:`Long.Shelhamer.Darrell.2015`.
-Unlike the CNNs that we encountered earlier
-for image classification 
-or object detection,
-a fully convolutional network
-transforms 
-the height and width of intermediate feature maps
-back to those of the input image:
-this is achieved by
-the transposed convolutional layer
-introduced in :numref:`sec_transposed_conv`.
-As a result,
-the classification output
-and the input image 
-have a one-to-one correspondence 
-in pixel level:
-the channel dimension at any output pixel 
-holds the classification results
-for the input pixel at the same spatial position.
+Như đã thảo luận trong :numref:`sec_semantic_segmentation`,
+phân đoạn ngữ nghĩa
+phân loại hình ảnh ở cấp độ pixel.
+Mạng tích chập hoàn toàn (FCN)
+sử dụng mạng nơ-ron tích chập để
+chuyển đổi các pixel hình ảnh thành các lớp pixel :cite:`Long.Shelhamer.Darrell.2015`.
+Khác với các CNN mà chúng ta đã gặp trước đây
+trong bài toán phân loại hình ảnh
+hoặc phát hiện đối tượng,
+mạng tích chập hoàn toàn
+chuyển đổi
+chiều cao và chiều rộng của các feature map trung gian
+trở lại thành kích thước của hình ảnh đầu vào:
+điều này đạt được nhờ
+lớp tích chập chuyển vị
+được giới thiệu trong :numref:`sec_transposed_conv`.
+Do đó,
+đầu ra phân loại
+và hình ảnh đầu vào
+có sự tương ứng một-một
+ở cấp độ pixel:
+chiều kênh tại mỗi pixel đầu ra
+chứa các kết quả phân loại
+cho pixel đầu vào ở cùng vị trí không gian.
 
 ```{.python .input}
 #@tab mxnet
@@ -46,35 +46,35 @@ from torch import nn
 from torch.nn import functional as F
 ```
 
-## The Model
+## Mô hình
 
-Here we describe the basic design of the fully convolutional network model. 
-As shown in :numref:`fig_fcn`,
-this model first uses a CNN to extract image features,
-then transforms the number of channels into
-the number of classes
-via a $1\times 1$ convolutional layer,
-and finally transforms the height and width of
-the feature maps
-to those
-of the input image via
-the transposed convolution introduced in :numref:`sec_transposed_conv`. 
-As a result,
-the model output has the same height and width as the input image,
-where the output channel contains the predicted classes
-for the input pixel at the same spatial position.
+Ở đây, chúng ta mô tả thiết kế cơ bản của mô hình mạng tích chập hoàn toàn.
+Như minh họa trong :numref:`fig_fcn`,
+mô hình này trước tiên sử dụng một CNN để trích xuất các đặc trưng hình ảnh,
+sau đó chuyển đổi số kênh thành
+số lớp
+thông qua một lớp tích chập $1\times 1$,
+và cuối cùng chuyển đổi chiều cao và chiều rộng của
+các feature map
+thành
+chiều cao và chiều rộng
+của hình ảnh đầu vào thông qua phép tích chập chuyển vị được giới thiệu trong :numref:`sec_transposed_conv`.
+Do đó,
+đầu ra của mô hình có cùng chiều cao và chiều rộng với hình ảnh đầu vào,
+trong đó kênh đầu ra chứa các lớp được dự đoán
+cho pixel đầu vào ở cùng vị trí không gian.
 
 
-![Fully convolutional network.](../img/fcn.svg)
+![Mạng tích chập hoàn toàn.](../img/fcn.svg)
 :label:`fig_fcn`
 
-Below, we [**use a ResNet-18 model pretrained on the ImageNet dataset to extract image features**]
-and denote the model instance as `pretrained_net`.
-The last few layers of this model
-include a global average pooling layer
-and a fully connected layer:
-they are not needed
-in the fully convolutional network.
+Dưới đây, chúng ta [**sử dụng mô hình ResNet-18 được pretrained trên bộ dữ liệu ImageNet để trích xuất các đặc trưng hình ảnh**]
+và ký hiệu instance của mô hình là `pretrained_net`.
+Một vài lớp cuối của mô hình này
+bao gồm một lớp global average pooling
+và một lớp fully connected:
+chúng không cần thiết
+trong mạng tích chập hoàn toàn.
 
 ```{.python .input}
 #@tab mxnet
@@ -88,11 +88,11 @@ pretrained_net = torchvision.models.resnet18(pretrained=True)
 list(pretrained_net.children())[-3:]
 ```
 
-Next, we [**create the fully convolutional network instance `net`**].
-It copies all the pretrained layers in the ResNet-18
-except for the final global average pooling layer
-and the fully connected layer that are closest
-to the output.
+Tiếp theo, chúng ta [**tạo instance mạng tích chập hoàn toàn `net`**].
+Mô hình này sao chép tất cả các lớp đã pretrained trong ResNet-18
+ngoại trừ lớp global average pooling cuối cùng
+và lớp fully connected gần
+đầu ra nhất.
 
 ```{.python .input}
 #@tab mxnet
@@ -106,9 +106,9 @@ for layer in pretrained_net.features[:-2]:
 net = nn.Sequential(*list(pretrained_net.children())[:-2])
 ```
 
-Given an input with height and width of 320 and 480 respectively,
-the forward propagation of `net`
-reduces the input height and width to 1/32 of the original, namely 10 and 15.
+Với đầu vào có chiều cao và chiều rộng lần lượt là 320 và 480,
+quá trình lan truyền xuôi của `net`
+giảm chiều cao và chiều rộng đầu vào xuống còn 1/32 kích thước ban đầu, tức là 10 và 15.
 
 ```{.python .input}
 #@tab mxnet
@@ -122,21 +122,21 @@ X = torch.rand(size=(1, 3, 320, 480))
 net(X).shape
 ```
 
-Next, we [**use a $1\times 1$ convolutional layer to transform the number of output channels into the number of classes (21) of the Pascal VOC2012 dataset.**]
-Finally, we need to (**increase the height and width of the feature maps by 32 times**) to change them back to the height and width of the input image. 
-Recall how to calculate 
-the output shape of a convolutional layer in :numref:`sec_padding`. 
-Since $(320-64+16\times2+32)/32=10$ and $(480-64+16\times2+32)/32=15$, we construct a transposed convolutional layer with stride of $32$, 
-setting
-the height and width of the kernel
-to $64$, the padding to $16$.
-In general,
-we can see that
-for stride $s$,
-padding $s/2$ (assuming $s/2$ is an integer),
-and the height and width of the kernel $2s$, 
-the transposed convolution will increase
-the height and width of the input by $s$ times.
+Tiếp theo, chúng ta [**sử dụng một lớp tích chập $1\times 1$ để chuyển đổi số kênh đầu ra thành số lớp (21) của bộ dữ liệu Pascal VOC2012.**]
+Cuối cùng, chúng ta cần (**tăng chiều cao và chiều rộng của các feature map lên 32 lần**) để đưa chúng trở lại chiều cao và chiều rộng của hình ảnh đầu vào.
+Hãy nhớ cách tính
+shape đầu ra của một lớp tích chập trong :numref:`sec_padding`.
+Vì $(320-64+16\times2+32)/32=10$ và $(480-64+16\times2+32)/32=15$, chúng ta xây dựng một lớp tích chập chuyển vị với stride bằng $32$,
+đặt
+chiều cao và chiều rộng của kernel
+bằng $64$, padding bằng $16$.
+Nói chung,
+ta có thể thấy rằng
+với stride $s$,
+padding $s/2$ (giả sử $s/2$ là một số nguyên),
+và chiều cao, chiều rộng của kernel bằng $2s$,
+phép tích chập chuyển vị sẽ tăng
+chiều cao và chiều rộng của đầu vào lên $s$ lần.
 
 ```{.python .input}
 #@tab mxnet
@@ -154,39 +154,40 @@ net.add_module('transpose_conv', nn.ConvTranspose2d(num_classes, num_classes,
                                     kernel_size=64, padding=16, stride=32))
 ```
 
-## [**Initializing Transposed Convolutional Layers**]
+## [**Khởi tạo các lớp tích chập chuyển vị**]
 
 
-We already know that
-transposed convolutional layers can increase
-the height and width of
-feature maps.
-In image processing, we may need to scale up
-an image, i.e., *upsampling*.
-*Bilinear interpolation*
-is one of the commonly used upsampling techniques.
-It is also often used for initializing transposed convolutional layers.
+Chúng ta đã biết rằng
+các lớp tích chập chuyển vị có thể tăng
+chiều cao và chiều rộng của
+các feature map.
+Trong xử lý hình ảnh, chúng ta có thể cần phóng to
+một hình ảnh, tức là *upsampling*.
+*Nội suy song tuyến tính*
+là một trong những kỹ thuật upsampling thường được sử dụng.
+Nó cũng thường được dùng để khởi tạo các lớp tích chập chuyển vị.
 
-To explain bilinear interpolation,
-say that 
-given an input image
-we want to 
-calculate each pixel 
-of the upsampled output image.
-In order to calculate the pixel of the output image
-at coordinate $(x, y)$, 
-first map $(x, y)$ to coordinate $(x', y')$ on the input image, for example, according to the ratio of the input size to the output size. 
-Note that the mapped $x'$ and $y'$ are real numbers. 
-Then, find the four pixels closest to coordinate
-$(x', y')$ on the input image. 
-Finally, the pixel of the output image at coordinate $(x, y)$ is calculated based on these four closest pixels
-on the input image and their relative distance from $(x', y')$. 
+Để giải thích phép nội suy song tuyến tính,
+giả sử rằng
+với một hình ảnh đầu vào,
+chúng ta muốn
+tính toán từng pixel
+của hình ảnh đầu ra sau khi upsampling.
+Để tính pixel của hình ảnh đầu ra
+tại tọa độ $(x, y)$,
+trước tiên ánh xạ $(x, y)$
+sang tọa độ $(x', y')$ trên hình ảnh đầu vào, chẳng hạn dựa trên tỷ lệ giữa kích thước đầu vào và kích thước đầu ra.
+Lưu ý rằng $x'$ và $y'$ sau khi ánh xạ là các số thực.
+Sau đó, tìm bốn pixel gần nhất với tọa độ
+$(x', y')$ trên hình ảnh đầu vào.
+Cuối cùng, pixel của hình ảnh đầu ra tại tọa độ $(x, y)$ được tính dựa trên bốn pixel gần nhất này
+trên hình ảnh đầu vào và khoảng cách tương đối của chúng so với $(x', y')$.
 
-Upsampling of bilinear interpolation
-can be implemented by the transposed convolutional layer 
-with the kernel constructed by the following `bilinear_kernel` function. 
-Due to space limitations, we only provide the implementation of the `bilinear_kernel` function below
-without discussions on its algorithm design.
+Upsampling bằng nội suy song tuyến tính
+có thể được triển khai bằng lớp tích chập chuyển vị
+với kernel được xây dựng bởi hàm `bilinear_kernel` sau đây.
+Do giới hạn về dung lượng, chúng tôi chỉ cung cấp phần triển khai của hàm `bilinear_kernel` bên dưới
+mà không thảo luận về thiết kế thuật toán của hàm này.
 
 ```{.python .input}
 #@tab mxnet
@@ -223,11 +224,11 @@ def bilinear_kernel(in_channels, out_channels, kernel_size):
     return weight
 ```
 
-Let's [**experiment with upsampling of bilinear interpolation**] 
-that is implemented by a transposed convolutional layer. 
-We construct a transposed convolutional layer that 
-doubles the height and weight,
-and initialize its kernel with the `bilinear_kernel` function.
+Hãy [**thử nghiệm với upsampling bằng nội suy song tuyến tính**]
+được triển khai bằng một lớp tích chập chuyển vị.
+Chúng ta xây dựng một lớp tích chập chuyển vị
+tăng gấp đôi chiều cao và chiều rộng,
+và khởi tạo kernel của nó bằng hàm `bilinear_kernel`.
 
 ```{.python .input}
 #@tab mxnet
@@ -242,7 +243,7 @@ conv_trans = nn.ConvTranspose2d(3, 3, kernel_size=4, padding=1, stride=2,
 conv_trans.weight.data.copy_(bilinear_kernel(3, 3, 4));
 ```
 
-Read the image `X` and assign the upsampling output to `Y`. In order to print the image, we need to adjust the position of the channel dimension.
+Đọc hình ảnh `X` và gán đầu ra upsampling cho `Y`. Để in hình ảnh, chúng ta cần điều chỉnh vị trí của chiều kênh.
 
 ```{.python .input}
 #@tab mxnet
@@ -260,9 +261,9 @@ Y = conv_trans(X)
 out_img = Y[0].permute(1, 2, 0).detach()
 ```
 
-As we can see, the transposed convolutional layer increases both the height and width of the image by a factor of two.
-Except for the different scales in coordinates,
-the image scaled up by bilinear interpolation and the original image printed in :numref:`sec_bbox` look the same.
+Như có thể thấy, lớp tích chập chuyển vị tăng cả chiều cao và chiều rộng của hình ảnh lên hai lần.
+Ngoại trừ sự khác biệt về tỷ lệ tọa độ,
+hình ảnh được phóng to bằng nội suy song tuyến tính và hình ảnh gốc được in trong :numref:`sec_bbox` trông giống nhau.
 
 ```{.python .input}
 #@tab mxnet
@@ -282,7 +283,7 @@ print('output image shape:', out_img.shape)
 d2l.plt.imshow(out_img);
 ```
 
-In a fully convolutional network, we [**initialize the transposed convolutional layer with upsampling of bilinear interpolation. For the $1\times 1$ convolutional layer, we use Xavier initialization.**]
+Trong mạng tích chập hoàn toàn, chúng ta [**khởi tạo lớp tích chập chuyển vị bằng upsampling nội suy song tuyến tính. Đối với lớp tích chập $1\times 1$, chúng ta sử dụng khởi tạo Xavier.**]
 
 ```{.python .input}
 #@tab mxnet
@@ -297,13 +298,13 @@ W = bilinear_kernel(num_classes, num_classes, 64)
 net.transpose_conv.weight.data.copy_(W);
 ```
 
-## [**Reading the Dataset**]
+## [**Đọc bộ dữ liệu**]
 
-We read
-the semantic segmentation dataset
-as introduced in :numref:`sec_semantic_segmentation`. 
-The output image shape of random cropping is
-specified as $320\times 480$: both the height and width are divisible by $32$.
+Chúng ta đọc
+bộ dữ liệu phân đoạn ngữ nghĩa
+như đã giới thiệu trong :numref:`sec_semantic_segmentation`.
+Shape đầu ra của phép crop ngẫu nhiên được
+chỉ định là $320\times 480$: cả chiều cao và chiều rộng đều chia hết cho $32$.
 
 ```{.python .input}
 #@tab all
@@ -311,20 +312,20 @@ batch_size, crop_size = 32, (320, 480)
 train_iter, test_iter = d2l.load_data_voc(batch_size, crop_size)
 ```
 
-## [**Training**]
+## [**Huấn luyện**]
 
 
-Now we can train our constructed
-fully convolutional network. 
-The loss function and accuracy calculation here
-are not essentially different from those in image classification of earlier chapters. 
-Because we use the output channel of the
-transposed convolutional layer to
-predict the class for each pixel,
-the channel dimension is specified in the loss calculation.
-In addition, the accuracy is calculated
-based on correctness
-of the predicted class for all the pixels.
+Bây giờ chúng ta có thể huấn luyện
+mạng tích chập hoàn toàn đã xây dựng.
+Hàm loss và cách tính accuracy ở đây
+về cơ bản không khác với những phần trong bài toán phân loại hình ảnh ở các chương trước.
+Vì chúng ta sử dụng kênh đầu ra của
+lớp tích chập chuyển vị để
+dự đoán lớp cho từng pixel,
+chiều kênh được chỉ định trong phép tính loss.
+Ngoài ra, accuracy được tính
+dựa trên tính chính xác
+của lớp được dự đoán cho tất cả các pixel.
 
 ```{.python .input}
 #@tab mxnet
@@ -346,11 +347,11 @@ trainer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=wd)
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-## [**Prediction**]
+## [**Dự đoán**]
 
 
-When predicting, we need to standardize the input image
-in each channel and transform the image into the four-dimensional input format required by the CNN.
+Khi dự đoán, chúng ta cần chuẩn hóa hình ảnh đầu vào
+trên từng kênh và chuyển hình ảnh thành định dạng đầu vào bốn chiều mà CNN yêu cầu.
 
 ```{.python .input}
 #@tab mxnet
@@ -369,7 +370,7 @@ def predict(img):
     return pred.reshape(pred.shape[1], pred.shape[2])
 ```
 
-To [**visualize the predicted class**] of each pixel, we map the predicted class back to its label color in the dataset.
+Để [**trực quan hóa lớp được dự đoán**] của từng pixel, chúng ta ánh xạ lớp được dự đoán trở lại màu nhãn tương ứng trong bộ dữ liệu.
 
 ```{.python .input}
 #@tab mxnet
@@ -387,31 +388,31 @@ def label2image(pred):
     return colormap[X, :]
 ```
 
-Images in the test dataset vary in size and shape.
-Since the model uses a transposed convolutional layer with stride of 32,
-when the height or width of an input image is indivisible by 32,
-the output height or width of the
-transposed convolutional layer will deviate from the shape of the input image.
-In order to address this issue,
-we can crop multiple rectangular areas with height and width that are integer multiples of 32 in the image,
-and perform forward propagation
-on the pixels in these areas separately.
-Note that
-the union of these rectangular areas needs to completely cover the input image.
-When a pixel is covered by multiple rectangular areas,
-the average of the transposed convolution outputs
-in separate areas for this same pixel
-can be input to
-the softmax operation
-to predict the class.
+Các hình ảnh trong bộ dữ liệu kiểm tra có kích thước và hình dạng khác nhau.
+Vì mô hình sử dụng một lớp tích chập chuyển vị với stride bằng 32,
+khi chiều cao hoặc chiều rộng của hình ảnh đầu vào không chia hết cho 32,
+chiều cao hoặc chiều rộng đầu ra của
+lớp tích chập chuyển vị sẽ lệch khỏi hình dạng của hình ảnh đầu vào.
+Để giải quyết vấn đề này,
+chúng ta có thể crop nhiều vùng hình chữ nhật có chiều cao và chiều rộng là các bội số nguyên của 32 trong hình ảnh,
+và thực hiện lan truyền xuôi
+riêng trên các pixel trong những vùng này.
+Lưu ý rằng
+hợp của các vùng hình chữ nhật này cần bao phủ hoàn toàn hình ảnh đầu vào.
+Khi một pixel được bao phủ bởi nhiều vùng hình chữ nhật,
+trung bình của các đầu ra tích chập chuyển vị
+tại các vùng riêng biệt đối với cùng pixel này
+có thể được đưa vào
+phép toán softmax
+để dự đoán lớp.
 
 
-For simplicity, we only read a few larger test images,
-and crop a $320\times480$ area for prediction starting from the upper-left corner of an image.
-For these test images, we
-print their cropped areas,
-prediction results,
-and ground-truth row by row.
+Để đơn giản, chúng tôi chỉ đọc một vài hình ảnh kiểm tra lớn hơn,
+và crop một vùng $320\times480$ để dự đoán, bắt đầu từ góc trên bên trái của hình ảnh.
+Đối với các hình ảnh kiểm tra này, chúng tôi
+in các vùng đã crop,
+kết quả dự đoán,
+và nhãn thực tế theo từng hàng.
 
 ```{.python .input}
 #@tab mxnet
@@ -441,23 +442,23 @@ for i in range(n):
 d2l.show_images(imgs[::3] + imgs[1::3] + imgs[2::3], 3, n, scale=2);
 ```
 
-## Summary
+## Tóm tắt
 
-* The fully convolutional network first uses a CNN to extract image features, then transforms the number of channels into the number of classes via a $1\times 1$ convolutional layer, and finally transforms the height and width of the feature maps to those of the input image via the transposed convolution.
-* In a fully convolutional network, we can use upsampling of bilinear interpolation to initialize the transposed convolutional layer.
+* Mạng tích chập hoàn toàn trước tiên sử dụng một CNN để trích xuất các đặc trưng hình ảnh, sau đó chuyển đổi số kênh thành số lớp thông qua một lớp tích chập $1\times 1$, và cuối cùng chuyển đổi chiều cao và chiều rộng của các feature map thành chiều cao và chiều rộng của hình ảnh đầu vào thông qua phép tích chập chuyển vị.
+* Trong mạng tích chập hoàn toàn, chúng ta có thể sử dụng upsampling bằng nội suy song tuyến tính để khởi tạo lớp tích chập chuyển vị.
 
 
-## Exercises
+## Bài tập
 
-1. If we use Xavier initialization for the transposed convolutional layer in the experiment, how does the result change?
-1. Can you further improve the accuracy of the model by tuning the hyperparameters?
-1. Predict the classes of all pixels in test images.
-1. The original fully convolutional network paper also uses outputs of some intermediate CNN layers :cite:`Long.Shelhamer.Darrell.2015`. Try to implement this idea.
+1. Nếu sử dụng khởi tạo Xavier cho lớp tích chập chuyển vị trong thử nghiệm, kết quả sẽ thay đổi như thế nào?
+1. Bạn có thể cải thiện hơn nữa accuracy của mô hình bằng cách tinh chỉnh các hyperparameter không?
+1. Dự đoán lớp của tất cả các pixel trong các hình ảnh kiểm tra.
+1. Bài báo gốc về mạng tích chập hoàn toàn cũng sử dụng đầu ra của một số lớp CNN trung gian :cite:`Long.Shelhamer.Darrell.2015`. Hãy thử triển khai ý tưởng này.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/377)
+[Thảo luận](https://discuss.d2l.ai/t/377)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1582)
+[Thảo luận](https://discuss.d2l.ai/t/1582)
 :end_tab:

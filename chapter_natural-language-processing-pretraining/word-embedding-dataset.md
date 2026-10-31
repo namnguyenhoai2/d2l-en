@@ -1,20 +1,20 @@
-# The Dataset for Pretraining Word Embeddings
+# Bộ dữ liệu để pretrain word embedding
 :label:`sec_word2vec_data`
 
-Now that we know the technical details of 
-the word2vec models and approximate training methods,
-let's walk through their implementations. 
-Specifically,
-we will take the skip-gram model in :numref:`sec_word2vec`
-and negative sampling in :numref:`sec_approx_train`
-as an example.
-In this section,
-we begin with the dataset
-for pretraining the word embedding model:
-the original format of the data
-will be transformed
-into minibatches
-that can be iterated over during training.
+Giờ đây, khi đã biết các chi tiết kỹ thuật
+của các mô hình word2vec và các phương pháp training xấp xỉ,
+hãy cùng tìm hiểu cách triển khai chúng.
+Cụ thể,
+chúng ta sẽ lấy mô hình skip-gram trong :numref:`sec_word2vec`
+và negative sampling trong :numref:`sec_approx_train`
+làm ví dụ.
+Trong phần này,
+chúng ta bắt đầu với dataset
+dùng để pretrain mô hình word embedding:
+định dạng ban đầu của dữ liệu
+sẽ được chuyển đổi
+thành các minibatch
+có thể được lặp qua trong quá trình training.
 
 ```{.python .input}
 #@tab mxnet
@@ -36,17 +36,17 @@ import os
 import random
 ```
 
-## Reading the Dataset
+## Đọc Dataset
 
-The dataset that we use here
-is [Penn Tree Bank (PTB)]( https://catalog.ldc.upenn.edu/LDC99T42). 
-This corpus is sampled
-from Wall Street Journal articles,
-split into training, validation, and test sets.
-In the original format,
-each line of the text file
-represents a sentence of words that are separated by spaces.
-Here we treat each word as a token.
+Dataset mà chúng ta sử dụng ở đây
+là [Penn Tree Bank (PTB)]( https://catalog.ldc.upenn.edu/LDC99T42).
+Corpus này được lấy mẫu
+từ các bài viết của Wall Street Journal,
+sau đó được chia thành các tập training, validation và test.
+Ở định dạng ban đầu,
+mỗi dòng trong file văn bản
+đại diện cho một câu gồm các từ được phân tách bằng dấu cách.
+Ở đây, chúng ta coi mỗi từ là một token.
 
 ```{.python .input}
 #@tab all
@@ -67,13 +67,13 @@ sentences = read_ptb()
 f'# sentences: {len(sentences)}'
 ```
 
-After reading the training set,
-we build a vocabulary for the corpus,
-where any word that appears 
-less than 10 times is replaced by 
-the "&lt;unk&gt;" token.
-Note that the original dataset
-also contains "&lt;unk&gt;" tokens that represent rare (unknown) words.
+Sau khi đọc tập training,
+chúng ta xây dựng một vocabulary cho corpus,
+trong đó mọi từ xuất hiện
+ít hơn 10 lần sẽ được thay thế bằng
+token "&lt;unk&gt;".
+Lưu ý rằng dataset ban đầu
+cũng chứa các token "&lt;unk&gt;" đại diện cho các từ hiếm (không xác định).
 
 ```{.python .input}
 #@tab all
@@ -83,43 +83,43 @@ f'vocab size: {len(vocab)}'
 
 ## Subsampling
 
-Text data
-typically have high-frequency words
-such as "the", "a", and "in":
-they may even occur billions of times in
-very large corpora.
-However,
-these words often co-occur
-with many different words in
-context windows, providing little useful signals.
-For instance,
-consider the word "chip" in a context window:
-intuitively
-its co-occurrence with a low-frequency word "intel"
-is more useful in training
-than 
-the co-occurrence with a high-frequency word "a".
-Moreover, training with vast amounts of (high-frequency) words
-is slow.
-Thus, when training word embedding models, 
-high-frequency words can be *subsampled* :cite:`Mikolov.Sutskever.Chen.ea.2013`.
-Specifically, 
-each indexed word $w_i$ 
-in the dataset will be discarded with probability
+Dữ liệu văn bản
+thường có các từ xuất hiện với tần suất cao
+như "the", "a" và "in":
+chúng thậm chí có thể xuất hiện hàng tỷ lần trong
+các corpus rất lớn.
+Tuy nhiên,
+những từ này thường đồng xuất hiện
+với nhiều từ khác nhau
+trong các context window, nên cung cấp rất ít tín hiệu hữu ích.
+Ví dụ,
+hãy xét từ "chip" trong một context window:
+theo trực giác,
+việc nó đồng xuất hiện với một từ có tần suất thấp như "intel"
+hữu ích hơn trong quá trình training
+so với
+việc đồng xuất hiện với một từ có tần suất cao như "a".
+Hơn nữa, training với một lượng lớn các từ (có tần suất cao)
+sẽ chậm.
+Do đó, khi training các mô hình word embedding,
+các từ có tần suất cao có thể được *subsample* :cite:`Mikolov.Sutskever.Chen.ea.2013`.
+Cụ thể,
+mỗi từ đã được đánh chỉ số $w_i$
+trong dataset sẽ bị loại bỏ với xác suất
 
 
 $$ P(w_i) = \max\left(1 - \sqrt{\frac{t}{f(w_i)}}, 0\right),$$
 
-where $f(w_i)$ is the ratio of 
-the number of words $w_i$
-to the total number of words in the dataset, 
-and the constant $t$ is a hyperparameter
-($10^{-4}$ in the experiment). 
-We can see that only when
-the relative frequency
-$f(w_i) > t$  can the (high-frequency) word $w_i$ be discarded, 
-and the higher the relative frequency of the word, 
-the greater the probability of being discarded.
+trong đó $f(w_i)$ là tỷ lệ giữa
+số lượng từ $w_i$
+và tổng số từ trong dataset,
+còn hằng số $t$ là một hyperparameter
+($10^{-4}$ trong thí nghiệm).
+Ta có thể thấy rằng chỉ khi
+tần suất tương đối
+$f(w_i) > t$ thì từ (có tần suất cao) $w_i$ mới có thể bị loại bỏ,
+và tần suất tương đối của từ càng cao
+thì xác suất bị loại bỏ càng lớn.
 
 ```{.python .input}
 #@tab all
@@ -144,14 +144,14 @@ def subsample(sentences, vocab):
 subsampled, counter = subsample(sentences, vocab)
 ```
 
-The following code snippet 
-plots the histogram of
-the number of tokens per sentence
-before and after subsampling.
-As expected, 
-subsampling significantly shortens sentences
-by dropping high-frequency words,
-which will lead to training speedup.
+Đoạn code sau
+vẽ histogram của
+số lượng token trong mỗi câu
+trước và sau khi subsampling.
+Đúng như dự kiến,
+subsampling rút ngắn đáng kể các câu
+bằng cách loại bỏ những từ có tần suất cao,
+từ đó giúp tăng tốc độ training.
 
 ```{.python .input}
 #@tab all
@@ -159,7 +159,8 @@ d2l.show_list_len_pair_hist(['origin', 'subsampled'], '# tokens per sentence',
                             'count', sentences, subsampled);
 ```
 
-For individual tokens, the sampling rate of the high-frequency word "the" is less than 1/20.
+Đối với từng token,
+tỷ lệ lấy mẫu của từ có tần suất cao "the" nhỏ hơn 1/20.
 
 ```{.python .input}
 #@tab all
@@ -171,15 +172,16 @@ def compare_counts(token):
 compare_counts('the')
 ```
 
-In contrast, 
-low-frequency words "join" are completely kept.
+Ngược lại,
+các từ có tần suất thấp như "join" được giữ lại hoàn toàn.
 
 ```{.python .input}
 #@tab all
 compare_counts('join')
 ```
 
-After subsampling, we map tokens to their indices for the corpus.
+Sau khi subsampling,
+chúng ta ánh xạ các token thành các chỉ số của chúng trong corpus.
 
 ```{.python .input}
 #@tab all
@@ -187,21 +189,21 @@ corpus = [vocab[line] for line in subsampled]
 corpus[:3]
 ```
 
-## Extracting Center Words and Context Words
+## Trích xuất Center Word và Context Word
 
 
-The following `get_centers_and_contexts`
-function extracts all the 
-center words and their context words
-from `corpus`.
-It uniformly samples an integer between 1 and `max_window_size`
-at random as the context window size.
-For any center word,
-those words 
-whose distance from it
-does not exceed the sampled
-context window size
-are its context words.
+Hàm `get_centers_and_contexts`
+sau đây trích xuất tất cả
+center word và các context word tương ứng
+từ `corpus`.
+Hàm lấy mẫu đồng đều một số nguyên trong khoảng từ 1 đến `max_window_size`
+một cách ngẫu nhiên làm kích thước context window.
+Với mỗi center word,
+những từ
+có khoảng cách đến nó
+không vượt quá
+kích thước context window đã lấy mẫu
+sẽ là các context word của nó.
 
 ```{.python .input}
 #@tab all
@@ -225,9 +227,9 @@ def get_centers_and_contexts(corpus, max_window_size):
     return centers, contexts
 ```
 
-Next, we create an artificial dataset containing two sentences of 7 and 3 words, respectively. 
-Let the maximum context window size be 2 
-and print all the center words and their context words.
+Tiếp theo, chúng ta tạo một dataset nhân tạo gồm hai câu lần lượt có 7 và 3 từ.
+Cho kích thước context window tối đa là 2
+và in tất cả center word cùng các context word tương ứng.
 
 ```{.python .input}
 #@tab all
@@ -237,9 +239,9 @@ for center, context in zip(*get_centers_and_contexts(tiny_dataset, 2)):
     print('center', center, 'has contexts', context)
 ```
 
-When training on the PTB dataset,
-we set the maximum context window size to 5. 
-The following extracts all the center words and their context words in the dataset.
+Khi training trên dataset PTB,
+chúng ta đặt kích thước context window tối đa là 5.
+Đoạn code sau trích xuất tất cả center word và context word tương ứng trong dataset.
 
 ```{.python .input}
 #@tab all
@@ -249,12 +251,12 @@ f'# center-context pairs: {sum([len(contexts) for contexts in all_contexts])}'
 
 ## Negative Sampling
 
-We use negative sampling for approximate training. 
-To sample noise words according to 
-a predefined distribution,
-we define the following `RandomGenerator` class,
-where the (possibly unnormalized) sampling distribution is passed
-via the argument `sampling_weights`.
+Chúng ta sử dụng negative sampling để training xấp xỉ.
+Để lấy mẫu các noise word theo
+một phân phối được định trước,
+chúng ta định nghĩa class `RandomGenerator` sau đây,
+trong đó phân phối lấy mẫu (có thể chưa chuẩn hóa) được truyền vào
+thông qua đối số `sampling_weights`.
 
 ```{.python .input}
 #@tab all
@@ -278,10 +280,10 @@ class RandomGenerator:
         return self.candidates[self.i - 1]
 ```
 
-For example, 
-we can draw 10 random variables $X$
-among indices 1, 2, and 3
-with sampling probabilities $P(X=1)=2/9, P(X=2)=3/9$, and $P(X=3)=4/9$ as follows.
+Ví dụ,
+chúng ta có thể lấy 10 biến ngẫu nhiên $X$
+từ các chỉ số 1, 2 và 3
+với xác suất lấy mẫu $P(X=1)=2/9, P(X=2)=3/9$ và $P(X=3)=4/9$ như sau.
 
 ```{.python .input}
 #@tab mxnet
@@ -289,15 +291,16 @@ generator = RandomGenerator([2, 3, 4])
 [generator.draw() for _ in range(10)]
 ```
 
-For a pair of center word and context word, 
-we randomly sample `K` (5 in the experiment) noise words. According to the suggestions in the word2vec paper,
-the sampling probability $P(w)$ of 
-a noise word $w$
-is 
-set to its relative frequency 
-in the dictionary
-raised to 
-the power of 0.75 :cite:`Mikolov.Sutskever.Chen.ea.2013`.
+Với một cặp gồm center word và context word,
+chúng ta lấy mẫu ngẫu nhiên `K` noise word (5 trong thí nghiệm).
+Theo đề xuất trong bài báo word2vec,
+xác suất lấy mẫu $P(w)$ của
+một noise word $w$
+được
+đặt bằng tần suất tương đối của nó
+trong dictionary
+lũy thừa
+0.75 :cite:`Mikolov.Sutskever.Chen.ea.2013`.
 
 ```{.python .input}
 #@tab all
@@ -322,57 +325,60 @@ def get_negatives(all_contexts, vocab, counter, K):
 all_negatives = get_negatives(all_contexts, vocab, counter, 5)
 ```
 
-## Loading Training Examples in Minibatches
+## Nạp Training Example theo Minibatch
 :label:`subsec_word2vec-minibatch-loading`
 
-After
-all the center words
-together with their
-context words and sampled noise words are extracted,
-they will be transformed into 
-minibatches of examples
-that can be iteratively loaded
-during training.
+Sau khi
+tất cả center word
+cùng với
+context word và noise word được lấy mẫu
+đã được trích xuất,
+chúng sẽ được chuyển đổi thành
+các minibatch gồm các example
+có thể được nạp lặp đi lặp lại
+trong quá trình training.
 
 
 
-In a minibatch,
-the $i^\textrm{th}$ example includes a center word
-and its $n_i$ context words and $m_i$ noise words. 
-Due to varying context window sizes,
-$n_i+m_i$ varies for different $i$.
-Thus,
-for each example
-we concatenate its context words and noise words in 
-the `contexts_negatives` variable,
-and pad zeros until the concatenation length
-reaches $\max_i n_i+m_i$ (`max_len`).
-To exclude paddings
-in the calculation of the loss,
-we define a mask variable `masks`.
-There is a one-to-one correspondence
-between elements in `masks` and elements in `contexts_negatives`,
-where zeros (otherwise ones) in `masks` correspond to paddings in `contexts_negatives`.
+Trong một minibatch,
+example thứ $i^\textrm{th}$ bao gồm một center word
+và $n_i$ context word cùng $m_i$ noise word.
+Do kích thước context window thay đổi,
+$n_i+m_i$ sẽ khác nhau đối với các $i$ khác nhau.
+Vì vậy,
+với mỗi example,
+chúng ta nối các context word và noise word của nó trong
+biến `contexts_negatives`,
+sau đó thêm các số 0 cho đến khi độ dài của chuỗi nối
+đạt $\max_i n_i+m_i$ (`max_len`).
+Để loại trừ phần padding
+khỏi phép tính loss,
+chúng ta định nghĩa một biến mask `masks`.
+Có sự tương ứng một-một
+giữa các phần tử trong `masks` và các phần tử trong `contexts_negatives`,
+trong đó các số 0 (các phần tử còn lại là số 1) trong `masks`
+tương ứng với phần padding trong `contexts_negatives`.
 
 
-To distinguish between positive and negative examples,
-we separate context words from noise words in  `contexts_negatives` via a `labels` variable. 
-Similar to `masks`,
-there is also a one-to-one correspondence
-between elements in `labels` and elements in `contexts_negatives`,
-where ones (otherwise zeros) in `labels` correspond to context words (positive examples) in `contexts_negatives`.
+Để phân biệt các example dương và âm,
+chúng ta tách context word khỏi noise word trong `contexts_negatives` thông qua một biến `labels`.
+Tương tự như `masks`,
+cũng có sự tương ứng một-một
+giữa các phần tử trong `labels` và các phần tử trong `contexts_negatives`,
+trong đó các số 1 (các phần tử còn lại là số 0) trong `labels`
+tương ứng với các context word (example dương) trong `contexts_negatives`.
 
 
-The above idea is implemented in the following `batchify` function.
-Its input `data` is a list with length
-equal to the batch size,
-where each element is an example
-consisting of
-the center word `center`, its context words `context`, and its noise words `negative`.
-This function returns 
-a minibatch that can be loaded for calculations 
-during training,
-such as including the mask variable.
+Ý tưởng trên được triển khai trong hàm `batchify` sau đây.
+Đầu vào `data` của hàm là một danh sách có độ dài
+bằng kích thước batch,
+trong đó mỗi phần tử là một example
+gồm
+center word `center`, context word `context` và noise word `negative` của nó.
+Hàm này trả về
+một minibatch có thể được nạp để thực hiện các phép tính
+trong quá trình training,
+chẳng hạn như bao gồm biến mask.
 
 ```{.python .input}
 #@tab all
@@ -391,7 +397,7 @@ def batchify(data):
         contexts_negatives), d2l.tensor(masks), d2l.tensor(labels))
 ```
 
-Let's test this function using a minibatch of two examples.
+Hãy kiểm thử hàm này bằng một minibatch gồm hai example.
 
 ```{.python .input}
 #@tab all
@@ -404,9 +410,9 @@ for name, data in zip(names, batch):
     print(name, '=', data)
 ```
 
-## Putting It All Together
+## Kết hợp Tất cả
 
-Last, we define the `load_data_ptb` function that reads the PTB dataset and returns the data iterator and the vocabulary.
+Cuối cùng, chúng ta định nghĩa hàm `load_data_ptb` để đọc dataset PTB và trả về data iterator cùng vocabulary.
 
 ```{.python .input}
 #@tab mxnet
@@ -466,7 +472,7 @@ def load_data_ptb(batch_size, max_window_size, num_noise_words):
     return data_iter, vocab
 ```
 
-Let's print the first minibatch of the data iterator.
+Hãy in minibatch đầu tiên của data iterator.
 
 ```{.python .input}
 #@tab all
@@ -477,23 +483,23 @@ for batch in data_iter:
     break
 ```
 
-## Summary
+## Tóm tắt
 
-* High-frequency words may not be so useful in training. We can subsample them for speedup in training.
-* For computational efficiency, we load examples in minibatches. We can define other variables to distinguish paddings from non-paddings, and positive examples from negative ones.
+* Các từ có tần suất cao có thể không hữu ích trong quá trình training. Chúng ta có thể subsample chúng để tăng tốc độ training.
+* Để đạt hiệu quả tính toán, chúng ta nạp các example theo minibatch. Chúng ta có thể định nghĩa các biến khác để phân biệt phần padding với phần không padding, cũng như các example dương với các example âm.
 
 
 
-## Exercises
+## Bài tập
 
-1. How does the running time of code in this section changes if not using subsampling?
-1. The `RandomGenerator` class caches `k` random sampling results. Set `k` to other values and see how it affects the data loading speed.
-1. What other hyperparameters in the code of this section may affect the data loading speed?
+1. Thời gian chạy của code trong phần này thay đổi như thế nào nếu không sử dụng subsampling?
+1. Class `RandomGenerator` lưu vào cache `k` kết quả lấy mẫu ngẫu nhiên. Hãy đặt `k` thành các giá trị khác và quan sát ảnh hưởng của nó đến tốc độ nạp dữ liệu.
+1. Những hyperparameter nào khác trong code của phần này có thể ảnh hưởng đến tốc độ nạp dữ liệu?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/383)
+[Thảo luận](https://discuss.d2l.ai/t/383)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1330)
+[Thảo luận](https://discuss.d2l.ai/t/1330)
 :end_tab:

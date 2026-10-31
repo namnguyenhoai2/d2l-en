@@ -1,56 +1,56 @@
-# Natural Language Processing: Pretraining
+# Xử lý ngôn ngữ tự nhiên: Pretraining
 :label:`chap_nlp_pretrain`
 
 
-Humans need to communicate.
-Out of this basic need of the human condition, a vast amount of written text has been generated on an everyday basis.
-Given rich text in social media, chat apps, emails, product reviews, news articles,  research papers, and books, it becomes vital to enable computers to understand them to offer assistance or make decisions based on human languages.
+Con người cần giao tiếp.
+Từ nhu cầu cơ bản này của con người, một lượng lớn văn bản viết được tạo ra hằng ngày.
+Với nguồn văn bản phong phú từ mạng xã hội, ứng dụng trò chuyện, email, đánh giá sản phẩm, bài báo thời sự, bài nghiên cứu và sách, việc giúp máy tính hiểu chúng để hỗ trợ hoặc đưa ra quyết định dựa trên ngôn ngữ của con người trở nên vô cùng quan trọng.
 
-*Natural language processing* studies interactions between computers and humans using natural languages.
-In practice, it is very common to use natural language processing techniques to process and analyze text (human natural language) data, such as language models in :numref:`sec_language-model` and machine translation models in :numref:`sec_machine_translation`.
+*Xử lý ngôn ngữ tự nhiên* nghiên cứu sự tương tác giữa máy tính và con người bằng ngôn ngữ tự nhiên.
+Trong thực tế, các kỹ thuật xử lý ngôn ngữ tự nhiên thường được sử dụng để xử lý và phân tích dữ liệu văn bản (ngôn ngữ tự nhiên của con người), chẳng hạn như các mô hình ngôn ngữ trong :numref:`sec_language-model` và các mô hình machine translation trong :numref:`sec_machine_translation`.
 
-To understand text, we can begin by learning
-its representations.
-Leveraging the existing text sequences
-from large corpora,
+Để hiểu văn bản, chúng ta có thể bắt đầu bằng việc học
+các biểu diễn của nó.
+Tận dụng các chuỗi văn bản hiện có
+từ những kho ngữ liệu lớn,
 *self-supervised learning*
-has been extensively
-used to pretrain text representations,
-such as by predicting some hidden part of the text
-using some other part of their surrounding text.
-In this way,
-models learn through supervision
-from *massive* text data
-without *expensive* labeling efforts!
+đã được sử dụng rộng rãi
+để pretrain các biểu diễn văn bản,
+chẳng hạn như dự đoán một phần bị che giấu của văn bản
+bằng cách sử dụng một phần khác trong văn bản xung quanh nó.
+Bằng cách này,
+các mô hình học thông qua sự giám sát
+từ dữ liệu văn bản *khổng lồ*
+mà không cần *nỗ lực gán nhãn tốn kém*!
 
 
-As we will see in this chapter,
-when treating each word or subword as an individual token,
-the representation of each token can be pretrained
-using word2vec, GloVe, or subword embedding models
-on large corpora.
-After pretraining, representation of each token can be a vector,
-however, it remains the same no matter what the context is.
-For instance, the vector representation of "bank" is the same
-in both
+Như chúng ta sẽ thấy trong chương này,
+khi xem mỗi từ hoặc subword là một token riêng lẻ,
+biểu diễn của mỗi token có thể được pretrain
+bằng word2vec, GloVe hoặc các mô hình subword embedding
+trên những kho ngữ liệu lớn.
+Sau khi pretrain, biểu diễn của mỗi token có thể là một vector,
+tuy nhiên, nó vẫn không thay đổi bất kể ngữ cảnh là gì.
+Ví dụ, biểu diễn vector của "bank" giống nhau
+trong cả hai câu
 "go to the bank to deposit some money"
-and
+và
 "go to the bank to sit down".
-Thus, many more recent pretraining models adapt representation of the same token
-to different contexts.
-Among them is BERT, a much deeper self-supervised model based on the Transformer encoder.
-In this chapter, we will focus on how to pretrain such representations for text,
-as highlighted in :numref:`fig_nlp-map-pretrain`.
+Vì vậy, nhiều mô hình pretraining gần đây hơn điều chỉnh biểu diễn của cùng một token
+cho các ngữ cảnh khác nhau.
+Trong số đó có BERT, một mô hình self-supervised sâu hơn nhiều dựa trên Transformer encoder.
+Trong chương này, chúng ta sẽ tập trung vào cách pretrain những biểu diễn như vậy cho văn bản,
+như được nhấn mạnh trong :numref:`fig_nlp-map-pretrain`.
 
-![Pretrained text representations can be fed to various deep learning architectures for different downstream natural language processing applications. This chapter focuses on the upstream text representation pretraining.](../img/nlp-map-pretrain.svg)
+![Các biểu diễn văn bản đã pretrain có thể được đưa vào nhiều kiến trúc deep learning khác nhau cho các ứng dụng xử lý ngôn ngữ tự nhiên downstream khác nhau. Chương này tập trung vào việc pretrain biểu diễn văn bản upstream.](../img/nlp-map-pretrain.svg)
 :label:`fig_nlp-map-pretrain`
 
 
-For sight of the big picture,
-:numref:`fig_nlp-map-pretrain` shows that
-the pretrained text representations can be fed to
-a variety of deep learning architectures for different downstream natural language processing applications.
-We will cover them in :numref:`chap_nlp_app`.
+Để có cái nhìn tổng quan,
+:numref:`fig_nlp-map-pretrain` cho thấy rằng
+các biểu diễn văn bản đã pretrain có thể được đưa vào
+nhiều kiến trúc deep learning khác nhau cho các ứng dụng xử lý ngôn ngữ tự nhiên downstream khác nhau.
+Chúng ta sẽ trình bày chúng trong :numref:`chap_nlp_app`.
 
 ```toc
 :maxdepth: 2
@@ -67,4 +67,3 @@ bert-dataset
 bert-pretraining
 
 ```
-

@@ -1,87 +1,87 @@
-# Neural Style Transfer
+# Chuyển giao phong cách bằng mạng nơ-ron
 
-If you are a photography enthusiast,
-you may be familiar with the filter.
-It can change the color style of photos
-so that landscape photos become sharper
-or portrait photos have whitened skins.
-However,
-one filter usually only changes
-one aspect of the photo.
-To apply an ideal style
-to a photo,
-you probably need to
-try many different filter combinations.
-This process is
-as complex as tuning the hyperparameters of a model.
+Nếu bạn là người yêu thích nhiếp ảnh,
+có thể bạn đã quen thuộc với các bộ lọc.
+Chúng có thể thay đổi phong cách màu sắc của ảnh
+để ảnh phong cảnh trở nên sắc nét hơn
+hoặc làm da trong ảnh chân dung trắng hơn.
+Tuy nhiên,
+một bộ lọc thường chỉ thay đổi
+một khía cạnh của ảnh.
+Để áp dụng một phong cách lý tưởng
+cho một bức ảnh,
+có lẽ bạn cần
+thử nhiều tổ hợp bộ lọc khác nhau.
+Quá trình này
+phức tạp không kém việc tinh chỉnh các hyperparameter của một mô hình.
 
 
 
-In this section, we will
-leverage layerwise representations of a CNN
-to automatically apply the style of one image
-to another image, i.e., *style transfer* :cite:`Gatys.Ecker.Bethge.2016`.
-This task needs two input images:
-one is the *content image* and
-the other is the *style image*.
-We will use neural networks
-to modify the content image
-to make it close to the style image in style.
-For example,
-the content image in :numref:`fig_style_transfer` is a landscape photo taken by us
-in Mount Rainier National Park in the suburbs of Seattle, while the style image is an oil painting
-with the theme of autumn oak trees.
-In the output synthesized image,
-the oil brush strokes of the style image
-are applied, leading to more vivid colors,
-while preserving the main shape of the objects
-in the content image.
+Trong phần này, chúng ta sẽ
+tận dụng các biểu diễn theo từng layer của một CNN
+để tự động áp dụng phong cách của một ảnh
+lên một ảnh khác, tức là *chuyển giao phong cách* :cite:`Gatys.Ecker.Bethge.2016`.
+Tác vụ này cần hai ảnh đầu vào:
+một là *ảnh nội dung*
+và ảnh còn lại là *ảnh phong cách*.
+Chúng ta sẽ sử dụng mạng nơ-ron
+để biến đổi ảnh nội dung
+sao cho phong cách của nó gần với ảnh phong cách.
+Ví dụ,
+ảnh nội dung trong :numref:`fig_style_transfer` là một ảnh phong cảnh do chúng tôi chụp
+tại Vườn quốc gia Mount Rainier ở ngoại ô Seattle, trong khi ảnh phong cách là một bức tranh sơn dầu
+với chủ đề những cây sồi mùa thu.
+Trong ảnh tổng hợp đầu ra,
+các nét cọ dầu của ảnh phong cách
+được áp dụng, tạo ra màu sắc sống động hơn,
+đồng thời giữ nguyên hình dạng chính của các đối tượng
+trong ảnh nội dung.
 
-![Given content and style images, style transfer outputs a synthesized image.](../img/style-transfer.svg)
+![Với ảnh nội dung và ảnh phong cách cho trước, chuyển giao phong cách tạo ra một ảnh tổng hợp.](../img/style-transfer.svg)
 :label:`fig_style_transfer`
 
-## Method
+## Phương pháp
 
-:numref:`fig_style_transfer_model` illustrates
-the CNN-based style transfer method with a simplified example.
-First, we initialize the synthesized image,
-for example, into the content image.
-This synthesized image is the only variable that needs to be updated during the style transfer process,
-i.e., the model parameters to be updated during training.
-Then we choose a pretrained CNN
-to extract image features and freeze its
-model parameters during training.
-This deep CNN uses multiple layers
-to extract
-hierarchical features for images.
-We can choose the output of some of these layers as content features or style features.
-Take :numref:`fig_style_transfer_model` as an example.
-The pretrained neural network here has 3 convolutional layers,
-where the second layer outputs the content features,
-and the first and third layers output the style features.
+:numref:`fig_style_transfer_model` minh họa
+phương pháp chuyển giao phong cách dựa trên CNN bằng một ví dụ đơn giản hóa.
+Trước tiên, chúng ta khởi tạo ảnh tổng hợp,
+chẳng hạn bằng ảnh nội dung.
+Ảnh tổng hợp này là biến duy nhất cần được cập nhật trong quá trình chuyển giao phong cách,
+tức là các tham số mô hình cần được cập nhật trong quá trình huấn luyện.
+Sau đó, chúng ta chọn một CNN đã được pretrained
+để trích xuất các đặc trưng của ảnh và đóng băng
+các tham số mô hình của nó trong quá trình huấn luyện.
+CNN sâu này sử dụng nhiều layer
+để trích xuất
+các đặc trưng phân cấp của ảnh.
+Chúng ta có thể chọn đầu ra của một số layer này làm đặc trưng nội dung hoặc đặc trưng phong cách.
+Lấy :numref:`fig_style_transfer_model` làm ví dụ.
+Mạng nơ-ron pretrained ở đây có 3 layer convolution,
+trong đó layer thứ hai tạo ra các đặc trưng nội dung,
+còn layer thứ nhất và thứ ba tạo ra các đặc trưng phong cách.
 
-![CNN-based style transfer process. Solid lines show the direction of forward propagation and dotted lines show backward propagation. ](../img/neural-style.svg)
+![Quy trình chuyển giao phong cách dựa trên CNN. Các đường liền nét biểu thị hướng lan truyền thuận và các đường chấm biểu thị lan truyền ngược. ](../img/neural-style.svg)
 :label:`fig_style_transfer_model`
 
-Next, we calculate the loss function of style transfer through forward propagation (direction of solid arrows), and update the model parameters (the synthesized image for output) through backpropagation (direction of dashed arrows).
-The loss function commonly used in style transfer consists of three parts:
-(i) *content loss* makes the synthesized image and the content image close in content features;
-(ii) *style loss* makes the synthesized image and style image close in style features;
-and (iii) *total variation loss* helps to reduce the noise in the synthesized image.
-Finally, when the model training is over, we output the model parameters of the style transfer to generate
-the final synthesized image.
+Tiếp theo, chúng ta tính hàm loss của quá trình chuyển giao phong cách thông qua lan truyền thuận (hướng của các mũi tên liền nét), rồi cập nhật các tham số mô hình (ảnh tổng hợp đầu ra) thông qua lan truyền ngược (hướng của các mũi tên nét đứt).
+Hàm loss thường được sử dụng trong chuyển giao phong cách gồm ba phần:
+(i) *content loss* làm cho ảnh tổng hợp và ảnh nội dung gần nhau về các đặc trưng nội dung;
+(ii) *style loss* làm cho ảnh tổng hợp và ảnh phong cách gần nhau về các đặc trưng phong cách;
+và (iii) *total variation loss* giúp giảm nhiễu trong ảnh tổng hợp.
+Cuối cùng, khi quá trình huấn luyện mô hình kết thúc, chúng ta xuất các tham số mô hình của quá trình chuyển giao phong cách để tạo ra
+ảnh tổng hợp cuối cùng.
 
 
 
-In the following,
-we will explain the technical details of style transfer via a concrete experiment.
+Trong phần tiếp theo,
+chúng ta sẽ giải thích các chi tiết kỹ thuật của chuyển giao phong cách thông qua một thí nghiệm cụ thể.
 
 
-## [**Reading the Content and Style Images**]
+## [**Đọc ảnh nội dung và ảnh phong cách**]
 
-First, we read the content and style images.
-From their printed coordinate axes,
-we can tell that these images have different sizes.
+Trước tiên, chúng ta đọc ảnh nội dung và ảnh phong cách.
+Từ các trục tọa độ được in ra,
+có thể thấy rằng các ảnh này có kích thước khác nhau.
 
 ```{.python .input}
 #@tab mxnet
@@ -122,14 +122,14 @@ style_img = d2l.Image.open('../img/autumn-oak.jpg')
 d2l.plt.imshow(style_img);
 ```
 
-## [**Preprocessing and Postprocessing**]
+## [**Tiền xử lý và hậu xử lý**]
 
-Below, we define two functions for preprocessing and postprocessing images.
-The `preprocess` function standardizes
-each of the three RGB channels of the input image and transforms the results into the CNN input format.
-The `postprocess` function restores the pixel values in the output image to their original values before standardization.
-Since the image printing function requires that each pixel has a floating point value from 0 to 1,
-we replace any value smaller than 0 or greater than 1 with 0 or 1, respectively.
+Dưới đây, chúng ta định nghĩa hai hàm để tiền xử lý và hậu xử lý ảnh.
+Hàm `preprocess` chuẩn hóa
+từng kênh trong ba kênh RGB của ảnh đầu vào và biến đổi kết quả thành định dạng đầu vào của CNN.
+Hàm `postprocess` khôi phục các giá trị pixel trong ảnh đầu ra về giá trị ban đầu trước khi chuẩn hóa.
+Vì hàm in ảnh yêu cầu mỗi pixel có giá trị dấu phẩy động từ 0 đến 1,
+chúng ta thay thế mọi giá trị nhỏ hơn 0 hoặc lớn hơn 1 lần lượt bằng 0 hoặc 1.
 
 ```{.python .input}
 #@tab mxnet
@@ -164,9 +164,9 @@ def postprocess(img):
     return torchvision.transforms.ToPILImage()(img.permute(2, 0, 1))
 ```
 
-## [**Extracting Features**]
+## [**Trích xuất đặc trưng**]
 
-We use the VGG-19 model pretrained on the ImageNet dataset to extract image features :cite:`Gatys.Ecker.Bethge.2016`.
+Chúng ta sử dụng mô hình VGG-19 được pretrained trên tập dữ liệu ImageNet để trích xuất các đặc trưng của ảnh :cite:`Gatys.Ecker.Bethge.2016`.
 
 ```{.python .input}
 #@tab mxnet
@@ -178,27 +178,27 @@ pretrained_net = gluon.model_zoo.vision.vgg19(pretrained=True)
 pretrained_net = torchvision.models.vgg19(pretrained=True)
 ```
 
-In order to extract the content features and style features of the image, we can select the output of certain layers in the VGG network.
-Generally speaking, the closer to the input layer, the easier to extract details of the image, and vice versa, the easier to extract the global information of the image. In order to avoid excessively
-retaining the details of the content image in the synthesized image,
-we choose a VGG layer that is closer to the output as the *content layer* to output the content features of the image.
-We also select the output of different VGG layers for extracting local and global style features.
-These layers are also called *style layers*.
-As mentioned in :numref:`sec_vgg`,
-the VGG network uses 5 convolutional blocks.
-In the experiment, we choose the last convolutional layer of the fourth convolutional block as the content layer, and the first convolutional layer of each convolutional block as the style layer.
-The indices of these layers can be obtained by printing the `pretrained_net` instance.
+Để trích xuất các đặc trưng nội dung và đặc trưng phong cách của ảnh, chúng ta có thể chọn đầu ra của một số layer nhất định trong mạng VGG.
+Nói chung, layer càng gần layer đầu vào thì càng dễ trích xuất các chi tiết của ảnh, và ngược lại, càng dễ trích xuất thông tin toàn cục của ảnh. Để tránh
+giữ lại quá nhiều chi tiết của ảnh nội dung trong ảnh tổng hợp,
+chúng ta chọn một layer VGG gần đầu ra hơn làm *content layer* để tạo ra các đặc trưng nội dung của ảnh.
+Chúng ta cũng chọn đầu ra của các layer VGG khác nhau để trích xuất các đặc trưng phong cách cục bộ và toàn cục.
+Các layer này còn được gọi là *style layer*.
+Như đã đề cập trong :numref:`sec_vgg`,
+mạng VGG sử dụng 5 convolutional block.
+Trong thí nghiệm, chúng ta chọn layer convolution cuối cùng của convolutional block thứ tư làm content layer, và layer convolution đầu tiên của mỗi convolutional block làm style layer.
+Có thể lấy chỉ số của các layer này bằng cách in instance `pretrained_net`.
 
 ```{.python .input}
 #@tab all
 style_layers, content_layers = [0, 5, 10, 19, 28], [25]
 ```
 
-When extracting features using VGG layers,
-we only need to use all those
-from the input layer to the content layer or style layer that is closest to the output layer.
-Let's construct a new network instance `net`, which only retains all the VGG layers to be
-used for feature extraction.
+Khi trích xuất đặc trưng bằng các layer VGG,
+chúng ta chỉ cần sử dụng tất cả các layer
+từ layer đầu vào đến content layer hoặc style layer gần layer đầu ra nhất.
+Hãy xây dựng một instance mạng mới `net`, chỉ giữ lại tất cả các layer VGG sẽ được
+sử dụng để trích xuất đặc trưng.
 
 ```{.python .input}
 #@tab mxnet
@@ -213,11 +213,11 @@ net = nn.Sequential(*[pretrained_net.features[i] for i in
                       range(max(content_layers + style_layers) + 1)])
 ```
 
-Given the input `X`, if we simply invoke
-the forward propagation `net(X)`, we can only get the output of the last layer.
-Since we also need the outputs of intermediate layers,
-we need to perform layer-by-layer computation and keep
-the content and style layer outputs.
+Với đầu vào `X`, nếu chỉ gọi
+lan truyền thuận `net(X)`, chúng ta chỉ có thể nhận được đầu ra của layer cuối cùng.
+Vì cũng cần các đầu ra của những layer trung gian,
+chúng ta cần thực hiện phép tính theo từng layer và lưu lại
+đầu ra của content layer và style layer.
 
 ```{.python .input}
 #@tab all
@@ -233,16 +233,16 @@ def extract_features(X, content_layers, style_layers):
     return contents, styles
 ```
 
-Two functions are defined below:
-the `get_contents` function extracts content features from the content image,
-and the `get_styles` function extracts style features from the style image.
-Since there is no need to update the model parameters of the pretrained VGG during training,
-we can extract the content and the style features
-even before the training starts.
-Since the synthesized image
-is a set of model parameters to be updated
-for style transfer,
-we can only extract the content and style features of the synthesized image by calling the `extract_features` function during training.
+Dưới đây định nghĩa hai hàm:
+hàm `get_contents` trích xuất các đặc trưng nội dung từ ảnh nội dung,
+còn hàm `get_styles` trích xuất các đặc trưng phong cách từ ảnh phong cách.
+Vì không cần cập nhật các tham số mô hình của VGG pretrained trong quá trình huấn luyện,
+chúng ta có thể trích xuất các đặc trưng nội dung và phong cách
+ngay cả trước khi bắt đầu huấn luyện.
+Vì ảnh tổng hợp
+là một tập hợp các tham số mô hình cần được cập nhật
+cho quá trình chuyển giao phong cách,
+chúng ta chỉ có thể trích xuất các đặc trưng nội dung và phong cách của ảnh tổng hợp bằng cách gọi hàm `extract_features` trong quá trình huấn luyện.
 
 ```{.python .input}
 #@tab mxnet
@@ -270,21 +270,21 @@ def get_styles(image_shape, device):
     return style_X, styles_Y
 ```
 
-## [**Defining the Loss Function**]
+## [**Định nghĩa hàm loss**]
 
-Now we will describe the loss function for style transfer. The loss function consists of
-the content loss, style loss, and total variation loss.
+Bây giờ chúng ta sẽ mô tả hàm loss cho quá trình chuyển giao phong cách. Hàm loss gồm
+content loss, style loss và total variation loss.
 
 ### Content Loss
 
-Similar to the loss function in linear regression,
-the content loss measures the difference
-in content features
-between the synthesized image and the content image via
-the squared loss function.
-The two inputs of the squared loss function
-are both
-outputs of the content layer computed by the `extract_features` function.
+Tương tự như hàm loss trong hồi quy tuyến tính,
+content loss đo lường sự khác biệt
+về các đặc trưng nội dung
+giữa ảnh tổng hợp và ảnh nội dung thông qua
+hàm loss bình phương.
+Hai đầu vào của hàm loss bình phương
+đều là
+đầu ra của content layer được tính bởi hàm `extract_features`.
 
 ```{.python .input}
 #@tab mxnet
@@ -303,32 +303,32 @@ def content_loss(Y_hat, Y):
 
 ### Style Loss
 
-Style loss, similar to content loss,
-also uses the squared loss function to measure the difference in style between the synthesized image and the style image.
-To express the style output of any style layer,
-we first use the `extract_features` function to
-compute the style layer output.
-Suppose that the output has
-1 example, $c$ channels,
-height $h$, and width $w$,
-we can transform this output into
-matrix $\mathbf{X}$ with $c$ rows and $hw$ columns.
-This matrix can be thought of as
-the concatenation of
-$c$ vectors $\mathbf{x}_1, \ldots, \mathbf{x}_c$,
-each of which has a length of $hw$.
-Here, vector $\mathbf{x}_i$ represents the style feature of channel $i$.
+Style loss, tương tự như content loss,
+cũng sử dụng hàm loss bình phương để đo lường sự khác biệt về phong cách giữa ảnh tổng hợp và ảnh phong cách.
+Để biểu diễn đầu ra phong cách của bất kỳ style layer nào,
+trước tiên chúng ta sử dụng hàm `extract_features` để
+tính đầu ra của style layer.
+Giả sử đầu ra có
+1 mẫu, $c$ kênh,
+chiều cao $h$ và chiều rộng $w$,
+chúng ta có thể biến đổi đầu ra này thành
+ma trận $\mathbf{X}$ có $c$ hàng và $hw$ cột.
+Ma trận này có thể được xem là
+phép nối của
+$c$ vector $\mathbf{x}_1, \ldots, \mathbf{x}_c$,
+mỗi vector có độ dài $hw$.
+Ở đây, vector $\mathbf{x}_i$ biểu diễn đặc trưng phong cách của kênh $i$.
 
-In the *Gram matrix* of these vectors $\mathbf{X}\mathbf{X}^\top \in \mathbb{R}^{c \times c}$, element $x_{ij}$ in row $i$ and column $j$ is the dot product of vectors $\mathbf{x}_i$ and $\mathbf{x}_j$.
-It represents the correlation of the style features of channels $i$ and $j$.
-We use this Gram matrix to represent the style output of any style layer.
-Note that when the value of $hw$ is larger,
-it likely leads to larger values in the Gram matrix.
-Note also that the height and width of the Gram matrix are both the number of channels $c$.
-To allow style loss not to be affected
-by these values,
-the `gram` function below divides
-the Gram matrix by the number of its elements, i.e., $chw$.
+Trong *ma trận Gram* của các vector này $\mathbf{X}\mathbf{X}^\top \in \mathbb{R}^{c \times c}$, phần tử $x_{ij}$ ở hàng $i$ và cột $j$ là tích vô hướng của các vector $\mathbf{x}_i$ và $\mathbf{x}_j$.
+Nó biểu diễn mối tương quan giữa các đặc trưng phong cách của kênh $i$ và $j$.
+Chúng ta sử dụng ma trận Gram này để biểu diễn đầu ra phong cách của bất kỳ style layer nào.
+Lưu ý rằng khi giá trị của $hw$ lớn hơn,
+nó có khả năng dẫn đến các giá trị lớn hơn trong ma trận Gram.
+Cũng lưu ý rằng chiều cao và chiều rộng của ma trận Gram đều bằng số kênh $c$.
+Để style loss không bị ảnh hưởng
+bởi các giá trị này,
+hàm `gram` dưới đây chia
+ma trận Gram cho số phần tử của nó, tức là $chw$.
 
 ```{.python .input}
 #@tab all
@@ -338,11 +338,11 @@ def gram(X):
     return d2l.matmul(X, X.T) / (num_channels * n)
 ```
 
-Obviously,
-the two Gram matrix inputs of the squared loss function for style loss are based on
-the style layer outputs for
-the synthesized image and the style image.
-It is assumed here that the Gram matrix `gram_Y` based on the style image has been precomputed.
+Rõ ràng,
+hai đầu vào ma trận Gram của hàm loss bình phương cho style loss đều dựa trên
+đầu ra của style layer đối với
+ảnh tổng hợp và ảnh phong cách.
+Ở đây giả định rằng ma trận Gram `gram_Y` dựa trên ảnh phong cách đã được tính trước.
 
 ```{.python .input}
 #@tab mxnet
@@ -358,17 +358,17 @@ def style_loss(Y_hat, gram_Y):
 
 ### Total Variation Loss
 
-Sometimes, the learned synthesized image
-has a lot of high-frequency noise,
-i.e., particularly bright or dark pixels.
-One common noise reduction method is
+Đôi khi, ảnh tổng hợp đã học
+có nhiều nhiễu tần số cao,
+tức là các pixel đặc biệt sáng hoặc tối.
+Một phương pháp giảm nhiễu phổ biến là
 *total variation denoising*.
-Denote by $x_{i, j}$ the pixel value at coordinate $(i, j)$.
-Reducing total variation loss
+Ký hiệu $x_{i, j}$ là giá trị pixel tại tọa độ $(i, j)$.
+Việc giảm total variation loss
 
 $$\sum_{i, j} \left|x_{i, j} - x_{i+1, j}\right| + \left|x_{i, j} - x_{i, j+1}\right|$$
 
-makes values of neighboring pixels on the synthesized image closer.
+làm cho giá trị của các pixel lân cận trên ảnh tổng hợp gần nhau hơn.
 
 ```{.python .input}
 #@tab all
@@ -377,14 +377,14 @@ def tv_loss(Y_hat):
                   d2l.abs(Y_hat[:, :, :, 1:] - Y_hat[:, :, :, :-1]).mean())
 ```
 
-### Loss Function
+### Hàm loss
 
-[**The loss function of style transfer is the weighted sum of content loss, style loss, and total variation loss**].
-By adjusting these weight hyperparameters,
-we can balance among
-content retention,
-style transfer,
-and noise reduction on the synthesized image.
+[**Hàm mất mát của chuyển giao phong cách là tổng có trọng số của hàm mất mát nội dung, hàm mất mát phong cách và hàm mất mát biến thiên toàn phần**].
+Bằng cách điều chỉnh các hyperparameter trọng số này,
+chúng ta có thể cân bằng giữa
+việc giữ lại nội dung,
+chuyển giao phong cách
+và giảm nhiễu trên ảnh được tổng hợp.
 
 ```{.python .input}
 #@tab all
@@ -402,12 +402,12 @@ def compute_loss(X, contents_Y_hat, styles_Y_hat, contents_Y, styles_Y_gram):
     return contents_l, styles_l, tv_l, l
 ```
 
-## [**Initializing the Synthesized Image**]
+## [**Khởi tạo ảnh được tổng hợp**]
 
-In style transfer,
-the synthesized image is the only variable that needs to be updated during training.
-Thus, we can define a simple model, `SynthesizedImage`, and treat the synthesized image as the model parameters.
-In this model, forward propagation just returns the model parameters.
+Trong chuyển giao phong cách,
+ảnh được tổng hợp là biến duy nhất cần được cập nhật trong quá trình huấn luyện.
+Do đó, chúng ta có thể định nghĩa một model đơn giản, `SynthesizedImage`, và coi ảnh được tổng hợp là các tham số của model.
+Trong model này, quá trình lan truyền xuôi chỉ trả về các tham số của model.
 
 ```{.python .input}
 #@tab mxnet
@@ -431,9 +431,9 @@ class SynthesizedImage(nn.Module):
         return self.weight
 ```
 
-Next, we define the `get_inits` function.
-This function creates a synthesized image model instance and initializes it to the image `X`.
-Gram matrices for the style image at various style layers, `styles_Y_gram`, are computed prior to training.
+Tiếp theo, chúng ta định nghĩa hàm `get_inits`.
+Hàm này tạo một instance của model ảnh được tổng hợp và khởi tạo nó bằng ảnh `X`.
+Các ma trận Gram của ảnh phong cách tại nhiều layer phong cách khác nhau, `styles_Y_gram`, được tính trước khi huấn luyện.
 
 ```{.python .input}
 #@tab mxnet
@@ -456,13 +456,13 @@ def get_inits(X, device, lr, styles_Y):
     return gen_img(), styles_Y_gram, trainer
 ```
 
-## [**Training**]
+## [**Huấn luyện**]
 
 
-When training the model for style transfer,
-we continuously extract
-content features and style features of the synthesized image, and calculate the loss function.
-Below defines the training loop.
+Khi huấn luyện model cho chuyển giao phong cách,
+chúng ta liên tục trích xuất
+các đặc trưng nội dung và đặc trưng phong cách của ảnh được tổng hợp, rồi tính hàm mất mát.
+Phần dưới đây định nghĩa vòng lặp huấn luyện.
 
 ```{.python .input}
 #@tab mxnet
@@ -514,9 +514,9 @@ def train(X, contents_Y, styles_Y, device, lr, num_epochs, lr_decay_epoch):
     return X
 ```
 
-Now we [**start to train the model**].
-We rescale the height and width of the content and style images to 300 by 450 pixels.
-We use the content image to initialize the synthesized image.
+Bây giờ chúng ta [**bắt đầu huấn luyện model**].
+Chúng ta thay đổi tỷ lệ chiều cao và chiều rộng của ảnh nội dung và ảnh phong cách thành 300 x 450 pixel.
+Chúng ta sử dụng ảnh nội dung để khởi tạo ảnh được tổng hợp.
 
 ```{.python .input}
 #@tab mxnet
@@ -536,36 +536,36 @@ _, styles_Y = get_styles(image_shape, device)
 output = train(content_X, contents_Y, styles_Y, device, 0.3, 500, 50)
 ```
 
-We can see that the synthesized image
-retains the scenery and objects of the content image,
-and transfers the color of the style image
-at the same time.
-For example,
-the synthesized image has blocks of color like
-those in the style image.
-Some of these blocks even have the subtle texture of brush strokes.
+Chúng ta có thể thấy rằng ảnh được tổng hợp
+giữ lại phong cảnh và các đối tượng của ảnh nội dung,
+đồng thời chuyển màu sắc của ảnh phong cách
+sang ảnh đó.
+Ví dụ,
+ảnh được tổng hợp có các mảng màu giống như
+những mảng màu trong ảnh phong cách.
+Một số mảng thậm chí còn có kết cấu tinh tế của các nét cọ.
 
 
 
 
-## Summary
+## Tóm tắt
 
-* The loss function commonly used in style transfer consists of three parts: (i) content loss makes the synthesized image and the content image close in content features; (ii) style loss makes the synthesized image and style image close in style features; and (iii) total variation loss helps to reduce the noise in the synthesized image.
-* We can use a pretrained CNN to extract image features and minimize the loss function to continuously update the synthesized image as model parameters during training.
-* We use Gram matrices to represent the style outputs from the style layers.
+* Hàm mất mát thường được sử dụng trong chuyển giao phong cách gồm ba phần: (i) hàm mất mát nội dung làm cho ảnh được tổng hợp và ảnh nội dung gần nhau về các đặc trưng nội dung; (ii) hàm mất mát phong cách làm cho ảnh được tổng hợp và ảnh phong cách gần nhau về các đặc trưng phong cách; và (iii) hàm mất mát biến thiên toàn phần giúp giảm nhiễu trong ảnh được tổng hợp.
+* Chúng ta có thể sử dụng một CNN pretrained để trích xuất các đặc trưng ảnh và tối thiểu hóa hàm mất mát nhằm liên tục cập nhật ảnh được tổng hợp dưới dạng các tham số của model trong quá trình huấn luyện.
+* Chúng ta sử dụng các ma trận Gram để biểu diễn đầu ra phong cách từ các layer phong cách.
 
 
-## Exercises
+## Bài tập
 
-1. How does the output change when you select different content and style layers?
-1. Adjust the weight hyperparameters in the loss function. Does the output retain more content or have less noise?
-1. Use different content and style images. Can you create more interesting synthesized images?
-1. Can we apply style transfer for text? Hint: you may refer to the survey paper by :citet:`10.1145/3544903.3544906`.
+1. Đầu ra thay đổi như thế nào khi bạn chọn các layer nội dung và layer phong cách khác nhau?
+1. Điều chỉnh các hyperparameter trọng số trong hàm mất mát. Đầu ra có giữ lại nhiều nội dung hơn hoặc ít nhiễu hơn không?
+1. Sử dụng các ảnh nội dung và ảnh phong cách khác nhau. Bạn có thể tạo ra những ảnh được tổng hợp thú vị hơn không?
+1. Chúng ta có thể áp dụng chuyển giao phong cách cho văn bản không? Gợi ý: bạn có thể tham khảo bài khảo sát của :citet:`10.1145/3544903.3544906`.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/378)
+[Thảo luận](https://discuss.d2l.ai/t/378)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1476)
+[Thảo luận](https://discuss.d2l.ai/t/1476)
 :end_tab:

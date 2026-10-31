@@ -1,114 +1,115 @@
-# Bidirectional Encoder Representations from Transformers (BERT)
+# Biểu diễn bộ mã hóa hai chiều từ các Transformer (BERT)
 :label:`sec_bert`
 
-We have introduced several word embedding models for natural language understanding.
-After pretraining, the output can be thought of as a matrix
-where each row is a vector that represents a word of a predefined vocabulary.
-In fact, these word embedding models are all *context-independent*.
-Let's begin by illustrating this property.
+Chúng ta đã giới thiệu một số mô hình embedding từ cho việc hiểu ngôn ngữ tự nhiên.
+Sau khi pretrain, đầu ra có thể được xem như một ma trận,
+trong đó mỗi hàng là một vector biểu diễn một từ trong một vocabulary được xác định trước.
+Trên thực tế, tất cả các mô hình embedding từ này đều *không phụ thuộc ngữ cảnh*.
+Hãy bắt đầu bằng cách minh họa đặc tính này.
 
 
-## From Context-Independent to Context-Sensitive
+## Từ không phụ thuộc ngữ cảnh đến nhạy ngữ cảnh
 
-Recall the experiments in :numref:`sec_word2vec_pretraining` and :numref:`sec_synonyms`.
-For instance, word2vec and GloVe both assign the same pretrained vector to the same word regardless of the context of the word (if any).
-Formally, a context-independent representation of any token $x$
-is a function $f(x)$ that only takes $x$ as its input.
-Given the abundance of polysemy and complex semantics in natural languages,
-context-independent representations have obvious limitations.
-For instance, the word "crane" in contexts
-"a crane is flying" and "a crane driver came" has completely different meanings;
-thus, the same word may be assigned different representations depending on contexts.
+Hãy nhớ lại các thí nghiệm trong :numref:`sec_word2vec_pretraining` và :numref:`sec_synonyms`.
+Chẳng hạn, cả word2vec và GloVe đều gán cùng một vector đã pretrain cho cùng một từ, bất kể ngữ cảnh của từ đó (nếu có).
+Về mặt hình thức, biểu diễn không phụ thuộc ngữ cảnh của bất kỳ token $x$ nào
+là một hàm $f(x)$ chỉ nhận $x$ làm đầu vào.
+Do ngôn ngữ tự nhiên có nhiều từ đa nghĩa và ngữ nghĩa phức tạp,
+các biểu diễn không phụ thuộc ngữ cảnh có những hạn chế rõ ràng.
+Ví dụ, từ "crane" trong các ngữ cảnh
+"a crane is flying" và "a crane driver came" có ý nghĩa hoàn toàn khác nhau;
+do đó, cùng một từ có thể được gán các biểu diễn khác nhau tùy thuộc vào ngữ cảnh.
 
-This motivates the development of *context-sensitive* word representations,
-where representations of words depend on their contexts.
-Hence, a context-sensitive representation of token $x$ is a function $f(x, c(x))$
-depending on both $x$ and its context $c(x)$.
-Popular context-sensitive representations
-include TagLM (language-model-augmented sequence tagger) :cite:`Peters.Ammar.Bhagavatula.ea.2017`,
+Điều này thúc đẩy sự phát triển của các biểu diễn từ *nhạy ngữ cảnh*,
+trong đó biểu diễn của từ phụ thuộc vào ngữ cảnh của chúng.
+Vì vậy, biểu diễn nhạy ngữ cảnh của token $x$ là một hàm $f(x, c(x))$
+phụ thuộc vào cả $x$ và ngữ cảnh $c(x)$ của nó.
+Các biểu diễn nhạy ngữ cảnh phổ biến
+bao gồm TagLM (language-model-augmented sequence tagger) :cite:`Peters.Ammar.Bhagavatula.ea.2017`,
 CoVe (Context Vectors) :cite:`McCann.Bradbury.Xiong.ea.2017`,
-and ELMo (Embeddings from Language Models) :cite:`Peters.Neumann.Iyyer.ea.2018`.
+và ELMo (Embeddings from Language Models) :cite:`Peters.Neumann.Iyyer.ea.2018`.
 
-For example, by taking the entire sequence as input,
-ELMo is a function that assigns a representation to each word from the input sequence.
-Specifically, ELMo combines all the intermediate layer representations from pretrained bidirectional LSTM as the output representation.
-Then the ELMo representation will be added to a downstream task's existing supervised model
-as additional features, such as by concatenating ELMo representation and the original representation (e.g., GloVe) of tokens in the existing model.
-On the one hand,
-all the weights in the pretrained bidirectional LSTM model are frozen after ELMo representations are added.
-On the other hand,
-the existing supervised model is specifically customized for a given task.
-Leveraging different best models for different tasks at that time,
-adding ELMo improved the state of the art across six natural language processing tasks:
-sentiment analysis, natural language inference,
-semantic role labeling, coreference resolution,
-named entity recognition, and question answering.
-
-
-## From Task-Specific to Task-Agnostic
-
-Although ELMo has significantly improved solutions to a diverse set of natural language processing tasks,
-each solution still hinges on a *task-specific* architecture.
-However, it is practically non-trivial to craft a specific architecture for every natural language processing task.
-The GPT (Generative Pre-Training) model represents an effort in designing
-a general *task-agnostic* model for context-sensitive representations :cite:`Radford.Narasimhan.Salimans.ea.2018`.
-Built on a Transformer decoder,
-GPT pretrains a language model that will be used to represent text sequences.
-When applying GPT to a downstream task,
-the output of the language model will be fed into an added linear output layer
-to predict the label of the task.
-In sharp contrast to ELMo that freezes parameters of the pretrained model,
-GPT fine-tunes *all* the parameters in the pretrained Transformer decoder
-during supervised learning of the downstream task.
-GPT was evaluated on twelve tasks of natural language inference,
-question answering, sentence similarity, and classification,
-and improved the state of the art in nine of them with minimal changes
-to the model architecture.
-
-However, due to the autoregressive nature of language models,
-GPT only looks forward (left-to-right).
-In contexts "i went to the bank to deposit cash" and "i went to the bank to sit down",
-as "bank" is sensitive to the context to its left,
-GPT will return the same representation for "bank",
-though it has different meanings.
+Ví dụ, bằng cách nhận toàn bộ sequence làm đầu vào,
+ELMo là một hàm gán một biểu diễn cho mỗi từ trong sequence đầu vào.
+Cụ thể, ELMo kết hợp tất cả biểu diễn của các layer trung gian từ bidirectional LSTM đã pretrain làm biểu diễn đầu ra.
+Sau đó, biểu diễn ELMo sẽ được thêm vào model supervised hiện có của một downstream task
+dưới dạng các feature bổ sung, chẳng hạn bằng cách nối biểu diễn ELMo với biểu diễn ban đầu (ví dụ: GloVe) của các token trong model hiện có.
+Một mặt,
+tất cả trọng số trong model bidirectional LSTM đã pretrain đều được đóng băng sau khi thêm các biểu diễn ELMo.
+Mặt khác,
+model supervised hiện có được tùy chỉnh riêng cho một task nhất định.
+Bằng cách tận dụng các model tốt nhất khác nhau cho từng task vào thời điểm đó,
+việc thêm ELMo đã cải thiện state of the art trên sáu task xử lý ngôn ngữ tự nhiên:
+phân tích cảm xúc, suy luận ngôn ngữ tự nhiên,
+gán nhãn vai nghĩa, phân giải đồng tham chiếu,
+nhận dạng thực thể có tên và trả lời câu hỏi.
 
 
-## BERT: Combining the Best of Both Worlds
+## Từ phụ thuộc task đến không phụ thuộc task
 
-As we have seen,
-ELMo encodes context bidirectionally but uses task-specific architectures;
-while GPT is task-agnostic but encodes context left-to-right.
-Combining the best of both worlds,
+Mặc dù ELMo đã cải thiện đáng kể các giải pháp cho nhiều task xử lý ngôn ngữ tự nhiên,
+mỗi giải pháp vẫn phụ thuộc vào một kiến trúc *đặc thù cho task*.
+Tuy nhiên, trên thực tế, việc thiết kế một kiến trúc cụ thể cho từng task xử lý ngôn ngữ tự nhiên không hề đơn giản.
+Model GPT (Generative Pre-Training) là một nỗ lực nhằm thiết kế
+một model tổng quát *không phụ thuộc task* cho các biểu diễn nhạy ngữ cảnh :cite:`Radford.Narasimhan.Salimans.ea.2018`.
+Được xây dựng trên Transformer decoder,
+GPT pretrain một language model sẽ được dùng để biểu diễn các text sequence.
+Khi áp dụng GPT cho một downstream task,
+đầu ra của language model sẽ được đưa vào một linear output layer được thêm vào
+để dự đoán label của task.
+Trái ngược rõ rệt với ELMo, vốn đóng băng các parameter của model đã pretrain,
+GPT fine-tune *tất cả* parameter trong Transformer decoder đã pretrain
+trong quá trình supervised learning của downstream task.
+GPT được đánh giá trên mười hai task về suy luận ngôn ngữ tự nhiên,
+trả lời câu hỏi, độ tương đồng câu và phân loại,
+đồng thời cải thiện state of the art ở chín task trong số đó với những thay đổi tối thiểu
+đối với kiến trúc model.
+
+Tuy nhiên, do bản chất autoregressive của language model,
+GPT chỉ nhìn về phía trước (từ trái sang phải).
+Trong các ngữ cảnh "i went to the bank to deposit cash" và "i went to the bank to sit down",
+vì "bank" nhạy với ngữ cảnh ở bên trái,
+GPT sẽ trả về cùng một biểu diễn cho "bank",
+mặc dù chúng có ý nghĩa khác nhau.
+
+
+## BERT: Kết hợp ưu điểm của cả hai
+
+Như chúng ta đã thấy,
+ELMo mã hóa ngữ cảnh theo hai chiều nhưng sử dụng các kiến trúc đặc thù cho task;
+trong khi GPT không phụ thuộc task nhưng mã hóa ngữ cảnh từ trái sang phải.
+Kết hợp ưu điểm của cả hai,
 BERT (Bidirectional Encoder Representations from Transformers)
-encodes context bidirectionally and requires minimal architecture changes
-for a wide range of natural language processing tasks :cite:`Devlin.Chang.Lee.ea.2018`.
-Using a pretrained Transformer encoder,
-BERT is able to represent any token based on its bidirectional context.
-During supervised learning of downstream tasks,
-BERT is similar to GPT in two aspects.
-First, BERT representations will be fed into an added output layer,
-with minimal changes to the model architecture depending on nature of tasks,
-such as predicting for every token vs. predicting for the entire sequence.
-Second,
-all the parameters of the pretrained Transformer encoder are fine-tuned,
-while the additional output layer will be trained from scratch.
-:numref:`fig_elmo-gpt-bert` depicts the differences among ELMo, GPT, and BERT.
+mã hóa ngữ cảnh theo hai chiều và yêu cầu thay đổi tối thiểu về kiến trúc
+cho nhiều task xử lý ngôn ngữ tự nhiên :cite:`Devlin.Chang.Lee.ea.2018`.
+Sử dụng một Transformer encoder đã pretrain,
+BERT có thể biểu diễn bất kỳ token nào dựa trên ngữ cảnh hai chiều của token đó.
+Trong quá trình supervised learning của các downstream task,
+BERT tương tự GPT ở hai khía cạnh.
+Thứ nhất, các biểu diễn BERT sẽ được đưa vào một output layer được thêm vào,
+với những thay đổi tối thiểu đối với kiến trúc model tùy theo bản chất của task,
+chẳng hạn như dự đoán cho từng token so với dự đoán cho toàn bộ sequence.
+Thứ hai,
+tất cả parameter của Transformer encoder đã pretrain đều được fine-tune,
+trong khi output layer bổ sung sẽ được train từ đầu.
+:numref:`fig_elmo-gpt-bert` mô tả sự khác biệt giữa ELMo, GPT và BERT.
 
-![A comparison of ELMo, GPT, and BERT.](../img/elmo-gpt-bert.svg)
+![So sánh ELMo, GPT và BERT.](../img/elmo-gpt-bert.svg)
 :label:`fig_elmo-gpt-bert`
 
 
-BERT further improved the state of the art on eleven natural language processing tasks
-under broad categories of (i) single text classification (e.g., sentiment analysis), (ii) text pair classification (e.g., natural language inference),
-(iii) question answering, (iv) text tagging (e.g., named entity recognition).
-All proposed in 2018,
-from context-sensitive ELMo to task-agnostic GPT and BERT,
-conceptually simple yet empirically powerful pretraining of deep representations for natural languages have revolutionized solutions to various natural language processing tasks.
+BERT tiếp tục cải thiện state of the art trên mười một task xử lý ngôn ngữ tự nhiên
+thuộc các nhóm lớn: (i) phân loại một văn bản (ví dụ: phân tích cảm xúc), (ii) phân loại cặp văn bản (ví dụ: suy luận ngôn ngữ tự nhiên),
+(iii) trả lời câu hỏi, (iv) gắn thẻ văn bản (ví dụ: nhận dạng thực thể có tên).
+Tất cả đều được đề xuất vào năm 2018,
+từ ELMo nhạy ngữ cảnh đến GPT và BERT không phụ thuộc task,
+việc pretrain các biểu diễn sâu cho ngôn ngữ tự nhiên, tuy đơn giản về mặt khái niệm nhưng mạnh mẽ về mặt thực nghiệm,
+đã cách mạng hóa các giải pháp cho nhiều task xử lý ngôn ngữ tự nhiên.
 
-In the rest of this chapter,
-we will dive into the pretraining of BERT.
-When natural language processing applications are explained in :numref:`chap_nlp_app`,
-we will illustrate fine-tuning of BERT for downstream applications.
+Trong phần còn lại của chương này,
+chúng ta sẽ đi sâu vào quá trình pretrain BERT.
+Khi các ứng dụng xử lý ngôn ngữ tự nhiên được giải thích trong :numref:`chap_nlp_app`,
+chúng ta sẽ minh họa cách fine-tune BERT cho các ứng dụng downstream.
 
 ```{.python .input}
 #@tab mxnet
@@ -126,35 +127,35 @@ import torch
 from torch import nn
 ```
 
-## [**Input Representation**]
+## [**Biểu diễn đầu vào**]
 :label:`subsec_bert_input_rep`
 
-In natural language processing,
-some tasks (e.g., sentiment analysis) take single text as input,
-while in some other tasks (e.g., natural language inference),
-the input is a pair of text sequences.
-The BERT input sequence unambiguously represents both single text and text pairs.
-In the former,
-the BERT input sequence is the concatenation of
-the special classification token “&lt;cls&gt;”,
-tokens of a text sequence,
-and the special separation token “&lt;sep&gt;”.
-In the latter,
-the BERT input sequence is the concatenation of
-“&lt;cls&gt;”, tokens of the first text sequence,
-“&lt;sep&gt;”, tokens of the second text sequence, and “&lt;sep&gt;”.
-We will consistently distinguish the terminology "BERT input sequence"
-from other types of "sequences".
-For instance, one *BERT input sequence* may include either one *text sequence* or two *text sequences*.
+Trong xử lý ngôn ngữ tự nhiên,
+một số task (ví dụ: phân tích cảm xúc) nhận một văn bản đơn làm đầu vào,
+trong khi một số task khác (ví dụ: suy luận ngôn ngữ tự nhiên)
+nhận một cặp text sequence làm đầu vào.
+BERT input sequence biểu diễn rõ ràng cả văn bản đơn lẫn cặp văn bản.
+Trong trường hợp đầu tiên,
+BERT input sequence là phép nối của
+classification token đặc biệt “&lt;cls&gt;”,
+các token của một text sequence
+và separation token đặc biệt “&lt;sep&gt;”.
+Trong trường hợp thứ hai,
+BERT input sequence là phép nối của
+“&lt;cls&gt;”, các token của text sequence thứ nhất,
+“&lt;sep&gt;”, các token của text sequence thứ hai và “&lt;sep&gt;”.
+Chúng ta sẽ nhất quán phân biệt thuật ngữ "BERT input sequence"
+với các loại "sequence" khác.
+Ví dụ, một *BERT input sequence* có thể bao gồm một *text sequence* hoặc hai *text sequence*.
 
-To distinguish text pairs,
-the learned segment embeddings $\mathbf{e}_A$ and $\mathbf{e}_B$
-are added to the token embeddings of the first sequence and the second sequence, respectively.
-For single text inputs, only $\mathbf{e}_A$ is used.
+Để phân biệt các cặp văn bản,
+các segment embedding được học $\mathbf{e}_A$ và $\mathbf{e}_B$
+được thêm lần lượt vào token embedding của sequence thứ nhất và sequence thứ hai.
+Đối với đầu vào là văn bản đơn, chỉ $\mathbf{e}_A$ được sử dụng.
 
-The following `get_tokens_and_segments` takes either one sentence or two sentences
-as input, then returns tokens of the BERT input sequence
-and their corresponding segment IDs.
+`get_tokens_and_segments` sau đây nhận một hoặc hai câu
+làm đầu vào, sau đó trả về các token của BERT input sequence
+và các segment ID tương ứng.
 
 ```{.python .input}
 #@tab all
@@ -170,23 +171,23 @@ def get_tokens_and_segments(tokens_a, tokens_b=None):
     return tokens, segments
 ```
 
-BERT chooses the Transformer encoder as its bidirectional architecture.
-Common in the Transformer encoder,
-positional embeddings are added at every position of the BERT input sequence.
-However, different from the original Transformer encoder,
-BERT uses *learnable* positional embeddings.
-To sum up, :numref:`fig_bert-input` shows that
-the embeddings of the BERT input sequence are the sum
-of the token embeddings, segment embeddings, and positional embeddings.
+BERT chọn Transformer encoder làm kiến trúc hai chiều của mình.
+Tương tự Transformer encoder,
+positional embedding được thêm vào mọi vị trí của BERT input sequence.
+Tuy nhiên, khác với Transformer encoder ban đầu,
+BERT sử dụng positional embedding *có thể học*.
+Tóm lại, :numref:`fig_bert-input` cho thấy
+embedding của BERT input sequence là tổng
+của token embedding, segment embedding và positional embedding.
 
-![The embeddings of the BERT input sequence are the sum
-of the token embeddings, segment embeddings, and positional embeddings.](../img/bert-input.svg)
+![Embedding của BERT input sequence là tổng
+của token embedding, segment embedding và positional embedding.](../img/bert-input.svg)
 :label:`fig_bert-input`
 
-The following [**`BERTEncoder` class**] is similar to the `TransformerEncoder` class
-as implemented in :numref:`sec_transformer`.
-Different from `TransformerEncoder`, `BERTEncoder` uses
-segment embeddings and learnable positional embeddings.
+[**class `BERTEncoder`**] sau đây tương tự class `TransformerEncoder`
+được triển khai trong :numref:`sec_transformer`.
+Khác với `TransformerEncoder`, `BERTEncoder` sử dụng
+segment embedding và positional embedding có thể học.
 
 ```{.python .input}
 #@tab mxnet
@@ -246,9 +247,9 @@ class BERTEncoder(nn.Module):
         return X
 ```
 
-Suppose that the vocabulary size is 10000.
-To demonstrate forward [**inference of `BERTEncoder`**],
-let's create an instance of it and initialize its parameters.
+Giả sử kích thước vocabulary là 10000.
+Để minh họa [**suy luận forward của `BERTEncoder`**],
+hãy tạo một instance của nó và khởi tạo các parameter của instance.
 
 ```{.python .input}
 #@tab mxnet
@@ -267,13 +268,13 @@ encoder = BERTEncoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
                       num_blks, dropout)
 ```
 
-We define `tokens` to be 2 BERT input sequences of length 8,
-where each token is an index of the vocabulary.
-The forward inference of `BERTEncoder` with the input `tokens`
-returns the encoded result where each token is represented by a vector
-whose length is predefined by the hyperparameter `num_hiddens`.
-This hyperparameter is usually referred to as the *hidden size*
-(number of hidden units) of the Transformer encoder.
+Chúng ta định nghĩa `tokens` là 2 BERT input sequence có độ dài 8,
+trong đó mỗi token là một index trong vocabulary.
+Suy luận forward của `BERTEncoder` với đầu vào `tokens`
+trả về kết quả đã encode, trong đó mỗi token được biểu diễn bằng một vector
+có độ dài được xác định trước bởi hyperparameter `num_hiddens`.
+Hyperparameter này thường được gọi là *hidden size*
+(số hidden unit) của Transformer encoder.
 
 ```{.python .input}
 #@tab mxnet
@@ -291,50 +292,50 @@ encoded_X = encoder(tokens, segments, None)
 encoded_X.shape
 ```
 
-## Pretraining Tasks
+## Các task pretrain
 :label:`subsec_bert_pretraining_tasks`
 
-The forward inference of `BERTEncoder` gives the BERT representation
-of each token of the input text and the inserted
-special tokens “&lt;cls&gt;” and “&lt;seq&gt;”.
-Next, we will use these representations to compute the loss function
-for pretraining BERT.
-The pretraining is composed of the following two tasks:
-masked language modeling and next sentence prediction.
+Suy luận forward của `BERTEncoder` cung cấp biểu diễn BERT
+của mỗi token trong văn bản đầu vào và các
+token đặc biệt được chèn “&lt;cls&gt;” và “&lt;seq&gt;”.
+Tiếp theo, chúng ta sẽ sử dụng các biểu diễn này để tính hàm loss
+cho việc pretrain BERT.
+Quá trình pretrain bao gồm hai task sau:
+masked language modeling và next sentence prediction.
 
 ### [**Masked Language Modeling**]
 :label:`subsec_mlm`
 
-As illustrated in :numref:`sec_language-model`,
-a language model predicts a token using the context on its left.
-To encode context bidirectionally for representing each token,
-BERT randomly masks tokens and uses tokens from the bidirectional context to
-predict the masked tokens in a self-supervised fashion.
-This task is referred to as a *masked language model*.
+Như được minh họa trong :numref:`sec_language-model`,
+một language model dự đoán một token bằng cách sử dụng ngữ cảnh ở bên trái.
+Để mã hóa ngữ cảnh theo hai chiều nhằm biểu diễn từng token,
+BERT ngẫu nhiên che các token và sử dụng các token từ ngữ cảnh hai chiều để
+dự đoán những token bị che theo cách tự giám sát.
+Nhiệm vụ này được gọi là một *masked language model*.
 
-In this pretraining task,
-15% of tokens will be selected at random as the masked tokens for prediction.
-To predict a masked token without cheating by using the label,
-one straightforward approach is to always replace it with a special “&lt;mask&gt;” token in the BERT input sequence.
-However, the artificial special token “&lt;mask&gt;” will never appear
-in fine-tuning.
-To avoid such a mismatch between pretraining and fine-tuning,
-if a token is masked for prediction (e.g., "great" is selected to be masked and predicted in "this movie is great"),
-in the input it will be replaced with:
+Trong tác vụ pretraining này,
+15% số token sẽ được chọn ngẫu nhiên làm các token bị che để dự đoán.
+Để dự đoán một token bị che mà không gian lận bằng cách sử dụng nhãn,
+một cách tiếp cận đơn giản là luôn thay thế nó bằng một token đặc biệt “&lt;mask&gt;” trong chuỗi đầu vào BERT.
+Tuy nhiên, token đặc biệt nhân tạo “&lt;mask&gt;” sẽ không bao giờ xuất hiện
+trong quá trình fine-tuning.
+Để tránh sự không tương thích giữa pretraining và fine-tuning,
+nếu một token bị che để dự đoán (ví dụ: "great" được chọn để che và dự đoán trong "this movie is great"),
+thì trong đầu vào, nó sẽ được thay thế bằng:
 
-* a special “&lt;mask&gt;” token for 80% of the time (e.g., "this movie is great" becomes "this movie is &lt;mask&gt;");
-* a random token for 10% of the time (e.g., "this movie is great" becomes "this movie is drink");
-* the unchanged label token for 10% of the time (e.g., "this movie is great" becomes "this movie is great").
+* một token đặc biệt “&lt;mask&gt;” trong 80% số lần (ví dụ: "this movie is great" trở thành "this movie is &lt;mask&gt;");
+* một token ngẫu nhiên trong 10% số lần (ví dụ: "this movie is great" trở thành "this movie is drink");
+* token nhãn không thay đổi trong 10% số lần (ví dụ: "this movie is great" vẫn là "this movie is great").
 
-Note that for 10% of 15% time a random token is inserted.
-This occasional noise encourages BERT to be less biased towards the masked token (especially when the label token remains unchanged) in its bidirectional context encoding.
+Lưu ý rằng trong 10% của 15% số lần, một token ngẫu nhiên được chèn vào.
+Nhiễu thỉnh thoảng này khuyến khích BERT giảm thiên lệch đối với token bị che (đặc biệt khi token nhãn không thay đổi) trong quá trình mã hóa ngữ cảnh hai chiều.
 
-We implement the following `MaskLM` class to predict masked tokens
-in the masked language model task of BERT pretraining.
-The prediction uses a one-hidden-layer MLP (`self.mlp`).
-In forward inference, it takes two inputs:
-the encoded result of `BERTEncoder` and the token positions for prediction.
-The output is the prediction results at these positions.
+Chúng ta triển khai lớp `MaskLM` sau đây để dự đoán các token bị che
+trong tác vụ masked language model của quá trình pretraining BERT.
+Việc dự đoán sử dụng một MLP có một hidden layer (`self.mlp`).
+Trong forward inference, nó nhận hai đầu vào:
+kết quả đã mã hóa của `BERTEncoder` và các vị trí token cần dự đoán.
+Đầu ra là các kết quả dự đoán tại những vị trí này.
 
 ```{.python .input}
 #@tab mxnet
@@ -389,14 +390,14 @@ class MaskLM(nn.Module):
         return mlm_Y_hat
 ```
 
-To demonstrate [**the forward inference of `MaskLM`**],
-we create its instance `mlm` and initialize it.
-Recall that `encoded_X` from the forward inference of `BERTEncoder`
-represents 2 BERT input sequences.
-We define `mlm_positions` as the 3 indices to predict in either BERT input sequence of `encoded_X`.
-The forward inference of `mlm` returns prediction results `mlm_Y_hat`
-at all the masked positions `mlm_positions` of `encoded_X`.
-For each prediction, the size of the result is equal to the vocabulary size.
+Để minh họa [**forward inference của `MaskLM`**],
+chúng ta tạo instance `mlm` của nó và khởi tạo instance này.
+Hãy nhớ rằng `encoded_X` từ forward inference của `BERTEncoder`
+biểu diễn 2 chuỗi đầu vào BERT.
+Chúng ta định nghĩa `mlm_positions` là 3 chỉ số cần dự đoán trong một trong hai chuỗi đầu vào BERT của `encoded_X`.
+Forward inference của `mlm` trả về các kết quả dự đoán `mlm_Y_hat`
+tại tất cả các vị trí bị che `mlm_positions` của `encoded_X`.
+Đối với mỗi dự đoán, kích thước của kết quả bằng với kích thước vocabulary.
 
 ```{.python .input}
 #@tab mxnet
@@ -415,8 +416,8 @@ mlm_Y_hat = mlm(encoded_X, mlm_positions)
 mlm_Y_hat.shape
 ```
 
-With the ground truth labels `mlm_Y` of the predicted tokens `mlm_Y_hat` under masks,
-we can calculate the cross-entropy loss of the masked language model task in BERT pretraining.
+Với các nhãn ground truth `mlm_Y` của những token được dự đoán `mlm_Y_hat` dưới các mask,
+chúng ta có thể tính cross-entropy loss của tác vụ masked language model trong quá trình pretraining BERT.
 
 ```{.python .input}
 #@tab mxnet
@@ -437,23 +438,23 @@ mlm_l.shape
 ### [**Next Sentence Prediction**]
 :label:`subsec_nsp`
 
-Although masked language modeling is able to encode bidirectional context
-for representing words, it does not explicitly model the logical relationship
-between text pairs.
-To help understand the relationship between two text sequences,
-BERT considers a binary classification task, *next sentence prediction*, in its pretraining.
-When generating sentence pairs for pretraining,
-for half of the time they are indeed consecutive sentences with the label "True";
-while for the other half of the time the second sentence is randomly sampled from the corpus with the label "False".
+Mặc dù masked language modeling có khả năng mã hóa ngữ cảnh hai chiều
+để biểu diễn các từ, nó không mô hình hóa tường minh mối quan hệ logic
+giữa các cặp văn bản.
+Để giúp hiểu mối quan hệ giữa hai chuỗi văn bản,
+BERT xem xét một tác vụ phân loại nhị phân, *next sentence prediction*, trong quá trình pretraining.
+Khi tạo các cặp câu cho pretraining,
+một nửa số lần chúng thực sự là các câu liên tiếp với nhãn "True";
+trong nửa số lần còn lại, câu thứ hai được lấy ngẫu nhiên từ corpus với nhãn "False".
 
-The following `NextSentencePred` class uses a one-hidden-layer MLP
-to predict whether the second sentence is the next sentence of the first
-in the BERT input sequence.
-Due to self-attention in the Transformer encoder,
-the BERT representation of the special token “&lt;cls&gt;”
-encodes both the two sentences from the input.
-Hence, the output layer (`self.output`) of the MLP classifier takes `X` as input,
-where `X` is the output of the MLP hidden layer whose input is the encoded “&lt;cls&gt;” token.
+Lớp `NextSentencePred` sau đây sử dụng một MLP có một hidden layer
+để dự đoán liệu câu thứ hai có phải là câu tiếp theo của câu thứ nhất
+trong chuỗi đầu vào BERT hay không.
+Do cơ chế self-attention trong Transformer encoder,
+biểu diễn của token đặc biệt “&lt;cls&gt;” trong BERT
+mã hóa cả hai câu từ đầu vào.
+Vì vậy, output layer (`self.output`) của MLP classifier nhận `X` làm đầu vào,
+trong đó `X` là đầu ra của hidden layer trong MLP có đầu vào là token “&lt;cls&gt;” đã được mã hóa.
 
 ```{.python .input}
 #@tab mxnet
@@ -483,8 +484,8 @@ class NextSentencePred(nn.Module):
         return self.output(X)
 ```
 
-We can see that [**the forward inference of an `NextSentencePred`**] instance
-returns binary predictions for each BERT input sequence.
+Chúng ta có thể thấy rằng [**forward inference của một instance `NextSentencePred`**]
+trả về các dự đoán nhị phân cho mỗi chuỗi đầu vào BERT.
 
 ```{.python .input}
 #@tab mxnet
@@ -505,7 +506,7 @@ nsp_Y_hat = nsp(encoded_X)
 nsp_Y_hat.shape
 ```
 
-The cross-entropy loss of the 2 binary classifications can also be computed.
+Cross-entropy loss của 2 phép phân loại nhị phân cũng có thể được tính.
 
 ```{.python .input}
 #@tab mxnet
@@ -521,23 +522,23 @@ nsp_l = loss(nsp_Y_hat, nsp_y)
 nsp_l.shape
 ```
 
-It is noteworthy that all the labels in both the aforementioned pretraining tasks
-can be trivially obtained from the pretraining corpus without manual labeling effort.
-The original BERT has been pretrained on the concatenation of BookCorpus :cite:`Zhu.Kiros.Zemel.ea.2015`
-and English Wikipedia.
-These two text corpora are huge:
-they have 800 million words and 2.5 billion words, respectively.
+Đáng chú ý là tất cả các nhãn trong cả hai tác vụ pretraining nói trên
+đều có thể dễ dàng thu được từ corpus pretraining mà không cần nỗ lực gán nhãn thủ công.
+BERT nguyên bản được pretrain trên sự kết hợp của BookCorpus :cite:`Zhu.Kiros.Zemel.ea.2015`
+và Wikipedia tiếng Anh.
+Hai corpus văn bản này rất lớn:
+chúng lần lượt có 800 triệu từ và 2,5 tỷ từ.
 
 
-## [**Putting It All Together**]
+## [**Kết hợp tất cả lại**]
 
-When pretraining BERT, the final loss function is a linear combination of
-both the loss functions for masked language modeling and next sentence prediction.
-Now we can define the `BERTModel` class by instantiating the three classes
-`BERTEncoder`, `MaskLM`, and `NextSentencePred`.
-The forward inference returns the encoded BERT representations `encoded_X`,
-predictions of masked language modeling `mlm_Y_hat`,
-and next sentence predictions `nsp_Y_hat`.
+Khi pretraining BERT, hàm loss cuối cùng là một tổ hợp tuyến tính của
+cả hàm loss của masked language modeling và next sentence prediction.
+Bây giờ chúng ta có thể định nghĩa lớp `BERTModel` bằng cách khởi tạo ba lớp
+`BERTEncoder`, `MaskLM`, và `NextSentencePred`.
+Forward inference trả về các biểu diễn BERT đã mã hóa `encoded_X`,
+các dự đoán của masked language modeling `mlm_Y_hat`,
+và các dự đoán next sentence `nsp_Y_hat`.
 
 ```{.python .input}
 #@tab mxnet
@@ -593,25 +594,25 @@ class BERTModel(nn.Module):
         return encoded_X, mlm_Y_hat, nsp_Y_hat
 ```
 
-## Summary
+## Tóm tắt
 
-* Word embedding models such as word2vec and GloVe are context-independent. They assign the same pretrained vector to the same word regardless of the context of the word (if any). It is hard for them to handle well polysemy or complex semantics in natural languages.
-* For context-sensitive word representations such as ELMo and GPT, representations of words depend on their contexts.
-* ELMo encodes context bidirectionally but uses task-specific architectures (however, it is practically non-trivial to craft a specific architecture for every natural language processing task); while GPT is task-agnostic but encodes context left-to-right.
-* BERT combines the best of both worlds: it encodes context bidirectionally and requires minimal architecture changes for a wide range of natural language processing tasks.
-* The embeddings of the BERT input sequence are the sum of the token embeddings, segment embeddings, and positional embeddings.
-* Pretraining BERT is composed of two tasks: masked language modeling and next sentence prediction. The former is able to encode bidirectional context for representing words, while the latter explicitly models the logical relationship between text pairs.
+* Các mô hình word embedding như word2vec và GloVe không phụ thuộc ngữ cảnh. Chúng gán cùng một vector đã pretrain cho cùng một từ bất kể ngữ cảnh của từ đó (nếu có). Chúng khó xử lý tốt hiện tượng đa nghĩa hoặc ngữ nghĩa phức tạp trong ngôn ngữ tự nhiên.
+* Đối với các biểu diễn từ phụ thuộc ngữ cảnh như ELMo và GPT, biểu diễn của các từ phụ thuộc vào ngữ cảnh của chúng.
+* ELMo mã hóa ngữ cảnh theo hai chiều nhưng sử dụng các kiến trúc dành riêng cho từng tác vụ (tuy nhiên, trên thực tế, việc xây dựng một kiến trúc cụ thể cho mọi tác vụ xử lý ngôn ngữ tự nhiên là không đơn giản); trong khi GPT không phụ thuộc tác vụ nhưng mã hóa ngữ cảnh từ trái sang phải.
+* BERT kết hợp ưu điểm của cả hai: nó mã hóa ngữ cảnh theo hai chiều và yêu cầu thay đổi kiến trúc ở mức tối thiểu cho nhiều tác vụ xử lý ngôn ngữ tự nhiên.
+* Các embedding của chuỗi đầu vào BERT là tổng của token embedding, segment embedding và positional embedding.
+* Pretraining BERT gồm hai tác vụ: masked language modeling và next sentence prediction. Tác vụ đầu có khả năng mã hóa ngữ cảnh hai chiều để biểu diễn các từ, trong khi tác vụ sau mô hình hóa tường minh mối quan hệ logic giữa các cặp văn bản.
 
 
-## Exercises
+## Bài tập
 
-1. All other things being equal, will a masked language model require more or fewer pretraining steps to converge than a left-to-right language model? Why?
-1. In the original implementation of BERT, the positionwise feed-forward network in `BERTEncoder` (via `d2l.TransformerEncoderBlock`) and the fully connected layer in `MaskLM` both use the Gaussian error linear unit (GELU) :cite:`Hendrycks.Gimpel.2016` as the activation function. Research into the difference between GELU and ReLU.
+1. Trong điều kiện mọi yếu tố khác như nhau, một masked language model sẽ cần nhiều hay ít bước pretraining hơn để hội tụ so với một language model từ trái sang phải? Tại sao?
+1. Trong triển khai ban đầu của BERT, positionwise feed-forward network trong `BERTEncoder` (thông qua `d2l.TransformerEncoderBlock`) và fully connected layer trong `MaskLM` đều sử dụng Gaussian error linear unit (GELU) :cite:`Hendrycks.Gimpel.2016` làm hàm activation. Hãy tìm hiểu sự khác biệt giữa GELU và ReLU.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/388)
+[Thảo luận](https://discuss.d2l.ai/t/388)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1490)
+[Thảo luận](https://discuss.d2l.ai/t/1490)
 :end_tab:

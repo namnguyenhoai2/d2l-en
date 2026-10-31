@@ -1,9 +1,9 @@
-# Concise Implementation for Multiple GPUs
+# Triển khai súc tích cho nhiều GPU
 :label:`sec_multi_gpu_concise`
 
-Implementing parallelism from scratch for every new model is no fun. Moreover, there is significant benefit in optimizing synchronization tools for high performance. In the following we will show how to do this using high-level APIs of deep learning frameworks.
-The mathematics and the algorithms are the same as in :numref:`sec_multi_gpu`.
-Quite unsurprisingly you will need at least two GPUs to run code of this section.
+Việc tự triển khai tính song song từ đầu cho mỗi model mới không hề thú vị. Hơn nữa, việc tối ưu các công cụ đồng bộ hóa để đạt hiệu năng cao mang lại lợi ích đáng kể. Trong phần sau, chúng ta sẽ trình bày cách thực hiện điều này bằng các API cấp cao của các framework deep learning.
+Toán học và các thuật toán giống như trong :numref:`sec_multi_gpu`.
+Không có gì đáng ngạc nhiên, bạn sẽ cần ít nhất hai GPU để chạy mã trong phần này.
 
 ```{.python .input}
 #@tab mxnet
@@ -20,11 +20,11 @@ import torch
 from torch import nn
 ```
 
-## [**A Toy Network**]
+## [**Một mạng minh họa**]
 
-Let's use a slightly more meaningful network than LeNet from :numref:`sec_multi_gpu` that is still sufficiently easy and quick to train.
-We pick a ResNet-18 variant :cite:`He.Zhang.Ren.ea.2016`. Since the input images are tiny we modify it slightly. In particular, the difference from :numref:`sec_resnet` is that we use a smaller convolution kernel, stride, and padding at the beginning.
-Moreover, we remove the max-pooling layer.
+Hãy sử dụng một mạng có ý nghĩa hơn LeNet trong :numref:`sec_multi_gpu` nhưng vẫn đủ đơn giản và nhanh để train.
+Chúng ta chọn một biến thể ResNet-18 :cite:`He.Zhang.Ren.ea.2016`. Vì các ảnh đầu vào rất nhỏ, chúng ta điều chỉnh mạng một chút. Cụ thể, điểm khác biệt so với :numref:`sec_resnet` là chúng ta sử dụng convolution kernel, stride và padding nhỏ hơn ở phần đầu.
+Ngoài ra, chúng ta loại bỏ lớp max-pooling.
 
 ```{.python .input}
 #@tab mxnet
@@ -86,16 +86,16 @@ def resnet18(num_classes, in_channels=1):
     return net
 ```
 
-## Network Initialization
+## Khởi tạo mạng
 
 :begin_tab:`mxnet`
-The `initialize` function allows us to initialize parameters on a device of our choice.
-For a refresher on initialization methods see :numref:`sec_numerical_stability`. What is particularly convenient is that it also allows us to initialize the network on *multiple* devices simultaneously. Let's try how this works in practice.
+Hàm `initialize` cho phép chúng ta khởi tạo các parameter trên device tùy chọn.
+Để ôn lại các phương pháp khởi tạo, hãy xem :numref:`sec_numerical_stability`. Điều đặc biệt tiện lợi là hàm này cũng cho phép chúng ta khởi tạo mạng đồng thời trên *nhiều* device. Hãy thử xem cách này hoạt động trong thực tế.
 :end_tab:
 
 :begin_tab:`pytorch`
-We will initialize the network inside the training loop.
-For a refresher on initialization methods see :numref:`sec_numerical_stability`.
+Chúng ta sẽ khởi tạo mạng bên trong training loop.
+Để ôn lại các phương pháp khởi tạo, hãy xem :numref:`sec_numerical_stability`.
 :end_tab:
 
 ```{.python .input}
@@ -116,7 +116,7 @@ devices = d2l.try_all_gpus()
 ```
 
 :begin_tab:`mxnet`
-Using the `split_and_load` function introduced in :numref:`sec_multi_gpu` we can divide a minibatch of data and copy portions to the list of devices provided by the `devices` variable. The network instance *automatically* uses the appropriate GPU to compute the value of the forward propagation. Here we generate 4 observations and split them over the GPUs.
+Sử dụng hàm `split_and_load` được giới thiệu trong :numref:`sec_multi_gpu`, chúng ta có thể chia một minibatch dữ liệu và sao chép các phần dữ liệu đến danh sách device do biến `devices` cung cấp. Instance của mạng *tự động* sử dụng GPU thích hợp để tính giá trị của forward propagation. Ở đây, chúng ta tạo 4 observation và chia chúng cho các GPU.
 :end_tab:
 
 ```{.python .input}
@@ -127,8 +127,8 @@ net(x_shards[0]), net(x_shards[1])
 ```
 
 :begin_tab:`mxnet`
-Once data passes through the network, the corresponding parameters are initialized *on the device the data passed through*.
-This means that initialization happens on a per-device basis. Since we picked GPU 0 and GPU 1 for initialization, the network is initialized only there, and not on the CPU. In fact, the parameters do not even exist on the CPU. We can verify this by printing out the parameters and observing any errors that might arise.
+Sau khi dữ liệu đi qua mạng, các parameter tương ứng được khởi tạo *trên device mà dữ liệu đã đi qua*.
+Điều này có nghĩa là việc khởi tạo diễn ra theo từng device. Vì chúng ta chọn GPU 0 và GPU 1 để khởi tạo, mạng chỉ được khởi tạo trên các device đó, không phải trên CPU. Trên thực tế, các parameter thậm chí không tồn tại trên CPU. Chúng ta có thể kiểm chứng điều này bằng cách in các parameter và quan sát bất kỳ lỗi nào có thể phát sinh.
 :end_tab:
 
 ```{.python .input}
@@ -143,7 +143,7 @@ weight.data(devices[0])[0], weight.data(devices[1])[0]
 ```
 
 :begin_tab:`mxnet`
-Next, let's replace the code to [**evaluate the accuracy**] by one that works (**in parallel across multiple devices**). This serves as a replacement of the `evaluate_accuracy_gpu` function from :numref:`sec_lenet`. The main difference is that we split a minibatch before invoking the network. All else is essentially identical.
+Tiếp theo, hãy thay thế mã để [**đánh giá độ chính xác**] bằng mã hoạt động (**song song trên nhiều device**). Mã này thay thế cho hàm `evaluate_accuracy_gpu` từ :numref:`sec_lenet`. Điểm khác biệt chính là chúng ta chia minibatch trước khi gọi mạng. Mọi thứ khác về cơ bản đều giống nhau.
 :end_tab:
 
 ```{.python .input}
@@ -167,14 +167,14 @@ def evaluate_accuracy_gpus(net, data_iter, split_f=d2l.split_batch):
 
 ## [**Training**]
 
-As before, the training code needs to perform several basic functions for efficient parallelism:
+Như trước đây, mã training cần thực hiện một số chức năng cơ bản để đạt tính song song hiệu quả:
 
-* Network parameters need to be initialized across all devices.
-* While iterating over the dataset minibatches are to be divided across all devices.
-* We compute the loss and its gradient in parallel across devices.
-* Gradients are aggregated and parameters are updated accordingly.
+* Các parameter của mạng cần được khởi tạo trên tất cả device.
+* Trong khi duyệt qua dataset, các minibatch cần được chia cho tất cả device.
+* Chúng ta tính loss và gradient của nó song song trên các device.
+* Các gradient được tổng hợp và các parameter được cập nhật tương ứng.
 
-In the end we compute the accuracy (again in parallel) to report the final performance of the network. The training routine is quite similar to implementations in previous chapters, except that we need to split and aggregate data.
+Cuối cùng, chúng ta tính accuracy (một lần nữa theo cách song song) để báo cáo hiệu năng cuối cùng của mạng. Training routine khá giống với các triển khai trong các chương trước, ngoại trừ việc chúng ta cần chia và tổng hợp dữ liệu.
 
 ```{.python .input}
 #@tab mxnet
@@ -234,7 +234,7 @@ def train(net, num_gpus, batch_size, lr):
           f'on {str(devices)}')
 ```
 
-Let's see how this works in practice. As a warm-up we [**train the network on a single GPU.**]
+Hãy xem cách này hoạt động trong thực tế. Để khởi động, chúng ta [**train mạng trên một GPU duy nhất.**]
 
 ```{.python .input}
 #@tab mxnet
@@ -246,9 +246,9 @@ train(num_gpus=1, batch_size=256, lr=0.1)
 train(net, num_gpus=1, batch_size=256, lr=0.1)
 ```
 
-Next we [**use 2 GPUs for training**]. Compared with LeNet
-evaluated in :numref:`sec_multi_gpu`,
-the model for ResNet-18 is considerably more complex. This is where parallelization shows its advantage. The time for computation is meaningfully larger than the time for synchronizing parameters. This improves scalability since the overhead for parallelization is less relevant.
+Tiếp theo, chúng ta [**sử dụng 2 GPU để training**]. So với LeNet
+được đánh giá trong :numref:`sec_multi_gpu`,
+model ResNet-18 phức tạp hơn đáng kể. Đây là lúc parallelization phát huy lợi thế. Thời gian tính toán lớn hơn đáng kể so với thời gian đồng bộ hóa các parameter. Điều này cải thiện khả năng mở rộng vì overhead của parallelization ít ảnh hưởng hơn.
 
 ```{.python .input}
 #@tab mxnet
@@ -260,36 +260,36 @@ train(num_gpus=2, batch_size=512, lr=0.2)
 train(net, num_gpus=2, batch_size=512, lr=0.2)
 ```
 
-## Summary
+## Tóm tắt
 
 :begin_tab:`mxnet`
-* Gluon provides primitives for model initialization across multiple devices by providing a context list.
+* Gluon cung cấp các primitive để khởi tạo model trên nhiều device bằng cách cung cấp một context list.
 :end_tab:
-* Data is automatically evaluated on the devices where the data can be found.
-* Take care to initialize the networks on each device before trying to access the parameters on that device. Otherwise you will encounter an error.
-* The optimization algorithms automatically aggregate over multiple GPUs.
+* Dữ liệu được tự động tính toán trên các device nơi dữ liệu đó có thể được tìm thấy.
+* Hãy đảm bảo khởi tạo mạng trên từng device trước khi cố gắng truy cập các parameter trên device đó. Nếu không, bạn sẽ gặp lỗi.
+* Các thuật toán optimization tự động tổng hợp trên nhiều GPU.
 
 
 
-## Exercises
+## Bài tập
 
 :begin_tab:`mxnet`
-1. This section uses ResNet-18. Try different epochs, batch sizes, and learning rates. Use more GPUs for computation. What happens if you try this with 16 GPUs (e.g., on an AWS p2.16xlarge instance)?
-1. Sometimes, different devices provide different computing power. We could use the GPUs and the CPU at the same time. How should we divide the work? Is it worth the effort? Why? Why not?
-1. What happens if we drop `npx.waitall()`? How would you modify training such that you have an overlap of up to two steps for parallelism?
+1. Phần này sử dụng ResNet-18. Hãy thử các epoch, batch size và learning rate khác nhau. Sử dụng nhiều GPU hơn để tính toán. Điều gì xảy ra nếu bạn thử với 16 GPU (ví dụ: trên một instance AWS p2.16xlarge)?
+1. Đôi khi, các device khác nhau cung cấp năng lực tính toán khác nhau. Chúng ta có thể sử dụng GPU và CPU cùng lúc. Nên chia công việc như thế nào? Việc này có đáng công sức không? Tại sao? Tại sao không?
+1. Điều gì xảy ra nếu chúng ta bỏ `npx.waitall()`? Bạn sẽ sửa training như thế nào để có độ chồng lấp tối đa hai bước cho parallelism?
 :end_tab:
 
 :begin_tab:`pytorch`
-1. This section uses ResNet-18. Try different epochs, batch sizes, and learning rates. Use more GPUs for computation. What happens if you try this with 16 GPUs (e.g., on an AWS p2.16xlarge instance)?
-1. Sometimes, different devices provide different computing power. We could use the GPUs and the CPU at the same time. How should we divide the work? Is it worth the effort? Why? Why not?
+1. Phần này sử dụng ResNet-18. Hãy thử các epoch, batch size và learning rate khác nhau. Sử dụng nhiều GPU hơn để tính toán. Điều gì xảy ra nếu bạn thử với 16 GPU (ví dụ: trên một instance AWS p2.16xlarge)?
+1. Đôi khi, các device khác nhau cung cấp năng lực tính toán khác nhau. Chúng ta có thể sử dụng GPU và CPU cùng lúc. Nên chia công việc như thế nào? Việc này có đáng công sức không? Tại sao? Tại sao không?
 :end_tab:
 
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/365)
+[Thảo luận](https://discuss.d2l.ai/t/365)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1403)
+[Thảo luận](https://discuss.d2l.ai/t/1403)
 :end_tab:

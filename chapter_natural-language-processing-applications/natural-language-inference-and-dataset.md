@@ -1,55 +1,55 @@
-# Natural Language Inference and the Dataset
+# Suy luận ngôn ngữ tự nhiên và tập dữ liệu
 :label:`sec_natural-language-inference-and-dataset`
 
-In :numref:`sec_sentiment`, we discussed the problem of sentiment analysis.
-This task aims to classify a single text sequence into predefined categories,
-such as a set of sentiment polarities.
-However, when there is a need to decide whether one sentence can be inferred form another, 
-or eliminate redundancy by identifying sentences that are semantically equivalent,
-knowing how to classify one text sequence is insufficient.
-Instead, we need to be able to reason over pairs of text sequences.
+Trong :numref:`sec_sentiment`, chúng ta đã thảo luận về bài toán phân tích cảm xúc.
+Nhiệm vụ này nhằm phân loại một chuỗi văn bản đơn lẻ vào các danh mục được định trước,
+chẳng hạn như một tập hợp các cực tính cảm xúc.
+Tuy nhiên, khi cần quyết định liệu một câu có thể được suy ra từ một câu khác hay không,
+hoặc loại bỏ sự dư thừa bằng cách xác định các câu tương đương về mặt ngữ nghĩa,
+thì việc biết cách phân loại một chuỗi văn bản là chưa đủ.
+Thay vào đó, chúng ta cần có khả năng suy luận trên các cặp chuỗi văn bản.
 
 
-## Natural Language Inference
+## Suy luận ngôn ngữ tự nhiên
 
-*Natural language inference* studies whether a *hypothesis*
-can be inferred from a *premise*, where both are a text sequence.
-In other words, natural language inference determines the logical relationship between a pair of text sequences.
-Such relationships usually fall into three types:
+*Suy luận ngôn ngữ tự nhiên* nghiên cứu liệu một *giả thuyết*
+có thể được suy ra từ một *tiền đề* hay không, trong đó cả hai đều là các chuỗi văn bản.
+Nói cách khác, suy luận ngôn ngữ tự nhiên xác định mối quan hệ logic giữa một cặp chuỗi văn bản.
+Các mối quan hệ như vậy thường thuộc ba loại:
 
-* *Entailment*: the hypothesis can be inferred from the premise.
-* *Contradiction*: the negation of the hypothesis can be inferred from the premise.
-* *Neutral*: all the other cases.
+* *Entailment*: giả thuyết có thể được suy ra từ tiền đề.
+* *Contradiction*: phủ định của giả thuyết có thể được suy ra từ tiền đề.
+* *Neutral*: tất cả các trường hợp còn lại.
 
-Natural language inference is also known as the recognizing textual entailment task.
-For example, the following pair will be labeled as *entailment* because "showing affection" in the hypothesis can be inferred from "hugging one another" in the premise.
+Suy luận ngôn ngữ tự nhiên còn được gọi là tác vụ nhận diện quan hệ kéo theo trong văn bản.
+Ví dụ, cặp sau được gán nhãn *entailment* vì “thể hiện tình cảm” trong giả thuyết có thể được suy ra từ “ôm nhau” trong tiền đề.
 
-> Premise: Two women are hugging each other.
+> Tiền đề: Hai người phụ nữ đang ôm nhau.
 
-> Hypothesis: Two women are showing affection.
+> Giả thuyết: Hai người phụ nữ đang thể hiện tình cảm.
 
-The following is an example of *contradiction* as "running the coding example" indicates "not sleeping" rather than "sleeping".
+Sau đây là một ví dụ về *contradiction*, vì “chạy ví dụ lập trình” cho thấy “không ngủ” chứ không phải “đang ngủ”.
 
-> Premise: A man is running the coding example from Dive into Deep Learning.
+> Tiền đề: Một người đàn ông đang chạy ví dụ lập trình từ Dive into Deep Learning.
 
-> Hypothesis: The man is sleeping.
+> Giả thuyết: Người đàn ông đang ngủ.
 
-The third example shows a *neutrality* relationship because neither "famous" nor "not famous" can be inferred from the fact that "are performing for us". 
+Ví dụ thứ ba cho thấy mối quan hệ *neutral* vì không thể suy ra “nổi tiếng” cũng như “không nổi tiếng” từ sự việc “đang biểu diễn cho chúng ta”.
 
-> Premise: The musicians are performing for us.
+> Tiền đề: Các nhạc sĩ đang biểu diễn cho chúng ta.
 
-> Hypothesis: The musicians are famous.
+> Giả thuyết: Các nhạc sĩ nổi tiếng.
 
-Natural language inference has been a central topic for understanding natural language.
-It enjoys wide applications ranging from
-information retrieval to open-domain question answering.
-To study this problem, we will begin by investigating a popular natural language inference benchmark dataset.
+Suy luận ngôn ngữ tự nhiên đã trở thành một chủ đề trọng tâm trong việc tìm hiểu ngôn ngữ tự nhiên.
+Nó có nhiều ứng dụng, từ
+truy hồi thông tin đến trả lời câu hỏi trong miền mở.
+Để nghiên cứu bài toán này, trước tiên chúng ta sẽ tìm hiểu một bộ dữ liệu chuẩn phổ biến về suy luận ngôn ngữ tự nhiên.
 
 
-## The Stanford Natural Language Inference (SNLI) Dataset
+## Bộ dữ liệu Stanford Natural Language Inference (SNLI)
 
-[**Stanford Natural Language Inference (SNLI) Corpus**] is a collection of over 500000 labeled English sentence pairs :cite:`Bowman.Angeli.Potts.ea.2015`.
-We download and store the extracted SNLI dataset in the path `../data/snli_1.0`.
+[**Kho ngữ liệu Stanford Natural Language Inference (SNLI)**] là một tập hợp gồm hơn 500000 cặp câu tiếng Anh được gán nhãn :cite:`Bowman.Angeli.Potts.ea.2015`.
+Chúng ta tải xuống và lưu bộ dữ liệu SNLI đã giải nén tại đường dẫn `../data/snli_1.0`.
 
 ```{.python .input}
 #@tab mxnet
@@ -84,9 +84,9 @@ d2l.DATA_HUB['SNLI'] = (
 data_dir = d2l.download_extract('SNLI')
 ```
 
-### [**Reading the Dataset**]
+### [**Đọc bộ dữ liệu**]
 
-The original SNLI dataset contains much richer information than what we really need in our experiments. Thus, we define a function `read_snli` to only extract part of the dataset, then return lists of premises, hypotheses, and their labels.
+Bộ dữ liệu SNLI gốc chứa nhiều thông tin phong phú hơn những gì chúng ta thực sự cần trong các thử nghiệm. Vì vậy, chúng ta định nghĩa một hàm `read_snli` để chỉ trích xuất một phần của bộ dữ liệu, sau đó trả về các danh sách tiền đề, giả thuyết và nhãn tương ứng.
 
 ```{.python .input}
 #@tab all
@@ -111,7 +111,7 @@ def read_snli(data_dir, is_train):
     return premises, hypotheses, labels
 ```
 
-Now let's [**print the first 3 pairs**] of premise and hypothesis, as well as their labels ("0", "1", and "2" correspond to "entailment", "contradiction", and "neutral", respectively ).
+Bây giờ, hãy [**in 3 cặp đầu tiên**] của tiền đề và giả thuyết, cùng với các nhãn của chúng (“0”, “1” và “2” lần lượt tương ứng với “entailment”, “contradiction” và “neutral”).
 
 ```{.python .input}
 #@tab all
@@ -122,11 +122,11 @@ for x0, x1, y in zip(train_data[0][:3], train_data[1][:3], train_data[2][:3]):
     print('label:', y)
 ```
 
-The training set has about 550000 pairs,
-and the testing set has about 10000 pairs.
-The following shows that 
-the three [**labels "entailment", "contradiction", and "neutral" are balanced**] in 
-both the training set and the testing set.
+Tập huấn luyện có khoảng 550000 cặp,
+còn tập kiểm tra có khoảng 10000 cặp.
+Phần sau cho thấy
+ba [**nhãn “entailment”, “contradiction” và “neutral” được phân bố cân bằng**] trong
+cả tập huấn luyện và tập kiểm tra.
 
 ```{.python .input}
 #@tab all
@@ -135,12 +135,12 @@ for data in [train_data, test_data]:
     print([[row for row in data[2]].count(i) for i in range(3)])
 ```
 
-### [**Defining a Class for Loading the Dataset**]
+### [**Định nghĩa một lớp để tải bộ dữ liệu**]
 
-Below we define a class for loading the SNLI dataset by inheriting from the `Dataset` class in Gluon. The argument `num_steps` in the class constructor specifies the length of a text sequence so that each minibatch of sequences will have the same shape. 
-In other words,
-tokens after the first `num_steps` ones in longer sequence are trimmed, while special tokens “&lt;pad&gt;” will be appended to shorter sequences until their length becomes `num_steps`.
-By implementing the `__getitem__` function, we can arbitrarily access the premise, hypothesis, and label with the index `idx`.
+Dưới đây, chúng ta định nghĩa một lớp để tải bộ dữ liệu SNLI bằng cách kế thừa từ lớp `Dataset` trong Gluon. Đối số `num_steps` trong hàm khởi tạo của lớp chỉ định độ dài của một chuỗi văn bản để mỗi minibatch các chuỗi có cùng hình dạng.
+Nói cách khác,
+các token sau `num_steps` token đầu tiên trong chuỗi dài hơn sẽ bị cắt bớt, trong khi các token đặc biệt “&lt;pad&gt;” sẽ được thêm vào các chuỗi ngắn hơn cho đến khi độ dài của chúng đạt `num_steps`.
+Bằng cách triển khai hàm `__getitem__`, chúng ta có thể truy cập tùy ý vào tiền đề, giả thuyết và nhãn bằng chỉ mục `idx`.
 
 ```{.python .input}
 #@tab mxnet
@@ -204,12 +204,12 @@ class SNLIDataset(torch.utils.data.Dataset):
         return len(self.premises)
 ```
 
-### [**Putting It All Together**]
+### [**Kết hợp mọi thứ**]
 
-Now we can invoke the `read_snli` function and the `SNLIDataset` class to download the SNLI dataset and return `DataLoader` instances for both training and testing sets, together with the vocabulary of the training set.
-It is noteworthy that we must use the vocabulary constructed from the training set
-as that of the testing set. 
-As a result, any new token from the testing set will be unknown to the model trained on the training set.
+Bây giờ, chúng ta có thể gọi hàm `read_snli` và lớp `SNLIDataset` để tải xuống bộ dữ liệu SNLI và trả về các thực thể `DataLoader` cho cả tập huấn luyện và tập kiểm tra, cùng với từ vựng của tập huấn luyện.
+Điều đáng chú ý là chúng ta phải sử dụng từ vựng được xây dựng từ tập huấn luyện
+làm từ vựng của tập kiểm tra.
+Kết quả là, mọi token mới trong tập kiểm tra sẽ không được mô hình đã huấn luyện trên tập huấn luyện nhận biết.
 
 ```{.python .input}
 #@tab mxnet
@@ -249,9 +249,9 @@ def load_data_snli(batch_size, num_steps=50):
     return train_iter, test_iter, train_set.vocab
 ```
 
-Here we set the batch size to 128 and sequence length to 50,
-and invoke the `load_data_snli` function to get the data iterators and vocabulary.
-Then we print the vocabulary size.
+Ở đây, chúng ta đặt kích thước batch là 128 và độ dài chuỗi là 50,
+sau đó gọi hàm `load_data_snli` để lấy các iterator dữ liệu và từ vựng.
+Tiếp theo, chúng ta in kích thước của từ vựng.
 
 ```{.python .input}
 #@tab all
@@ -259,9 +259,9 @@ train_iter, test_iter, vocab = load_data_snli(128, 50)
 len(vocab)
 ```
 
-Now we print the shape of the first minibatch.
-Contrary to sentiment analysis,
-we have two inputs `X[0]` and `X[1]` representing pairs of premises and hypotheses.
+Bây giờ, chúng ta in hình dạng của minibatch đầu tiên.
+Trái với phân tích cảm xúc,
+chúng ta có hai đầu vào `X[0]` và `X[1]` đại diện cho các cặp tiền đề và giả thuyết.
 
 ```{.python .input}
 #@tab all
@@ -272,22 +272,22 @@ for X, Y in train_iter:
     break
 ```
 
-## Summary
+## Tóm tắt
 
-* Natural language inference studies whether a hypothesis can be inferred from a premise, where both are a text sequence.
-* In natural language inference, relationships between premises and hypotheses include entailment, contradiction, and neutral.
-* Stanford Natural Language Inference (SNLI) Corpus is a popular benchmark dataset of natural language inference.
+* Suy luận ngôn ngữ tự nhiên nghiên cứu liệu một giả thuyết có thể được suy ra từ một tiền đề hay không, trong đó cả hai đều là các chuỗi văn bản.
+* Trong suy luận ngôn ngữ tự nhiên, các mối quan hệ giữa tiền đề và giả thuyết bao gồm entailment, contradiction và neutral.
+* Kho ngữ liệu Stanford Natural Language Inference (SNLI) là một bộ dữ liệu chuẩn phổ biến về suy luận ngôn ngữ tự nhiên.
 
 
-## Exercises
+## Bài tập
 
-1. Machine translation has long been evaluated based on superficial $n$-gram matching between an output translation and a ground-truth translation. Can you design a measure for evaluating machine translation results by using natural language inference?
-1. How can we change hyperparameters to reduce the vocabulary size?
+1. Dịch máy từ lâu đã được đánh giá dựa trên việc khớp $n$-gram bề mặt giữa bản dịch đầu ra và bản dịch chuẩn. Bạn có thể thiết kế một phương pháp đánh giá kết quả dịch máy bằng cách sử dụng suy luận ngôn ngữ tự nhiên không?
+1. Làm thế nào để thay đổi các hyperparameter nhằm giảm kích thước từ vựng?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/394)
+[Thảo luận](https://discuss.d2l.ai/t/394)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1388)
+[Thảo luận](https://discuss.d2l.ai/t/1388)
 :end_tab:

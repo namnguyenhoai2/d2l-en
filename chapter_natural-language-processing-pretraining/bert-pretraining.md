@@ -1,8 +1,8 @@
-# Pretraining BERT
+# Tiền huấn luyện BERT
 :label:`sec_bert-pretraining`
 
-With the BERT model implemented in :numref:`sec_bert`
-and the pretraining examples generated from the WikiText-2 dataset in :numref:`sec_bert-dataset`, we will pretrain BERT on the WikiText-2 dataset in this section.
+Với mô hình BERT được triển khai trong :numref:`sec_bert`
+và các ví dụ tiền huấn luyện được tạo từ tập dữ liệu WikiText-2 trong :numref:`sec_bert-dataset`, trong phần này, chúng ta sẽ tiền huấn luyện BERT trên tập dữ liệu WikiText-2.
 
 ```{.python .input}
 #@tab mxnet
@@ -19,10 +19,10 @@ import torch
 from torch import nn
 ```
 
-To start, we load the WikiText-2 dataset as minibatches
-of pretraining examples for masked language modeling and next sentence prediction.
-The batch size is 512 and the maximum length of a BERT input sequence is 64.
-Note that in the original BERT model, the maximum length is 512.
+Trước tiên, chúng ta tải tập dữ liệu WikiText-2 dưới dạng các minibatch
+gồm các ví dụ tiền huấn luyện cho mô hình ngôn ngữ bị che và dự đoán câu tiếp theo.
+Kích thước batch là 512 và độ dài tối đa của một chuỗi đầu vào BERT là 64.
+Lưu ý rằng trong mô hình BERT gốc, độ dài tối đa là 512.
 
 ```{.python .input}
 #@tab all
@@ -30,16 +30,16 @@ batch_size, max_len = 512, 64
 train_iter, vocab = d2l.load_data_wiki(batch_size, max_len)
 ```
 
-## Pretraining BERT
+## Tiền huấn luyện BERT
 
-The original BERT has two versions of different model sizes :cite:`Devlin.Chang.Lee.ea.2018`.
-The base model ($\textrm{BERT}_{\textrm{BASE}}$) uses 12 layers (Transformer encoder blocks)
-with 768 hidden units (hidden size) and 12 self-attention heads.
-The large model ($\textrm{BERT}_{\textrm{LARGE}}$) uses 24 layers
-with 1024 hidden units and 16 self-attention heads.
-Notably, the former has 110 million parameters while the latter has 340 million parameters.
-For demonstration with ease,
-we define [**a small BERT, using 2 layers, 128 hidden units, and 2 self-attention heads**].
+BERT gốc có hai phiên bản với kích thước mô hình khác nhau :cite:`Devlin.Chang.Lee.ea.2018`.
+Mô hình base ($\textrm{BERT}_{\textrm{BASE}}$) sử dụng 12 tầng (các khối encoder của Transformer)
+với 768 hidden unit (hidden size) và 12 đầu self-attention.
+Mô hình large ($\textrm{BERT}_{\textrm{LARGE}}$) sử dụng 24 tầng
+với 1024 hidden unit và 16 đầu self-attention.
+Đáng chú ý, mô hình trước có 110 triệu tham số, trong khi mô hình sau có 340 triệu tham số.
+Để dễ minh họa,
+chúng ta định nghĩa [**một BERT nhỏ, sử dụng 2 tầng, 128 hidden unit và 2 đầu self-attention**].
 
 ```{.python .input}
 #@tab mxnet
@@ -58,13 +58,13 @@ devices = d2l.try_all_gpus()
 loss = nn.CrossEntropyLoss()
 ```
 
-Before defining the training loop,
-we define a helper function `_get_batch_loss_bert`.
-Given the shard of training examples,
-this function [**computes the loss for both the masked language modeling and next sentence prediction tasks**].
-Note that the final loss of BERT pretraining
-is just the sum of both the masked language modeling loss
-and the next sentence prediction loss.
+Trước khi định nghĩa vòng lặp huấn luyện,
+chúng ta định nghĩa một hàm hỗ trợ `_get_batch_loss_bert`.
+Với một shard gồm các ví dụ huấn luyện,
+hàm này [**tính loss cho cả hai tác vụ mô hình ngôn ngữ bị che và dự đoán câu tiếp theo**].
+Lưu ý rằng loss cuối cùng trong quá trình tiền huấn luyện BERT
+chỉ là tổng của loss mô hình ngôn ngữ bị che
+và loss dự đoán câu tiếp theo.
 
 ```{.python .input}
 #@tab mxnet
@@ -120,14 +120,14 @@ def _get_batch_loss_bert(net, loss, vocab_size, tokens_X,
     return mlm_l, nsp_l, l
 ```
 
-Invoking the two aforementioned helper functions,
-the following `train_bert` function
-defines the procedure to [**pretrain BERT (`net`) on the WikiText-2 (`train_iter`) dataset**].
-Training BERT can take very long.
-Instead of specifying the number of epochs for training
-as in the `train_ch13` function (see :numref:`sec_image_augmentation`),
-the input `num_steps` of the following function
-specifies the number of iteration steps for training.
+Gọi hai hàm hỗ trợ nêu trên,
+hàm `train_bert` sau đây
+định nghĩa quy trình để [**tiền huấn luyện BERT (`net`) trên tập dữ liệu WikiText-2 (`train_iter`)**].
+Việc huấn luyện BERT có thể mất rất nhiều thời gian.
+Thay vì chỉ định số epoch huấn luyện
+như trong hàm `train_ch13` (xem :numref:`sec_image_augmentation`),
+đầu vào `num_steps` của hàm sau
+chỉ định số bước lặp dùng để huấn luyện.
 
 ```{.python .input}
 #@tab mxnet
@@ -217,20 +217,20 @@ def train_bert(train_iter, net, loss, vocab_size, devices, num_steps):
           f'{str(devices)}')
 ```
 
-We can plot both the masked language modeling loss and the next sentence prediction loss
-during BERT pretraining.
+Chúng ta có thể vẽ cả loss mô hình ngôn ngữ bị che và loss dự đoán câu tiếp theo
+trong quá trình tiền huấn luyện BERT.
 
 ```{.python .input}
 #@tab all
 train_bert(train_iter, net, loss, len(vocab), devices, 50)
 ```
 
-## [**Representing Text with BERT**]
+## [**Biểu diễn văn bản bằng BERT**]
 
-After pretraining BERT,
-we can use it to represent single text, text pairs, or any token in them.
-The following function returns the BERT (`net`) representations for all tokens
-in `tokens_a` and `tokens_b`.
+Sau khi tiền huấn luyện BERT,
+chúng ta có thể sử dụng nó để biểu diễn một văn bản đơn, các cặp văn bản hoặc bất kỳ token nào trong đó.
+Hàm sau trả về các biểu diễn BERT (`net`) cho tất cả token
+trong `tokens_a` và `tokens_b`.
 
 ```{.python .input}
 #@tab mxnet
@@ -255,15 +255,15 @@ def get_bert_encoding(net, tokens_a, tokens_b=None):
     return encoded_X
 ```
 
-[**Consider the sentence "a crane is flying".**]
-Recall the input representation of BERT as discussed in :numref:`subsec_bert_input_rep`.
-After inserting special tokens “&lt;cls&gt;” (used for classification)
-and “&lt;sep&gt;” (used for separation),
-the BERT input sequence has a length of six.
-Since zero is the index of the “&lt;cls&gt;” token,
-`encoded_text[:, 0, :]` is the BERT representation of the entire input sentence.
-To evaluate the polysemy token "crane",
-we also print out the first three elements of the BERT representation of the token.
+[**Xét câu "a crane is flying".**]
+Hãy nhớ lại biểu diễn đầu vào của BERT như đã thảo luận trong :numref:`subsec_bert_input_rep`.
+Sau khi chèn các token đặc biệt “&lt;cls&gt;” (dùng cho việc phân loại)
+và “&lt;sep&gt;” (dùng để phân tách),
+chuỗi đầu vào BERT có độ dài là sáu.
+Vì chỉ số của token “&lt;cls&gt;” là zero,
+`encoded_text[:, 0, :]` là biểu diễn BERT của toàn bộ câu đầu vào.
+Để đánh giá token đa nghĩa "crane",
+chúng ta cũng in ra ba phần tử đầu tiên trong biểu diễn BERT của token này.
 
 ```{.python .input}
 #@tab all
@@ -275,11 +275,11 @@ encoded_text_crane = encoded_text[:, 2, :]
 encoded_text.shape, encoded_text_cls.shape, encoded_text_crane[0][:3]
 ```
 
-[**Now consider a sentence pair
-"a crane driver came" and "he just left".**]
-Similarly, `encoded_pair[:, 0, :]` is the encoded result of the entire sentence pair from the pretrained BERT.
-Note that the first three elements of the polysemy token "crane" are different from those when the context is different.
-This supports that BERT representations are context-sensitive.
+[**Bây giờ hãy xét cặp câu
+"a crane driver came" và "he just left".**]
+Tương tự, `encoded_pair[:, 0, :]` là kết quả được mã hóa của toàn bộ cặp câu từ BERT đã được tiền huấn luyện.
+Lưu ý rằng ba phần tử đầu tiên của token đa nghĩa "crane" khác với khi ngữ cảnh khác đi.
+Điều này cho thấy các biểu diễn BERT phụ thuộc vào ngữ cảnh.
 
 ```{.python .input}
 #@tab all
@@ -292,25 +292,25 @@ encoded_pair_crane = encoded_pair[:, 2, :]
 encoded_pair.shape, encoded_pair_cls.shape, encoded_pair_crane[0][:3]
 ```
 
-In :numref:`chap_nlp_app`, we will fine-tune a pretrained BERT model
-for downstream natural language processing applications.
+Trong :numref:`chap_nlp_app`, chúng ta sẽ fine-tune một mô hình BERT đã được tiền huấn luyện
+cho các ứng dụng xử lý ngôn ngữ tự nhiên downstream.
 
-## Summary
+## Tóm tắt
 
-* The original BERT has two versions, where the base model has 110 million parameters and the large model has 340 million parameters.
-* After pretraining BERT, we can use it to represent single text, text pairs, or any token in them.
-* In the experiment, the same token has different BERT representation when their contexts are different. This supports that BERT representations are context-sensitive.
+* BERT gốc có hai phiên bản, trong đó mô hình base có 110 triệu tham số và mô hình large có 340 triệu tham số.
+* Sau khi tiền huấn luyện BERT, chúng ta có thể sử dụng nó để biểu diễn một văn bản đơn, các cặp văn bản hoặc bất kỳ token nào trong đó.
+* Trong thí nghiệm, cùng một token có biểu diễn BERT khác nhau khi ngữ cảnh của chúng khác nhau. Điều này cho thấy các biểu diễn BERT phụ thuộc vào ngữ cảnh.
 
 
-## Exercises
+## Bài tập
 
-1. In the experiment, we can see that the masked language modeling loss is significantly higher than the next sentence prediction loss. Why?
-2. Set the maximum length of a BERT input sequence to be 512 (same as the original BERT model). Use the configurations of the original BERT model such as $\textrm{BERT}_{\textrm{LARGE}}$. Do you encounter any error when running this section? Why?
+1. Trong thí nghiệm, chúng ta có thể thấy loss mô hình ngôn ngữ bị che cao hơn đáng kể so với loss dự đoán câu tiếp theo. Tại sao?
+2. Đặt độ dài tối đa của chuỗi đầu vào BERT là 512 (giống mô hình BERT gốc). Sử dụng các cấu hình của mô hình BERT gốc, chẳng hạn như $\textrm{BERT}_{\textrm{LARGE}}$. Bạn có gặp lỗi khi chạy phần này không? Tại sao?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/390)
+[Thảo luận](https://discuss.d2l.ai/t/390)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1497)
+[Thảo luận](https://discuss.d2l.ai/t/1497)
 :end_tab:

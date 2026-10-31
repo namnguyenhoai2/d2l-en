@@ -1,41 +1,41 @@
-# Sentiment Analysis: Using Convolutional Neural Networks
+# Phân tích cảm xúc: Sử dụng mạng nơ-ron tích chập
 :label:`sec_sentiment_cnn` 
 
 
-In :numref:`chap_cnn`,
-we investigated mechanisms
-for processing
-two-dimensional image data
-with two-dimensional CNNs,
-which were applied to
-local features such as adjacent pixels.
-Though originally
-designed for computer vision,
-CNNs are also widely used
-for natural language processing.
-Simply put,
-just think of any text sequence
-as a one-dimensional image.
-In this way,
-one-dimensional CNNs
-can process local features
-such as $n$-grams in text.
+Trong :numref:`chap_cnn`,
+chúng ta đã tìm hiểu các cơ chế
+để xử lý
+dữ liệu hình ảnh hai chiều
+bằng CNN hai chiều,
+được áp dụng cho
+các đặc trưng cục bộ như những pixel liền kề.
+Mặc dù ban đầu
+được thiết kế cho thị giác máy tính,
+CNN cũng được sử dụng rộng rãi
+trong xử lý ngôn ngữ tự nhiên.
+Nói một cách đơn giản,
+hãy xem mọi chuỗi văn bản
+như một hình ảnh một chiều.
+Theo cách này,
+CNN một chiều
+có thể xử lý các đặc trưng cục bộ
+như các $n$-gram trong văn bản.
 
-In this section,
-we will use the *textCNN* model
-to demonstrate
-how to design a CNN architecture
-for representing single text :cite:`Kim.2014`.
-Compared with
+Trong phần này,
+chúng ta sẽ sử dụng mô hình *textCNN*
+để minh họa
+cách thiết kế một kiến trúc CNN
+nhằm biểu diễn một văn bản đơn :cite:`Kim.2014`.
+So với
 :numref:`fig_nlp-map-sa-rnn`
-that uses an RNN architecture with GloVe pretraining
-for sentiment analysis,
-the only difference in :numref:`fig_nlp-map-sa-cnn`
-lies in
-the choice of the architecture.
+sử dụng kiến trúc RNN cùng với việc pretrain GloVe
+cho bài toán phân tích cảm xúc,
+khác biệt duy nhất trong :numref:`fig_nlp-map-sa-cnn`
+nằm ở
+việc lựa chọn kiến trúc.
 
 
-![This section feeds pretrained GloVe to a CNN-based architecture for sentiment analysis.](../img/nlp-map-sa-cnn.svg)
+![Phần này đưa GloVe đã được pretrain vào một kiến trúc dựa trên CNN để phân tích cảm xúc.](../img/nlp-map-sa-cnn.svg)
 :label:`fig_nlp-map-sa-cnn`
 
 ```{.python .input}
@@ -59,34 +59,34 @@ batch_size = 64
 train_iter, test_iter, vocab = d2l.load_data_imdb(batch_size)
 ```
 
-## One-Dimensional Convolutions
+## Tích chập một chiều
 
-Before introducing the model,
-let's see how a one-dimensional convolution works.
-Bear in mind that it is just a special case
-of a two-dimensional convolution
-based on the cross-correlation operation.
+Trước khi giới thiệu mô hình,
+hãy cùng xem tích chập một chiều hoạt động như thế nào.
+Hãy nhớ rằng đây chỉ là một trường hợp đặc biệt
+của tích chập hai chiều
+dựa trên phép tương quan chéo.
 
-![One-dimensional cross-correlation operation. The shaded portions are the first output element as well as the input and kernel tensor elements used for the output computation: $0\times1+1\times2=2$.](../img/conv1d.svg)
+![Phép tương quan chéo một chiều. Các phần được tô đậm là phần tử đầu tiên của đầu ra, cũng như các phần tử tensor đầu vào và tensor kernel được sử dụng để tính đầu ra: $0\times1+1\times2=2$.](../img/conv1d.svg)
 :label:`fig_conv1d`
 
-As shown in :numref:`fig_conv1d`,
-in the one-dimensional case,
-the convolution window
-slides from left to right
-across the input tensor.
-During sliding,
-the input subtensor (e.g., $0$ and $1$ in :numref:`fig_conv1d`) contained in the convolution window
-at a certain position
-and the kernel tensor (e.g., $1$ and $2$ in :numref:`fig_conv1d`) are multiplied elementwise.
-The sum of these multiplications
-gives the single scalar value (e.g., $0\times1+1\times2=2$ in :numref:`fig_conv1d`)
-at the corresponding position of the output tensor.
+Như được trình bày trong :numref:`fig_conv1d`,
+trong trường hợp một chiều,
+cửa sổ tích chập
+trượt từ trái sang phải
+trên tensor đầu vào.
+Trong quá trình trượt,
+tensor con đầu vào (ví dụ, $0$ và $1$ trong :numref:`fig_conv1d`) nằm trong cửa sổ tích chập
+tại một vị trí nhất định
+và tensor kernel (ví dụ, $1$ và $2$ trong :numref:`fig_conv1d`) được nhân theo từng phần tử.
+Tổng của các phép nhân này
+cho ra một giá trị vô hướng duy nhất (ví dụ, $0\times1+1\times2=2$ trong :numref:`fig_conv1d`)
+tại vị trí tương ứng của tensor đầu ra.
 
-We implement one-dimensional cross-correlation in the following `corr1d` function.
-Given an input tensor `X`
-and a kernel tensor `K`,
-it returns the output tensor `Y`.
+Chúng ta triển khai phép tương quan chéo một chiều trong hàm `corr1d` sau đây.
+Với tensor đầu vào `X`
+và tensor kernel `K`,
+hàm trả về tensor đầu ra `Y`.
 
 ```{.python .input}
 #@tab all
@@ -98,7 +98,7 @@ def corr1d(X, K):
     return Y
 ```
 
-We can construct the input tensor `X` and the kernel tensor `K` from :numref:`fig_conv1d` to validate the output of the above one-dimensional cross-correlation implementation.
+Chúng ta có thể tạo tensor đầu vào `X` và tensor kernel `K` từ :numref:`fig_conv1d` để kiểm tra đầu ra của phép triển khai tương quan chéo một chiều ở trên.
 
 ```{.python .input}
 #@tab all
@@ -106,22 +106,22 @@ X, K = d2l.tensor([0, 1, 2, 3, 4, 5, 6]), d2l.tensor([1, 2])
 corr1d(X, K)
 ```
 
-For any
-one-dimensional input with multiple channels,
-the convolution kernel
-needs to have the same number of input channels.
-Then for each channel,
-perform a cross-correlation operation on the one-dimensional tensor of the input and the one-dimensional tensor of the convolution kernel,
-summing the results over all the channels
-to produce the one-dimensional output tensor.
-:numref:`fig_conv1d_channel` shows a one-dimensional cross-correlation operation with 3 input channels.
+Đối với mọi
+đầu vào một chiều có nhiều kênh,
+kernel tích chập
+cần có cùng số lượng kênh đầu vào.
+Sau đó, với mỗi kênh,
+thực hiện phép tương quan chéo trên tensor một chiều của đầu vào và tensor một chiều của kernel tích chập,
+cộng các kết quả trên tất cả các kênh
+để tạo ra tensor đầu ra một chiều.
+:numref:`fig_conv1d_channel` minh họa phép tương quan chéo một chiều với 3 kênh đầu vào.
 
-![One-dimensional cross-correlation operation with 3 input channels. The shaded portions are the first output element as well as the input and kernel tensor elements used for the output computation: $0\times1+1\times2+1\times3+2\times4+2\times(-1)+3\times(-3)=2$.](../img/conv1d-channel.svg)
+![Phép tương quan chéo một chiều với 3 kênh đầu vào. Các phần được tô đậm là phần tử đầu tiên của đầu ra, cũng như các phần tử tensor đầu vào và tensor kernel được sử dụng để tính đầu ra: $0\times1+1\times2+1\times3+2\times4+2\times(-1)+3\times(-3)=2$.](../img/conv1d-channel.svg)
 :label:`fig_conv1d_channel`
 
 
-We can implement the one-dimensional cross-correlation operation for multiple input channels
-and validate the results in :numref:`fig_conv1d_channel`.
+Chúng ta có thể triển khai phép tương quan chéo một chiều cho nhiều kênh đầu vào
+và kiểm tra các kết quả trong :numref:`fig_conv1d_channel`.
 
 ```{.python .input}
 #@tab all
@@ -137,114 +137,114 @@ K = d2l.tensor([[1, 2], [3, 4], [-1, -3]])
 corr1d_multi_in(X, K)
 ```
 
-Note that
-multi-input-channel one-dimensional cross-correlations
-are equivalent
-to
-single-input-channel
-two-dimensional cross-correlations.
-To illustrate,
-an equivalent form of
-the multi-input-channel one-dimensional cross-correlation
-in :numref:`fig_conv1d_channel`
-is
-the
-single-input-channel
-two-dimensional cross-correlation
-in :numref:`fig_conv1d_2d`,
-where the height of the convolution kernel
-has to be the same as that of the input tensor.
+Lưu ý rằng
+các phép tương quan chéo một chiều với nhiều kênh đầu vào
+tương đương
+với
+các phép tương quan chéo hai chiều
+với một kênh đầu vào.
+Để minh họa,
+dạng tương đương của
+phép tương quan chéo một chiều với nhiều kênh đầu vào
+trong :numref:`fig_conv1d_channel`
+là
+phép tương quan chéo hai chiều
+với một kênh đầu vào
+trong :numref:`fig_conv1d_2d`,
+trong đó chiều cao của kernel tích chập
+phải giống với chiều cao của tensor đầu vào.
 
 
-![Two-dimensional cross-correlation operation with a single input channel. The shaded portions are the first output element as well as the input and kernel tensor elements used for the output computation: $2\times(-1)+3\times(-3)+1\times3+2\times4+0\times1+1\times2=2$.](../img/conv1d-2d.svg)
+![Phép tương quan chéo hai chiều với một kênh đầu vào. Các phần được tô đậm là phần tử đầu tiên của đầu ra, cũng như các phần tử tensor đầu vào và tensor kernel được sử dụng để tính đầu ra: $2\times(-1)+3\times(-3)+1\times3+2\times4+0\times1+1\times2=2$.](../img/conv1d-2d.svg)
 :label:`fig_conv1d_2d`
 
-Both the outputs in :numref:`fig_conv1d` and :numref:`fig_conv1d_channel` have only one channel.
-Same as two-dimensional convolutions with multiple output channels described in :numref:`subsec_multi-output-channels`,
-we can also specify multiple output channels
-for one-dimensional convolutions.
+Cả hai đầu ra trong :numref:`fig_conv1d` và :numref:`fig_conv1d_channel` chỉ có một kênh.
+Tương tự như các phép tích chập hai chiều với nhiều kênh đầu ra được mô tả trong :numref:`subsec_multi-output-channels`,
+chúng ta cũng có thể chỉ định nhiều kênh đầu ra
+cho các phép tích chập một chiều.
 
-## Max-Over-Time Pooling
+## Pooling cực đại theo thời gian
 
-Similarly, we can use pooling
-to extract the highest value
-from sequence representations
-as the most important feature
-across time steps.
-The *max-over-time pooling* used in textCNN
-works like
-the one-dimensional global max-pooling
+Tương tự, chúng ta có thể sử dụng pooling
+để trích xuất giá trị cao nhất
+từ các biểu diễn chuỗi
+như đặc trưng quan trọng nhất
+trải dài qua các bước thời gian.
+*Pooling cực đại theo thời gian*
+được sử dụng trong textCNN
+hoạt động giống như
+global max-pooling một chiều
 :cite:`Collobert.Weston.Bottou.ea.2011`.
-For a multi-channel input
-where each channel stores values
-at different time steps,
-the output at each channel
-is the maximum value
-for that channel.
-Note that
-the max-over-time pooling
-allows different numbers of time steps
-at different channels.
+Đối với đầu vào nhiều kênh,
+trong đó mỗi kênh lưu trữ các giá trị
+tại những bước thời gian khác nhau,
+đầu ra của mỗi kênh
+là giá trị lớn nhất
+của kênh đó.
+Lưu ý rằng
+pooling cực đại theo thời gian
+cho phép các kênh khác nhau
+có số bước thời gian khác nhau.
 
-## The textCNN Model
+## Mô hình textCNN
 
-Using the one-dimensional convolution
-and max-over-time pooling,
-the textCNN model
-takes individual pretrained token representations
-as input,
-then obtains and transforms sequence representations
-for the downstream application.
+Bằng cách sử dụng tích chập một chiều
+và pooling cực đại theo thời gian,
+mô hình textCNN
+nhận các biểu diễn token đã được pretrain riêng lẻ
+làm đầu vào,
+sau đó thu được và biến đổi các biểu diễn chuỗi
+cho ứng dụng hạ nguồn.
 
-For a single text sequence
-with $n$ tokens represented by
-$d$-dimensional vectors,
-the width, height, and number of channels
-of the input tensor
-are $n$, $1$, and $d$, respectively.
-The textCNN model transforms the input
-into the output as follows:
+Đối với một chuỗi văn bản đơn
+có $n$ token được biểu diễn bằng
+các vector $d$ chiều,
+chiều rộng, chiều cao và số lượng kênh
+của tensor đầu vào
+lần lượt là $n$, $1$ và $d$.
+Mô hình textCNN biến đổi đầu vào
+thành đầu ra như sau:
 
-1. Define multiple one-dimensional convolution kernels and perform convolution operations separately on the inputs. Convolution kernels with different widths may capture local features among different numbers of adjacent tokens.
-1. Perform max-over-time pooling on all the output channels, and then concatenate all the scalar pooling outputs as a vector.
-1. Transform the concatenated vector into the output categories using the fully connected layer. Dropout can be used for reducing overfitting.
+1. Xác định nhiều kernel tích chập một chiều và thực hiện các phép tích chập riêng biệt trên các đầu vào. Các kernel tích chập có chiều rộng khác nhau có thể nắm bắt các đặc trưng cục bộ giữa số lượng token liền kề khác nhau.
+1. Thực hiện pooling cực đại theo thời gian trên tất cả các kênh đầu ra, sau đó nối tất cả các đầu ra pooling vô hướng thành một vector.
+1. Biến đổi vector đã nối thành các lớp đầu ra bằng fully connected layer. Có thể sử dụng Dropout để giảm overfitting.
 
-![The model architecture of textCNN.](../img/textcnn.svg)
+![Kiến trúc mô hình của textCNN.](../img/textcnn.svg)
 :label:`fig_conv1d_textcnn`
 
 :numref:`fig_conv1d_textcnn`
-illustrates the model architecture of textCNN
-with a concrete example.
-The input is a sentence with 11 tokens,
-where
-each token is represented by a 6-dimensional vectors.
-So we have a 6-channel input with width 11.
-Define
-two one-dimensional convolution kernels
-of widths 2 and 4,
-with 4 and 5 output channels, respectively.
-They produce
-4 output channels with width $11-2+1=10$
-and 5 output channels with width $11-4+1=8$.
-Despite different widths of these 9 channels,
-the max-over-time pooling
-gives a concatenated 9-dimensional vector,
-which is finally transformed
-into a 2-dimensional output vector
-for binary sentiment predictions.
+minh họa kiến trúc mô hình textCNN
+bằng một ví dụ cụ thể.
+Đầu vào là một câu có 11 token,
+trong đó
+mỗi token được biểu diễn bằng một vector 6 chiều.
+Vì vậy, chúng ta có một đầu vào 6 kênh với chiều rộng 11.
+Xác định
+hai kernel tích chập một chiều
+có chiều rộng 2 và 4,
+với lần lượt 4 và 5 kênh đầu ra.
+Chúng tạo ra
+4 kênh đầu ra có chiều rộng $11-2+1=10$
+và 5 kênh đầu ra có chiều rộng $11-4+1=8$.
+Mặc dù 9 kênh này có các chiều rộng khác nhau,
+pooling cực đại theo thời gian
+tạo ra một vector 9 chiều được nối,
+cuối cùng được biến đổi
+thành một vector đầu ra 2 chiều
+để dự đoán cảm xúc nhị phân.
 
 
 
-### Defining the Model
+### Định nghĩa mô hình
 
-We implement the textCNN model in the following class.
-Compared with the bidirectional RNN model in
+Chúng ta triển khai mô hình textCNN trong lớp sau đây.
+So với mô hình RNN hai chiều trong
 :numref:`sec_sentiment_rnn`,
-besides
-replacing recurrent layers with convolutional layers,
-we also use two embedding layers:
-one with trainable weights and the other
-with fixed weights.
+ngoài việc
+thay thế các recurrent layer bằng các convolutional layer,
+chúng ta cũng sử dụng hai embedding layer:
+một lớp có trọng số có thể huấn luyện và lớp còn lại
+có trọng số cố định.
 
 ```{.python .input}
 #@tab mxnet
@@ -321,8 +321,8 @@ class TextCNN(nn.Module):
         return outputs
 ```
 
-Let's create a textCNN instance.
-It has 3 convolutional layers with kernel widths of 3, 4, and 5, all with 100 output channels.
+Hãy tạo một thực thể textCNN.
+Mô hình có 3 convolutional layer với chiều rộng kernel lần lượt là 3, 4 và 5, tất cả đều có 100 kênh đầu ra.
 
 ```{.python .input}
 #@tab mxnet
@@ -345,14 +345,14 @@ def init_weights(module):
 net.apply(init_weights);
 ```
 
-### Loading Pretrained Word Vectors
+### Tải các vector từ đã được pretrain
 
-Same as :numref:`sec_sentiment_rnn`,
-we load pretrained 100-dimensional GloVe embeddings
-as the initialized token representations.
-These token representations (embedding weights)
-will be trained in `embedding`
-and fixed in `constant_embedding`.
+Tương tự như :numref:`sec_sentiment_rnn`,
+chúng ta tải các embedding GloVe 100 chiều đã được pretrain
+làm các biểu diễn token được khởi tạo.
+Các biểu diễn token này (embedding weight)
+sẽ được huấn luyện trong `embedding`
+và được cố định trong `constant_embedding`.
 
 ```{.python .input}
 #@tab mxnet
@@ -372,9 +372,9 @@ net.constant_embedding.weight.data.copy_(embeds)
 net.constant_embedding.weight.requires_grad = False
 ```
 
-### Training and Evaluating the Model
+### Huấn luyện và đánh giá mô hình
 
-Now we can train the textCNN model for sentiment analysis.
+Bây giờ chúng ta có thể huấn luyện mô hình textCNN để phân tích cảm xúc.
 
 ```{.python .input}
 #@tab mxnet
@@ -392,7 +392,7 @@ loss = nn.CrossEntropyLoss(reduction="none")
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-Below we use the trained model to predict the sentiment for two simple sentences.
+Dưới đây, chúng ta sử dụng mô hình đã huấn luyện để dự đoán cảm xúc cho hai câu đơn giản.
 
 ```{.python .input}
 #@tab all
@@ -404,24 +404,24 @@ d2l.predict_sentiment(net, vocab, 'this movie is so great')
 d2l.predict_sentiment(net, vocab, 'this movie is so bad')
 ```
 
-## Summary
+## Tóm tắt
 
-* One-dimensional CNNs can process local features such as $n$-grams in text.
-* Multi-input-channel one-dimensional cross-correlations are equivalent to single-input-channel two-dimensional cross-correlations.
-* The max-over-time pooling allows different numbers of time steps at different channels.
-* The textCNN model transforms individual token representations into downstream application outputs using one-dimensional convolutional layers and max-over-time pooling layers.
+* CNN một chiều có thể xử lý các đặc trưng cục bộ như $n$-gram trong văn bản.
+* Các phép tương quan chéo một chiều với nhiều kênh đầu vào tương đương với các phép tương quan chéo hai chiều với một kênh đầu vào.
+* Pooling cực đại theo thời gian cho phép các kênh khác nhau có số bước thời gian khác nhau.
+* Mô hình textCNN biến đổi các biểu diễn token riêng lẻ thành đầu ra cho ứng dụng hạ nguồn bằng cách sử dụng các convolutional layer một chiều và các pooling layer cực đại theo thời gian.
 
 
-## Exercises
+## Bài tập
 
-1. Tune hyperparameters and compare the two architectures for sentiment analysis in :numref:`sec_sentiment_rnn` and in this section, such as in classification accuracy and computational efficiency.
-1. Can you further improve the classification accuracy of the model by using the methods introduced in the exercises of :numref:`sec_sentiment_rnn`?
-1. Add positional encoding in the input representations. Does it improve the classification accuracy?
+1. Tinh chỉnh các hyperparameter và so sánh hai kiến trúc dùng cho phân tích cảm xúc trong :numref:`sec_sentiment_rnn` và trong phần này, chẳng hạn như về độ chính xác phân loại và hiệu quả tính toán.
+1. Bạn có thể cải thiện thêm độ chính xác phân loại của mô hình bằng cách sử dụng các phương pháp được giới thiệu trong phần bài tập của :numref:`sec_sentiment_rnn` không?
+1. Thêm positional encoding vào các biểu diễn đầu vào. Điều này có cải thiện độ chính xác phân loại không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/393)
+[Thảo luận](https://discuss.d2l.ai/t/393)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1425)
+[Thảo luận](https://discuss.d2l.ai/t/1425)
 :end_tab:

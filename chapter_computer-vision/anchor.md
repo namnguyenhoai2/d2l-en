@@ -2,22 +2,22 @@
 :label:`sec_anchor`
 
 
-Object detection algorithms usually
-sample a large number of regions in the input image, determine whether these regions contain
-objects of interest, and adjust the boundaries
-of the regions so as to predict the
-*ground-truth bounding boxes*
-of the objects more accurately.
-Different models may adopt
-different region sampling schemes. 
-Here we introduce one of such methods:
-it generates multiple bounding boxes with varying scales and aspect ratios centered on each pixel. 
-These bounding boxes are called *anchor boxes*.
-We will design an object detection model
-based on anchor boxes in :numref:`sec_ssd`.
+Các thuật toán phát hiện đối tượng thường
+lấy mẫu một số lượng lớn vùng trong ảnh đầu vào, xác định xem các vùng này có chứa
+đối tượng cần quan tâm hay không, và điều chỉnh ranh giới
+của các vùng để dự đoán
+*bounding box thực tế*
+của các đối tượng chính xác hơn.
+Các mô hình khác nhau có thể áp dụng
+những phương pháp lấy mẫu vùng khác nhau.
+Ở đây, chúng ta giới thiệu một trong những phương pháp đó:
+phương pháp này tạo ra nhiều bounding box với các tỷ lệ và tỉ lệ khung hình khác nhau, được căn giữa tại mỗi pixel.
+Các bounding box này được gọi là *anchor box*.
+Chúng ta sẽ thiết kế một mô hình phát hiện đối tượng
+dựa trên anchor box trong :numref:`sec_ssd`.
 
-First, let's modify the printing accuracy
-just for more concise outputs.
+Trước tiên, hãy điều chỉnh độ chính xác khi in
+chỉ để kết quả đầu ra ngắn gọn hơn.
 
 ```{.python .input}
 #@tab mxnet
@@ -38,31 +38,31 @@ import torch
 torch.set_printoptions(2)  # Simplify printing accuracy
 ```
 
-## Generating Multiple Anchor Boxes
+## Tạo nhiều Anchor Box
 
-Suppose that the input image has a height of $h$ and width of $w$. 
-We generate anchor boxes with different shapes centered on each pixel of the image.
-Let the *scale* be $s\in (0, 1]$ and
-the *aspect ratio* (ratio of width to height) is $r > 0$. 
-Then [**the width and height of the anchor box are $ws\sqrt{r}$ and $hs/\sqrt{r}$, respectively.**]
-Note that when the center position is given, an anchor box with known width and height is determined.
+Giả sử ảnh đầu vào có chiều cao là $h$ và chiều rộng là $w$.
+Chúng ta tạo các anchor box có hình dạng khác nhau, được căn giữa tại mỗi pixel của ảnh.
+Gọi *scale* là $s\in (0, 1]$ và
+*aspect ratio* (tỉ lệ giữa chiều rộng và chiều cao) là $r > 0$.
+Khi đó [**chiều rộng và chiều cao của anchor box lần lượt là $ws\sqrt{r}$ và $hs/\sqrt{r}$.**]
+Lưu ý rằng khi đã biết vị trí tâm, một anchor box có chiều rộng và chiều cao xác định sẽ được xác định hoàn toàn.
 
-To generate multiple anchor boxes with different shapes,
-let's set a series of scales
-$s_1,\ldots, s_n$ and 
-a series of aspect ratios $r_1,\ldots, r_m$.
-When using all the combinations of these scales and aspect ratios with each pixel as the center,
-the input image will have a total of $whnm$ anchor boxes. Although these anchor boxes may cover all the
-ground-truth bounding boxes, the computational complexity is easily too high.
-In practice,
-we can only (**consider those combinations
-containing**) $s_1$ or $r_1$:
+Để tạo nhiều anchor box có hình dạng khác nhau,
+hãy đặt một dãy scale
+$s_1,\ldots, s_n$ và
+một dãy aspect ratio $r_1,\ldots, r_m$.
+Khi sử dụng mọi tổ hợp của các scale và aspect ratio này với mỗi pixel làm tâm,
+ảnh đầu vào sẽ có tổng cộng $whnm$ anchor box. Mặc dù các anchor box này có thể bao phủ tất cả
+bounding box thực tế, độ phức tạp tính toán dễ dàng trở nên quá cao.
+Trong thực tế,
+chúng ta chỉ có thể (**xét những tổ hợp
+chứa**) $s_1$ hoặc $r_1$:
 
 (**$$(s_1, r_1), (s_1, r_2), \ldots, (s_1, r_m), (s_2, r_1), (s_3, r_1), \ldots, (s_n, r_1).$$**)
 
-That is to say, the number of anchor boxes centered on the same pixel is $n+m-1$. For the entire input image, we will generate a total of $wh(n+m-1)$ anchor boxes.
+Nói cách khác, số lượng anchor box được căn giữa trên cùng một pixel là $n+m-1$. Đối với toàn bộ ảnh đầu vào, chúng ta sẽ tạo tổng cộng $wh(n+m-1)$ anchor box.
 
-The above method of generating anchor boxes is implemented in the following `multibox_prior` function. We specify the input image, a list of scales, and a list of aspect ratios, then this function will return all the anchor boxes.
+Phương pháp tạo anchor box nêu trên được triển khai trong hàm `multibox_prior` sau đây. Chúng ta chỉ định ảnh đầu vào, một danh sách scale và một danh sách aspect ratio, sau đó hàm này sẽ trả về tất cả anchor box.
 
 ```{.python .input}
 #@tab mxnet
@@ -146,8 +146,8 @@ def multibox_prior(data, sizes, ratios):
     return output.unsqueeze(0)
 ```
 
-We can see that [**the shape of the returned anchor box variable `Y`**] is
-(batch size, number of anchor boxes, 4).
+Ta có thể thấy rằng [**hình dạng của biến anchor box được trả về `Y`**] là
+(kích thước batch, số lượng anchor box, 4).
 
 ```{.python .input}
 #@tab mxnet
@@ -171,12 +171,12 @@ Y = multibox_prior(X, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5])
 Y.shape
 ```
 
-After changing the shape of the anchor box variable `Y` to (image height, image width, number of anchor boxes centered on the same pixel, 4),
-we can obtain all the anchor boxes centered on a specified pixel position.
-In the following,
-we [**access the first anchor box centered on (250, 250)**]. It has four elements: the $(x, y)$-axis coordinates at the upper-left corner and the $(x, y)$-axis coordinates at the lower-right corner of the anchor box.
-The coordinate values of both axes
-are divided by the width and height of the image, respectively.
+Sau khi thay đổi hình dạng của biến anchor box `Y` thành (chiều cao ảnh, chiều rộng ảnh, số lượng anchor box được căn giữa trên cùng một pixel, 4),
+chúng ta có thể lấy tất cả anchor box được căn giữa tại một vị trí pixel cụ thể.
+Sau đây,
+chúng ta [**truy cập anchor box đầu tiên được căn giữa tại (250, 250)**]. Nó có bốn phần tử: tọa độ trên các trục $(x, y)$ tại góc trên bên trái và tọa độ trên các trục $(x, y)$ tại góc dưới bên phải của anchor box.
+Các giá trị tọa độ của cả hai trục
+được chia lần lượt cho chiều rộng và chiều cao của ảnh.
 
 ```{.python .input}
 #@tab all
@@ -184,8 +184,8 @@ boxes = Y.reshape(h, w, 5, 4)
 boxes[250, 250, 0, :]
 ```
 
-In order to [**show all the anchor boxes centered on one pixel in the image**],
-we define the following `show_bboxes` function to draw multiple bounding boxes on the image.
+Để [**hiển thị tất cả anchor box được căn giữa trên một pixel trong ảnh**],
+chúng ta định nghĩa hàm `show_bboxes` sau đây để vẽ nhiều bounding box trên ảnh.
 
 ```{.python .input}
 #@tab all
@@ -213,13 +213,13 @@ def show_bboxes(axes, bboxes, labels=None, colors=None):
                       bbox=dict(facecolor=color, lw=0))
 ```
 
-As we just saw, the coordinate values of the $x$ and $y$ axes in the variable `boxes` have been divided by the width and height of the image, respectively.
-When drawing anchor boxes,
-we need to restore their original coordinate values;
-thus, we define variable `bbox_scale` below. 
-Now, we can draw all the anchor boxes centered on (250, 250) in the image.
-As you can see, the blue anchor box with a scale of 0.75 and an aspect ratio of 1 well
-surrounds the dog in the image.
+Như chúng ta vừa thấy, các giá trị tọa độ của các trục $x$ và $y$ trong biến `boxes` lần lượt đã được chia cho chiều rộng và chiều cao của ảnh.
+Khi vẽ anchor box,
+chúng ta cần khôi phục các giá trị tọa độ ban đầu của chúng;
+do đó, bên dưới chúng ta định nghĩa biến `bbox_scale`.
+Bây giờ, chúng ta có thể vẽ tất cả anchor box được căn giữa tại (250, 250) trong ảnh.
+Như bạn có thể thấy, anchor box màu xanh lam có scale 0.75 và aspect ratio bằng 1 bao quanh tốt
+con chó trong ảnh.
 
 ```{.python .input}
 #@tab all
@@ -233,28 +233,28 @@ show_bboxes(fig.axes, boxes[250, 250, :, :] * bbox_scale,
 
 ## [**Intersection over Union (IoU)**]
 
-We just mentioned that an anchor box "well" surrounds the dog in the image.
-If the ground-truth bounding box of the object is known, how can "well" here be quantified?
-Intuitively, we can measure the similarity between
-the anchor box and the ground-truth bounding box.
-We know that the *Jaccard index* can measure the similarity between two sets. Given sets $\mathcal{A}$ and $\mathcal{B}$, their Jaccard index is the size of their intersection divided by the size of their union:
+Chúng ta vừa đề cập rằng một anchor box bao quanh con chó trong ảnh một cách “tốt”.
+Nếu đã biết bounding box thực tế của đối tượng, làm thế nào để định lượng mức độ “tốt” này?
+Theo trực giác, chúng ta có thể đo độ tương đồng giữa
+anchor box và bounding box thực tế.
+Chúng ta biết rằng *chỉ số Jaccard* có thể đo độ tương đồng giữa hai tập hợp. Với hai tập hợp $\mathcal{A}$ và $\mathcal{B}$, chỉ số Jaccard của chúng là kích thước phần giao chia cho kích thước phần hợp:
 
 $$J(\mathcal{A},\mathcal{B}) = \frac{\left|\mathcal{A} \cap \mathcal{B}\right|}{\left| \mathcal{A} \cup \mathcal{B}\right|}.$$
 
 
-In fact, we can consider the pixel area of any bounding box as a set of pixels. 
-In this way, we can measure the similarity of the two bounding boxes by the Jaccard index of their pixel sets. For two bounding boxes, we usually refer their Jaccard index as *intersection over union* (*IoU*), which is the ratio of their intersection area to their union area, as shown in :numref:`fig_iou`.
-The range of an IoU is between 0 and 1:
-0 means that two bounding boxes do not overlap at all,
-while 1 indicates that the two bounding boxes are equal.
+Trên thực tế, chúng ta có thể xem diện tích pixel của bất kỳ bounding box nào là một tập hợp các pixel.
+Theo cách này, chúng ta có thể đo độ tương đồng của hai bounding box bằng chỉ số Jaccard của các tập pixel của chúng. Đối với hai bounding box, chúng ta thường gọi chỉ số Jaccard của chúng là *intersection over union* (*IoU*), tức là tỉ lệ giữa diện tích phần giao và diện tích phần hợp của chúng, như minh họa trong :numref:`fig_iou`.
+Giá trị IoU nằm trong khoảng từ 0 đến 1:
+0 nghĩa là hai bounding box hoàn toàn không chồng lấp,
+trong khi 1 cho biết hai bounding box giống hệt nhau.
 
-![IoU is the ratio of the intersection area to the union area of two bounding boxes.](../img/iou.svg)
+![IoU là tỉ lệ giữa diện tích phần giao và diện tích phần hợp của hai bounding box.](../img/iou.svg)
 :label:`fig_iou`
 
-For the remainder of this section, we will use IoU to measure the similarity between anchor boxes and ground-truth bounding boxes, and between different anchor boxes.
-Given two lists of anchor or bounding boxes,
-the following `box_iou` computes their pairwise IoU
-across these two lists.
+Trong phần còn lại của mục này, chúng ta sẽ sử dụng IoU để đo độ tương đồng giữa các anchor box và bounding box thực tế, cũng như giữa các anchor box khác nhau.
+Với hai danh sách anchor box hoặc bounding box,
+`box_iou` sau đây tính IoU theo từng cặp
+giữa hai danh sách này.
 
 ```{.python .input}
 #@tab mxnet
@@ -300,62 +300,62 @@ def box_iou(boxes1, boxes2):
     return inter_areas / union_areas
 ```
 
-## Labeling Anchor Boxes in Training Data
+## Gán nhãn Anchor Box trong Dữ liệu Huấn luyện
 :label:`subsec_labeling-anchor-boxes`
 
 
-In a training dataset,
-we consider each anchor box as a training example.
-In order to train an object detection model,
-we need *class* and *offset* labels for each anchor box,
-where the former is
-the class of the object relevant to the anchor box
-and the latter is the offset
-of the ground-truth bounding box relative to the anchor box.
-During the prediction,
-for each image
-we generate multiple anchor boxes,
-predict classes and offsets for all the anchor boxes,
-adjust their positions according to the predicted offsets to obtain the predicted bounding boxes,
-and finally only output those 
-predicted bounding boxes that satisfy certain criteria.
+Trong một tập dữ liệu huấn luyện,
+chúng ta xem mỗi anchor box là một mẫu huấn luyện.
+Để huấn luyện mô hình phát hiện đối tượng,
+chúng ta cần nhãn *class* và *offset* cho mỗi anchor box,
+trong đó nhãn đầu tiên là
+class của đối tượng liên quan đến anchor box,
+còn nhãn thứ hai là offset
+của bounding box thực tế so với anchor box.
+Trong quá trình dự đoán,
+đối với mỗi ảnh
+chúng ta tạo nhiều anchor box,
+dự đoán class và offset cho tất cả anchor box,
+điều chỉnh vị trí của chúng theo các offset đã dự đoán để thu được các bounding box dự đoán,
+và cuối cùng chỉ xuất ra những
+bounding box dự đoán thỏa mãn các tiêu chí nhất định.
 
 
-As we know, an object detection training set
-comes with labels for
-locations of *ground-truth bounding boxes*
-and classes of their surrounded objects.
-To label any generated *anchor box*,
-we refer to the labeled
-location and class of its *assigned* ground-truth bounding box that is closest to the anchor box.
-In the following,
-we describe an algorithm for assigning
-closest ground-truth bounding boxes to anchor boxes. 
+Như chúng ta đã biết, một tập huấn luyện phát hiện đối tượng
+đi kèm với các nhãn cho
+vị trí của *bounding box thực tế*
+và class của các đối tượng mà chúng bao quanh.
+Để gán nhãn cho bất kỳ *anchor box* nào được tạo ra,
+chúng ta tham chiếu đến
+vị trí và class đã được gán nhãn của bounding box thực tế *được gán* cho nó và gần anchor box nhất.
+Sau đây,
+chúng ta mô tả một thuật toán để gán
+bounding box thực tế gần nhất cho các anchor box.
 
-### [**Assigning Ground-Truth Bounding Boxes to Anchor Boxes**]
+### [**Gán Bounding Box Thực tế cho Anchor Box**]
 
-Given an image,
-suppose that the anchor boxes are $A_1, A_2, \ldots, A_{n_a}$ and the ground-truth bounding boxes are $B_1, B_2, \ldots, B_{n_b}$, where $n_a \geq n_b$.
-Let's define a matrix $\mathbf{X} \in \mathbb{R}^{n_a \times n_b}$, whose element $x_{ij}$ in the $i^\textrm{th}$ row and $j^\textrm{th}$ column is the IoU of the anchor box $A_i$ and the ground-truth bounding box $B_j$. The algorithm consists of the following steps:
+Với một ảnh,
+giả sử các anchor box là $A_1, A_2, \ldots, A_{n_a}$ và các bounding box thực tế là $B_1, B_2, \ldots, B_{n_b}$, trong đó $n_a \geq n_b$.
+Hãy định nghĩa một ma trận $\mathbf{X} \in \mathbb{R}^{n_a \times n_b}$, trong đó phần tử $x_{ij}$ tại hàng thứ $i^\textrm{th}$ và cột thứ $j^\textrm{th}$ là IoU của anchor box $A_i$ và bounding box thực tế $B_j$. Thuật toán gồm các bước sau:
 
-1. Find the largest element in matrix $\mathbf{X}$ and denote its row and column indices as $i_1$ and $j_1$, respectively. Then the ground-truth bounding box $B_{j_1}$ is assigned to the anchor box $A_{i_1}$. This is quite intuitive because $A_{i_1}$ and $B_{j_1}$ are the closest among all the pairs of anchor boxes and ground-truth bounding boxes. After the first assignment, discard all the elements in the ${i_1}^\textrm{th}$ row and the ${j_1}^\textrm{th}$ column in matrix $\mathbf{X}$. 
-1. Find the largest of the remaining elements in matrix $\mathbf{X}$ and denote its row and column indices as $i_2$ and $j_2$, respectively. We assign ground-truth bounding box $B_{j_2}$ to anchor box $A_{i_2}$ and discard all the elements in the ${i_2}^\textrm{th}$ row and the ${j_2}^\textrm{th}$ column in matrix $\mathbf{X}$.
-1. At this point, elements in two rows and two columns in  matrix $\mathbf{X}$ have been discarded. We proceed until all elements in $n_b$ columns in matrix $\mathbf{X}$ are discarded. At this time, we have assigned a ground-truth bounding box to each of $n_b$ anchor boxes.
-1. Only traverse through the remaining $n_a - n_b$ anchor boxes. For example, given any anchor box $A_i$, find the ground-truth bounding box $B_j$ with the largest IoU with $A_i$ throughout the $i^\textrm{th}$ row of matrix $\mathbf{X}$, and assign $B_j$ to $A_i$ only if this IoU is greater than a predefined threshold.
+1. Tìm phần tử lớn nhất trong ma trận $\mathbf{X}$ và ký hiệu chỉ số hàng và cột của nó lần lượt là $i_1$ và $j_1$. Khi đó, bounding box thực tế $B_{j_1}$ được gán cho anchor box $A_{i_1}$. Điều này khá trực quan vì $A_{i_1}$ và $B_{j_1}$ là cặp gần nhau nhất trong tất cả các cặp anchor box và bounding box thực tế. Sau lần gán đầu tiên, loại bỏ tất cả phần tử trong hàng thứ ${i_1}^\textrm{th}$ và cột thứ ${j_1}^\textrm{th}$ trong ma trận $\mathbf{X}$.
+1. Tìm phần tử lớn nhất trong số các phần tử còn lại của ma trận $\mathbf{X}$ và ký hiệu chỉ số hàng và cột của nó lần lượt là $i_2$ và $j_2$. Chúng ta gán bounding box thực tế $B_{j_2}$ cho anchor box $A_{i_2}$ và loại bỏ tất cả phần tử trong hàng thứ ${i_2}^\textrm{th}$ và cột thứ ${j_2}^\textrm{th}$ trong ma trận $\mathbf{X}$.
+1. Lúc này, các phần tử trong hai hàng và hai cột của ma trận $\mathbf{X}$ đã bị loại bỏ. Chúng ta tiếp tục cho đến khi tất cả phần tử trong $n_b$ cột của ma trận $\mathbf{X}$ bị loại bỏ. Khi đó, chúng ta đã gán một bounding box thực tế cho mỗi trong số $n_b$ anchor box.
+1. Chỉ duyệt qua $n_a - n_b$ anchor box còn lại. Ví dụ, với bất kỳ anchor box $A_i$ nào, hãy tìm bounding box thực tế $B_j$ có IoU lớn nhất với $A_i$ trên toàn bộ hàng thứ $i^\textrm{th}$ của ma trận $\mathbf{X}$, và chỉ gán $B_j$ cho $A_i$ nếu IoU này lớn hơn một ngưỡng được định trước.
 
-Let's illustrate the above algorithm using a concrete
-example.
-As shown in :numref:`fig_anchor_label` (left), assuming that the maximum value in matrix $\mathbf{X}$ is $x_{23}$, we assign the ground-truth bounding box $B_3$ to the anchor box $A_2$.
-Then, we discard all the elements in row 2 and column 3 of the matrix, find the largest $x_{71}$ in the remaining  elements (shaded area), and assign the ground-truth bounding box $B_1$ to the anchor box $A_7$. 
-Next, as shown in :numref:`fig_anchor_label` (middle), discard all the elements in row 7 and column 1 of the matrix, find the largest $x_{54}$ in the remaining  elements (shaded area), and assign the ground-truth bounding box $B_4$ to the anchor box $A_5$. 
-Finally, as shown in :numref:`fig_anchor_label` (right), discard all the elements in row 5 and column 4 of the matrix, find the largest $x_{92}$ in the remaining elements (shaded area), and assign the ground-truth bounding box $B_2$ to the anchor box $A_9$.
-After that, we only need to traverse through
-the remaining anchor boxes $A_1, A_3, A_4, A_6, A_8$ and determine whether to assign them ground-truth bounding boxes according to the threshold.
+Hãy minh họa thuật toán trên bằng một
+ví dụ cụ thể.
+Như được trình bày trong :numref:`fig_anchor_label` (bên trái), giả sử giá trị lớn nhất trong ma trận $\mathbf{X}$ là $x_{23}$, ta gán bounding box ground-truth $B_3$ cho anchor box $A_2$.
+Sau đó, ta loại bỏ tất cả các phần tử trong hàng 2 và cột 3 của ma trận, tìm $x_{71}$ lớn nhất trong các phần tử còn lại (vùng được tô bóng), rồi gán bounding box ground-truth $B_1$ cho anchor box $A_7$. 
+Tiếp theo, như được trình bày trong :numref:`fig_anchor_label` (ở giữa), ta loại bỏ tất cả các phần tử trong hàng 7 và cột 1 của ma trận, tìm $x_{54}$ lớn nhất trong các phần tử còn lại (vùng được tô bóng), rồi gán bounding box ground-truth $B_4$ cho anchor box $A_5$. 
+Cuối cùng, như được trình bày trong :numref:`fig_anchor_label` (bên phải), ta loại bỏ tất cả các phần tử trong hàng 5 và cột 4 của ma trận, tìm $x_{92}$ lớn nhất trong các phần tử còn lại (vùng được tô bóng), rồi gán bounding box ground-truth $B_2$ cho anchor box $A_9$.
+Sau đó, ta chỉ cần duyệt qua
+các anchor box còn lại $A_1, A_3, A_4, A_6, A_8$ và xác định có gán bounding box ground-truth cho chúng hay không dựa trên threshold.
 
-![Assigning ground-truth bounding boxes to anchor boxes.](../img/anchor-label.svg)
+![Gán bounding box ground-truth cho anchor box.](../img/anchor-label.svg)
 :label:`fig_anchor_label`
 
-This algorithm is implemented in the following `assign_anchor_to_bbox` function.
+Thuật toán này được triển khai trong hàm `assign_anchor_to_bbox` sau đây.
 
 ```{.python .input}
 #@tab mxnet
@@ -416,40 +416,40 @@ def assign_anchor_to_bbox(ground_truth, anchors, device, iou_threshold=0.5):
     return anchors_bbox_map
 ```
 
-### Labeling Classes and Offsets
+### Gán nhãn Class và Offset
 
-Now we can label the class and offset for each anchor box. Suppose that an anchor box $A$ is assigned
-a ground-truth bounding box $B$. 
-On the one hand,
-the class of the anchor box $A$ will be
-labeled as that of $B$.
-On the other hand,
-the offset of the anchor box $A$ 
-will be labeled according to the 
-relative position between
-the central coordinates of $B$ and $A$
-together with the relative size between
-these two boxes.
-Given varying
-positions and sizes of different boxes in the dataset,
-we can apply transformations
-to those relative positions and sizes
-that may lead to 
-more uniformly distributed offsets
-that are easier to fit.
-Here we describe a common transformation.
-[**Given the central coordinates of $A$ and $B$ as $(x_a, y_a)$ and $(x_b, y_b)$, 
-their widths as $w_a$ and $w_b$, 
-and their heights as $h_a$ and $h_b$, respectively. 
-We may label the offset of $A$ as
+Bây giờ ta có thể gán nhãn class và offset cho mỗi anchor box. Giả sử một anchor box $A$ được gán
+một bounding box ground-truth $B$. 
+Một mặt,
+class của anchor box $A$ sẽ được
+gán nhãn giống class của $B$.
+Mặt khác,
+offset của anchor box $A$ 
+sẽ được gán nhãn dựa trên 
+vị trí tương đối giữa
+các tọa độ tâm của $B$ và $A$
+cùng với kích thước tương đối giữa
+hai box này.
+Vì các box khác nhau trong dataset có
+vị trí và kích thước khác nhau,
+ta có thể áp dụng các phép biến đổi
+cho những vị trí và kích thước tương đối đó
+để tạo ra các offset
+có phân phối đồng đều hơn
+và dễ khớp hơn.
+Sau đây, ta mô tả một phép biến đổi phổ biến.
+[**Cho tọa độ tâm của $A$ và $B$ lần lượt là $(x_a, y_a)$ và $(x_b, y_b)$, 
+chiều rộng lần lượt là $w_a$ và $w_b$, 
+và chiều cao lần lượt là $h_a$ và $h_b$. 
+Ta có thể gán nhãn offset của $A$ là
 
 $$\left( \frac{ \frac{x_b - x_a}{w_a} - \mu_x }{\sigma_x},
 \frac{ \frac{y_b - y_a}{h_a} - \mu_y }{\sigma_y},
 \frac{ \log \frac{w_b}{w_a} - \mu_w }{\sigma_w},
 \frac{ \log \frac{h_b}{h_a} - \mu_h }{\sigma_h}\right),$$
 **]
-where default values of the constants are $\mu_x = \mu_y = \mu_w = \mu_h = 0, \sigma_x=\sigma_y=0.1$, and $\sigma_w=\sigma_h=0.2$.
-This transformation is implemented below in the `offset_boxes` function.
+trong đó giá trị mặc định của các hằng số là $\mu_x = \mu_y = \mu_w = \mu_h = 0, \sigma_x=\sigma_y=0.1$, và $\sigma_w=\sigma_h=0.2$.
+Phép biến đổi này được triển khai bên dưới trong hàm `offset_boxes`.
 
 ```{.python .input}
 #@tab all
@@ -464,12 +464,12 @@ def offset_boxes(anchors, assigned_bb, eps=1e-6):
     return offset
 ```
 
-If an anchor box is not assigned a ground-truth bounding box, we just label the class of the anchor box as "background".
-Anchor boxes whose classes are background are often referred to as *negative* anchor boxes,
-and the rest are called *positive* anchor boxes.
-We implement the following `multibox_target` function
-to [**label classes and offsets for anchor boxes**] (the `anchors` argument) using ground-truth bounding boxes (the `labels` argument).
-This function sets the background class to zero and increments the integer index of a new class by one.
+Nếu một anchor box không được gán bounding box ground-truth, ta chỉ cần gán nhãn class của anchor box là "background".
+Các anchor box có class là background thường được gọi là anchor box *negative*,
+còn các anchor box còn lại được gọi là anchor box *positive*.
+Ta triển khai hàm `multibox_target` sau đây
+để [**gán nhãn class và offset cho anchor box**] (đối số `anchors`) bằng cách sử dụng các bounding box ground-truth (đối số `labels`).
+Hàm này đặt class background thành 0 và tăng chỉ số nguyên của một class mới lên một đơn vị.
 
 ```{.python .input}
 #@tab mxnet
@@ -546,22 +546,22 @@ def multibox_target(anchors, labels):
     return (bbox_offset, bbox_mask, class_labels)
 ```
 
-### An Example
+### Một ví dụ
 
-Let's illustrate anchor box labeling
-via a concrete example.
-We define ground-truth bounding boxes for the dog and cat in the loaded image,
-where the first element is the class (0 for dog and 1 for cat) and the remaining four elements are the
-$(x, y)$-axis coordinates
-at the upper-left corner and the lower-right corner
-(range is between 0 and 1). 
-We also construct five anchor boxes to be labeled
-using the coordinates of
-the upper-left corner and the lower-right corner:
-$A_0, \ldots, A_4$ (the index starts from 0).
-Then we [**plot these ground-truth bounding boxes 
-and anchor boxes 
-in the image.**]
+Hãy minh họa việc gán nhãn cho anchor box
+bằng một ví dụ cụ thể.
+Ta định nghĩa các bounding box ground-truth cho chó và mèo trong ảnh đã tải,
+trong đó phần tử đầu tiên là class (0 đối với chó và 1 đối với mèo), còn bốn phần tử còn lại là
+tọa độ trên các trục $(x, y)$
+tại góc trên bên trái và góc dưới bên phải
+(giá trị nằm trong khoảng từ 0 đến 1). 
+Ta cũng tạo năm anchor box để gán nhãn
+bằng cách sử dụng tọa độ của
+góc trên bên trái và góc dưới bên phải:
+$A_0, \ldots, A_4$ (chỉ số bắt đầu từ 0).
+Sau đó, ta [**vẽ các bounding box ground-truth 
+và anchor box 
+trên ảnh.**]
 
 ```{.python .input}
 #@tab all
@@ -576,14 +576,14 @@ show_bboxes(fig.axes, ground_truth[:, 1:] * bbox_scale, ['dog', 'cat'], 'k')
 show_bboxes(fig.axes, anchors * bbox_scale, ['0', '1', '2', '3', '4']);
 ```
 
-Using the `multibox_target` function defined above,
-we can [**label classes and offsets
-of these anchor boxes based on
-the ground-truth bounding boxes**] for the dog and cat.
-In this example, indices of
-the background, dog, and cat classes
-are 0, 1, and 2, respectively. 
-Below we add an dimension for examples of anchor boxes and ground-truth bounding boxes.
+Sử dụng hàm `multibox_target` được định nghĩa ở trên,
+ta có thể [**gán nhãn class và offset
+cho các anchor box này dựa trên
+các bounding box ground-truth**] của chó và mèo.
+Trong ví dụ này, chỉ số của
+các class background, chó và mèo
+lần lượt là 0, 1 và 2. 
+Bên dưới, ta thêm một chiều cho các ví dụ của anchor box và bounding box ground-truth.
 
 ```{.python .input}
 #@tab mxnet
@@ -597,66 +597,66 @@ labels = multibox_target(anchors.unsqueeze(dim=0),
                          ground_truth.unsqueeze(dim=0))
 ```
 
-There are three items in the returned result, all of which are in the tensor format.
-The third item contains the labeled classes of the input anchor boxes.
+Kết quả trả về có ba phần tử, tất cả đều ở định dạng tensor.
+Phần tử thứ ba chứa các class đã gán nhãn của các anchor box đầu vào.
 
-Let's analyze the returned class labels below based on
-anchor box and ground-truth bounding box positions in the image.
-First, among all the pairs of anchor boxes
-and ground-truth bounding boxes,
-the IoU of the anchor box $A_4$ and the ground-truth bounding box of the cat is the largest. 
-Thus, the class of $A_4$ is labeled as the cat.
-Taking out 
-pairs containing $A_4$ or the ground-truth bounding box of the cat, among the rest 
-the pair of the anchor box $A_1$ and the ground-truth bounding box of the dog has the largest IoU.
-So the class of $A_1$ is labeled as the dog.
-Next, we need to traverse through the remaining three unlabeled anchor boxes: $A_0$, $A_2$, and $A_3$.
-For $A_0$,
-the class of the ground-truth bounding box with the largest IoU is the dog,
-but the IoU is below the predefined threshold (0.5),
-so the class is labeled as background;
-for $A_2$,
-the class of the ground-truth bounding box with the largest IoU is the cat and the IoU exceeds the threshold, so the class is labeled as the cat;
-for $A_3$,
-the class of the ground-truth bounding box with the largest IoU is the cat, but the value is below the threshold, so the class is labeled as background.
+Hãy phân tích các class label được trả về bên dưới dựa trên
+vị trí của anchor box và bounding box ground-truth trong ảnh.
+Trước tiên, trong tất cả các cặp anchor box
+và bounding box ground-truth,
+IoU của anchor box $A_4$ và bounding box ground-truth của mèo là lớn nhất. 
+Do đó, class của $A_4$ được gán nhãn là mèo.
+Sau khi loại bỏ
+các cặp chứa $A_4$ hoặc bounding box ground-truth của mèo, trong số các cặp còn lại,
+cặp gồm anchor box $A_1$ và bounding box ground-truth của chó có IoU lớn nhất.
+Vì vậy, class của $A_1$ được gán nhãn là chó.
+Tiếp theo, ta cần duyệt qua ba anchor box chưa được gán nhãn còn lại: $A_0$, $A_2$ và $A_3$.
+Đối với $A_0$,
+class của bounding box ground-truth có IoU lớn nhất là chó,
+nhưng IoU thấp hơn threshold được định trước (0.5),
+nên class được gán nhãn là background;
+đối với $A_2$,
+class của bounding box ground-truth có IoU lớn nhất là mèo và IoU vượt threshold, nên class được gán nhãn là mèo;
+đối với $A_3$,
+class của bounding box ground-truth có IoU lớn nhất là mèo, nhưng giá trị này thấp hơn threshold, nên class được gán nhãn là background.
 
 ```{.python .input}
 #@tab all
 labels[2]
 ```
 
-The second returned item is a mask variable of the shape (batch size, four times the number of anchor boxes).
-Every four elements in the mask variable 
-correspond to the four offset values of each anchor box.
-Since we do not care about background detection,
-offsets of this negative class should not affect the objective function.
-Through elementwise multiplications, zeros in the mask variable will filter out negative class offsets before calculating the objective function.
+Phần tử thứ hai được trả về là một biến mask có shape (batch size, bốn lần số lượng anchor box).
+Mỗi bốn phần tử trong biến mask 
+tương ứng với bốn giá trị offset của mỗi anchor box.
+Vì ta không quan tâm đến việc phát hiện background,
+các offset của class negative này không được ảnh hưởng đến hàm mục tiêu.
+Thông qua phép nhân theo từng phần tử, các số 0 trong biến mask sẽ lọc bỏ các offset của class negative trước khi tính hàm mục tiêu.
 
 ```{.python .input}
 #@tab all
 labels[1]
 ```
 
-The first returned item contains the four offset values labeled for each anchor box.
-Note that the offsets of negative-class anchor boxes are labeled as zeros.
+Phần tử đầu tiên được trả về chứa bốn giá trị offset được gán nhãn cho mỗi anchor box.
+Lưu ý rằng các offset của anchor box thuộc class negative được gán nhãn là 0.
 
 ```{.python .input}
 #@tab all
 labels[0]
 ```
 
-## Predicting Bounding Boxes with Non-Maximum Suppression
+## Dự đoán Bounding Box bằng Non-Maximum Suppression
 :label:`subsec_predicting-bounding-boxes-nms`
 
-During prediction,
-we generate multiple anchor boxes for the image and predict classes and offsets for each of them.
-A *predicted bounding box*
-is thus obtained according to 
-an anchor box with its predicted offset.
-Below we implement the `offset_inverse` function
-that takes in anchors and
-offset predictions as inputs and [**applies inverse offset transformations to
-return the predicted bounding box coordinates**].
+Trong quá trình dự đoán,
+ta tạo nhiều anchor box cho ảnh và dự đoán class cùng offset cho mỗi anchor box.
+Do đó, một *bounding box được dự đoán*
+được tạo ra dựa trên 
+một anchor box cùng offset được dự đoán của nó.
+Bên dưới, ta triển khai hàm `offset_inverse`
+nhận anchor và
+các dự đoán offset làm đầu vào, đồng thời [**áp dụng các phép biến đổi offset nghịch đảo để
+trả về tọa độ của bounding box được dự đoán**].
 
 ```{.python .input}
 #@tab all
@@ -671,34 +671,33 @@ def offset_inverse(anchors, offset_preds):
     return predicted_bbox
 ```
 
-When there are many anchor boxes,
-many similar (with significant overlap)
-predicted bounding boxes 
-can be potentially output for surrounding the same object.
-To simplify the output,
-we can merge similar predicted bounding boxes
-that belong to the same object
-by using *non-maximum suppression* (NMS).
+Khi có nhiều anchor box,
+nhiều bounding box được dự đoán tương tự nhau (có độ chồng lấp đáng kể)
+có thể được tạo ra để bao quanh cùng một đối tượng.
+Để đơn giản hóa đầu ra,
+ta có thể gộp các bounding box được dự đoán tương tự nhau
+và thuộc cùng một đối tượng
+bằng cách sử dụng *non-maximum suppression* (NMS).
 
-Here is how non-maximum suppression works.
-For a predicted bounding box $B$,
-the object detection model calculates the predicted likelihood
-for each class.
-Denoting by $p$ the largest predicted likelihood,
-the class corresponding to this probability is the predicted class for $B$.
-Specifically, we refer to $p$ as the *confidence* (score) of the predicted bounding box $B$.
-On the same image,
-all the predicted non-background bounding boxes 
-are sorted by confidence in descending order
-to generate a list $L$.
-Then we manipulate the sorted list $L$ in the following steps:
+Sau đây là cách non-maximum suppression hoạt động.
+Với một bounding box được dự đoán $B$,
+mô hình object detection tính
+likelihood được dự đoán cho mỗi class.
+Gọi $p$ là likelihood được dự đoán lớn nhất,
+class tương ứng với xác suất này là class được dự đoán của $B$.
+Cụ thể, ta gọi $p$ là *confidence* (score) của bounding box được dự đoán $B$.
+Trong cùng một ảnh,
+tất cả các bounding box được dự đoán không phải background
+được sắp xếp theo confidence giảm dần
+để tạo thành một danh sách $L$.
+Sau đó, ta xử lý danh sách đã sắp xếp $L$ theo các bước sau:
 
-1. Select the predicted bounding box $B_1$ with the highest confidence from $L$ as a basis and remove all non-basis predicted bounding boxes whose IoU with $B_1$ exceeds a predefined threshold $\epsilon$ from $L$. At this point, $L$ keeps the predicted bounding box with the highest confidence but drops others that are too similar to it. In a nutshell, those with *non-maximum* confidence scores are *suppressed*.
-1. Select the predicted bounding box $B_2$ with the second highest confidence from $L$ as another basis and remove all non-basis predicted bounding boxes whose IoU with $B_2$ exceeds $\epsilon$ from $L$.
-1. Repeat the above process until all the predicted bounding boxes in $L$ have been used as a basis. At this time, the IoU of any pair of predicted bounding boxes in $L$ is below the threshold $\epsilon$; thus, no pair is too similar with each other. 
-1. Output all the predicted bounding boxes in the list $L$.
+1. Chọn bounding box được dự đoán $B_1$ có confidence cao nhất trong $L$ làm cơ sở và loại khỏi $L$ tất cả các bounding box được dự đoán không phải cơ sở có IoU với $B_1$ vượt threshold $\epsilon$ được định trước. Tại thời điểm này, $L$ giữ lại bounding box được dự đoán có confidence cao nhất nhưng loại bỏ các bounding box khác quá tương tự với nó. Nói ngắn gọn, những bounding box có score *non-maximum* sẽ bị *suppressed*.
+1. Chọn bounding box được dự đoán $B_2$ có confidence cao thứ hai trong $L$ làm một cơ sở khác và loại khỏi $L$ tất cả các bounding box được dự đoán không phải cơ sở có IoU với $B_2$ vượt $\epsilon$.
+1. Lặp lại quy trình trên cho đến khi tất cả các bounding box được dự đoán trong $L$ đều đã được sử dụng làm cơ sở. Khi đó, IoU của mọi cặp bounding box được dự đoán trong $L$ đều thấp hơn threshold $\epsilon$; do đó, không có cặp nào quá tương tự nhau. 
+1. Xuất tất cả các bounding box được dự đoán trong danh sách $L$.
 
-[**The following `nms` function sorts confidence scores in descending order and returns their indices.**]
+[**Hàm `nms` sau đây sắp xếp các confidence score theo thứ tự giảm dần và trả về các chỉ số tương ứng.**]
 
 ```{.python .input}
 #@tab mxnet
@@ -736,12 +735,13 @@ def nms(boxes, scores, iou_threshold):
     return d2l.tensor(keep, device=boxes.device)
 ```
 
-We define the following `multibox_detection`
-to [**apply non-maximum suppression
-to predicting bounding boxes**].
-Do not worry if you find the implementation
-a bit complicated: we will show how it works
-with a concrete example right after the implementation.
+Ta định nghĩa `multibox_detection` sau đây
+để [**áp dụng non-maximum suppression
+cho việc dự đoán bounding box**].
+Đừng lo lắng nếu bạn thấy phần triển khai
+hơi phức tạp: ngay sau phần triển khai,
+ta sẽ minh họa cách hoạt động của nó
+bằng một ví dụ cụ thể.
 
 ```{.python .input}
 #@tab mxnet
@@ -815,13 +815,13 @@ def multibox_detection(cls_probs, offset_preds, anchors, nms_threshold=0.5,
     return d2l.stack(out)
 ```
 
-Now let's [**apply the above implementations
-to a concrete example with four anchor boxes**].
-For simplicity, we assume that the
-predicted offsets are all zeros.
-This means that the predicted bounding boxes are anchor boxes. 
-For each class among the background, dog, and cat,
-we also define its predicted likelihood.
+Bây giờ hãy [**áp dụng các phần triển khai trên
+cho một ví dụ cụ thể với bốn anchor box**].
+Để đơn giản, ta giả sử các
+offset được dự đoán đều bằng 0.
+Điều này có nghĩa là các bounding box được dự đoán chính là các anchor box. 
+Đối với mỗi class trong số background, chó và mèo,
+ta cũng định nghĩa likelihood được dự đoán của class đó.
 
 ```{.python .input}
 #@tab all
@@ -833,7 +833,7 @@ cls_probs = d2l.tensor([[0] * 4,  # Predicted background likelihood
                       [0.1, 0.2, 0.3, 0.9]])  # Predicted cat likelihood
 ```
 
-We can [**plot these predicted bounding boxes with their confidence on the image.**]
+Ta có thể [**vẽ các bounding box được dự đoán cùng confidence của chúng trên ảnh.**]
 
 ```{.python .input}
 #@tab all
@@ -842,20 +842,20 @@ show_bboxes(fig.axes, anchors * bbox_scale,
             ['dog=0.9', 'dog=0.8', 'dog=0.7', 'cat=0.9'])
 ```
 
-Now we can invoke the `multibox_detection` function
-to perform non-maximum suppression,
-where the threshold is set to 0.5.
-Note that we add
-a dimension for examples in the tensor input.
+Bây giờ chúng ta có thể gọi hàm `multibox_detection`
+để thực hiện non-maximum suppression,
+trong đó ngưỡng được đặt là 0.5.
+Lưu ý rằng chúng ta thêm
+một chiều cho các mẫu trong tensor đầu vào.
 
-We can see that [**the shape of the returned result**] is
-(batch size, number of anchor boxes, 6).
-The six elements in the innermost dimension
-gives the output information for the same predicted bounding box.
-The first element is the predicted class index, which starts from 0 (0 is dog and 1 is cat). The value -1 indicates background or removal in non-maximum suppression.
-The second element is the confidence of the predicted bounding box.
-The remaining four elements are the $(x, y)$-axis coordinates of the upper-left corner and 
-the lower-right corner of the predicted bounding box, respectively (range is between 0 and 1).
+Ta có thể thấy rằng [**shape của kết quả được trả về**] là
+(kích thước batch, số lượng anchor box, 6).
+Sáu phần tử trong chiều trong cùng
+cung cấp thông tin đầu ra cho cùng một bounding box được dự đoán.
+Phần tử đầu tiên là chỉ số lớp được dự đoán, bắt đầu từ 0 (0 là chó và 1 là mèo). Giá trị -1 biểu thị nền hoặc việc loại bỏ trong non-maximum suppression.
+Phần tử thứ hai là độ tin cậy của bounding box được dự đoán.
+Bốn phần tử còn lại lần lượt là tọa độ theo các trục $(x, y)$ của góc trên bên trái và
+góc dưới bên phải của bounding box được dự đoán (giá trị nằm trong khoảng từ 0 đến 1).
 
 ```{.python .input}
 #@tab mxnet
@@ -875,10 +875,10 @@ output = multibox_detection(cls_probs.unsqueeze(dim=0),
 output
 ```
 
-After removing those predicted bounding boxes
-of class -1, 
-we can [**output the final predicted bounding box
-kept by non-maximum suppression**].
+Sau khi loại bỏ các bounding box được dự đoán
+có lớp -1,
+chúng ta có thể [**xuất bounding box được dự đoán cuối cùng
+được non-maximum suppression giữ lại**].
 
 ```{.python .input}
 #@tab all
@@ -890,32 +890,32 @@ for i in d2l.numpy(output[0]):
     show_bboxes(fig.axes, [d2l.tensor(i[2:]) * bbox_scale], label)
 ```
 
-In practice, we can remove predicted bounding boxes with lower confidence even before performing non-maximum suppression, thereby reducing computation in this algorithm.
-We may also post-process the output of non-maximum suppression, for example, by only keeping
-results with higher confidence
-in the final output.
+Trong thực tế, chúng ta có thể loại bỏ các bounding box được dự đoán có độ tin cậy thấp hơn ngay cả trước khi thực hiện non-maximum suppression, qua đó giảm lượng tính toán trong thuật toán này.
+Chúng ta cũng có thể hậu xử lý đầu ra của non-maximum suppression, chẳng hạn chỉ giữ lại
+các kết quả có độ tin cậy cao hơn
+trong đầu ra cuối cùng.
 
 
-## Summary
+## Tóm tắt
 
-* We generate anchor boxes with different shapes centered on each pixel of the image.
-* Intersection over union (IoU), also known as Jaccard index, measures the similarity of two bounding boxes. It is the ratio of their intersection area to their union area.
-* In a training set, we need two types of labels for each anchor box. One is the class of the object relevant to the anchor box and the other is the offset of the ground-truth bounding box relative to the anchor box.
-* During prediction, we can use non-maximum suppression (NMS) to remove similar predicted bounding boxes, thereby simplifying the output.
+* Chúng ta tạo các anchor box có hình dạng khác nhau, được căn giữa tại mỗi pixel của ảnh.
+* Intersection over union (IoU), còn được gọi là chỉ số Jaccard, đo độ tương đồng của hai bounding box. Đây là tỷ lệ giữa diện tích phần giao và diện tích phần hợp của chúng.
+* Trong một tập huấn luyện, chúng ta cần hai loại nhãn cho mỗi anchor box. Một loại là lớp của đối tượng tương ứng với anchor box, loại còn lại là độ lệch của bounding box ground truth so với anchor box.
+* Trong quá trình dự đoán, chúng ta có thể sử dụng non-maximum suppression (NMS) để loại bỏ các bounding box được dự đoán tương tự nhau, qua đó đơn giản hóa đầu ra.
 
 
-## Exercises
+## Bài tập
 
-1. Change values of `sizes` and `ratios` in the `multibox_prior` function. What are the changes to the generated anchor boxes?
-1. Construct and visualize two bounding boxes with an IoU of 0.5. How do they overlap with each other?
-1. Modify the variable `anchors` in :numref:`subsec_labeling-anchor-boxes` and :numref:`subsec_predicting-bounding-boxes-nms`. How do the results change?
-1. Non-maximum suppression is a greedy algorithm that suppresses predicted bounding boxes by *removing* them. Is it possible that some of these removed ones are actually useful? How can this algorithm be modified to suppress *softly*? You may refer to Soft-NMS :cite:`Bodla.Singh.Chellappa.ea.2017`.
-1. Rather than being hand-crafted, can non-maximum suppression be learned?
+1. Thay đổi các giá trị của `sizes` và `ratios` trong hàm `multibox_prior`. Các anchor box được tạo ra thay đổi như thế nào?
+1. Tạo và trực quan hóa hai bounding box có IoU bằng 0.5. Chúng chồng lấp với nhau như thế nào?
+1. Sửa đổi biến `anchors` trong :numref:`subsec_labeling-anchor-boxes` và :numref:`subsec_predicting-bounding-boxes-nms`. Kết quả thay đổi như thế nào?
+1. Non-maximum suppression là một thuật toán tham lam, trong đó các bounding box được dự đoán bị loại bỏ. Có khả năng một số bounding box bị loại bỏ này thực sự hữu ích không? Làm thế nào có thể sửa đổi thuật toán này để thực hiện suppression một cách *mềm*? Bạn có thể tham khảo Soft-NMS :cite:`Bodla.Singh.Chellappa.ea.2017`.
+1. Thay vì được thiết kế thủ công, liệu non-maximum suppression có thể được học không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/370)
+[Thảo luận](https://discuss.d2l.ai/t/370)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1603)
+[Thảo luận](https://discuss.d2l.ai/t/1603)
 :end_tab:

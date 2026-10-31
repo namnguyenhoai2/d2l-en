@@ -1,64 +1,64 @@
-# Fine-Tuning
+# Tinh chỉnh
 :label:`sec_fine_tuning`
 
-In earlier chapters, we discussed how to train models on the Fashion-MNIST training dataset with only 60000 images. We also described ImageNet, the most widely used large-scale image dataset in academia, which has more than 10 million images and 1000 objects. However, the size of the dataset that we usually encounter is between those of the two datasets.
+Trong các chương trước, chúng ta đã thảo luận cách huấn luyện mô hình trên tập dữ liệu huấn luyện Fashion-MNIST chỉ gồm 60000 hình ảnh. Chúng ta cũng đã giới thiệu ImageNet, tập dữ liệu hình ảnh quy mô lớn được sử dụng rộng rãi nhất trong giới học thuật, với hơn 10 triệu hình ảnh và 1000 đối tượng. Tuy nhiên, quy mô của tập dữ liệu mà chúng ta thường gặp nằm giữa hai tập dữ liệu này.
 
 
-Suppose that we want to recognize different types of chairs from images, and then recommend purchase links to users. 
-One possible method is to first identify
-100 common chairs,
-take 1000 images of different angles for each chair, 
-and then train a classification model on the collected image dataset.
-Although this chair dataset may be larger than the Fashion-MNIST dataset,
-the number of examples is still less than one-tenth of 
-that in ImageNet.
-This may lead to overfitting of complicated models 
-that are suitable for ImageNet on this chair dataset.
-Besides, due to the limited amount of training examples,
-the accuracy of the trained model
-may not meet practical requirements.
+Giả sử chúng ta muốn nhận dạng các loại ghế khác nhau từ hình ảnh, sau đó đề xuất các liên kết mua hàng cho người dùng. 
+Một phương pháp khả thi là trước tiên xác định
+100 loại ghế phổ biến,
+chụp 1000 hình ảnh từ các góc độ khác nhau cho mỗi loại ghế,
+sau đó huấn luyện một mô hình classification trên tập dữ liệu hình ảnh đã thu thập.
+Mặc dù tập dữ liệu về ghế này có thể lớn hơn tập dữ liệu Fashion-MNIST,
+số lượng mẫu vẫn ít hơn một phần mười
+số lượng mẫu trong ImageNet.
+Điều này có thể dẫn đến overfitting đối với các mô hình phức tạp
+vốn phù hợp với ImageNet nhưng được áp dụng cho tập dữ liệu về ghế này.
+Ngoài ra, do số lượng mẫu huấn luyện hạn chế,
+độ chính xác của mô hình đã huấn luyện
+có thể không đáp ứng các yêu cầu thực tế.
 
 
-In order to address the above problems,
-an obvious solution is to collect more data.
-However, collecting and labeling data can take a lot of time and money.
-For example, in order to collect the ImageNet dataset, researchers have spent millions of dollars from research funding.
-Although the current data collection cost has been significantly reduced, this cost still cannot be ignored.
+Để giải quyết các vấn đề trên,
+một giải pháp rõ ràng là thu thập thêm dữ liệu.
+Tuy nhiên, việc thu thập và gán nhãn dữ liệu có thể tốn rất nhiều thời gian và tiền bạc.
+Ví dụ, để thu thập tập dữ liệu ImageNet, các nhà nghiên cứu đã chi hàng triệu đô la từ nguồn kinh phí nghiên cứu.
+Mặc dù chi phí thu thập dữ liệu hiện nay đã giảm đáng kể, chi phí này vẫn không thể xem nhẹ.
 
 
-Another solution is to apply *transfer learning* to transfer the knowledge learned from the *source dataset* to the *target dataset*.
-For example, although most of the images in the ImageNet dataset have nothing to do with chairs, the model trained on this dataset may extract more general image features, which can help identify edges, textures, shapes, and object composition.
-These similar features may
-also be effective for recognizing chairs.
+Một giải pháp khác là áp dụng *transfer learning* để chuyển giao kiến thức đã học từ *source dataset* sang *target dataset*.
+Ví dụ, mặc dù phần lớn hình ảnh trong tập dữ liệu ImageNet không liên quan đến ghế, mô hình được huấn luyện trên tập dữ liệu này có thể trích xuất các đặc trưng hình ảnh tổng quát hơn, qua đó giúp nhận dạng các cạnh, kết cấu, hình dạng và thành phần của đối tượng.
+Các đặc trưng tương tự này
+cũng có thể hiệu quả trong việc nhận dạng ghế.
 
 
-## Steps
+## Các bước
 
 
-In this section, we will introduce a common technique in transfer learning: *fine-tuning*. As shown in :numref:`fig_finetune`, fine-tuning consists of the following four steps:
+Trong phần này, chúng ta sẽ giới thiệu một kỹ thuật phổ biến trong transfer learning: *fine-tuning*. Như minh họa trong :numref:`fig_finetune`, fine-tuning gồm bốn bước sau:
 
 
-1. Pretrain a neural network model, i.e., the *source model*, on a source dataset (e.g., the ImageNet dataset).
-1. Create a new neural network model, i.e., the *target model*. This copies all model designs and their parameters on the source model except the output layer. We assume that these model parameters contain the knowledge learned from the source dataset and this knowledge will also be applicable to the target dataset. We also assume that the output layer of the source model is closely related to the labels of the source dataset; thus it is not used in the target model.
-1. Add an output layer to the target model, whose number of outputs is the number of categories in the target dataset. Then randomly initialize the model parameters of this layer.
-1. Train the target model on the target dataset, such as a chair dataset. The output layer will be trained from scratch, while the parameters of all the other layers are fine-tuned based on the parameters of the source model.
+1. Pretrain một mô hình mạng neural, tức *source model*, trên một source dataset (ví dụ: tập dữ liệu ImageNet).
+1. Tạo một mô hình mạng neural mới, tức *target model*. Mô hình này sao chép toàn bộ thiết kế mô hình và các tham số của source model, ngoại trừ output layer. Chúng ta giả định rằng các tham số mô hình này chứa kiến thức đã học từ source dataset và kiến thức này cũng có thể áp dụng cho target dataset. Chúng ta cũng giả định rằng output layer của source model có liên quan chặt chẽ đến các nhãn của source dataset; do đó, output layer này không được sử dụng trong target model.
+1. Thêm một output layer vào target model, trong đó số lượng output bằng số danh mục trong target dataset. Sau đó, khởi tạo ngẫu nhiên các tham số mô hình của layer này.
+1. Huấn luyện target model trên target dataset, chẳng hạn như tập dữ liệu về ghế. Output layer sẽ được huấn luyện từ đầu, trong khi các tham số của tất cả layer khác được fine-tune dựa trên các tham số của source model.
 
-![Fine tuning.](../img/finetune.svg)
+![Tinh chỉnh.](../img/finetune.svg)
 :label:`fig_finetune`
 
-When target datasets are much smaller than source datasets, fine-tuning helps to improve models' generalization ability.
+Khi target dataset nhỏ hơn nhiều so với source dataset, fine-tuning giúp cải thiện khả năng khái quát hóa của mô hình.
 
 
-## Hot Dog Recognition
+## Nhận dạng bánh mì kẹp xúc xích
 
-Let's demonstrate fine-tuning via a concrete case:
-hot dog recognition. 
-We will fine-tune a ResNet model on a small dataset,
-which was pretrained on the ImageNet dataset.
-This small dataset consists of
-thousands of images with and without hot dogs.
-We will use the fine-tuned model to recognize 
-hot dogs from images.
+Hãy minh họa fine-tuning bằng một trường hợp cụ thể:
+nhận dạng bánh mì kẹp xúc xích.
+Chúng ta sẽ fine-tune một mô hình ResNet trên một tập dữ liệu nhỏ,
+mô hình này đã được pretrain trên tập dữ liệu ImageNet.
+Tập dữ liệu nhỏ này gồm
+hàng nghìn hình ảnh có và không có bánh mì kẹp xúc xích.
+Chúng ta sẽ sử dụng mô hình đã fine-tune để nhận dạng
+bánh mì kẹp xúc xích từ hình ảnh.
 
 ```{.python .input}
 #@tab mxnet
@@ -81,18 +81,18 @@ import torchvision
 import os
 ```
 
-### Reading the Dataset
+### Đọc tập dữ liệu
 
-[**The hot dog dataset we use was taken from online images**].
-This dataset consists of
-1400 positive-class images containing hot dogs,
-and as many negative-class images containing other foods.
-1000 images of both classes are used for training and the rest are for testing.
+[**Tập dữ liệu bánh mì kẹp xúc xích mà chúng ta sử dụng được lấy từ các hình ảnh trực tuyến**].
+Tập dữ liệu này gồm
+1400 hình ảnh thuộc lớp dương có chứa bánh mì kẹp xúc xích,
+và số lượng tương đương các hình ảnh thuộc lớp âm có chứa những loại thức ăn khác.
+1000 hình ảnh của mỗi lớp được sử dụng để huấn luyện và số còn lại được dùng để kiểm thử.
 
 
-After unzipping the downloaded dataset,
-we obtain two folders `hotdog/train` and `hotdog/test`. Both folders have `hotdog` and `not-hotdog` subfolders, either of which contains images of
-the corresponding class.
+Sau khi giải nén tập dữ liệu đã tải xuống,
+chúng ta nhận được hai thư mục `hotdog/train` và `hotdog/test`. Cả hai thư mục đều có `hotdog` và `not-hotdog` thư mục con, mỗi thư mục con chứa các hình ảnh của
+lớp tương ứng.
 
 ```{.python .input}
 #@tab all
@@ -103,7 +103,7 @@ d2l.DATA_HUB['hotdog'] = (d2l.DATA_URL + 'hotdog.zip',
 data_dir = d2l.download_extract('hotdog')
 ```
 
-We create two instances to read all the image files in the training and testing datasets, respectively.
+Chúng ta tạo hai instance để lần lượt đọc tất cả tệp hình ảnh trong tập dữ liệu huấn luyện và kiểm thử.
 
 ```{.python .input}
 #@tab mxnet
@@ -119,7 +119,7 @@ train_imgs = torchvision.datasets.ImageFolder(os.path.join(data_dir, 'train'))
 test_imgs = torchvision.datasets.ImageFolder(os.path.join(data_dir, 'test'))
 ```
 
-The first 8 positive examples and the last 8 negative images are shown below. As you can see, [**the images vary in size and aspect ratio**].
+8 mẫu dương đầu tiên và 8 hình ảnh âm cuối cùng được hiển thị bên dưới. Như bạn có thể thấy, [**các hình ảnh có kích thước và tỷ lệ khung hình khác nhau**].
 
 ```{.python .input}
 #@tab all
@@ -128,17 +128,17 @@ not_hotdogs = [train_imgs[-i - 1][0] for i in range(8)]
 d2l.show_images(hotdogs + not_hotdogs, 2, 8, scale=1.4);
 ```
 
-During training, we first crop a random area of random size and random aspect ratio from the image,
-and then scale this area
-to a $224 \times 224$ input image. 
-During testing, we scale both the height and width of an image to 256 pixels, and then crop a central $224 \times 224$ area as input.
-In addition, 
-for the three RGB (red, green, and blue) color channels
-we *standardize* their values channel by channel.
-Concretely,
-the mean value of a channel is subtracted from each value of that channel and then the result is divided by the standard deviation of that channel.
+Trong quá trình huấn luyện, trước tiên chúng ta cắt một vùng ngẫu nhiên có kích thước và tỷ lệ khung hình ngẫu nhiên từ hình ảnh,
+sau đó scale vùng này
+thành một hình ảnh đầu vào có kích thước $224 \times 224$.
+Trong quá trình kiểm thử, chúng ta scale cả chiều cao và chiều rộng của hình ảnh thành 256 pixel, sau đó cắt một vùng trung tâm có kích thước $224 \times 224$ làm đầu vào.
+Ngoài ra,
+đối với ba kênh màu RGB (đỏ, lục và lam),
+chúng ta *standardize* các giá trị của từng kênh.
+Cụ thể,
+giá trị trung bình của một kênh được trừ khỏi từng giá trị của kênh đó, sau đó kết quả được chia cho độ lệch chuẩn của kênh.
 
-[~~Data augmentations~~]
+[~~Tăng cường dữ liệu~~]
 
 ```{.python .input}
 #@tab mxnet
@@ -180,11 +180,11 @@ test_augs = torchvision.transforms.Compose([
     normalize])
 ```
 
-### [**Defining and Initializing the Model**]
+### [**Định nghĩa và khởi tạo mô hình**]
 
-We use ResNet-18, which was pretrained on the ImageNet dataset, as the source model. Here, we specify `pretrained=True` to automatically download the pretrained model parameters. 
-If this model is used for the first time,
-Internet connection is required for download.
+Chúng ta sử dụng ResNet-18, đã được pretrain trên tập dữ liệu ImageNet, làm source model. Ở đây, chúng ta chỉ định `pretrained=True` để tự động tải xuống các tham số của mô hình đã pretrain.
+Nếu đây là lần đầu tiên sử dụng mô hình này,
+cần có kết nối Internet để tải xuống.
 
 ```{.python .input}
 #@tab mxnet
@@ -197,13 +197,13 @@ pretrained_net = torchvision.models.resnet18(pretrained=True)
 ```
 
 :begin_tab:`mxnet`
-The pretrained source model instance contains two member variables: `features` and `output`. The former contains all layers of the model except the output layer, and the latter is the output layer of the model. 
-The main purpose of this division is to facilitate the fine-tuning of model parameters of all layers but the output layer. The member variable `output` of source model is shown below.
+Instance source model đã pretrain chứa hai biến thành viên: `features` và `output`. Biến đầu tiên chứa tất cả layer của mô hình ngoại trừ output layer, còn biến thứ hai là output layer của mô hình.
+Mục đích chính của việc phân chia này là tạo điều kiện thuận lợi cho việc fine-tune các tham số mô hình của tất cả layer, ngoại trừ output layer. Biến thành viên `output` của source model được hiển thị bên dưới.
 :end_tab:
 
 :begin_tab:`pytorch`
-The pretrained source model instance contains a number of feature layers and an output layer `fc`.
-The main purpose of this division is to facilitate the fine-tuning of model parameters of all layers but the output layer. The member variable `fc` of source model is given below.
+Instance source model đã pretrain chứa một số feature layer và một output layer `fc`.
+Mục đích chính của việc phân chia này là tạo điều kiện thuận lợi cho việc fine-tune các tham số mô hình của tất cả layer, ngoại trừ output layer. Biến thành viên `fc` của source model được trình bày bên dưới.
 :end_tab:
 
 ```{.python .input}
@@ -216,19 +216,19 @@ pretrained_net.output
 pretrained_net.fc
 ```
 
-As a fully connected layer, it transforms ResNet's final global average pooling outputs into 1000 class outputs of the ImageNet dataset.
-We then construct a new neural network as the target model. It is defined in the same way as the pretrained source model except that
-its number of outputs in the final layer
-is set to
-the number of classes in the target dataset (rather than 1000).
+Là một fully connected layer, layer này chuyển đổi các output của global average pooling cuối cùng của ResNet thành 1000 output lớp của tập dữ liệu ImageNet.
+Sau đó, chúng ta xây dựng một mạng neural mới làm target model. Mô hình này được định nghĩa giống source model đã pretrain, ngoại trừ
+số lượng output ở layer cuối
+được đặt thành
+số lượng lớp trong target dataset (thay vì 1000).
 
-In the code below, the model parameters before the output layer of the target model instance `finetune_net` are initialized to model parameters of the corresponding layers from the source model.
-Since these model parameters were obtained via pretraining on ImageNet, 
-they are effective.
-Therefore, we can only use 
-a small learning rate to *fine-tune* such pretrained parameters.
-In contrast, model parameters in the output layer are randomly initialized and generally require a larger learning rate to be learned from scratch.
-Letting the base learning rate be $\eta$, a learning rate of $10\eta$ will be used to iterate the model parameters in the output layer.
+Trong đoạn code bên dưới, các tham số mô hình trước output layer của instance target model `finetune_net` được khởi tạo bằng các tham số mô hình của những layer tương ứng từ source model.
+Vì các tham số mô hình này thu được thông qua quá trình pretrain trên ImageNet,
+chúng có hiệu quả.
+Do đó, chúng ta chỉ có thể sử dụng
+learning rate nhỏ để *fine-tune* các tham số đã pretrain này.
+Ngược lại, các tham số mô hình trong output layer được khởi tạo ngẫu nhiên và thường cần learning rate lớn hơn để học từ đầu.
+Với learning rate cơ sở là $\eta$, learning rate $10\eta$ sẽ được sử dụng để lặp qua các tham số mô hình trong output layer.
 
 ```{.python .input}
 #@tab mxnet
@@ -247,9 +247,9 @@ finetune_net.fc = nn.Linear(finetune_net.fc.in_features, 2)
 nn.init.xavier_uniform_(finetune_net.fc.weight);
 ```
 
-### [**Fine-Tuning the Model**]
+### [**Fine-tune mô hình**]
 
-First, we define a training function `train_fine_tuning` that uses fine-tuning so it can be called multiple times.
+Trước tiên, chúng ta định nghĩa một hàm huấn luyện `train_fine_tuning` sử dụng fine-tuning để có thể gọi nhiều lần.
 
 ```{.python .input}
 #@tab mxnet
@@ -296,8 +296,8 @@ def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5,
                    devices)
 ```
 
-We [**set the base learning rate to a small value**]
-in order to *fine-tune* the model parameters obtained via pretraining. Based on the previous settings, we will train the output layer parameters of the target model from scratch using a learning rate ten times greater.
+Chúng ta [**đặt learning rate cơ sở ở một giá trị nhỏ**]
+để *fine-tune* các tham số mô hình thu được qua quá trình pretrain. Dựa trên các thiết lập trước đó, chúng ta sẽ huấn luyện các tham số output layer của target model từ đầu bằng learning rate lớn gấp mười lần.
 
 ```{.python .input}
 #@tab mxnet
@@ -309,7 +309,7 @@ train_fine_tuning(finetune_net, 0.01)
 train_fine_tuning(finetune_net, 5e-5)
 ```
 
-[**For comparison,**] we define an identical model, but (**initialize all of its model parameters to random values**). Since the entire model needs to be trained from scratch, we can use a larger learning rate.
+[**Để so sánh,**] chúng ta định nghĩa một mô hình giống hệt, nhưng (**khởi tạo tất cả tham số mô hình bằng các giá trị ngẫu nhiên**). Vì toàn bộ mô hình cần được huấn luyện từ đầu, chúng ta có thể sử dụng learning rate lớn hơn.
 
 ```{.python .input}
 #@tab mxnet
@@ -325,22 +325,22 @@ scratch_net.fc = nn.Linear(scratch_net.fc.in_features, 2)
 train_fine_tuning(scratch_net, 5e-4, param_group=False)
 ```
 
-As we can see, the fine-tuned model tends to perform better for the same epoch
-because its initial parameter values are more effective.
+Như có thể thấy, mô hình đã fine-tune có xu hướng hoạt động tốt hơn ở cùng một epoch
+vì các giá trị tham số ban đầu của nó hiệu quả hơn.
 
 
-## Summary
+## Tóm tắt
 
-* Transfer learning transfers knowledge learned from the source dataset to the target dataset. Fine-tuning is a common technique for transfer learning.
-* The target model copies all model designs with their parameters from the source model except the output layer, and fine-tunes these parameters based on the target dataset. In contrast, the output layer of the target model needs to be trained from scratch.
-* Generally, fine-tuning parameters uses a smaller learning rate, while training the output layer from scratch can use a larger learning rate.
+* Transfer learning chuyển giao kiến thức đã học từ source dataset sang target dataset. Fine-tuning là một kỹ thuật phổ biến của transfer learning.
+* Target model sao chép toàn bộ thiết kế mô hình cùng các tham số từ source model, ngoại trừ output layer, rồi fine-tune các tham số này dựa trên target dataset. Ngược lại, output layer của target model cần được huấn luyện từ đầu.
+* Nhìn chung, việc fine-tune các tham số sử dụng learning rate nhỏ hơn, trong khi huấn luyện output layer từ đầu có thể sử dụng learning rate lớn hơn.
 
 
-## Exercises
+## Bài tập
 
-1. Keep increasing the learning rate of `finetune_net`. How does the accuracy of the model change?
-2. Further adjust hyperparameters of `finetune_net` and `scratch_net` in the comparative experiment. Do they still differ in accuracy?
-3. Set the parameters before the output layer of `finetune_net` to those of the source model and do *not* update them during training. How does the accuracy of the model change? You can use the following code.
+1. Tiếp tục tăng learning rate của `finetune_net`. Độ chính xác của mô hình thay đổi như thế nào?
+2. Tiếp tục điều chỉnh các hyperparameter của `finetune_net` và `scratch_net` trong thí nghiệm so sánh. Độ chính xác của chúng còn khác nhau không?
+3. Đặt các tham số trước output layer của `finetune_net` bằng các tham số của source model và *không* cập nhật chúng trong quá trình huấn luyện. Độ chính xác của mô hình thay đổi như thế nào? Bạn có thể sử dụng đoạn code sau.
 
 ```{.python .input}
 #@tab mxnet
@@ -353,7 +353,7 @@ for param in finetune_net.parameters():
     param.requires_grad = False
 ```
 
-4. In fact, there is a "hotdog" class in the `ImageNet` dataset. Its corresponding weight parameter in the output layer can be obtained via the following code. How can we leverage this weight parameter?
+4. Trên thực tế, có một lớp "hotdog" trong tập dữ liệu `ImageNet`. Tham số trọng số tương ứng của lớp này trong output layer có thể được lấy bằng đoạn code sau. Làm thế nào chúng ta có thể tận dụng tham số trọng số này?
 
 ```{.python .input}
 #@tab mxnet
@@ -370,9 +370,9 @@ hotdog_w.shape
 ```
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/368)
+[Thảo luận](https://discuss.d2l.ai/t/368)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1439)
+[Thảo luận](https://discuss.d2l.ai/t/1439)
 :end_tab:

@@ -1,23 +1,24 @@
-# Word Similarity and Analogy
+# Độ tương đồng và phép loại suy từ
 :label:`sec_synonyms`
 
-In :numref:`sec_word2vec_pretraining`, 
-we trained a word2vec model on a small dataset, 
-and applied it
-to find semantically similar words 
-for an input word.
-In practice,
-word vectors that are pretrained
-on large corpora can be
-applied to downstream
-natural language processing tasks,
-which will be covered later
-in :numref:`chap_nlp_app`.
-To demonstrate 
-semantics of pretrained word vectors
-from large corpora in a straightforward way,
-let's apply them
-in the word similarity and analogy tasks.
+Trong :numref:`sec_word2vec_pretraining`, 
+chúng ta đã huấn luyện một mô hình word2vec trên một tập dữ liệu nhỏ 
+và áp dụng mô hình đó
+để tìm các từ tương đồng về mặt ngữ nghĩa 
+với một từ đầu vào.
+Trong thực tế,
+các vector từ được pretrained
+trên những kho ngữ liệu lớn có thể được
+áp dụng cho các tác vụ
+xử lý ngôn ngữ tự nhiên
+ở các bước tiếp theo,
+sẽ được trình bày sau
+trong :numref:`chap_nlp_app`.
+Để minh họa
+một cách trực quan ngữ nghĩa của các vector từ đã được pretrained
+từ những kho ngữ liệu lớn,
+hãy áp dụng chúng
+cho các tác vụ độ tương đồng và phép loại suy từ.
 
 ```{.python .input}
 #@tab mxnet
@@ -36,13 +37,13 @@ from torch import nn
 import os
 ```
 
-## Loading Pretrained Word Vectors
+## Tải các Vector Từ Đã Pretrained
 
-Below lists pretrained GloVe embeddings of dimension 50, 100, and 300,
-which can be downloaded from the [GloVe website](https://nlp.stanford.edu/projects/glove/).
-The pretrained fastText embeddings are available in multiple languages.
-Here we consider one English version (300-dimensional "wiki.en") that can be downloaded from the
-[fastText website](https://fasttext.cc/).
+Dưới đây liệt kê các embedding GloVe đã được pretrained với số chiều 50, 100 và 300,
+có thể tải xuống từ [trang web GloVe](https://nlp.stanford.edu/projects/glove/).
+Các embedding fastText đã được pretrained có sẵn trong nhiều ngôn ngữ.
+Ở đây, chúng ta xét một phiên bản tiếng Anh (300 chiều, "wiki.en") có thể tải xuống từ
+[trang web fastText](https://fasttext.cc/).
 
 ```{.python .input}
 #@tab all
@@ -63,7 +64,7 @@ d2l.DATA_HUB['wiki.en'] = (d2l.DATA_URL + 'wiki.en.zip',
                            'c1816da3821ae9f43899be655002f6c723e91b88')
 ```
 
-To load these pretrained GloVe and fastText embeddings, we define the following `TokenEmbedding` class.
+Để tải các embedding GloVe và fastText đã được pretrained này, chúng ta định nghĩa `TokenEmbedding` class sau.
 
 ```{.python .input}
 #@tab all
@@ -103,49 +104,48 @@ class TokenEmbedding:
         return len(self.idx_to_token)
 ```
 
-Below we load the
-50-dimensional GloVe embeddings
-(pretrained on a Wikipedia subset).
-When creating the `TokenEmbedding` instance,
-the specified embedding file has to be downloaded if it
-was not yet.
+Dưới đây, chúng ta tải các embedding GloVe 50 chiều
+(được pretrained trên một tập con của Wikipedia).
+Khi tạo một instance `TokenEmbedding`,
+tệp embedding được chỉ định sẽ phải được tải xuống nếu
+chưa được tải xuống trước đó.
 
 ```{.python .input}
 #@tab all
 glove_6b50d = TokenEmbedding('glove.6b.50d')
 ```
 
-Output the vocabulary size. The vocabulary contains 400000 words (tokens) and a special unknown token.
+Xuất kích thước từ vựng. Từ vựng chứa 400000 từ (token) và một token đặc biệt dành cho từ chưa biết.
 
 ```{.python .input}
 #@tab all
 len(glove_6b50d)
 ```
 
-We can get the index of a word in the vocabulary, and vice versa.
+Chúng ta có thể lấy chỉ mục của một từ trong từ vựng và ngược lại.
 
 ```{.python .input}
 #@tab all
 glove_6b50d.token_to_idx['beautiful'], glove_6b50d.idx_to_token[3367]
 ```
 
-## Applying Pretrained Word Vectors
+## Áp dụng các Vector Từ Đã Pretrained
 
-Using the loaded GloVe vectors,
-we will demonstrate their semantics
-by applying them
-in the following word similarity and analogy tasks.
+Sử dụng các vector GloVe đã tải,
+chúng ta sẽ minh họa ngữ nghĩa của chúng
+bằng cách áp dụng chúng
+cho các tác vụ độ tương đồng và phép loại suy từ sau đây.
 
 
-### Word Similarity
+### Độ Tương đồng Từ
 
-Similar to :numref:`subsec_apply-word-embed`,
-in order to find semantically similar words
-for an input word
-based on cosine similarities between
-word vectors,
-we implement the following `knn`
-($k$-nearest neighbors) function.
+Tương tự như :numref:`subsec_apply-word-embed`,
+để tìm các từ tương đồng về mặt ngữ nghĩa
+với một từ đầu vào
+dựa trên độ tương đồng cosine giữa
+các vector từ,
+chúng ta triển khai hàm `knn`
+($k$-nearest neighbors) sau.
 
 ```{.python .input}
 #@tab mxnet
@@ -168,10 +168,10 @@ def knn(W, x, k):
     return topk, [cos[int(i)] for i in topk]
 ```
 
-Then, we 
-search for similar words
-using the pretrained word vectors 
-from the `TokenEmbedding` instance `embed`.
+Sau đó, chúng ta
+tìm kiếm các từ tương tự
+bằng cách sử dụng các vector từ đã pretrained
+từ instance `TokenEmbedding` `embed`.
 
 ```{.python .input}
 #@tab all
@@ -181,21 +181,21 @@ def get_similar_tokens(query_token, k, embed):
         print(f'cosine sim={float(c):.3f}: {embed.idx_to_token[int(i)]}')
 ```
 
-The vocabulary of the pretrained word vectors
-in `glove_6b50d` contains 400000 words and a special unknown token. 
-Excluding the input word and unknown token,
-among this vocabulary
-let's find 
-three most semantically similar words
-to word "chip".
+Từ vựng của các vector từ đã pretrained
+trong `glove_6b50d` chứa 400000 từ và một token đặc biệt dành cho từ chưa biết.
+Không tính từ đầu vào và token dành cho từ chưa biết,
+trong từ vựng này,
+hãy tìm
+ba từ tương đồng nhất về mặt ngữ nghĩa
+với từ "chip".
 
 ```{.python .input}
 #@tab all
 get_similar_tokens('chip', 3, glove_6b50d)
 ```
 
-Below outputs similar words
-to "baby" and "beautiful".
+Dưới đây xuất ra các từ tương tự
+với "baby" và "beautiful".
 
 ```{.python .input}
 #@tab all
@@ -207,25 +207,25 @@ get_similar_tokens('baby', 3, glove_6b50d)
 get_similar_tokens('beautiful', 3, glove_6b50d)
 ```
 
-### Word Analogy
+### Phép Loại Suy Từ
 
-Besides finding similar words,
-we can also apply word vectors
-to word analogy tasks.
-For example,
+Bên cạnh việc tìm các từ tương tự,
+chúng ta cũng có thể áp dụng các vector từ
+cho các tác vụ phép loại suy từ.
+Ví dụ,
 “man”:“woman”::“son”:“daughter”
-is the form of a word analogy:
-“man” is to “woman” as “son” is to “daughter”.
-Specifically,
-the word analogy completion task
-can be defined as:
-for a word analogy 
-$a : b :: c : d$, given the first three words $a$, $b$ and $c$, find $d$. 
-Denote the vector of word $w$ by $\textrm{vec}(w)$. 
-To complete the analogy,
-we will find the word 
-whose vector is most similar
-to the result of $\textrm{vec}(c)+\textrm{vec}(b)-\textrm{vec}(a)$.
+là dạng của một phép loại suy từ:
+“man” đối với “woman” cũng như “son” đối với “daughter”.
+Cụ thể,
+tác vụ hoàn thành phép loại suy từ
+có thể được định nghĩa như sau:
+với một phép loại suy từ
+$a : b :: c : d$, cho trước ba từ đầu tiên $a$, $b$ và $c$, hãy tìm $d$.
+Ký hiệu vector của từ $w$ là $\textrm{vec}(w)$.
+Để hoàn thành phép loại suy,
+chúng ta sẽ tìm từ
+có vector tương đồng nhất
+với kết quả của $\textrm{vec}(c)+\textrm{vec}(b)-\textrm{vec}(a)$.
 
 ```{.python .input}
 #@tab all
@@ -236,61 +236,61 @@ def get_analogy(token_a, token_b, token_c, embed):
     return embed.idx_to_token[int(topk[0])]  # Remove unknown words
 ```
 
-Let's verify the "male-female" analogy using the loaded word vectors.
+Hãy kiểm chứng phép loại suy "nam-nữ" bằng các vector từ đã tải.
 
 ```{.python .input}
 #@tab all
 get_analogy('man', 'woman', 'son', glove_6b50d)
 ```
 
-Below completes a
-“capital-country” analogy: 
+Dưới đây hoàn thành một
+phép loại suy “thủ đô-quốc gia”:
 “beijing”:“china”::“tokyo”:“japan”.
-This demonstrates 
-semantics in the pretrained word vectors.
+Điều này minh họa
+ngữ nghĩa trong các vector từ đã pretrained.
 
 ```{.python .input}
 #@tab all
 get_analogy('beijing', 'china', 'tokyo', glove_6b50d)
 ```
 
-For the
-“adjective-superlative adjective” analogy
-such as 
+Đối với
+phép loại suy “tính từ-tính từ so sánh nhất”
+chẳng hạn như
 “bad”:“worst”::“big”:“biggest”,
-we can see that the pretrained word vectors
-may capture the syntactic information.
+chúng ta có thể thấy rằng các vector từ đã pretrained
+có thể nắm bắt thông tin cú pháp.
 
 ```{.python .input}
 #@tab all
 get_analogy('bad', 'worst', 'big', glove_6b50d)
 ```
 
-To show the captured notion
-of past tense in the pretrained word vectors,
-we can test the syntax using the
-"present tense-past tense" analogy: “do”:“did”::“go”:“went”.
+Để cho thấy khái niệm
+thì quá khứ được nắm bắt trong các vector từ đã pretrained,
+chúng ta có thể kiểm tra cú pháp bằng
+phép loại suy "thì hiện tại-thì quá khứ": “do”:“did”::“go”:“went”.
 
 ```{.python .input}
 #@tab all
 get_analogy('do', 'did', 'go', glove_6b50d)
 ```
 
-## Summary
+## Tóm tắt
 
-* In practice, word vectors that are pretrained on large corpora can be applied to downstream natural language processing tasks.
-* Pretrained word vectors can be applied to the word similarity and analogy tasks.
+* Trong thực tế, các vector từ được pretrained trên những kho ngữ liệu lớn có thể được áp dụng cho các tác vụ xử lý ngôn ngữ tự nhiên ở các bước tiếp theo.
+* Các vector từ đã pretrained có thể được áp dụng cho các tác vụ độ tương đồng và phép loại suy từ.
 
 
-## Exercises
+## Bài tập
 
-1. Test the fastText results using `TokenEmbedding('wiki.en')`.
-1. When the vocabulary is extremely large, how can we find similar words or complete a word analogy faster?
+1. Kiểm tra các kết quả của fastText bằng `TokenEmbedding('wiki.en')`.
+1. Khi từ vựng cực kỳ lớn, làm thế nào chúng ta có thể tìm các từ tương tự hoặc hoàn thành một phép loại suy từ nhanh hơn?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/387)
+[Thảo luận](https://discuss.d2l.ai/t/387)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1336)
+[Thảo luận](https://discuss.d2l.ai/t/1336)
 :end_tab:

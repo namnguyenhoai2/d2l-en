@@ -1,37 +1,37 @@
-# Object Detection and Bounding Boxes
+# Phát hiện đối tượng và các hộp giới hạn
 :label:`sec_bbox`
 
 
-In earlier sections (e.g., :numref:`sec_alexnet`--:numref:`sec_googlenet`),
-we introduced various models for image classification.
-In image classification tasks,
-we assume that there is only *one*
-major object
-in the image and we only focus on how to 
-recognize its category.
-However, there are often *multiple* objects
-in the image of interest.
-We not only want to know their categories, but also their specific positions in the image.
-In computer vision, we refer to such tasks as *object detection* (or *object recognition*).
+Trong các phần trước (ví dụ: :numref:`sec_alexnet`--:numref:`sec_googlenet`),
+chúng ta đã giới thiệu nhiều mô hình khác nhau cho bài toán phân loại hình ảnh.
+Trong các tác vụ phân loại hình ảnh,
+chúng ta giả định rằng chỉ có *một*
+đối tượng chính
+trong hình ảnh và chỉ tập trung vào việc
+nhận biết danh mục của đối tượng đó.
+Tuy nhiên, thường có *nhiều* đối tượng
+đáng quan tâm trong hình ảnh.
+Chúng ta không chỉ muốn biết danh mục của chúng mà còn muốn biết vị trí cụ thể của chúng trong hình ảnh.
+Trong thị giác máy tính, chúng ta gọi những tác vụ như vậy là *phát hiện đối tượng* (hoặc *nhận dạng đối tượng*).
 
-Object detection has been
-widely applied in many fields.
-For example, self-driving needs to plan 
-traveling routes
-by detecting the positions
-of vehicles, pedestrians, roads, and obstacles in the captured video images.
-Besides,
-robots may use this technique
-to detect and localize objects of interest
-throughout its navigation of an environment.
-Moreover,
-security systems
-may need to detect abnormal objects, such as intruders or bombs.
+Phát hiện đối tượng đã được
+áp dụng rộng rãi trong nhiều lĩnh vực.
+Ví dụ, xe tự lái cần lập kế hoạch
+các tuyến đường di chuyển
+bằng cách phát hiện vị trí
+của phương tiện, người đi bộ, đường sá và chướng ngại vật trong các hình ảnh video được ghi lại.
+Ngoài ra,
+robot có thể sử dụng kỹ thuật này
+để phát hiện và xác định vị trí các đối tượng đáng quan tâm
+trong suốt quá trình điều hướng môi trường.
+Hơn nữa,
+các hệ thống an ninh
+có thể cần phát hiện những đối tượng bất thường, chẳng hạn như kẻ xâm nhập hoặc bom.
 
-In the next few sections, we will introduce 
-several deep learning methods for object detection.
-We will begin with an introduction
-to *positions* (or *locations*) of objects.
+Trong một vài phần tiếp theo, chúng ta sẽ giới thiệu
+một số phương pháp deep learning để phát hiện đối tượng.
+Chúng ta sẽ bắt đầu bằng phần giới thiệu
+về *vị trí* (hoặc *tọa độ*) của các đối tượng.
 
 ```{.python .input}
 #@tab mxnet
@@ -56,8 +56,8 @@ from d2l import tensorflow as d2l
 import tensorflow as tf
 ```
 
-We will load the sample image to be used in this section. We can see that there is a dog on the left side of the image and a cat on the right.
-They are the two major objects in this image.
+Chúng ta sẽ tải hình ảnh mẫu được sử dụng trong phần này. Có thể thấy một con chó ở phía bên trái hình ảnh và một con mèo ở phía bên phải.
+Đó là hai đối tượng chính trong hình ảnh này.
 
 ```{.python .input}
 #@tab mxnet
@@ -73,22 +73,20 @@ img = d2l.plt.imread('../img/catdog.jpg')
 d2l.plt.imshow(img);
 ```
 
-## Bounding Boxes
+## Các hộp giới hạn
 
 
-In object detection,
-we usually use a *bounding box* to describe the spatial location of an object.
-The bounding box is rectangular, which is determined by the $x$ and $y$ coordinates of the upper-left corner of the rectangle and the such coordinates of the lower-right corner. 
-Another commonly used bounding box representation is the $(x, y)$-axis
-coordinates of the bounding box center, and the width and height of the box.
+Trong phát hiện đối tượng,
+chúng ta thường sử dụng một *hộp giới hạn* để mô tả vị trí không gian của một đối tượng.
+Hộp giới hạn có dạng hình chữ nhật, được xác định bởi tọa độ $x$ và $y$ của góc trên bên trái của hình chữ nhật, cùng các tọa độ tương ứng của góc dưới bên phải.
+Một cách biểu diễn hộp giới hạn thường được sử dụng khác là tọa độ $(x, y)$ của tâm hộp giới hạn, cùng với chiều rộng và chiều cao của hộp.
 
-[**Here we define functions to convert between**] these (**two
-representations**):
-`box_corner_to_center` converts from the two-corner
-representation to the center-width-height presentation,
-and `box_center_to_corner` vice versa.
-The input argument `boxes` should be a two-dimensional tensor of
-shape ($n$, 4), where $n$ is the number of bounding boxes.
+[**Tại đây, chúng ta định nghĩa các hàm để chuyển đổi giữa**] hai (**cách biểu diễn**):
+`box_corner_to_center` chuyển đổi từ cách biểu diễn bằng hai góc
+sang cách biểu diễn tâm–chiều rộng–chiều cao,
+còn `box_center_to_corner` thực hiện chuyển đổi ngược lại.
+Đối số đầu vào `boxes` phải là một tensor hai chiều có
+shape ($n$, 4), trong đó $n$ là số lượng hộp giới hạn.
 
 ```{.python .input}
 #@tab all
@@ -115,11 +113,11 @@ def box_center_to_corner(boxes):
     return boxes
 ```
 
-We will [**define the bounding boxes of the dog and the cat in the image**] based
-on the coordinate information.
-The origin of the coordinates in the image
-is the upper-left corner of the image, and to the right and down are the
-positive directions of the $x$ and $y$ axes, respectively.
+Chúng ta sẽ [**xác định các hộp giới hạn của con chó và con mèo trong hình ảnh**] dựa
+trên thông tin tọa độ.
+Gốc tọa độ trong hình ảnh
+là góc trên bên trái của hình ảnh, còn bên phải và bên dưới lần lượt là
+các hướng dương của trục $x$ và $y$.
 
 ```{.python .input}
 #@tab all
@@ -127,8 +125,8 @@ positive directions of the $x$ and $y$ axes, respectively.
 dog_bbox, cat_bbox = [60.0, 45.0, 378.0, 516.0], [400.0, 112.0, 655.0, 493.0]
 ```
 
-We can verify the correctness of the two
-bounding box conversion functions by converting twice.
+Chúng ta có thể kiểm tra tính đúng đắn của hai
+hàm chuyển đổi hộp giới hạn bằng cách thực hiện chuyển đổi hai lần.
 
 ```{.python .input}
 #@tab all
@@ -136,8 +134,8 @@ boxes = d2l.tensor((dog_bbox, cat_bbox))
 box_center_to_corner(box_corner_to_center(boxes)) == boxes
 ```
 
-Let's [**draw the bounding boxes in the image**] to check if they are accurate.
-Before drawing, we will define a helper function `bbox_to_rect`. It represents the bounding box in the bounding box format of the  `matplotlib` package.
+Hãy [**vẽ các hộp giới hạn lên hình ảnh**] để kiểm tra xem chúng có chính xác hay không.
+Trước khi vẽ, chúng ta sẽ định nghĩa một hàm hỗ trợ `bbox_to_rect`. Hàm này biểu diễn hộp giới hạn theo định dạng hộp giới hạn của gói `matplotlib`.
 
 ```{.python .input}
 #@tab all
@@ -152,8 +150,8 @@ def bbox_to_rect(bbox, color):
         fill=False, edgecolor=color, linewidth=2)
 ```
 
-After adding the bounding boxes on the image,
-we can see that the main outline of the two objects are basically inside the two boxes.
+Sau khi thêm các hộp giới hạn vào hình ảnh,
+chúng ta có thể thấy rằng đường viền chính của hai đối tượng về cơ bản nằm bên trong hai hộp.
 
 ```{.python .input}
 #@tab all
@@ -162,21 +160,21 @@ fig.axes.add_patch(bbox_to_rect(dog_bbox, 'blue'))
 fig.axes.add_patch(bbox_to_rect(cat_bbox, 'red'));
 ```
 
-## Summary
+## Tóm tắt
 
-* Object detection not only recognizes all the objects of interest in the image, but also their positions. The position is generally represented by a rectangular bounding box.
-* We can convert between two commonly used bounding box representations.
+* Phát hiện đối tượng không chỉ nhận dạng tất cả các đối tượng đáng quan tâm trong hình ảnh mà còn xác định vị trí của chúng. Vị trí thường được biểu diễn bằng một hộp giới hạn hình chữ nhật.
+* Chúng ta có thể chuyển đổi giữa hai cách biểu diễn hộp giới hạn thường được sử dụng.
 
-## Exercises
+## Bài tập
 
-1. Find another image and try to label a bounding box that contains the object. Compare labeling bounding boxes and categories: which usually takes longer?
-1. Why is the innermost dimension of the input argument `boxes` of `box_corner_to_center` and `box_center_to_corner` always 4?
+1. Tìm một hình ảnh khác và thử gắn nhãn một hộp giới hạn bao quanh đối tượng. Hãy so sánh việc gắn nhãn hộp giới hạn với việc gắn nhãn danh mục: việc nào thường mất nhiều thời gian hơn?
+1. Tại sao chiều trong cùng của đối số đầu vào `boxes` của `box_corner_to_center` và `box_center_to_corner` luôn là 4?
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/369)
+[Thảo luận](https://discuss.d2l.ai/t/369)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1527)
+[Thảo luận](https://discuss.d2l.ai/t/1527)
 :end_tab:

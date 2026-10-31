@@ -1,139 +1,138 @@
-# Approximate Training
+# Huấn luyện xấp xỉ
 :label:`sec_approx_train`
 
-Recall our discussions in :numref:`sec_word2vec`.
-The main idea of the skip-gram model is
-using softmax operations to calculate
-the conditional probability of
-generating a context word $w_o$
-based on the given center word $w_c$
-in :eqref:`eq_skip-gram-softmax`,
-whose corresponding logarithmic loss is given by
-the opposite of :eqref:`eq_skip-gram-log`.
+Hãy nhớ lại các thảo luận của chúng ta trong :numref:`sec_word2vec`.
+Ý tưởng chính của mô hình skip-gram là
+sử dụng các phép toán softmax để tính
+xác suất có điều kiện của việc
+sinh ra một từ ngữ cảnh $w_o$
+dựa trên từ trung tâm $w_c$ đã cho
+trong :eqref:`eq_skip-gram-softmax`,
+với hàm mất mát log tương ứng bằng
+đối của :eqref:`eq_skip-gram-log`.
 
 
 
-Due to the nature of the softmax operation,
-since a context word may be anyone in the
-dictionary $\mathcal{V}$,
-the opposite of :eqref:`eq_skip-gram-log`
-contains the summation
-of items as many as the entire size of the vocabulary.
-Consequently,
-the gradient calculation
-for the skip-gram model
-in :eqref:`eq_skip-gram-grad`
-and that
-for the continuous bag-of-words model
-in :eqref:`eq_cbow-gradient`
-both contain
-the summation.
-Unfortunately,
-the computational cost
-for such gradients
-that sum over
-a large dictionary
-(often with
-hundreds of thousands or millions of words)
-is huge!
+Do bản chất của phép toán softmax,
+vì một từ ngữ cảnh có thể là bất kỳ từ nào trong
+từ điển $\mathcal{V}$,
+đối của :eqref:`eq_skip-gram-log`
+chứa phép tổng
+của số hạng nhiều bằng toàn bộ kích thước của từ vựng.
+Do đó,
+việc tính gradient
+cho mô hình skip-gram
+trong :eqref:`eq_skip-gram-grad`
+và
+cho mô hình continuous bag-of-words
+trong :eqref:`eq_cbow-gradient`
+đều chứa
+phép tổng.
+Đáng tiếc là,
+chi phí tính toán
+cho các gradient như vậy,
+vốn tính tổng trên
+một từ điển lớn
+(thường có
+hàng trăm nghìn hoặc hàng triệu từ),
+là rất lớn!
 
-In order to reduce the aforementioned computational complexity, this section will introduce two approximate training methods:
-*negative sampling* and *hierarchical softmax*.
-Due to the similarity
-between the skip-gram model and
-the continuous bag of words model,
-we will just take the skip-gram model as an example
-to describe these two approximate training methods.
+Để giảm độ phức tạp tính toán nói trên, phần này sẽ giới thiệu hai phương pháp huấn luyện xấp xỉ:
+*negative sampling* và *hierarchical softmax*.
+Do sự tương đồng
+giữa mô hình skip-gram và
+mô hình continuous bag-of-words,
+chúng ta sẽ chỉ lấy mô hình skip-gram làm ví dụ
+để mô tả hai phương pháp huấn luyện xấp xỉ này.
 
 ## Negative Sampling
 :label:`subsec_negative-sampling`
 
 
-Negative sampling modifies the original objective function.
-Given the context window of a center word $w_c$,
-the fact that any (context) word $w_o$
-comes from this context window
-is considered as an event with the probability
-modeled by
+Negative sampling sửa đổi hàm mục tiêu ban đầu.
+Với cửa sổ ngữ cảnh của một từ trung tâm $w_c$,
+việc một từ (ngữ cảnh) bất kỳ $w_o$
+xuất hiện trong cửa sổ ngữ cảnh này
+được xem là một sự kiện có xác suất
+được mô hình hóa bởi
 
 
 $$P(D=1\mid w_c, w_o) = \sigma(\mathbf{u}_o^\top \mathbf{v}_c),$$
 
-where $\sigma$ uses the definition of the sigmoid activation function:
+trong đó $\sigma$ sử dụng định nghĩa của hàm kích hoạt sigmoid:
 
 $$\sigma(x) = \frac{1}{1+\exp(-x)}.$$
 :eqlabel:`eq_sigma-f`
 
-Let's begin by
-maximizing the joint probability of
-all such events in text sequences
-to train word embeddings.
-Specifically,
-given a text sequence of length $T$,
-denote by $w^{(t)}$ the word at time step $t$
-and let the context window size be $m$,
-consider maximizing the joint probability
+Hãy bắt đầu bằng cách
+tối đa hóa xác suất đồng thời của
+tất cả các sự kiện như vậy trong
+các chuỗi văn bản để huấn luyện word embedding.
+Cụ thể,
+với một chuỗi văn bản có độ dài $T$,
+ký hiệu $w^{(t)}$ là từ tại bước thời gian $t$
+và gọi kích thước cửa sổ ngữ cảnh là $m$,
+ta xét việc tối đa hóa xác suất đồng thời
 
 
 $$ \prod_{t=1}^{T} \prod_{-m \leq j \leq m,\ j \neq 0} P(D=1\mid w^{(t)}, w^{(t+j)}).$$
 :eqlabel:`eq-negative-sample-pos`
 
 
-However,
+Tuy nhiên,
 :eqref:`eq-negative-sample-pos`
-only considers those events
-that involve positive examples.
-As a result,
-the joint probability in
+chỉ xét các sự kiện
+liên quan đến các ví dụ dương.
+Do đó,
+xác suất đồng thời trong
 :eqref:`eq-negative-sample-pos`
-is maximized to 1
-only if all the word vectors are equal to infinity.
-Of course,
-such results are meaningless.
-To make the objective function
-more meaningful,
+được tối đa hóa thành 1
+chỉ khi tất cả các vector từ đều bằng vô cực.
+Dĩ nhiên,
+kết quả như vậy là vô nghĩa.
+Để làm cho hàm mục tiêu
+có ý nghĩa hơn,
 *negative sampling*
-adds negative examples sampled
-from a predefined distribution.
+bổ sung các ví dụ âm được lấy mẫu
+từ một phân phối định trước.
 
-Denote by $S$
-the event that
-a context word $w_o$ comes from
-the context window of a center word $w_c$.
-For this event involving $w_o$,
-from a predefined distribution $P(w)$
-sample $K$ *noise words*
-that are not from this context window.
-Denote by $N_k$
-the event that
-a noise word $w_k$ ($k=1, \ldots, K$)
-does not come from
-the context window of $w_c$.
-Assume that
-these events involving
-both the positive example and negative examples
-$S, N_1, \ldots, N_K$ are mutually independent.
+Ký hiệu $S$
+là sự kiện mà
+một từ ngữ cảnh $w_o$ xuất hiện
+trong cửa sổ ngữ cảnh của một từ trung tâm $w_c$.
+Với sự kiện liên quan đến $w_o$ này,
+từ một phân phối định trước $P(w)$,
+lấy mẫu $K$ *noise word*
+không xuất hiện trong cửa sổ ngữ cảnh này.
+Ký hiệu $N_k$
+là sự kiện mà
+một noise word $w_k$ ($k=1, \ldots, K$)
+không xuất hiện
+trong cửa sổ ngữ cảnh của $w_c$.
+Giả sử rằng
+các sự kiện liên quan đến
+cả ví dụ dương và các ví dụ âm
+$S, N_1, \ldots, N_K$ là độc lập lẫn nhau.
 Negative sampling
-rewrites the joint probability (involving only positive examples)
-in :eqref:`eq-negative-sample-pos`
-as
+viết lại xác suất đồng thời (chỉ liên quan đến các ví dụ dương)
+trong :eqref:`eq-negative-sample-pos`
+thành
 
 $$ \prod_{t=1}^{T} \prod_{-m \leq j \leq m,\ j \neq 0} P(w^{(t+j)} \mid w^{(t)}),$$
 
-where the conditional probability is approximated through
-events $S, N_1, \ldots, N_K$:
+trong đó xác suất có điều kiện được xấp xỉ thông qua
+các sự kiện $S, N_1, \ldots, N_K$:
 
 $$ P(w^{(t+j)} \mid w^{(t)}) =P(D=1\mid w^{(t)}, w^{(t+j)})\prod_{k=1,\ w_k \sim P(w)}^K P(D=0\mid w^{(t)}, w_k).$$
 :eqlabel:`eq-negative-sample-conditional-prob`
 
-Denote by
-$i_t$ and $h_k$
-the indices of
-a word $w^{(t)}$ at time step $t$
-of a text sequence
-and a noise word $w_k$,
-respectively.
-The logarithmic loss with respect to the conditional probabilities in :eqref:`eq-negative-sample-conditional-prob` is
+Ký hiệu
+$i_t$ và $h_k$
+lần lượt là chỉ số của
+một từ $w^{(t)}$ tại bước thời gian $t$
+của một chuỗi văn bản
+và một noise word $w_k$.
+Hàm mất mát log đối với các xác suất có điều kiện trong :eqref:`eq-negative-sample-conditional-prob` là
 
 $$
 \begin{aligned}
@@ -145,95 +144,95 @@ $$
 $$
 
 
-We can see that
-now the computational cost for gradients
-at each training step
-has nothing to do with the dictionary size,
-but linearly depends on $K$.
-When setting the hyperparameter $K$
-to a smaller value,
-the computational cost for gradients
-at each training step with negative sampling
-is smaller.
+Ta có thể thấy rằng
+giờ đây chi phí tính toán gradient
+ở mỗi bước huấn luyện
+không liên quan gì đến kích thước từ điển,
+mà phụ thuộc tuyến tính vào $K$.
+Khi đặt hyperparameter $K$
+thành một giá trị nhỏ hơn,
+chi phí tính toán gradient
+ở mỗi bước huấn luyện với negative sampling
+sẽ nhỏ hơn.
 
 
 
 
 ## Hierarchical Softmax
 
-As an alternative approximate training method,
+Là một phương pháp huấn luyện xấp xỉ khác,
 *hierarchical softmax*
-uses the binary tree,
-a data structure
-illustrated in :numref:`fig_hi_softmax`,
-where each leaf node
-of the tree represents
-a word in dictionary $\mathcal{V}$.
+sử dụng cây nhị phân,
+một cấu trúc dữ liệu
+được minh họa trong :numref:`fig_hi_softmax`,
+trong đó mỗi nút lá
+của cây biểu diễn
+một từ trong từ điển $\mathcal{V}$.
 
-![Hierarchical softmax for approximate training, where each leaf node of the tree represents a word in the dictionary.](../img/hi-softmax.svg)
+![Hierarchical softmax cho huấn luyện xấp xỉ, trong đó mỗi nút lá của cây biểu diễn một từ trong từ điển.](../img/hi-softmax.svg)
 :label:`fig_hi_softmax`
 
-Denote by $L(w)$
-the number of nodes (including both ends)
-on the path
-from the root node to the leaf node representing word $w$
-in the binary tree.
-Let $n(w,j)$ be the $j^\textrm{th}$ node on this path,
-with its context word vector being
+Ký hiệu $L(w)$
+là số lượng nút (bao gồm cả hai đầu mút)
+trên đường đi
+từ nút gốc đến nút lá biểu diễn từ $w$
+trong cây nhị phân.
+Gọi $n(w,j)$ là nút thứ $j^\textrm{th}$ trên đường đi này,
+với vector từ ngữ cảnh của nó là
 $\mathbf{u}_{n(w, j)}$.
-For example,
-$L(w_3) = 4$ in  :numref:`fig_hi_softmax`.
-Hierarchical softmax approximates the conditional probability in :eqref:`eq_skip-gram-softmax` as
+Ví dụ,
+$L(w_3) = 4$ trong :numref:`fig_hi_softmax`.
+Hierarchical softmax xấp xỉ xác suất có điều kiện trong :eqref:`eq_skip-gram-softmax` như sau:
 
 
 $$P(w_o \mid w_c) = \prod_{j=1}^{L(w_o)-1} \sigma\left( [\![  n(w_o, j+1) = \textrm{leftChild}(n(w_o, j)) ]\!] \cdot \mathbf{u}_{n(w_o, j)}^\top \mathbf{v}_c\right),$$
 
-where function $\sigma$
-is defined in :eqref:`eq_sigma-f`,
-and $\textrm{leftChild}(n)$ is the left child node of node $n$: if $x$ is true, $[\![x]\!] = 1$; otherwise $[\![x]\!] = -1$.
+trong đó hàm $\sigma$
+được định nghĩa trong :eqref:`eq_sigma-f`,
+và $\textrm{leftChild}(n)$ là nút con bên trái của nút $n$: nếu $x$ đúng thì $[\![x]\!] = 1$; ngược lại, $[\![x]\!] = -1$.
 
-To illustrate,
-let's calculate
-the conditional probability
-of generating word $w_3$
-given word $w_c$ in :numref:`fig_hi_softmax`.
-This requires dot products
-between the word vector
-$\mathbf{v}_c$ of $w_c$
-and
-non-leaf node vectors
-on the path (the path in bold in :numref:`fig_hi_softmax`) from the root to $w_3$,
-which is traversed left, right, then left:
+Để minh họa,
+hãy tính
+xác suất có điều kiện
+của việc sinh ra từ $w_3$
+với từ $w_c$ trong :numref:`fig_hi_softmax`.
+Việc này yêu cầu các tích vô hướng
+giữa vector từ
+$\mathbf{v}_c$ của $w_c$
+và
+các vector của những nút không phải lá
+trên đường đi (đường đi được in đậm trong :numref:`fig_hi_softmax`) từ gốc đến $w_3$,
+được duyệt theo thứ tự trái, phải, rồi trái:
 
 
 $$P(w_3 \mid w_c) = \sigma(\mathbf{u}_{n(w_3, 1)}^\top \mathbf{v}_c) \cdot \sigma(-\mathbf{u}_{n(w_3, 2)}^\top \mathbf{v}_c) \cdot \sigma(\mathbf{u}_{n(w_3, 3)}^\top \mathbf{v}_c).$$
 
-Since $\sigma(x)+\sigma(-x) = 1$,
-it holds that
-the conditional probabilities of
-generating all the words in
-dictionary $\mathcal{V}$
-based on any word $w_c$
-sum up to one:
+Vì $\sigma(x)+\sigma(-x) = 1$,
+nên
+tổng các xác suất có điều kiện của
+việc sinh ra tất cả các từ trong
+từ điển $\mathcal{V}$
+dựa trên bất kỳ từ $w_c$ nào
+bằng một:
 
 $$\sum_{w \in \mathcal{V}} P(w \mid w_c) = 1.$$
 :eqlabel:`eq_hi-softmax-sum-one`
 
-Fortunately, since $L(w_o)-1$ is on the order of $\mathcal{O}(\textrm{log}_2|\mathcal{V}|)$ due to the binary tree structure,
-when the dictionary size $\mathcal{V}$ is huge,
-the computational cost for  each training step using hierarchical softmax
-is significantly reduced compared with that
-without approximate training.
+May mắn là, vì $L(w_o)-1$ có bậc $\mathcal{O}(\textrm{log}_2|\mathcal{V}|)$ do cấu trúc cây nhị phân,
+khi kích thước từ điển $\mathcal{V}$ rất lớn,
+chi phí tính toán cho mỗi bước huấn luyện sử dụng hierarchical softmax
+được giảm đáng kể so với
+chi phí khi không sử dụng huấn luyện xấp xỉ.
 
-## Summary
+## Tóm tắt
 
-* Negative sampling constructs the loss function by considering mutually independent events that involve both positive and negative examples. The computational cost for training is linearly dependent on the number of noise words at each step.
-* Hierarchical softmax constructs the loss function using  the path from the root node to the leaf node in the binary tree. The computational cost for training is dependent on the logarithm of the dictionary size at each step.
+* Negative sampling xây dựng hàm mất mát bằng cách xét các sự kiện độc lập lẫn nhau có liên quan đến cả ví dụ dương và ví dụ âm. Chi phí tính toán cho việc huấn luyện phụ thuộc tuyến tính vào số lượng noise word ở mỗi bước.
+* Hierarchical softmax xây dựng hàm mất mát bằng cách sử dụng đường đi từ nút gốc đến nút lá trong cây nhị phân. Chi phí tính toán cho việc huấn luyện phụ thuộc vào logarit của kích thước từ điển ở mỗi bước.
 
-## Exercises
+## Bài tập
 
-1. How can we sample noise words in negative sampling?
-1. Verify that :eqref:`eq_hi-softmax-sum-one` holds.
-1. How to train the continuous bag of words model using negative sampling and hierarchical softmax, respectively?
+1. Làm thế nào để lấy mẫu noise word trong negative sampling?
+1. Hãy chứng minh :eqref:`eq_hi-softmax-sum-one` đúng.
+1. Làm thế nào để huấn luyện mô hình continuous bag-of-words lần lượt bằng negative sampling và hierarchical softmax?
 
-[Discussions](https://discuss.d2l.ai/t/382)
+[Thảo luận](https://discuss.d2l.ai/t/382)
