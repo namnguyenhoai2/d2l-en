@@ -3,35 +3,35 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Data Preprocessing
+# Tiền xử lý dữ liệu
 :label:`sec_pandas`
 
-So far, we have been working with synthetic data
-that arrived in ready-made tensors.
-However, to apply deep learning in the wild
-we must extract messy data 
-stored in arbitrary formats,
-and preprocess it to suit our needs.
-Fortunately, the *pandas* [library](https://pandas.pydata.org/) 
-can do much of the heavy lifting.
-This section, while no substitute 
-for a proper *pandas* [tutorial](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html),
-will give you a crash course
-on some of the most common routines.
+Cho đến nay, chúng ta đã làm việc với dữ liệu tổng hợp
+được cung cấp dưới dạng các tensor dựng sẵn.
+Tuy nhiên, để áp dụng deep learning trong thực tế,
+chúng ta phải trích xuất dữ liệu lộn xộn
+được lưu trữ ở các định dạng tùy ý,
+sau đó tiền xử lý dữ liệu để phù hợp với nhu cầu.
+May mắn là thư viện *pandas* [library](https://pandas.pydata.org/)
+có thể đảm nhiệm phần lớn công việc nặng nhọc.
+Phần này không thể thay thế
+một *pandas* [tutorial](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html) đầy đủ,
+nhưng sẽ cung cấp cho bạn một khóa học cấp tốc
+về một số quy trình thường dùng nhất.
 
-## Reading the Dataset
+## Đọc tập dữ liệu
 
-Comma-separated values (CSV) files are ubiquitous 
-for the storing of tabular (spreadsheet-like) data.
-In them, each line corresponds to one record
-and consists of several (comma-separated) fields, e.g.,
+Các tệp giá trị được phân tách bằng dấu phẩy (CSV) xuất hiện phổ biến
+khi lưu trữ dữ liệu dạng bảng (giống bảng tính).
+Trong các tệp này, mỗi dòng tương ứng với một bản ghi
+và gồm một số trường (được phân tách bằng dấu phẩy), ví dụ:
 "Albert Einstein,March 14 1879,Ulm,Federal polytechnic school,field of gravitational physics".
-To demonstrate how to load CSV files with `pandas`, 
-we (**create a CSV file below**) `../data/house_tiny.csv`. 
-This file represents a dataset of homes,
-where each row corresponds to a distinct home
-and the columns correspond to the number of rooms (`NumRooms`),
-the roof type (`RoofType`), and the price (`Price`).
+Để minh họa cách tải tệp CSV bằng `pandas`,
+chúng ta (**tạo một tệp CSV bên dưới**) `../data/house_tiny.csv`.
+Tệp này biểu diễn một tập dữ liệu về các ngôi nhà,
+trong đó mỗi hàng tương ứng với một ngôi nhà riêng biệt
+và các cột tương ứng với số phòng (`NumRooms`),
+loại mái (`RoofType`) và giá (`Price`).
 
 ```{.python .input}
 %%tab all
@@ -47,7 +47,7 @@ NA,NA,127500
 NA,NA,140000''')
 ```
 
-Now let's import `pandas` and load the dataset with `read_csv`.
+Bây giờ hãy import `pandas` và tải tập dữ liệu bằng `read_csv`.
 
 ```{.python .input}
 %%tab all
@@ -57,44 +57,44 @@ data = pd.read_csv(data_file)
 print(data)
 ```
 
-## Data Preparation
+## Chuẩn bị dữ liệu
 
-In supervised learning, we train models
-to predict a designated *target* value,
-given some set of *input* values. 
-Our first step in processing the dataset
-is to separate out columns corresponding
-to input versus target values. 
-We can select columns either by name or
-via integer-location based indexing (`iloc`).
+Trong học có giám sát, chúng ta huấn luyện các mô hình
+để dự đoán một giá trị *target* được chỉ định,
+dựa trên một tập các giá trị *input*.
+Bước đầu tiên khi xử lý tập dữ liệu
+là tách các cột tương ứng
+với giá trị đầu vào và giá trị mục tiêu.
+Chúng ta có thể chọn các cột theo tên hoặc
+thông qua lập chỉ mục dựa trên vị trí số nguyên (`iloc`).
 
-You might have noticed that `pandas` replaced
-all CSV entries with value `NA`
-with a special `NaN` (*not a number*) value. 
-This can also happen whenever an entry is empty,
-e.g., "3,,,270000".
-These are called *missing values* 
-and they are the "bed bugs" of data science,
-a persistent menace that you will confront
-throughout your career. 
-Depending upon the context, 
-missing values might be handled
-either via *imputation* or *deletion*.
-Imputation replaces missing values 
-with estimates of their values
-while deletion simply discards 
-either those rows or those columns
-that contain missing values. 
+Có thể bạn đã nhận thấy rằng `pandas` đã thay thế
+tất cả các mục trong CSV có giá trị `NA`
+bằng một giá trị đặc biệt `NaN` (*not a number*).
+Điều này cũng có thể xảy ra khi một mục bị bỏ trống,
+ví dụ: "3,,,270000".
+Chúng được gọi là *missing values*
+và là những "con rệp" của khoa học dữ liệu,
+một mối đe dọa dai dẳng mà bạn sẽ phải đối mặt
+trong suốt sự nghiệp của mình.
+Tùy theo ngữ cảnh,
+các giá trị thiếu có thể được xử lý
+bằng *imputation* hoặc *deletion*.
+Imputation thay thế các giá trị thiếu
+bằng các ước lượng của chúng,
+còn deletion đơn giản là loại bỏ
+các hàng hoặc cột
+chứa giá trị thiếu.
 
-Here are some common imputation heuristics.
-[**For categorical input fields, 
-we can treat `NaN` as a category.**]
-Since the `RoofType` column takes values `Slate` and `NaN`,
-`pandas` can convert this column 
-into two columns `RoofType_Slate` and `RoofType_nan`.
-A row whose roof type is `Slate` will set values 
-of `RoofType_Slate` and `RoofType_nan` to 1 and 0, respectively.
-The converse holds for a row with a missing `RoofType` value.
+Dưới đây là một số heuristic imputation phổ biến.
+[**Đối với các trường input phân loại,
+chúng ta có thể coi `NaN` là một category.**]
+Vì cột `RoofType` nhận các giá trị `Slate` và `NaN`,
+`pandas` có thể chuyển đổi cột này
+thành hai cột `RoofType_Slate` và `RoofType_nan`.
+Một hàng có loại mái là `Slate` sẽ đặt các giá trị
+của `RoofType_Slate` và `RoofType_nan` lần lượt là 1 và 0.
+Điều ngược lại cũng đúng với một hàng có giá trị `RoofType` bị thiếu.
 
 ```{.python .input}
 %%tab all
@@ -103,10 +103,10 @@ inputs = pd.get_dummies(inputs, dummy_na=True)
 print(inputs)
 ```
 
-For missing numerical values, 
-one common heuristic is to 
-[**replace the `NaN` entries with 
-the mean value of the corresponding column**].
+Đối với các giá trị số bị thiếu,
+một heuristic phổ biến là
+[**thay thế các mục `NaN` bằng
+giá trị trung bình của cột tương ứng**].
 
 ```{.python .input}
 %%tab all
@@ -114,10 +114,10 @@ inputs = inputs.fillna(inputs.mean())
 print(inputs)
 ```
 
-## Conversion to the Tensor Format
+## Chuyển đổi sang định dạng Tensor
 
-Now that [**all the entries in `inputs` and `targets` are numerical,
-we can load them into a tensor**] (recall :numref:`sec_ndarray`).
+Bây giờ, [**tất cả các mục trong `inputs` và `targets` đều là số,
+chúng ta có thể tải chúng vào một tensor**] (hãy nhớ :numref:`sec_ndarray`).
 
 ```{.python .input}
 %%tab mxnet
@@ -154,62 +154,62 @@ y = jnp.array(targets.to_numpy(dtype=float))
 X, y
 ```
 
-## Discussion
+## Thảo luận
 
-You now know how to partition data columns, 
-impute missing variables, 
-and load `pandas` data into tensors. 
-In :numref:`sec_kaggle_house`, you will
-pick up some more data processing skills. 
-While this crash course kept things simple,
-data processing can get hairy.
-For example, rather than arriving in a single CSV file,
-our dataset might be spread across multiple files
-extracted from a relational database.
-For instance, in an e-commerce application,
-customer addresses might live in one table
-and purchase data in another.
-Moreover, practitioners face myriad data types
-beyond categorical and numeric, for example,
-text strings, images,
-audio data, and point clouds. 
-Oftentimes, advanced tools and efficient algorithms 
-are required in order to prevent data processing from becoming
-the biggest bottleneck in the machine learning pipeline. 
-These problems will arise when we get to 
-computer vision and natural language processing. 
-Finally, we must pay attention to data quality.
-Real-world datasets are often plagued 
-by outliers, faulty measurements from sensors, and recording errors, 
-which must be addressed before 
-feeding the data into any model. 
-Data visualization tools such as [seaborn](https://seaborn.pydata.org/), 
-[Bokeh](https://docs.bokeh.org/), or [matplotlib](https://matplotlib.org/)
-can help you to manually inspect the data 
-and develop intuitions about 
-the type of problems you may need to address.
+Giờ đây bạn đã biết cách phân vùng các cột dữ liệu,
+impute các biến bị thiếu
+và tải dữ liệu `pandas` vào các tensor.
+Trong :numref:`sec_kaggle_house`, bạn sẽ
+học thêm một số kỹ năng xử lý dữ liệu.
+Mặc dù khóa học cấp tốc này giữ mọi thứ đơn giản,
+việc xử lý dữ liệu có thể trở nên phức tạp.
+Ví dụ, thay vì được cung cấp trong một tệp CSV duy nhất,
+tập dữ liệu của chúng ta có thể được phân tán
+trong nhiều tệp được trích xuất từ một cơ sở dữ liệu quan hệ.
+Chẳng hạn, trong một ứng dụng thương mại điện tử,
+địa chỉ khách hàng có thể nằm trong một bảng
+còn dữ liệu mua hàng nằm trong một bảng khác.
+Hơn nữa, các chuyên gia phải xử lý vô số kiểu dữ liệu
+ngoài dữ liệu phân loại và dữ liệu số, chẳng hạn như
+chuỗi văn bản, hình ảnh,
+dữ liệu âm thanh và point cloud.
+Thông thường, cần có các công cụ nâng cao và thuật toán hiệu quả
+để ngăn việc xử lý dữ liệu trở thành
+nút thắt cổ chai lớn nhất trong pipeline machine learning.
+Những vấn đề này sẽ xuất hiện khi chúng ta chuyển sang
+computer vision và natural language processing.
+Cuối cùng, chúng ta phải chú ý đến chất lượng dữ liệu.
+Các tập dữ liệu trong thực tế thường bị ảnh hưởng
+bởi các giá trị ngoại lai, phép đo sai từ cảm biến và lỗi ghi chép,
+những vấn đề cần được xử lý trước khi
+đưa dữ liệu vào bất kỳ mô hình nào.
+Các công cụ trực quan hóa dữ liệu như [seaborn](https://seaborn.pydata.org/),
+[Bokeh](https://docs.bokeh.org/) hoặc [matplotlib](https://matplotlib.org/)
+có thể giúp bạn kiểm tra dữ liệu thủ công
+và hình thành trực giác về
+loại vấn đề mà bạn có thể cần xử lý.
 
 
-## Exercises
+## Bài tập
 
-1. Try loading datasets, e.g., Abalone from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets) and inspect their properties. What fraction of them has missing values? What fraction of the variables is numerical, categorical, or text?
-1. Try indexing and selecting data columns by name rather than by column number. The pandas documentation on [indexing](https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html) has further details on how to do this.
-1. How large a dataset do you think you could load this way? What might be the limitations? Hint: consider the time to read the data, representation, processing, and memory footprint. Try this out on your laptop. What happens if you try it out on a server? 
-1. How would you deal with data that has a very large number of categories? What if the category labels are all unique? Should you include the latter?
-1. What alternatives to pandas can you think of? How about [loading NumPy tensors from a file](https://numpy.org/doc/stable/reference/generated/numpy.load.html)? Check out [Pillow](https://python-pillow.org/), the Python Imaging Library. 
+1. Hãy thử tải các tập dữ liệu, chẳng hạn như Abalone từ [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets) và kiểm tra các thuộc tính của chúng. Tỷ lệ bao nhiêu trong số chúng có giá trị thiếu? Tỷ lệ bao nhiêu biến là số, phân loại hoặc văn bản?
+1. Hãy thử lập chỉ mục và chọn các cột dữ liệu theo tên thay vì theo số cột. Tài liệu pandas về [indexing](https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html) có thêm chi tiết về cách thực hiện việc này.
+1. Bạn nghĩ mình có thể tải một tập dữ liệu lớn đến mức nào theo cách này? Những giới hạn nào có thể xảy ra? Gợi ý: hãy xem xét thời gian đọc dữ liệu, cách biểu diễn, việc xử lý và dung lượng bộ nhớ. Hãy thử trên máy tính xách tay của bạn. Điều gì xảy ra nếu bạn thử trên một server?
+1. Bạn sẽ xử lý dữ liệu có số lượng category rất lớn như thế nào? Nếu các nhãn category đều là duy nhất thì sao? Bạn có nên đưa các nhãn đó vào không?
+1. Bạn có thể nghĩ đến những lựa chọn thay thế nào cho pandas? Còn [loading NumPy tensors from a file](https://numpy.org/doc/stable/reference/generated/numpy.load.html) thì sao? Hãy xem [Pillow](https://python-pillow.org/), thư viện hình ảnh Python.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/28)
+[Thảo luận](https://discuss.d2l.ai/t/28)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/29)
+[Thảo luận](https://discuss.d2l.ai/t/29)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/195)
+[Thảo luận](https://discuss.d2l.ai/t/195)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17967)
+[Thảo luận](https://discuss.d2l.ai/t/17967)
 :end_tab:

@@ -3,63 +3,62 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Data Manipulation
+# Thao tác dữ liệu
 :label:`sec_ndarray`
 
-In order to get anything done, 
-we need some way to store and manipulate data.
-Generally, there are two important things 
-we need to do with data: 
-(i) acquire them; 
-and (ii) process them once they are inside the computer. 
-There is no point in acquiring data 
-without some way to store it, 
-so to start, let's get our hands dirty
-with $n$-dimensional arrays, 
-which we also call *tensors*.
-If you already know the NumPy 
-scientific computing package, 
-this will be a breeze.
-For all modern deep learning frameworks,
-the *tensor class* (`ndarray` in MXNet, 
-`Tensor` in PyTorch and TensorFlow) 
-resembles NumPy's `ndarray`,
-with a few killer features added.
-First, the tensor class
-supports automatic differentiation.
-Second, it leverages GPUs
-to accelerate numerical computation,
-whereas NumPy only runs on CPUs.
-These properties make neural networks
-both easy to code and fast to run.
+Để thực hiện được bất kỳ công việc nào, 
+chúng ta cần một cách để lưu trữ và thao tác với dữ liệu.
+Nói chung, có hai việc quan trọng 
+chúng ta cần làm với dữ liệu: 
+(i) thu thập dữ liệu; 
+và (ii) xử lý dữ liệu sau khi chúng đã được đưa vào máy tính. 
+Việc thu thập dữ liệu sẽ không có ý nghĩa 
+nếu không có cách lưu trữ chúng, 
+vì vậy, trước tiên, hãy cùng bắt tay vào làm quen
+với các mảng $n$ chiều, 
+mà chúng ta cũng gọi là *tensor*.
+Nếu bạn đã quen thuộc với gói điện toán khoa học NumPy, 
+việc này sẽ rất dễ dàng.
+Trong tất cả các framework deep learning hiện đại,
+*tensor class* (`ndarray` trong MXNet, 
+`Tensor` trong PyTorch và TensorFlow) 
+có nhiều điểm tương đồng với `ndarray` của NumPy,
+nhưng được bổ sung một số tính năng nổi bật.
+Thứ nhất, tensor class
+hỗ trợ automatic differentiation.
+Thứ hai, nó tận dụng GPU
+để tăng tốc tính toán số,
+trong khi NumPy chỉ chạy trên CPU.
+Những thuộc tính này giúp việc lập trình mạng neural
+vừa dễ dàng vừa có tốc độ thực thi nhanh.
 
 
 
-## Getting Started
+## Bắt đầu
 
 :begin_tab:`mxnet`
-To start, we import the `np` (`numpy`) and
-`npx` (`numpy_extension`) modules from MXNet.
-Here, the `np` module includes 
-functions supported by NumPy,
-while the `npx` module contains a set of extensions
-developed to empower deep learning 
-within a NumPy-like environment.
-When using tensors, we almost always 
-invoke the `set_np` function:
-this is for compatibility of tensor processing 
-by other components of MXNet.
+Để bắt đầu, chúng ta import các module `np` (`numpy`) và
+`npx` (`numpy_extension`) từ MXNet.
+Ở đây, module `np` bao gồm 
+các hàm được NumPy hỗ trợ,
+trong khi module `npx` chứa một tập hợp các phần mở rộng
+được phát triển để hỗ trợ deep learning 
+trong một môi trường tương tự NumPy.
+Khi sử dụng tensor, chúng ta hầu như luôn 
+gọi hàm `set_np`:
+điều này nhằm bảo đảm khả năng xử lý tensor 
+tương thích với các thành phần khác của MXNet.
 :end_tab:
 
 :begin_tab:`pytorch`
-(**To start, we import the PyTorch library.
-Note that the package name is `torch`.**)
+(**Để bắt đầu, chúng ta import thư viện PyTorch.
+Lưu ý rằng tên package là `torch`.**)
 :end_tab:
 
 :begin_tab:`tensorflow`
-To start, we import `tensorflow`. 
-For brevity, practitioners 
-often assign the alias `tf`.
+Để bắt đầu, chúng ta import `tensorflow`. 
+Để viết ngắn gọn, các lập trình viên 
+thường đặt alias là `tf`.
 :end_tab:
 
 ```{.python .input}
@@ -84,53 +83,53 @@ import jax
 from jax import numpy as jnp
 ```
 
-[**A tensor represents a (possibly multidimensional) array of numerical values.**]
-In the one-dimensional case, i.e., when only one axis is needed for the data,
-a tensor is called a *vector*.
-With two axes, a tensor is called a *matrix*.
-With $k > 2$ axes, we drop the specialized names
-and just refer to the object as a $k^\textrm{th}$-*order tensor*.
+[**Một tensor biểu diễn một mảng (có thể là đa chiều) gồm các giá trị số.**]
+Trong trường hợp một chiều, tức là khi dữ liệu chỉ cần một trục,
+tensor được gọi là một *vector*.
+Với hai trục, tensor được gọi là một *matrix*.
+Với $k > 2$ trục, chúng ta không dùng các tên chuyên biệt
+mà chỉ gọi đối tượng đó là một $k^\textrm{th}$-*order tensor*.
 
 :begin_tab:`mxnet`
-MXNet provides a variety of functions 
-for creating new tensors 
-prepopulated with values. 
-For example, by invoking `arange(n)`,
-we can create a vector of evenly spaced values,
-starting at 0 (included) 
-and ending at `n` (not included).
-By default, the interval size is $1$.
-Unless otherwise specified, 
-new tensors are stored in main memory 
-and designated for CPU-based computation.
+MXNet cung cấp nhiều hàm 
+để tạo các tensor mới 
+được điền sẵn các giá trị. 
+Ví dụ, bằng cách gọi `arange(n)`,
+chúng ta có thể tạo một vector gồm các giá trị cách đều nhau,
+bắt đầu từ 0 (được lấy) 
+và kết thúc tại `n` (không được lấy).
+Theo mặc định, kích thước khoảng cách là $1$.
+Trừ khi được chỉ định khác đi, 
+các tensor mới được lưu trong bộ nhớ chính 
+và được dùng cho việc tính toán trên CPU.
 :end_tab:
 
 :begin_tab:`pytorch`
-PyTorch provides a variety of functions 
-for creating new tensors 
-prepopulated with values. 
-For example, by invoking `arange(n)`,
-we can create a vector of evenly spaced values,
-starting at 0 (included) 
-and ending at `n` (not included).
-By default, the interval size is $1$.
-Unless otherwise specified, 
-new tensors are stored in main memory 
-and designated for CPU-based computation.
+PyTorch cung cấp nhiều hàm 
+để tạo các tensor mới 
+được điền sẵn các giá trị. 
+Ví dụ, bằng cách gọi `arange(n)`,
+chúng ta có thể tạo một vector gồm các giá trị cách đều nhau,
+bắt đầu từ 0 (được lấy) 
+và kết thúc tại `n` (không được lấy).
+Theo mặc định, kích thước khoảng cách là $1$.
+Trừ khi được chỉ định khác đi, 
+các tensor mới được lưu trong bộ nhớ chính 
+và được dùng cho việc tính toán trên CPU.
 :end_tab:
 
 :begin_tab:`tensorflow`
-TensorFlow provides a variety of functions 
-for creating new tensors 
-prepopulated with values. 
-For example, by invoking `range(n)`,
-we can create a vector of evenly spaced values,
-starting at 0 (included) 
-and ending at `n` (not included).
-By default, the interval size is $1$.
-Unless otherwise specified, 
-new tensors are stored in main memory 
-and designated for CPU-based computation.
+TensorFlow cung cấp nhiều hàm 
+để tạo các tensor mới 
+được điền sẵn các giá trị. 
+Ví dụ, bằng cách gọi `range(n)`,
+chúng ta có thể tạo một vector gồm các giá trị cách đều nhau,
+bắt đầu từ 0 (được lấy) 
+và kết thúc tại `n` (không được lấy).
+Theo mặc định, kích thước khoảng cách là $1$.
+Trừ khi được chỉ định khác đi, 
+các tensor mới được lưu trong bộ nhớ chính 
+và được dùng cho việc tính toán trên CPU.
 :end_tab:
 
 ```{.python .input}
@@ -158,27 +157,27 @@ x
 ```
 
 :begin_tab:`mxnet`
-Each of these values is called
-an *element* of the tensor.
-The tensor `x` contains 12 elements.
-We can inspect the total number of elements 
-in a tensor via its `size` attribute.
+Mỗi giá trị này được gọi là
+một *phần tử* của tensor.
+Tensor `x` chứa 12 phần tử.
+Chúng ta có thể kiểm tra tổng số phần tử 
+trong một tensor thông qua thuộc tính `size` của nó.
 :end_tab:
 
 :begin_tab:`pytorch`
-Each of these values is called
-an *element* of the tensor.
-The tensor `x` contains 12 elements.
-We can inspect the total number of elements 
-in a tensor via its `numel` method.
+Mỗi giá trị này được gọi là
+một *phần tử* của tensor.
+Tensor `x` chứa 12 phần tử.
+Chúng ta có thể kiểm tra tổng số phần tử 
+trong một tensor thông qua phương thức `numel` của nó.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Each of these values is called
-an *element* of the tensor.
-The tensor `x` contains 12 elements.
-We can inspect the total number of elements 
-in a tensor via the `size` function.
+Mỗi giá trị này được gọi là
+một *phần tử* của tensor.
+Tensor `x` chứa 12 phần tử.
+Chúng ta có thể kiểm tra tổng số phần tử 
+trong một tensor thông qua hàm `size`.
 :end_tab:
 
 ```{.python .input}
@@ -196,28 +195,28 @@ x.numel()
 tf.size(x)
 ```
 
-(**We can access a tensor's *shape***) 
-(the length along each axis)
-by inspecting its `shape` attribute.
-Because we are dealing with a vector here,
-the `shape` contains just a single element
-and is identical to the size.
+(**Chúng ta có thể truy cập *shape***) 
+(độ dài dọc theo mỗi trục)
+bằng cách kiểm tra thuộc tính `shape` của nó.
+Vì ở đây chúng ta đang làm việc với một vector,
+`shape` chỉ chứa một phần tử
+và giống với size.
 
 ```{.python .input}
 %%tab all
 x.shape
 ```
 
-We can [**change the shape of a tensor
-without altering its size or values**],
-by invoking `reshape`.
-For example, we can transform 
-our vector `x` whose shape is (12,) 
-to a matrix `X`  with shape (3, 4).
-This new tensor retains all elements
-but reconfigures them into a matrix.
-Notice that the elements of our vector
-are laid out one row at a time and thus
+Chúng ta có thể [**thay đổi shape của một tensor
+mà không làm thay đổi size hoặc các giá trị của nó**],
+bằng cách gọi `reshape`.
+Ví dụ, chúng ta có thể chuyển đổi 
+vector `x` có shape là (12,) 
+thành một matrix `X` có shape là (3, 4).
+Tensor mới này giữ nguyên tất cả các phần tử
+nhưng sắp xếp lại chúng thành một matrix.
+Hãy lưu ý rằng các phần tử của vector
+được sắp xếp lần lượt theo từng hàng và do đó
 `x[3] == X[0, 3]`.
 
 ```{.python .input}
@@ -232,23 +231,23 @@ X = tf.reshape(x, (3, 4))
 X
 ```
 
-Note that specifying every shape component
-to `reshape` is redundant.
-Because we already know our tensor's size,
-we can work out one component of the shape given the rest.
-For example, given a tensor of size $n$
-and target shape ($h$, $w$),
-we know that $w = n/h$.
-To automatically infer one component of the shape,
-we can place a `-1` for the shape component
-that should be inferred automatically.
-In our case, instead of calling `x.reshape(3, 4)`,
-we could have equivalently called `x.reshape(-1, 4)` or `x.reshape(3, -1)`.
+Lưu ý rằng việc chỉ định mọi thành phần của shape
+cho `reshape` là dư thừa.
+Vì chúng ta đã biết size của tensor,
+chúng ta có thể tính một thành phần của shape dựa trên các thành phần còn lại.
+Ví dụ, với một tensor có size $n$
+và shape đích là ($h$, $w$),
+ta biết rằng $w = n/h$.
+Để tự động suy ra một thành phần của shape,
+chúng ta có thể đặt `-1` cho thành phần shape
+cần được tự động suy ra.
+Trong trường hợp này, thay vì gọi `x.reshape(3, 4)`,
+chúng ta có thể gọi tương đương `x.reshape(-1, 4)` hoặc `x.reshape(3, -1)`.
 
-Practitioners often need to work with tensors
-initialized to contain all 0s or 1s.
-[**We can construct a tensor with all elements set to 0**] (~~or one~~)
-and a shape of (2, 3, 4) via the `zeros` function.
+Các lập trình viên thường cần làm việc với những tensor
+được khởi tạo với toàn bộ phần tử là 0 hoặc 1.
+[**Chúng ta có thể tạo một tensor với tất cả các phần tử được đặt thành 0**] (~~hoặc một tensor~~)
+và shape là (2, 3, 4) thông qua hàm `zeros`.
 
 ```{.python .input}
 %%tab mxnet
@@ -270,8 +269,8 @@ tf.zeros((2, 3, 4))
 jnp.zeros((2, 3, 4))
 ```
 
-Similarly, we can create a tensor 
-with all 1s by invoking `ones`.
+Tương tự, chúng ta có thể tạo một tensor 
+với toàn bộ phần tử là 1 bằng cách gọi `ones`.
 
 ```{.python .input}
 %%tab mxnet
@@ -293,15 +292,15 @@ tf.ones((2, 3, 4))
 jnp.ones((2, 3, 4))
 ```
 
-We often wish to 
-[**sample each element randomly (and independently)**] 
-from a given probability distribution.
-For example, the parameters of neural networks
-are often initialized randomly.
-The following snippet creates a tensor 
-with elements drawn from 
-a standard Gaussian (normal) distribution
-with mean 0 and standard deviation 1.
+Chúng ta thường muốn 
+[**lấy mẫu từng phần tử một cách ngẫu nhiên (và độc lập)**] 
+từ một phân phối xác suất cho trước.
+Ví dụ, các tham số của mạng neural
+thường được khởi tạo ngẫu nhiên.
+Đoạn mã sau tạo một tensor 
+với các phần tử được lấy từ 
+phân phối Gaussian (normal) chuẩn
+có giá trị trung bình bằng 0 và độ lệch chuẩn bằng 1.
 
 ```{.python .input}
 %%tab mxnet
@@ -326,13 +325,13 @@ tf.random.normal(shape=[3, 4])
 jax.random.normal(jax.random.PRNGKey(0), (3, 4))
 ```
 
-Finally, we can construct tensors by
-[**supplying the exact values for each element**] 
-by supplying (possibly nested) Python list(s) 
-containing numerical literals.
-Here, we construct a matrix with a list of lists,
-where the outermost list corresponds to axis 0,
-and the inner list corresponds to axis 1.
+Cuối cùng, chúng ta có thể tạo tensor bằng cách
+[**cung cấp chính xác các giá trị cho từng phần tử**] 
+thông qua một hoặc nhiều list Python (có thể lồng nhau) 
+chứa các literal số.
+Ở đây, chúng ta tạo một matrix bằng một list các list,
+trong đó list ngoài cùng tương ứng với trục 0,
+còn list bên trong tương ứng với trục 1.
 
 ```{.python .input}
 %%tab mxnet
@@ -354,24 +353,24 @@ tf.constant([[2, 1, 4, 3], [1, 2, 3, 4], [4, 3, 2, 1]])
 jnp.array([[2, 1, 4, 3], [1, 2, 3, 4], [4, 3, 2, 1]])
 ```
 
-## Indexing and Slicing
+## Indexing và slicing
 
-As with  Python lists,
-we can access tensor elements 
-by indexing (starting with 0).
-To access an element based on its position
-relative to the end of the list,
-we can use negative indexing.
-Finally, we can access whole ranges of indices 
-via slicing (e.g., `X[start:stop]`), 
-where the returned value includes 
-the first index (`start`) *but not the last* (`stop`).
-Finally, when only one index (or slice)
-is specified for a $k^\textrm{th}$-order tensor,
-it is applied along axis 0.
-Thus, in the following code,
-[**`[-1]` selects the last row and `[1:3]`
-selects the second and third rows**].
+Tương tự như các list Python,
+chúng ta có thể truy cập các phần tử của tensor 
+bằng indexing (bắt đầu từ 0).
+Để truy cập một phần tử dựa trên vị trí
+tính từ cuối list,
+chúng ta có thể sử dụng indexing âm.
+Cuối cùng, chúng ta có thể truy cập toàn bộ phạm vi các index 
+thông qua slicing (ví dụ: `X[start:stop]`), 
+trong đó giá trị trả về bao gồm 
+index đầu tiên (`start`) *nhưng không bao gồm index cuối cùng* (`stop`).
+Cuối cùng, khi chỉ có một index (hoặc slice)
+được chỉ định cho một tensor cấp $k^\textrm{th}$,
+nó sẽ được áp dụng dọc theo trục 0.
+Do đó, trong đoạn mã sau,
+[**`[-1]` chọn hàng cuối cùng và `[1:3]`
+chọn hàng thứ hai và thứ ba**].
 
 ```{.python .input}
 %%tab all
@@ -379,17 +378,17 @@ X[-1], X[1:3]
 ```
 
 :begin_tab:`mxnet, pytorch`
-Beyond reading them, (**we can also *write* elements of a matrix by specifying indices.**)
+Ngoài việc đọc các phần tử, (**chúng ta cũng có thể *ghi* các phần tử của một matrix bằng cách chỉ định các index.**)
 :end_tab:
 
 :begin_tab:`tensorflow`
-`Tensors` in TensorFlow are immutable, and cannot be assigned to.
-`Variables` in TensorFlow are mutable containers of state that support
-assignments. Keep in mind that gradients in TensorFlow do not flow backwards
-through `Variable` assignments.
+`Tensors` trong TensorFlow là immutable và không thể được gán giá trị.
+`Variables` trong TensorFlow là các container trạng thái mutable, hỗ trợ phép gán.
+Hãy nhớ rằng gradient trong TensorFlow không truyền ngược
+qua các phép gán `Variable`.
 
-Beyond assigning a value to the entire `Variable`, we can write elements of a
-`Variable` by specifying indices.
+Ngoài việc gán một giá trị cho toàn bộ `Variable`, chúng ta có thể ghi các phần tử của một
+`Variable` bằng cách chỉ định các index.
 :end_tab:
 
 ```{.python .input}
@@ -414,15 +413,15 @@ X_new_1 = X.at[1, 2].set(17)
 X_new_1
 ```
 
-If we want [**to assign multiple elements the same value,
-we apply the indexing on the left-hand side 
-of the assignment operation.**]
-For instance, `[:2, :]`  accesses 
-the first and second rows,
-where `:` takes all the elements along axis 1 (column).
-While we discussed indexing for matrices,
-this also works for vectors
-and for tensors of more than two dimensions.
+Nếu muốn [**gán cùng một giá trị cho nhiều phần tử,
+chúng ta áp dụng indexing ở vế trái 
+của phép gán.**]
+Ví dụ, `[:2, :]` truy cập 
+hàng thứ nhất và thứ hai,
+trong khi `:` lấy tất cả các phần tử dọc theo trục 1 (cột).
+Mặc dù chúng ta đã thảo luận về indexing cho matrix,
+cách này cũng hoạt động với vector
+và tensor có nhiều hơn hai chiều.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -443,30 +442,27 @@ X_new_2 = X_new_1.at[:2, :].set(12)
 X_new_2
 ```
 
-## Operations
+## Các phép toán
 
-Now that we know how to construct tensors
-and how to read from and write to their elements,
-we can begin to manipulate them
-with various mathematical operations.
-Among the most useful of these 
-are the *elementwise* operations.
-These apply a standard scalar operation
-to each element of a tensor.
-For functions that take two tensors as inputs,
-elementwise operations apply some standard binary operator
-on each pair of corresponding elements.
-We can create an elementwise function 
-from any function that maps 
-from a scalar to a scalar.
+Bây giờ, khi đã biết cách tạo tensor
+cũng như cách đọc và ghi các phần tử của chúng,
+chúng ta có thể bắt đầu thao tác với chúng
+bằng nhiều phép toán toán học khác nhau.
+Một trong những phép toán hữu ích nhất 
+là các phép toán *elementwise*.
+Các phép toán này áp dụng một phép toán vô hướng tiêu chuẩn
+cho từng phần tử của tensor.
+Đối với các hàm nhận hai tensor làm đầu vào,
+các phép toán elementwise áp dụng một toán tử nhị phân tiêu chuẩn
+lên từng cặp phần tử tương ứng.
+Chúng ta có thể tạo một hàm elementwise 
+từ bất kỳ hàm nào ánh xạ 
+từ một vô hướng sang một vô hướng.
 
-In mathematical notation, we denote such
-*unary* scalar operators (taking one input)
-by the signature 
+Trong ký hiệu toán học, chúng ta biểu diễn các toán tử vô hướng *một ngôi* (nhận một đầu vào) như sau:
 $f: \mathbb{R} \rightarrow \mathbb{R}$.
-This just means that the function maps
-from any real number onto some other real number.
-Most standard operators, including unary ones like $e^x$, can be applied elementwise.
+Điều này đơn giản có nghĩa là hàm ánh xạ từ một số thực bất kỳ sang một số thực khác.
+Hầu hết các toán tử tiêu chuẩn, bao gồm cả các toán tử một ngôi như $e^x$, đều có thể được áp dụng theo từng phần tử.
 
 ```{.python .input}
 %%tab mxnet
@@ -488,28 +484,20 @@ tf.exp(x)
 jnp.exp(x)
 ```
 
-Likewise, we denote *binary* scalar operators,
-which map pairs of real numbers
-to a (single) real number
-via the signature 
+Tương tự, chúng ta biểu diễn các toán tử vô hướng *hai ngôi*, ánh xạ các cặp số thực thành một số thực (duy nhất) thông qua chữ ký
 $f: \mathbb{R}, \mathbb{R} \rightarrow \mathbb{R}$.
-Given any two vectors $\mathbf{u}$ 
-and $\mathbf{v}$ *of the same shape*,
-and a binary operator $f$, we can produce a vector
+Cho hai vector $\mathbf{u}$ và $\mathbf{v}$ *có cùng shape*, cùng một toán tử hai ngôi $f$, chúng ta có thể tạo ra một vector
 $\mathbf{c} = F(\mathbf{u},\mathbf{v})$
-by setting $c_i \gets f(u_i, v_i)$ for all $i$,
-where $c_i, u_i$, and $v_i$ are the $i^\textrm{th}$ elements
-of vectors $\mathbf{c}, \mathbf{u}$, and $\mathbf{v}$.
-Here, we produced the vector-valued
+bằng cách đặt $c_i \gets f(u_i, v_i)$ với mọi $i$,
+trong đó $c_i, u_i$ và $v_i$ lần lượt là các phần tử thứ $i^\textrm{th}$ của các vector $\mathbf{c}, \mathbf{u}$ và $\mathbf{v}$.
+Ở đây, chúng ta đã tạo ra hàm nhận giá trị vector
 $F: \mathbb{R}^d, \mathbb{R}^d \rightarrow \mathbb{R}^d$
-by *lifting* the scalar function
-to an elementwise vector operation.
-The common standard arithmetic operators
-for addition (`+`), subtraction (`-`), 
-multiplication (`*`), division (`/`), 
-and exponentiation (`**`)
-have all been *lifted* to elementwise operations
-for identically-shaped tensors of arbitrary shape.
+bằng cách *nâng* hàm vô hướng thành một phép toán vector theo từng phần tử.
+Các toán tử số học tiêu chuẩn phổ biến cho phép cộng (`+`), phép trừ (`-`),
+phép nhân (`*`), phép chia (`/`)
+và phép lũy thừa (`**`)
+đều đã được *nâng* thành các phép toán theo từng phần tử
+cho các tensor có cùng shape và shape bất kỳ.
 
 ```{.python .input}
 %%tab mxnet
@@ -539,23 +527,23 @@ y = jnp.array([2, 2, 2, 2])
 x + y, x - y, x * y, x / y, x ** y
 ```
 
-In addition to elementwise computations,
-we can also perform linear algebraic operations,
-such as dot products and matrix multiplications.
-We will elaborate on these
-in :numref:`sec_linear-algebra`.
+Ngoài các phép tính theo từng phần tử,
+chúng ta cũng có thể thực hiện các phép toán đại số tuyến tính,
+chẳng hạn như tích vô hướng và phép nhân ma trận.
+Chúng ta sẽ trình bày chi tiết hơn về các phép toán này
+trong :numref:`sec_linear-algebra`.
 
-We can also [***concatenate* multiple tensors,**]
-stacking them end-to-end to form a larger one.
-We just need to provide a list of tensors
-and tell the system along which axis to concatenate.
-The example below shows what happens when we concatenate
-two matrices along rows (axis 0)
-instead of columns (axis 1).
-We can see that the first output's axis-0 length ($6$)
-is the sum of the two input tensors' axis-0 lengths ($3 + 3$);
-while the second output's axis-1 length ($8$)
-is the sum of the two input tensors' axis-1 lengths ($4 + 4$).
+Chúng ta cũng có thể [***nối* nhiều tensor,**]
+xếp chúng liên tiếp để tạo thành một tensor lớn hơn.
+Chúng ta chỉ cần cung cấp một danh sách các tensor
+và cho hệ thống biết cần nối theo axis nào.
+Ví dụ dưới đây cho thấy điều gì xảy ra khi chúng ta nối
+hai ma trận theo các hàng (axis 0)
+thay vì theo các cột (axis 1).
+Có thể thấy độ dài axis-0 của đầu ra thứ nhất ($6$)
+là tổng độ dài axis-0 của hai tensor đầu vào ($3 + 3$);
+trong khi độ dài axis-1 của đầu ra thứ hai ($8$)
+là tổng độ dài axis-1 của hai tensor đầu vào ($4 + 4$).
 
 ```{.python .input}
 %%tab mxnet
@@ -585,19 +573,19 @@ Y = jnp.array([[2.0, 1, 4, 3], [1, 2, 3, 4], [4, 3, 2, 1]])
 jnp.concatenate((X, Y), axis=0), jnp.concatenate((X, Y), axis=1)
 ```
 
-Sometimes, we want to 
-[**construct a binary tensor via *logical statements*.**]
-Take `X == Y` as an example.
-For each position `i, j`, if `X[i, j]` and `Y[i, j]` are equal, 
-then the corresponding entry in the result takes value `1`,
-otherwise it takes value `0`.
+Đôi khi, chúng ta muốn
+[**xây dựng một tensor nhị phân thông qua *các mệnh đề logic*.**]
+Lấy `X == Y` làm ví dụ.
+Tại mỗi vị trí `i, j`, nếu `X[i, j]` và `Y[i, j]` bằng nhau,
+thì phần tử tương ứng trong kết quả nhận giá trị `1`,
+ngược lại, nó nhận giá trị `0`.
 
 ```{.python .input}
 %%tab all
 X == Y
 ```
 
-[**Summing all the elements in the tensor**] yields a tensor with only one element.
+[**Tính tổng tất cả các phần tử trong tensor**] sẽ tạo ra một tensor chỉ có một phần tử.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -612,21 +600,21 @@ tf.reduce_sum(X)
 ## Broadcasting
 :label:`subsec_broadcasting`
 
-By now, you know how to perform 
-elementwise binary operations
-on two tensors of the same shape. 
-Under certain conditions,
-even when shapes differ, 
-we can still [**perform elementwise binary operations
-by invoking the *broadcasting mechanism*.**]
-Broadcasting works according to 
-the following two-step procedure:
-(i) expand one or both arrays
-by copying elements along axes with length 1
-so that after this transformation,
-the two tensors have the same shape;
-(ii) perform an elementwise operation
-on the resulting arrays.
+Đến đây, bạn đã biết cách thực hiện
+các phép toán hai ngôi theo từng phần tử
+trên hai tensor có cùng shape.
+Trong một số điều kiện nhất định,
+ngay cả khi shape khác nhau,
+chúng ta vẫn có thể [**thực hiện các phép toán hai ngôi theo từng phần tử
+bằng cách gọi cơ chế *broadcasting*.**]
+Broadcasting hoạt động theo
+quy trình gồm hai bước sau:
+(i) mở rộng một hoặc cả hai mảng
+bằng cách sao chép các phần tử dọc theo các axis có độ dài 1
+để sau phép biến đổi này,
+hai tensor có cùng shape;
+(ii) thực hiện phép toán theo từng phần tử
+trên các mảng thu được.
 
 ```{.python .input}
 %%tab mxnet
@@ -656,34 +644,33 @@ b = jnp.arange(2).reshape((1, 2))
 a, b
 ```
 
-Since `a` and `b` are $3\times1$ 
-and $1\times2$ matrices, respectively,
-their shapes do not match up.
-Broadcasting produces a larger $3\times2$ matrix 
-by replicating matrix `a` along the columns
-and matrix `b` along the rows
-before adding them elementwise.
+Vì `a` và `b` lần lượt là các ma trận $3\times1$
+và $1\times2$,
+shape của chúng không khớp nhau.
+Broadcasting tạo ra một ma trận lớn hơn có shape $3\times2$
+bằng cách lặp lại ma trận `a` dọc theo các cột
+và ma trận `b` dọc theo các hàng
+trước khi cộng chúng theo từng phần tử.
 
 ```{.python .input}
 %%tab all
 a + b
 ```
 
-## Saving Memory
+## Tiết kiệm bộ nhớ
 
-[**Running operations can cause new memory to be
-allocated to host results.**]
-For example, if we write `Y = X + Y`,
-we dereference the tensor that `Y` used to point to
-and instead point `Y` at the newly allocated memory.
-We can demonstrate this issue with Python's `id()` function,
-which gives us the exact address 
-of the referenced object in memory.
-Note that after we run `Y = Y + X`,
-`id(Y)` points to a different location.
-That is because Python first evaluates `Y + X`,
-allocating new memory for the result 
-and then points `Y` to this new location in memory.
+[**Việc thực hiện các phép toán có thể khiến bộ nhớ mới được cấp phát cho các kết quả trên host.**]
+Ví dụ, nếu chúng ta viết `Y = X + Y`,
+chúng ta bỏ tham chiếu tensor mà `Y` từng trỏ tới
+và thay vào đó trỏ `Y` tới vùng bộ nhớ vừa được cấp phát.
+Chúng ta có thể minh họa vấn đề này bằng hàm `id()` của Python,
+hàm này cung cấp cho chúng ta địa chỉ chính xác
+của đối tượng được tham chiếu trong bộ nhớ.
+Lưu ý rằng sau khi chạy `Y = Y + X`,
+`id(Y)` trỏ tới một vị trí khác.
+Đó là vì trước tiên Python đánh giá `Y + X`,
+cấp phát bộ nhớ mới cho kết quả
+rồi trỏ `Y` tới vị trí mới này trong bộ nhớ.
 
 ```{.python .input}
 %%tab all
@@ -692,40 +679,40 @@ Y = Y + X
 id(Y) == before
 ```
 
-This might be undesirable for two reasons.
-First, we do not want to run around
-allocating memory unnecessarily all the time.
-In machine learning, we often have
-hundreds of megabytes of parameters
-and update all of them multiple times per second.
-Whenever possible, we want to perform these updates *in place*.
-Second, we might point at the 
-same parameters from multiple variables.
-If we do not update in place, 
-we must be careful to update all of these references,
-lest we spring a memory leak 
-or inadvertently refer to stale parameters.
+Điều này có thể không mong muốn vì hai lý do.
+Thứ nhất, chúng ta không muốn liên tục
+cấp phát bộ nhớ một cách không cần thiết.
+Trong machine learning, chúng ta thường có
+hàng trăm megabyte tham số
+và cập nhật tất cả chúng nhiều lần mỗi giây.
+Bất cứ khi nào có thể, chúng ta muốn thực hiện các cập nhật này *tại chỗ*.
+Thứ hai, nhiều biến có thể cùng trỏ tới
+các tham số giống nhau.
+Nếu không cập nhật tại chỗ,
+chúng ta phải cẩn thận cập nhật tất cả các tham chiếu này,
+nếu không có thể gây ra memory leak
+hoặc vô tình tham chiếu tới các tham số đã lỗi thời.
 
 :begin_tab:`mxnet, pytorch`
-Fortunately, (**performing in-place operations**) is easy.
-We can assign the result of an operation
-to a previously allocated array `Y`
-by using slice notation: `Y[:] = <expression>`.
-To illustrate this concept, 
-we overwrite the values of tensor `Z`,
-after initializing it, using `zeros_like`,
-to have the same shape as `Y`.
+May mắn là (**thực hiện các phép toán tại chỗ**) rất dễ.
+Chúng ta có thể gán kết quả của một phép toán
+vào một mảng đã được cấp phát trước `Y`
+bằng cách sử dụng ký hiệu slice: `Y[:] = <expression>`.
+Để minh họa khái niệm này,
+chúng ta ghi đè các giá trị của tensor `Z`,
+sau khi khởi tạo nó bằng `zeros_like`,
+để có cùng shape với `Y`.
 :end_tab:
 
 :begin_tab:`tensorflow`
-`Variables` are mutable containers of state in TensorFlow. They provide
-a way to store your model parameters.
-We can assign the result of an operation
-to a `Variable` with `assign`.
-To illustrate this concept, 
-we overwrite the values of `Variable` `Z`
-after initializing it, using `zeros_like`,
-to have the same shape as `Y`.
+`Variables` là các vùng chứa trạng thái có thể thay đổi trong TensorFlow. Chúng cung cấp
+một cách để lưu trữ các tham số của model.
+Chúng ta có thể gán kết quả của một phép toán
+vào một `Variable` bằng `assign`.
+Để minh họa khái niệm này,
+chúng ta ghi đè các giá trị của `Variable` `Z`
+sau khi khởi tạo nó bằng `zeros_like`,
+để có cùng shape với `Y`.
 :end_tab:
 
 ```{.python .input}
@@ -758,26 +745,26 @@ print('id(Z):', id(Z))
 ```
 
 :begin_tab:`mxnet, pytorch`
-[**If the value of `X` is not reused in subsequent computations,
-we can also use `X[:] = X + Y` or `X += Y`
-to reduce the memory overhead of the operation.**]
+[**Nếu giá trị của `X` không được sử dụng lại trong các phép tính tiếp theo,
+chúng ta cũng có thể sử dụng `X[:] = X + Y` hoặc `X += Y`
+để giảm chi phí bộ nhớ của phép toán.**]
 :end_tab:
 
 :begin_tab:`tensorflow`
-Even once you store state persistently in a `Variable`, 
-you may want to reduce your memory usage further by avoiding excess
-allocations for tensors that are not your model parameters.
-Because TensorFlow `Tensors` are immutable 
-and gradients do not flow through `Variable` assignments, 
-TensorFlow does not provide an explicit way to run
-an individual operation in-place.
+Ngay cả khi lưu trữ trạng thái lâu dài trong một `Variable`,
+bạn vẫn có thể muốn giảm thêm mức sử dụng bộ nhớ bằng cách tránh
+cấp phát dư thừa cho các tensor không phải là tham số của model.
+Vì `Tensors` của TensorFlow là bất biến
+và gradient không lan truyền qua các phép gán `Variable`,
+TensorFlow không cung cấp cách rõ ràng để thực hiện
+một phép toán riêng lẻ tại chỗ.
 
-However, TensorFlow provides the `tf.function` decorator 
-to wrap computation inside of a TensorFlow graph 
-that gets compiled and optimized before running.
-This allows TensorFlow to prune unused values, 
-and to reuse prior allocations that are no longer needed. 
-This minimizes the memory overhead of TensorFlow computations.
+Tuy nhiên, TensorFlow cung cấp decorator `tf.function`
+để bọc phép tính bên trong một TensorFlow graph
+được biên dịch và tối ưu hóa trước khi chạy.
+Điều này cho phép TensorFlow loại bỏ các giá trị không được sử dụng
+và tái sử dụng các vùng bộ nhớ đã cấp phát trước nhưng không còn cần thiết.
+Nhờ đó, chi phí bộ nhớ của các phép tính TensorFlow được giảm thiểu.
 :end_tab:
 
 ```{.python .input}
@@ -800,25 +787,25 @@ def computation(X, Y):
 computation(X, Y)
 ```
 
-## Conversion to Other Python Objects
+## Chuyển đổi sang các đối tượng Python khác
 
 :begin_tab:`mxnet, tensorflow`
-[**Converting to a NumPy tensor (`ndarray`)**], or vice versa, is easy.
-The converted result does not share memory.
-This minor inconvenience is actually quite important:
-when you perform operations on the CPU or on GPUs,
-you do not want to halt computation, waiting to see
-whether the NumPy package of Python 
-might want to be doing something else
-with the same chunk of memory.
+[**Việc chuyển đổi sang một tensor NumPy (`ndarray`)**], hoặc ngược lại, rất dễ dàng.
+Kết quả sau chuyển đổi không dùng chung bộ nhớ.
+Sự bất tiện nhỏ này thực ra rất quan trọng:
+khi thực hiện các phép toán trên CPU hoặc GPU,
+bạn không muốn tạm dừng phép tính để chờ xem
+liệu package NumPy của Python
+có thể muốn làm việc gì khác
+với cùng một vùng bộ nhớ hay không.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**Converting to a NumPy tensor (`ndarray`)**], or vice versa, is easy.
-The torch tensor and NumPy array 
-will share their underlying memory, 
-and changing one through an in-place operation 
-will also change the other.
+[**Việc chuyển đổi sang một tensor NumPy (`ndarray`)**], hoặc ngược lại, rất dễ dàng.
+Tensor của torch và mảng NumPy
+sẽ dùng chung vùng bộ nhớ bên dưới,
+và việc thay đổi một đối tượng thông qua phép toán tại chỗ
+cũng sẽ thay đổi đối tượng còn lại.
 :end_tab:
 
 ```{.python .input}
@@ -849,8 +836,8 @@ B = jax.device_put(A)
 type(A), type(B)
 ```
 
-To (**convert a size-1 tensor to a Python scalar**),
-we can invoke the `item` function or Python's built-in functions.
+Để (**chuyển đổi một tensor có kích thước 1 thành một scalar Python**),
+chúng ta có thể gọi hàm `item` hoặc các hàm dựng sẵn của Python.
 
 ```{.python .input}
 %%tab mxnet
@@ -876,29 +863,29 @@ a = jnp.array([3.5])
 a, a.item(), float(a), int(a)
 ```
 
-## Summary
+## Tóm tắt
 
-The tensor class is the main interface for storing and manipulating data in deep learning libraries.
-Tensors provide a variety of functionalities including construction routines; indexing and slicing; basic mathematics operations; broadcasting; memory-efficient assignment; and conversion to and from other Python objects.
+Lớp tensor là giao diện chính để lưu trữ và thao tác với dữ liệu trong các thư viện deep learning.
+Tensor cung cấp nhiều chức năng, bao gồm các quy trình khởi tạo; lập chỉ mục và slicing; các phép toán cơ bản; broadcasting; phép gán tiết kiệm bộ nhớ; và chuyển đổi qua lại với các đối tượng Python khác.
 
 
-## Exercises
+## Bài tập
 
-1. Run the code in this section. Change the conditional statement `X == Y` to `X < Y` or `X > Y`, and then see what kind of tensor you can get.
-1. Replace the two tensors that operate by element in the broadcasting mechanism with other shapes, e.g., 3-dimensional tensors. Is the result the same as expected?
+1. Chạy đoạn code trong phần này. Thay đổi mệnh đề điều kiện `X == Y` thành `X < Y` hoặc `X > Y`, rồi xem bạn có thể nhận được loại tensor nào.
+1. Thay thế hai tensor hoạt động theo từng phần tử trong cơ chế broadcasting bằng các shape khác, chẳng hạn như tensor 3 chiều. Kết quả có giống như dự kiến không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/26)
+[Thảo luận](https://discuss.d2l.ai/t/26)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/27)
+[Thảo luận](https://discuss.d2l.ai/t/27)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/187)
+[Thảo luận](https://discuss.d2l.ai/t/187)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17966)
+[Thảo luận](https://discuss.d2l.ai/t/17966)
 :end_tab:

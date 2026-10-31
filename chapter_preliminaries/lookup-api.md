@@ -3,30 +3,30 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Documentation
+# Tài liệu
 :begin_tab:`mxnet`
-While we cannot possibly introduce every single MXNet function and class 
-(and the information might become outdated quickly), 
-the [API documentation](https://mxnet.apache.org/versions/1.8.0/api) 
-and additional [tutorials](https://mxnet.apache.org/versions/1.8.0/api/python/docs/tutorials/) and examples 
-provide such documentation. 
-This section provides some guidance for how to explore the MXNet API.
+Mặc dù không thể giới thiệu từng hàm và lớp MXNet 
+(và thông tin có thể nhanh chóng trở nên lỗi thời), 
+[tài liệu API](https://mxnet.apache.org/versions/1.8.0/api) 
+cùng với các [bài hướng dẫn](https://mxnet.apache.org/versions/1.8.0/api/python/docs/tutorials/) và ví dụ bổ sung 
+cung cấp những tài liệu như vậy. 
+Phần này đưa ra một số hướng dẫn về cách khám phá API MXNet.
 :end_tab:
 
 :begin_tab:`pytorch`
-While we cannot possibly introduce every single PyTorch function and class 
-(and the information might become outdated quickly), 
-the [API documentation](https://pytorch.org/docs/stable/index.html) and additional [tutorials](https://pytorch.org/tutorials/beginner/basics/intro.html) and examples 
-provide such documentation.
-This section provides some guidance for how to explore the PyTorch API.
+Mặc dù không thể giới thiệu từng hàm và lớp PyTorch 
+(và thông tin có thể nhanh chóng trở nên lỗi thời), 
+[tài liệu API](https://pytorch.org/docs/stable/index.html) cùng với các [bài hướng dẫn](https://pytorch.org/tutorials/beginner/basics/intro.html) và ví dụ bổ sung 
+cung cấp những tài liệu như vậy.
+Phần này đưa ra một số hướng dẫn về cách khám phá API PyTorch.
 :end_tab:
 
 :begin_tab:`tensorflow`
-While we cannot possibly introduce every single TensorFlow function and class 
-(and the information might become outdated quickly), 
-the [API documentation](https://www.tensorflow.org/api_docs) and additional [tutorials](https://www.tensorflow.org/tutorials) and examples 
-provide such documentation. 
-This section provides some guidance for how to explore the TensorFlow API.
+Mặc dù không thể giới thiệu từng hàm và lớp TensorFlow 
+(và thông tin có thể nhanh chóng trở nên lỗi thời), 
+[tài liệu API](https://www.tensorflow.org/api_docs) cùng với các [bài hướng dẫn](https://www.tensorflow.org/tutorials) và ví dụ bổ sung 
+cung cấp những tài liệu như vậy. 
+Phần này đưa ra một số hướng dẫn về cách khám phá API TensorFlow.
 :end_tab:
 
 ```{.python .input}
@@ -49,11 +49,11 @@ import tensorflow as tf
 import jax
 ```
 
-## Functions and Classes in a Module
+## Các hàm và lớp trong một module
 
-To know which functions and classes can be called in a module,
-we invoke the `dir` function. For instance, we can
-(**query all properties in the module for generating random numbers**):
+Để biết những hàm và lớp nào có thể được gọi trong một module,
+chúng ta gọi hàm `dir`. Ví dụ, chúng ta có thể
+(**truy vấn tất cả thuộc tính trong module để tạo số ngẫu nhiên**):
 
 ```{.python .input  n=1}
 %%tab mxnet
@@ -75,19 +75,19 @@ print(dir(tf.random))
 print(dir(jax.random))
 ```
 
-Generally, we can ignore functions that start and end with `__` (special objects in Python) 
-or functions that start with a single `_`(usually internal functions). 
-Based on the remaining function or attribute names, 
-we might hazard a guess that this module offers 
-various methods for generating random numbers, 
-including sampling from the uniform distribution (`uniform`), 
-normal distribution (`normal`), and multinomial distribution (`multinomial`).
+Nhìn chung, chúng ta có thể bỏ qua các hàm bắt đầu và kết thúc bằng `__` (các đối tượng đặc biệt trong Python) 
+hoặc các hàm bắt đầu bằng một `_` duy nhất (thường là các hàm nội bộ). 
+Dựa trên tên của các hàm hoặc thuộc tính còn lại, 
+chúng ta có thể đoán rằng module này cung cấp 
+nhiều phương thức để tạo số ngẫu nhiên, 
+bao gồm lấy mẫu từ phân phối đều (`uniform`),
+phân phối chuẩn (`normal`) và phân phối đa thức (`multinomial`).
 
-## Specific Functions and Classes
+## Các hàm và lớp cụ thể
 
-For specific instructions on how to use a given function or class,
-we can invoke the  `help` function. As an example, let's
-[**explore the usage instructions for tensors' `ones` function**].
+Để biết hướng dẫn cụ thể về cách sử dụng một hàm hoặc lớp,
+chúng ta có thể gọi hàm `help`. Ví dụ, hãy cùng
+[**khám phá hướng dẫn sử dụng hàm `ones` của tensor**].
 
 ```{.python .input}
 %%tab mxnet
@@ -109,11 +109,11 @@ help(tf.ones)
 help(jax.numpy.ones)
 ```
 
-From the documentation, we can see that the `ones` function 
-creates a new tensor with the specified shape 
-and sets all the elements to the value of 1. 
-Whenever possible, you should (**run a quick test**) 
-to confirm your interpretation:
+Từ tài liệu, chúng ta có thể thấy rằng hàm `ones` 
+tạo một tensor mới với hình dạng được chỉ định 
+và đặt tất cả các phần tử thành giá trị 1. 
+Bất cứ khi nào có thể, bạn nên (**chạy một kiểm thử nhanh**) 
+để xác nhận cách hiểu của mình:
 
 ```{.python .input}
 %%tab mxnet
@@ -135,34 +135,34 @@ tf.ones(4)
 jax.numpy.ones(4)
 ```
 
-In the Jupyter notebook, we can use `?` to display the document in another
-window. For example, `list?` will create content
-that is almost identical to `help(list)`,
-displaying it in a new browser window.
-In addition, if we use two question marks, such as `list??`,
-the Python code implementing the function will also be displayed.
+Trong Jupyter notebook, chúng ta có thể sử dụng `?` để hiển thị tài liệu trong một
+cửa sổ khác. Ví dụ, `list?` sẽ tạo nội dung
+gần như giống hệt với `help(list)`,
+và hiển thị nội dung đó trong một cửa sổ trình duyệt mới.
+Ngoài ra, nếu sử dụng hai dấu chấm hỏi, chẳng hạn như `list??`,
+mã Python triển khai hàm cũng sẽ được hiển thị.
 
-The official documentation provides plenty of descriptions and examples that are beyond this book. 
-We emphasize important use cases 
-that will get you started quickly with practical problems, 
-rather than completeness of coverage. 
-We also encourage you to study the source code of the libraries 
-to see examples of high-quality implementations of production code. 
-By doing this you will become a better engineer 
-in addition to becoming a better scientist.
+Tài liệu chính thức cung cấp rất nhiều mô tả và ví dụ vượt quá phạm vi của cuốn sách này. 
+Chúng tôi nhấn mạnh những trường hợp sử dụng quan trọng 
+giúp bạn nhanh chóng bắt đầu giải quyết các vấn đề thực tế, 
+thay vì cố gắng bao quát đầy đủ mọi nội dung. 
+Chúng tôi cũng khuyến khích bạn nghiên cứu mã nguồn của các thư viện 
+để xem những ví dụ về các triển khai mã production chất lượng cao. 
+Qua đó, bạn sẽ trở thành một kỹ sư giỏi hơn
+đồng thời cũng trở thành một nhà khoa học giỏi hơn.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/38)
+[Thảo luận](https://discuss.d2l.ai/t/38)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/39)
+[Thảo luận](https://discuss.d2l.ai/t/39)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/199)
+[Thảo luận](https://discuss.d2l.ai/t/199)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17972)
+[Thảo luận](https://discuss.d2l.ai/t/17972)
 :end_tab:

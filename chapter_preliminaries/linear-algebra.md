@@ -3,18 +3,18 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Linear Algebra
+# Đại số tuyến tính
 :label:`sec_linear-algebra`
 
-By now, we can load datasets into tensors
-and manipulate these tensors
-with basic mathematical operations.
-To start building sophisticated models,
-we will also need a few tools from linear algebra.
-This section offers a gentle introduction
-to the most essential concepts,
-starting from scalar arithmetic
-and ramping up to matrix multiplication.
+Đến đây, chúng ta đã có thể tải các bộ dữ liệu vào tensor
+và thao tác với các tensor này
+bằng những phép toán cơ bản.
+Để bắt đầu xây dựng các mô hình phức tạp,
+chúng ta cũng sẽ cần một vài công cụ từ đại số tuyến tính.
+Phần này giới thiệu nhẹ nhàng
+những khái niệm thiết yếu nhất,
+bắt đầu từ số học vô hướng
+và mở rộng dần đến phép nhân ma trận.
 
 ```{.python .input}
 %%tab mxnet
@@ -37,43 +37,43 @@ import tensorflow as tf
 from jax import numpy as jnp
 ```
 
-## Scalars
+## Vô hướng
 
 
-Most everyday mathematics
-consists of manipulating
-numbers one at a time.
-Formally, we call these values *scalars*.
-For example, the temperature in Palo Alto
-is a balmy $72$ degrees Fahrenheit.
-If you wanted to convert the temperature to Celsius
-you would evaluate the expression
-$c = \frac{5}{9}(f - 32)$, setting $f$ to $72$.
-In this equation, the values
-$5$, $9$, and $32$ are constant scalars.
-The variables $c$ and $f$
-in general represent unknown scalars.
+Phần lớn toán học hằng ngày
+bao gồm việc thao tác với
+từng số một.
+Về mặt hình thức, chúng ta gọi những giá trị này là *vô hướng*.
+Ví dụ, nhiệt độ ở Palo Alto
+là mức ấm áp $72$ độ Fahrenheit.
+Nếu muốn chuyển đổi nhiệt độ sang độ Celsius,
+bạn sẽ tính biểu thức
+$c = \frac{5}{9}(f - 32)$, với $f$ được đặt bằng $72$.
+Trong phương trình này, các giá trị
+$5$, $9$, và $32$ là những vô hướng hằng.
+Các biến $c$ và $f$
+nói chung biểu diễn những vô hướng chưa biết.
 
-We denote scalars
-by ordinary lower-cased letters
-(e.g., $x$, $y$, and $z$)
-and the space of all (continuous)
-*real-valued* scalars by $\mathbb{R}$.
-For expedience, we will skip past
-rigorous definitions of *spaces*:
-just remember that the expression $x \in \mathbb{R}$
-is a formal way to say that $x$ is a real-valued scalar.
-The symbol $\in$ (pronounced "in")
-denotes membership in a set.
-For example, $x, y \in \{0, 1\}$
-indicates that $x$ and $y$ are variables
-that can only take values $0$ or $1$.
+Chúng ta ký hiệu các vô hướng
+bằng những chữ cái thường thông thường
+(ví dụ, $x$, $y$, và $z$)
+và không gian của tất cả các vô hướng *có giá trị thực*
+(liên tục) bằng $\mathbb{R}$.
+Để thuận tiện, chúng ta sẽ bỏ qua
+các định nghĩa chặt chẽ về *không gian*:
+chỉ cần nhớ rằng biểu thức $x \in \mathbb{R}$
+là cách nói hình thức rằng $x$ là một vô hướng có giá trị thực.
+Ký hiệu $\in$ (đọc là "thuộc")
+biểu thị sự thuộc về một tập hợp.
+Ví dụ, $x, y \in \{0, 1\}$
+cho biết rằng $x$ và $y$ là các biến
+chỉ có thể nhận giá trị $0$ hoặc $1$.
 
-(**Scalars are implemented as tensors
-that contain only one element.**)
-Below, we assign two scalars
-and perform the familiar addition, multiplication,
-division, and exponentiation operations.
+(**Vô hướng được triển khai dưới dạng các tensor
+chỉ chứa một phần tử.**)
+Bên dưới, chúng ta gán hai vô hướng
+và thực hiện các phép cộng, nhân,
+chia, và lũy thừa quen thuộc.
 
 ```{.python .input}
 %%tab mxnet
@@ -107,31 +107,32 @@ y = jnp.array(2.0)
 x + y, x * y, x / y, x**y
 ```
 
-## Vectors
+## Vector
 
-For current purposes, [**you can think of a vector as a fixed-length array of scalars.**]
-As with their code counterparts,
-we call these scalars the *elements* of the vector
-(synonyms include *entries* and *components*).
-When vectors represent examples from real-world datasets,
-their values hold some real-world significance.
-For example, if we were training a model to predict
-the risk of a loan defaulting,
-we might associate each applicant with a vector
-whose components correspond to quantities
-like their income, length of employment,
-or number of previous defaults.
-If we were studying the risk of heart attack,
-each vector might represent a patient
-and its components might correspond to
-their most recent vital signs, cholesterol levels,
-minutes of exercise per day, etc.
-We denote vectors by bold lowercase letters,
-(e.g., $\mathbf{x}$, $\mathbf{y}$, and $\mathbf{z}$).
+Trong phạm vi hiện tại, [**bạn có thể hiểu vector là một mảng vô hướng có độ dài cố định.**]
+Giống như trong code,
+chúng ta gọi các vô hướng này là *phần tử* của vector
+(các từ đồng nghĩa bao gồm *mục nhập* và *thành phần*).
+Khi vector biểu diễn các ví dụ từ những bộ dữ liệu trong thế giới thực,
+các giá trị của chúng mang ý nghĩa thực tế.
+Ví dụ, nếu đang huấn luyện một mô hình để dự đoán
+rủi ro một khoản vay bị vỡ nợ,
+chúng ta có thể gắn mỗi người nộp đơn với một vector
+có các thành phần tương ứng với những đại lượng
+như thu nhập, thời gian làm việc,
+hoặc số lần vỡ nợ trước đây của họ.
+Nếu đang nghiên cứu nguy cơ đau tim,
+mỗi vector có thể biểu diễn một bệnh nhân
+và các thành phần của vector có thể tương ứng với
+các dấu hiệu sinh tồn gần đây nhất,
+mức cholesterol,
+số phút tập thể dục mỗi ngày, v.v.
+Chúng ta ký hiệu các vector bằng các chữ cái thường in đậm,
+(ví dụ, $\mathbf{x}$, $\mathbf{y}$, và $\mathbf{z}$).
 
-Vectors are implemented as $1^{\textrm{st}}$-order tensors.
-In general, such tensors can have arbitrary lengths,
-subject to memory limitations. Caution: in Python, as in most programming languages, vector indices start at $0$, also known as *zero-based indexing*, whereas in linear algebra subscripts begin at $1$ (one-based indexing).
+Vector được triển khai dưới dạng các tensor có cấp $1^{\textrm{st}}$.
+Nhìn chung, các tensor như vậy có thể có độ dài tùy ý,
+phụ thuộc vào giới hạn bộ nhớ. Cẩn thận: trong Python, cũng như trong hầu hết các ngôn ngữ lập trình, chỉ số vector bắt đầu từ $0$, còn được gọi là *đánh chỉ số từ 0*, trong khi các chỉ số dưới trong đại số tuyến tính bắt đầu từ $1` (đánh chỉ số từ 1).
 
 ```{.python .input}
 %%tab mxnet
@@ -157,82 +158,81 @@ x = jnp.arange(3)
 x
 ```
 
-We can refer to an element of a vector by using a subscript.
-For example, $x_2$ denotes the second element of $\mathbf{x}$.
-Since $x_2$ is a scalar, we do not bold it.
-By default, we visualize vectors
-by stacking their elements vertically:
+Chúng ta có thể tham chiếu đến một phần tử của vector bằng cách sử dụng chỉ số dưới.
+Ví dụ, $x_2$ biểu thị phần tử thứ hai của $\mathbf{x}$.
+Vì $x_2$ là một vô hướng nên chúng ta không in đậm nó.
+Theo mặc định, chúng ta trực quan hóa vector
+bằng cách xếp các phần tử theo chiều dọc:
 
 $$\mathbf{x} =\begin{bmatrix}x_{1}  \\ \vdots  \\x_{n}\end{bmatrix}.$$
 :eqlabel:`eq_vec_def`
 
-Here $x_1, \ldots, x_n$ are elements of the vector.
-Later on, we will distinguish between such *column vectors*
-and *row vectors* whose elements are stacked horizontally.
-Recall that [**we access a tensor's elements via indexing.**]
+Ở đây, $x_1, \ldots, x_n$ là các phần tử của vector.
+Sau này, chúng ta sẽ phân biệt giữa các *vector cột*
+như vậy và *vector hàng*, trong đó các phần tử được xếp theo chiều ngang.
+Hãy nhớ rằng [**chúng ta truy cập các phần tử của tensor thông qua việc đánh chỉ số.**]
 
 ```{.python .input}
 %%tab all
 x[2]
 ```
 
-To indicate that a vector contains $n$ elements,
-we write $\mathbf{x} \in \mathbb{R}^n$.
-Formally, we call $n$ the *dimensionality* of the vector.
-[**In code, this corresponds to the tensor's length**],
-accessible via Python's built-in `len` function.
+Để biểu thị một vector chứa $n$ phần tử,
+chúng ta viết $\mathbf{x} \in \mathbb{R}^n$.
+Về mặt hình thức, chúng ta gọi $n$ là *số chiều* của vector.
+[**Trong code, điều này tương ứng với độ dài của tensor**],
+có thể truy cập thông qua hàm dựng sẵn `len` của Python.
 
 ```{.python .input}
 %%tab all
 len(x)
 ```
 
-We can also access the length via the `shape` attribute.
-The shape is a tuple that indicates a tensor's length along each axis.
-(**Tensors with just one axis have shapes with just one element.**)
+Chúng ta cũng có thể truy cập độ dài thông qua thuộc tính `shape`.
+Shape là một tuple cho biết độ dài của tensor dọc theo mỗi trục.
+(**Các tensor chỉ có một trục có shape chỉ gồm một phần tử.**)
 
 ```{.python .input}
 %%tab all
 x.shape
 ```
 
-Oftentimes, the word "dimension" gets overloaded
-to mean both the number of axes
-and the length along a particular axis.
-To avoid this confusion,
-we use *order* to refer to the number of axes
-and *dimensionality* exclusively to refer
-to the number of components.
+Thông thường, từ "chiều" bị dùng với nhiều nghĩa
+để chỉ cả số lượng trục
+và độ dài dọc theo một trục cụ thể.
+Để tránh nhầm lẫn này,
+chúng ta dùng *cấp* để chỉ số lượng trục
+và chỉ dùng *số chiều* để chỉ số lượng thành phần.
 
 
-## Matrices
+## Ma trận
 
-Just as scalars are $0^{\textrm{th}}$-order tensors
-and vectors are $1^{\textrm{st}}$-order tensors,
-matrices are $2^{\textrm{nd}}$-order tensors.
-We denote matrices by bold capital letters
-(e.g., $\mathbf{X}$, $\mathbf{Y}$, and $\mathbf{Z}$),
-and represent them in code by tensors with two axes.
-The expression $\mathbf{A} \in \mathbb{R}^{m \times n}$
-indicates that a matrix $\mathbf{A}$
-contains $m \times n$ real-valued scalars,
-arranged as $m$ rows and $n$ columns.
-When $m = n$, we say that a matrix is *square*.
-Visually, we can illustrate any matrix as a table.
-To refer to an individual element,
-we subscript both the row and column indices, e.g.,
-$a_{ij}$ is the value that belongs to $\mathbf{A}$'s
-$i^{\textrm{th}}$ row and $j^{\textrm{th}}$ column:
+Cũng như vô hướng là các tensor cấp $0^{\textrm{th}}$
+và vector là các tensor cấp $1^{\textrm{st}}$,
+ma trận là các tensor cấp $2^{\textrm{nd}}$.
+Chúng ta ký hiệu ma trận bằng các chữ cái viết hoa in đậm
+(ví dụ, $\mathbf{X}$, $\mathbf{Y}$, và $\mathbf{Z}$),
+và biểu diễn chúng trong code bằng các tensor có hai trục.
+Biểu thức $\mathbf{A} \in \mathbb{R}^{m \times n}$
+cho biết rằng ma trận $\mathbf{A}$
+chứa $m \times n$ vô hướng có giá trị thực,
+được sắp xếp thành $m$ hàng và $n$ cột.
+Khi $m = n$, chúng ta nói ma trận là *ma trận vuông*.
+Về mặt trực quan, chúng ta có thể minh họa mọi ma trận dưới dạng một bảng.
+Để tham chiếu đến một phần tử riêng lẻ,
+chúng ta đặt cả chỉ số hàng và cột ở dưới, ví dụ,
+$a_{ij}$ là giá trị thuộc về hàng
+$i^{\textrm{th}}$ và cột $j^{\textrm{th}}$ của $\mathbf{A}$:
 
 $$\mathbf{A}=\begin{bmatrix} a_{11} & a_{12} & \cdots & a_{1n} \\ a_{21} & a_{22} & \cdots & a_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ a_{m1} & a_{m2} & \cdots & a_{mn} \\ \end{bmatrix}.$$
 :eqlabel:`eq_matrix_def`
 
 
-In code, we represent a matrix $\mathbf{A} \in \mathbb{R}^{m \times n}$
-by a $2^{\textrm{nd}}$-order tensor with shape ($m$, $n$).
-[**We can convert any appropriately sized $m \times n$ tensor
-into an $m \times n$ matrix**]
-by passing the desired shape to `reshape`:
+Trong code, chúng ta biểu diễn ma trận $\mathbf{A} \in \mathbb{R}^{m \times n}$
+bằng một tensor cấp $2^{\textrm{nd}}$ có shape ($m$, $n$).
+[**Chúng ta có thể chuyển đổi mọi tensor $m \times n$ có kích thước phù hợp
+thành một ma trận $m \times n$**]
+bằng cách truyền shape mong muốn vào `reshape`:
 
 ```{.python .input}
 %%tab mxnet
@@ -258,14 +258,14 @@ A = jnp.arange(6).reshape(3, 2)
 A
 ```
 
-Sometimes we want to flip the axes.
-When we exchange a matrix's rows and columns,
-the result is called its *transpose*.
-Formally, we signify a matrix $\mathbf{A}$'s transpose
-by $\mathbf{A}^\top$ and if $\mathbf{B} = \mathbf{A}^\top$,
-then $b_{ij} = a_{ji}$ for all $i$ and $j$.
-Thus, the transpose of an $m \times n$ matrix
-is an $n \times m$ matrix:
+Đôi khi chúng ta muốn đảo các trục.
+Khi hoán đổi các hàng và cột của một ma trận,
+kết quả được gọi là *ma trận chuyển vị*.
+Về mặt hình thức, chúng ta biểu thị ma trận chuyển vị của $\mathbf{A}$
+bằng $\mathbf{A}^\top$ và nếu $\mathbf{B} = \mathbf{A}^\top$,
+thì $b_{ij} = a_{ji}$ với mọi $i$ và $j$.
+Do đó, chuyển vị của một ma trận $m \times n$
+là một ma trận $n \times m$:
 
 $$
 \mathbf{A}^\top =
@@ -277,7 +277,7 @@ $$
 \end{bmatrix}.
 $$
 
-In code, we can access any (**matrix's transpose**) as follows:
+Trong code, chúng ta có thể truy cập (**ma trận chuyển vị**) như sau:
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -289,10 +289,10 @@ A.T
 tf.transpose(A)
 ```
 
-[**Symmetric matrices are the subset of square matrices
-that are equal to their own transposes:
+[**Ma trận đối xứng là tập con của các ma trận vuông
+bằng chính ma trận chuyển vị của chúng:
 $\mathbf{A} = \mathbf{A}^\top$.**]
-The following matrix is symmetric:
+Ma trận sau đây là ma trận đối xứng:
 
 ```{.python .input}
 %%tab mxnet
@@ -318,46 +318,46 @@ A = jnp.array([[1, 2, 3], [2, 0, 4], [3, 4, 5]])
 A == A.T
 ```
 
-Matrices are useful for representing datasets.
-Typically, rows correspond to individual records
-and columns correspond to distinct attributes.
+Ma trận rất hữu ích trong việc biểu diễn các bộ dữ liệu.
+Thông thường, các hàng tương ứng với từng bản ghi
+và các cột tương ứng với những thuộc tính riêng biệt.
 
 
 
-## Tensors
+## Tensor
 
-While you can go far in your machine learning journey
-with only scalars, vectors, and matrices,
-eventually you may need to work with
-higher-order [**tensors**].
-Tensors (**give us a generic way of describing
-extensions to $n^{\textrm{th}}$-order arrays.**)
-We call software objects of the *tensor class* "tensors"
-precisely because they too can have arbitrary numbers of axes.
-While it may be confusing to use the word
-*tensor* for both the mathematical object
-and its realization in code,
-our meaning should usually be clear from context.
-We denote general tensors by capital letters
-with a special font face
-(e.g., $\mathsf{X}$, $\mathsf{Y}$, and $\mathsf{Z}$)
-and their indexing mechanism
-(e.g., $x_{ijk}$ and $[\mathsf{X}]_{1, 2i-1, 3}$)
-follows naturally from that of matrices.
+Mặc dù bạn có thể tiến xa trong hành trình học máy
+chỉ với vô hướng, vector và ma trận,
+cuối cùng bạn có thể cần làm việc với
+các [**tensor**] cấp cao hơn.
+Tensor (**cung cấp cho chúng ta một cách chung để mô tả
+các mảng cấp $n^{\textrm{th}}$ mở rộng.**)
+Chúng ta gọi các đối tượng phần mềm thuộc *lớp tensor* là "tensor"
+chính xác vì chúng cũng có thể có số lượng trục tùy ý.
+Mặc dù việc dùng từ
+*tensor* cho cả đối tượng toán học
+và cách hiện thực hóa nó trong code có thể gây nhầm lẫn,
+ý nghĩa của chúng ta thường sẽ rõ ràng dựa trên ngữ cảnh.
+Chúng ta ký hiệu các tensor tổng quát bằng các chữ cái viết hoa
+với kiểu phông chữ đặc biệt
+(ví dụ, $\mathsf{X}$, $\mathsf{Y}$, và $\mathsf{Z}$)
+và cơ chế đánh chỉ số của chúng
+(ví dụ, $x_{ijk}$ và $[\mathsf{X}]_{1, 2i-1, 3}$)
+tuân theo cách tự nhiên từ cơ chế của ma trận.
 
-Tensors will become more important
-when we start working with images.
-Each image arrives as a $3^{\textrm{rd}}$-order tensor
-with axes corresponding to the height, width, and *channel*.
-At each spatial location, the intensities
-of each color (red, green, and blue)
-are stacked along the channel.
-Furthermore, a collection of images is represented
-in code by a $4^{\textrm{th}}$-order tensor,
-where distinct images are indexed
-along the first axis.
-Higher-order tensors are constructed, as were vectors and matrices,
-by growing the number of shape components.
+Tensor sẽ trở nên quan trọng hơn
+khi chúng ta bắt đầu làm việc với hình ảnh.
+Mỗi hình ảnh được biểu diễn dưới dạng tensor cấp $3^{\textrm{rd}}$
+với các trục tương ứng với chiều cao, chiều rộng và *kênh*.
+Tại mỗi vị trí không gian, cường độ
+của mỗi màu (đỏ, xanh lá và xanh dương)
+được xếp dọc theo kênh.
+Ngoài ra, một tập hợp hình ảnh được biểu diễn
+trong code bằng tensor cấp $4^{\textrm{th}}$,
+trong đó các hình ảnh riêng biệt được đánh chỉ số
+dọc theo trục đầu tiên.
+Các tensor cấp cao hơn được xây dựng, tương tự như vector và ma trận,
+bằng cách tăng số lượng thành phần shape.
 
 ```{.python .input}
 %%tab mxnet
@@ -379,14 +379,14 @@ tf.reshape(tf.range(24), (2, 3, 4))
 jnp.arange(24).reshape(2, 3, 4)
 ```
 
-## Basic Properties of Tensor Arithmetic
+## Các thuộc tính cơ bản của phép toán tensor
 
-Scalars, vectors, matrices,
-and higher-order tensors
-all have some handy properties.
-For example, elementwise operations
-produce outputs that have the
-same shape as their operands.
+Vô hướng, vector, ma trận
+và các tensor cấp cao hơn
+đều có một số thuộc tính hữu ích.
+Ví dụ, các phép toán theo phần tử
+tạo ra những đầu ra có
+shape giống với các toán hạng của chúng.
 
 ```{.python .input}
 %%tab mxnet
@@ -416,10 +416,10 @@ B = A
 A, A + B
 ```
 
-The [**elementwise product of two matrices
-is called their *Hadamard product***] (denoted $\odot$).
-We can spell out the entries
-of the Hadamard product of two matrices
+Tích [**theo từng phần tử của hai ma trận
+được gọi là *tích Hadamard* của chúng**] (ký hiệu là $\odot$).
+Ta có thể viết rõ các phần tử
+của tích Hadamard của hai ma trận
 $\mathbf{A}, \mathbf{B} \in \mathbb{R}^{m \times n}$:
 
 
@@ -439,9 +439,9 @@ $$
 A * B
 ```
 
-[**Adding or multiplying a scalar and a tensor**] produces a result
-with the same shape as the original tensor.
-Here, each element of the tensor is added to (or multiplied by) the scalar.
+[**Cộng hoặc nhân một scalar với một tensor**] tạo ra một kết quả
+có cùng shape với tensor ban đầu.
+Ở đây, mỗi phần tử của tensor được cộng với (hoặc nhân với) scalar.
 
 ```{.python .input}
 %%tab mxnet
@@ -471,12 +471,12 @@ X = jnp.arange(24).reshape(2, 3, 4)
 a + X, (a * X).shape
 ```
 
-## Reduction
+## Phép rút gọn
 :label:`subsec_lin-alg-reduction`
 
-Often, we wish to calculate [**the sum of a tensor's elements.**]
-To express the sum of the elements in a vector $\mathbf{x}$ of length $n$,
-we write $\sum_{i=1}^n x_i$. There is a simple function for it:
+Thông thường, chúng ta muốn tính [**tổng các phần tử của một tensor.**]
+Để biểu diễn tổng các phần tử trong một vector $\mathbf{x}$ có độ dài $n$,
+ta viết $\sum_{i=1}^n x_i$. Có một hàm đơn giản cho phép thực hiện việc này:
 
 ```{.python .input}
 %%tab mxnet
@@ -502,11 +502,11 @@ x = jnp.arange(3, dtype=jnp.float32)
 x, x.sum()
 ```
 
-To express [**sums over the elements of tensors of arbitrary shape**],
-we simply sum over all its axes.
-For example, the sum of the elements
-of an $m \times n$ matrix $\mathbf{A}$
-could be written $\sum_{i=1}^{m} \sum_{j=1}^{n} a_{ij}$.
+Để biểu diễn [**tổng các phần tử của tensor có shape tùy ý**],
+ta chỉ cần tính tổng theo tất cả các axis của nó.
+Ví dụ, tổng các phần tử
+của ma trận $m \times n$ $\mathbf{A}$
+có thể được viết là $\sum_{i=1}^{m} \sum_{j=1}^{n} a_{ij}$.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -518,16 +518,16 @@ A.shape, A.sum()
 A.shape, tf.reduce_sum(A)
 ```
 
-By default, invoking the sum function
-*reduces* a tensor along all of its axes,
-eventually producing a scalar.
-Our libraries also allow us to [**specify the axes
-along which the tensor should be reduced.**]
-To sum over all elements along the rows (axis 0),
-we specify `axis=0` in `sum`.
-Since the input matrix reduces along axis 0
-to generate the output vector,
-this axis is missing from the shape of the output.
+Theo mặc định, việc gọi hàm tính tổng
+*sẽ rút gọn* một tensor theo tất cả các axis của nó,
+cuối cùng tạo ra một scalar.
+Các thư viện của chúng ta cũng cho phép [**chỉ định các axis
+mà tensor sẽ được rút gọn theo đó.**]
+Để tính tổng tất cả các phần tử theo các hàng (axis 0),
+ta chỉ định `axis=0` trong `sum`.
+Vì ma trận đầu vào được rút gọn theo axis 0
+để tạo ra vector đầu ra,
+axis này không còn xuất hiện trong shape của đầu ra.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -539,7 +539,7 @@ A.shape, A.sum(axis=0).shape
 A.shape, tf.reduce_sum(A, axis=0).shape
 ```
 
-Specifying `axis=1` will reduce the column dimension (axis 1) by summing up elements of all the columns.
+Việc chỉ định `axis=1` sẽ rút gọn chiều cột (axis 1) bằng cách cộng các phần tử của tất cả các cột.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -551,8 +551,8 @@ A.shape, A.sum(axis=1).shape
 A.shape, tf.reduce_sum(A, axis=1).shape
 ```
 
-Reducing a matrix along both rows and columns via summation
-is equivalent to summing up all the elements of the matrix.
+Rút gọn một ma trận theo cả hàng và cột bằng phép cộng
+tương đương với việc cộng tất cả các phần tử của ma trận.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -564,12 +564,12 @@ A.sum(axis=[0, 1]) == A.sum()  # Same as A.sum()
 tf.reduce_sum(A, axis=[0, 1]), tf.reduce_sum(A)  # Same as tf.reduce_sum(A)
 ```
 
-[**A related quantity is the *mean*, also called the *average*.**]
-We calculate the mean by dividing the sum
-by the total number of elements.
-Because computing the mean is so common,
-it gets a dedicated library function
-that works analogously to `sum`.
+[**Một đại lượng liên quan là *mean*, còn gọi là *average*.**]
+Ta tính mean bằng cách chia tổng
+cho tổng số phần tử.
+Vì việc tính mean rất phổ biến,
+nó có một hàm thư viện riêng
+hoạt động tương tự như `sum`.
 
 ```{.python .input}
 %%tab mxnet, jax
@@ -586,8 +586,8 @@ A.mean(), A.sum() / A.numel()
 tf.reduce_mean(A), tf.reduce_sum(A) / tf.size(A).numpy()
 ```
 
-Likewise, the function for calculating the mean
-can also reduce a tensor along specific axes.
+Tương tự, hàm tính mean
+cũng có thể rút gọn một tensor theo các axis cụ thể.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -599,12 +599,12 @@ A.mean(axis=0), A.sum(axis=0) / A.shape[0]
 tf.reduce_mean(A, axis=0), tf.reduce_sum(A, axis=0) / A.shape[0]
 ```
 
-## Non-Reduction Sum
+## Tổng không rút gọn
 :label:`subsec_lin-alg-non-reduction`
 
-Sometimes it can be useful to [**keep the number of axes unchanged**]
-when invoking the function for calculating the sum or mean.
-This matters when we want to use the broadcast mechanism.
+Đôi khi, việc [**giữ nguyên số lượng axis**]
+khi gọi hàm tính tổng hoặc mean có thể hữu ích.
+Điều này quan trọng khi chúng ta muốn sử dụng cơ chế broadcasting.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -618,18 +618,18 @@ sum_A = tf.reduce_sum(A, axis=1, keepdims=True)
 sum_A, sum_A.shape
 ```
 
-For instance, since `sum_A` keeps its two axes after summing each row,
-we can (**divide `A` by `sum_A` with broadcasting**)
-to create a matrix where each row sums up to $1$.
+Ví dụ, vì `sum_A` giữ lại hai axis sau khi tính tổng từng hàng,
+chúng ta có thể (**chia `A` cho `sum_A` bằng broadcasting**)
+để tạo ra một ma trận trong đó tổng của mỗi hàng bằng $1$.
 
 ```{.python .input}
 %%tab all
 A / sum_A
 ```
 
-If we want to calculate [**the cumulative sum of elements of `A` along some axis**],
-say `axis=0` (row by row), we can call the `cumsum` function.
-By design, this function does not reduce the input tensor along any axis.
+Nếu muốn tính [**tổng tích lũy của các phần tử của `A` theo một axis nào đó**],
+chẳng hạn `axis=0` (theo từng hàng), ta có thể gọi hàm `cumsum`.
+Theo thiết kế, hàm này không rút gọn tensor đầu vào theo bất kỳ axis nào.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -641,19 +641,19 @@ A.cumsum(axis=0)
 tf.cumsum(A, axis=0)
 ```
 
-## Dot Products
+## Tích vô hướng
 
-So far, we have only performed elementwise operations, sums, and averages.
-And if this was all we could do, linear algebra
-would not deserve its own section.
-Fortunately, this is where things get more interesting.
-One of the most fundamental operations is the dot product.
-Given two vectors $\mathbf{x}, \mathbf{y} \in \mathbb{R}^d$,
-their *dot product* $\mathbf{x}^\top \mathbf{y}$ (also known as *inner product*, $\langle \mathbf{x}, \mathbf{y}  \rangle$)
-is a sum over the products of the elements at the same position:
+Cho đến nay, chúng ta mới chỉ thực hiện các phép toán theo từng phần tử, phép tính tổng và mean.
+Và nếu đó là tất cả những gì chúng ta có thể làm, đại số tuyến tính
+sẽ không xứng đáng có một phần riêng.
+May mắn thay, đây là lúc mọi thứ trở nên thú vị hơn.
+Một trong những phép toán nền tảng nhất là tích vô hướng.
+Cho hai vector $\mathbf{x}, \mathbf{y} \in \mathbb{R}^d$,
+*tích vô hướng* của chúng $\mathbf{x}^\top \mathbf{y}$ (còn gọi là *inner product*, $\langle \mathbf{x}, \mathbf{y}  \rangle$)
+là tổng của các tích giữa những phần tử ở cùng vị trí:
 $\mathbf{x}^\top \mathbf{y} = \sum_{i=1}^{d} x_i y_i$.
 
-[~~The *dot product* of two vectors is a sum over the products of the elements at the same position~~]
+[~~*Tích vô hướng* của hai vector là tổng các tích giữa những phần tử ở cùng vị trí~~]
 
 ```{.python .input}
 %%tab mxnet
@@ -679,8 +679,8 @@ y = jnp.ones(3, dtype = jnp.float32)
 x, y, jnp.dot(x, y)
 ```
 
-Equivalently, (**we can calculate the dot product of two vectors
-by performing an elementwise multiplication followed by a sum:**)
+Tương đương, (**chúng ta có thể tính tích vô hướng của hai vector
+bằng cách thực hiện phép nhân theo từng phần tử rồi tính tổng:**)
 
 ```{.python .input}
 %%tab mxnet
@@ -702,29 +702,29 @@ tf.reduce_sum(x * y)
 jnp.sum(x * y)
 ```
 
-Dot products are useful in a wide range of contexts.
-For example, given some set of values,
-denoted by a vector $\mathbf{x}  \in \mathbb{R}^n$,
-and a set of weights, denoted by $\mathbf{w} \in \mathbb{R}^n$,
-the weighted sum of the values in $\mathbf{x}$
-according to the weights $\mathbf{w}$
-could be expressed as the dot product $\mathbf{x}^\top \mathbf{w}$.
-When the weights are nonnegative
-and sum to $1$, i.e., $\left(\sum_{i=1}^{n} {w_i} = 1\right)$,
-the dot product expresses a *weighted average*.
-After normalizing two vectors to have unit length,
-the dot products express the cosine of the angle between them.
-Later in this section, we will formally introduce this notion of *length*.
+Tích vô hướng hữu ích trong nhiều ngữ cảnh.
+Ví dụ, cho một tập hợp các giá trị,
+được biểu diễn bằng vector $\mathbf{x}  \in \mathbb{R}^n$,
+và một tập hợp các trọng số, được biểu diễn bằng $\mathbf{w} \in \mathbb{R}^n$,
+tổng có trọng số của các giá trị trong $\mathbf{x}$
+theo các trọng số $\mathbf{w}$
+có thể được biểu diễn bằng tích vô hướng $\mathbf{x}^\top \mathbf{w}$.
+Khi các trọng số không âm
+và có tổng bằng $1$, tức là $\left(\sum_{i=1}^{n} {w_i} = 1\right)$,
+tích vô hướng biểu diễn một *weighted average*.
+Sau khi chuẩn hóa hai vector để có độ dài bằng đơn vị,
+các tích vô hướng biểu diễn cosine của góc giữa chúng.
+Ở phần sau của mục này, chúng ta sẽ giới thiệu chính thức khái niệm *độ dài* này.
 
 
-## Matrix--Vector Products
+## Tích ma trận--vector
 
-Now that we know how to calculate dot products,
-we can begin to understand the *product*
-between an $m \times n$ matrix $\mathbf{A}$
-and an $n$-dimensional vector $\mathbf{x}$.
-To start off, we visualize our matrix
-in terms of its row vectors
+Giờ đây, khi đã biết cách tính tích vô hướng,
+chúng ta có thể bắt đầu tìm hiểu *tích*
+giữa một ma trận $m \times n$ $\mathbf{A}$
+và một vector $n$ chiều $\mathbf{x}$.
+Trước hết, ta biểu diễn ma trận
+theo các vector hàng của nó
 
 $$\mathbf{A}=
 \begin{bmatrix}
@@ -734,13 +734,14 @@ $$\mathbf{A}=
 \mathbf{a}^\top_m \\
 \end{bmatrix},$$
 
-where each $\mathbf{a}^\top_{i} \in \mathbb{R}^n$
-is a row vector representing the $i^\textrm{th}$ row
-of the matrix $\mathbf{A}$.
+trong đó mỗi $\mathbf{a}^\top_{i} \in \mathbb{R}^n$
+là một vector hàng biểu diễn hàng thứ $\mathbf{th}$
+của ma trận $\mathbf{A}$.
 
-[**The matrix--vector product $\mathbf{A}\mathbf{x}$
-is simply a column vector of length $m$,
-whose $i^\textrm{th}$ element is the dot product
+[**Tích ma trận--vector $\mathbf{A}\mathbf{x}$
+chỉ đơn giản là một vector cột có độ dài $m$,
+trong đó phần tử thứ $\mathbf{th}$
+là tích vô hướng
 $\mathbf{a}^\top_i \mathbf{x}$:**]
 
 $$
@@ -759,47 +760,47 @@ $$
 \end{bmatrix}.
 $$
 
-We can think of multiplication with a matrix
+Ta có thể xem phép nhân với một ma trận
 $\mathbf{A}\in \mathbb{R}^{m \times n}$
-as a transformation that projects vectors
-from $\mathbb{R}^{n}$ to $\mathbb{R}^{m}$.
-These transformations are remarkably useful.
-For example, we can represent rotations
-as multiplications by certain square matrices.
-Matrix--vector products also describe
-the key calculation involved in computing
-the outputs of each layer in a neural network
-given the outputs from the previous layer.
+là một phép biến đổi chiếu các vector
+từ $\mathbb{R}^{n}$ sang $\mathbb{R}^{m}$.
+Các phép biến đổi này cực kỳ hữu ích.
+Ví dụ, chúng ta có thể biểu diễn phép quay
+bằng phép nhân với các ma trận vuông nhất định.
+Tích ma trận--vector cũng mô tả
+phép tính then chốt liên quan đến việc tính
+đầu ra của mỗi layer trong một neural network
+dựa trên đầu ra từ layer trước đó.
 
 :begin_tab:`mxnet`
-To express a matrix--vector product in code,
-we use the same `dot` function.
-The operation is inferred
-based on the type of the arguments.
-Note that the column dimension of `A`
-(its length along axis 1)
-must be the same as the dimension of `x` (its length).
+Để biểu diễn tích ma trận--vector trong code,
+ta sử dụng cùng hàm `dot`.
+Phép toán được suy ra
+dựa trên kiểu của các đối số.
+Lưu ý rằng chiều cột của `A`
+(độ dài của nó theo axis 1)
+phải bằng chiều của `x` (độ dài của nó).
 :end_tab:
 
 :begin_tab:`pytorch`
-To express a matrix--vector product in code,
-we use the `mv` function.
-Note that the column dimension of `A`
-(its length along axis 1)
-must be the same as the dimension of `x` (its length).
-Python has a convenience operator `@`
-that can execute both matrix--vector
-and matrix--matrix products
-(depending on its arguments).
-Thus we can write `A@x`.
+Để biểu diễn tích ma trận--vector trong code,
+ta sử dụng hàm `mv`.
+Lưu ý rằng chiều cột của `A`
+(độ dài của nó theo axis 1)
+phải bằng chiều của `x` (độ dài của nó).
+Python có một toán tử tiện lợi `@`
+có thể thực hiện cả tích ma trận--vector
+và tích ma trận--ma trận
+(tùy thuộc vào các đối số).
+Do đó, ta có thể viết `A@x`.
 :end_tab:
 
 :begin_tab:`tensorflow`
-To express a matrix--vector product in code,
-we use the `matvec` function.
-Note that the column dimension of `A`
-(its length along axis 1)
-must be the same as the dimension of `x` (its length).
+Để biểu diễn tích ma trận--vector trong code,
+chúng ta sử dụng hàm `matvec`.
+Lưu ý rằng số chiều cột của `A`
+(độ dài của nó theo axis 1)
+phải bằng số chiều của `x` (độ dài của nó).
 :end_tab:
 
 ```{.python .input}
@@ -822,14 +823,14 @@ A.shape, x.shape, tf.linalg.matvec(A, x)
 A.shape, x.shape, jnp.matmul(A, x)
 ```
 
-## Matrix--Matrix Multiplication
+## Phép nhân ma trận--ma trận
 
-Once you have gotten the hang of dot products and matrix--vector products,
-then *matrix--matrix multiplication* should be straightforward.
+Khi đã thành thạo tích vô hướng và tích ma trận--vector,
+thì *phép nhân ma trận--ma trận* sẽ trở nên khá đơn giản.
 
-Say that we have two matrices
+Giả sử chúng ta có hai ma trận
 $\mathbf{A} \in \mathbb{R}^{n \times k}$
-and $\mathbf{B} \in \mathbb{R}^{k \times m}$:
+và $\mathbf{B} \in \mathbb{R}^{k \times m}$:
 
 $$\mathbf{A}=\begin{bmatrix}
  a_{11} & a_{12} & \cdots & a_{1k} \\
@@ -845,12 +846,12 @@ $$\mathbf{A}=\begin{bmatrix}
 \end{bmatrix}.$$
 
 
-Let $\mathbf{a}^\top_{i} \in \mathbb{R}^k$ denote
-the row vector representing the $i^\textrm{th}$ row
-of the matrix $\mathbf{A}$
-and let $\mathbf{b}_{j} \in \mathbb{R}^k$ denote
-the column vector from the $j^\textrm{th}$ column
-of the matrix $\mathbf{B}$:
+Gọi $\mathbf{a}^\top_{i} \in \mathbb{R}^k$ là
+vector hàng biểu diễn hàng thứ $i^\textrm{th}$
+của ma trận $\mathbf{A}$
+và gọi $\mathbf{b}_{j} \in \mathbb{R}^k$ là
+vector cột từ cột thứ $j^\textrm{th}$
+của ma trận $\mathbf{B}$:
 
 $$\mathbf{A}=
 \begin{bmatrix}
@@ -865,12 +866,12 @@ $$\mathbf{A}=
 $$
 
 
-To form the matrix product $\mathbf{C} \in \mathbb{R}^{n \times m}$,
-we simply compute each element $c_{ij}$
-as the dot product between
-the $i^{\textrm{th}}$ row of $\mathbf{A}$
-and the $j^{\textrm{th}}$ column of $\mathbf{B}$,
-i.e., $\mathbf{a}^\top_i \mathbf{b}_j$:
+Để tạo tích ma trận $\mathbf{C} \in \mathbb{R}^{n \times m}$,
+chúng ta chỉ cần tính từng phần tử $c_{ij}$
+bằng tích vô hướng giữa
+hàng thứ $i^{\textrm{th}}$ của $\mathbf{A}$
+và cột thứ $j^{\textrm{th}}$ của $\mathbf{B}$,
+tức là $\mathbf{a}^\top_i \mathbf{b}_j$:
 
 $$\mathbf{C} = \mathbf{AB} = \begin{bmatrix}
 \mathbf{a}^\top_{1} \\
@@ -889,16 +890,16 @@ $$\mathbf{C} = \mathbf{AB} = \begin{bmatrix}
 \end{bmatrix}.
 $$
 
-[**We can think of the matrix--matrix multiplication $\mathbf{AB}$
-as performing $m$ matrix--vector products
-or $m \times n$ dot products
-and stitching the results together
-to form an $n \times m$ matrix.**]
-In the following snippet,
-we perform matrix multiplication on `A` and `B`.
-Here, `A` is a matrix with two rows and three columns,
-and `B` is a matrix with three rows and four columns.
-After multiplication, we obtain a matrix with two rows and four columns.
+[**Chúng ta có thể xem phép nhân ma trận--ma trận $\mathbf{AB}$
+là thực hiện $m$ tích ma trận--vector
+hoặc $m \times n$ tích vô hướng
+rồi ghép các kết quả lại
+để tạo thành một ma trận $n \times m$.**]
+Trong đoạn mã sau,
+chúng ta thực hiện phép nhân ma trận trên `A` và `B`.
+Ở đây, `A` là một ma trận có hai hàng và ba cột,
+còn `B` là một ma trận có ba hàng và bốn cột.
+Sau phép nhân, chúng ta thu được một ma trận có hai hàng và bốn cột.
 
 ```{.python .input}
 %%tab mxnet
@@ -924,43 +925,43 @@ B = jnp.ones((3, 4))
 jnp.matmul(A, B)
 ```
 
-The term *matrix--matrix multiplication* is
-often simplified to *matrix multiplication*,
-and should not be confused with the Hadamard product.
+Thuật ngữ *phép nhân ma trận--ma trận* thường được rút gọn thành
+*phép nhân ma trận*,
+và không nên nhầm lẫn với tích Hadamard.
 
 
-## Norms
+## Chuẩn
 :label:`subsec_lin-algebra-norms`
 
-Some of the most useful operators in linear algebra are *norms*.
-Informally, the norm of a vector tells us how *big* it is.
-For instance, the $\ell_2$ norm measures
-the (Euclidean) length of a vector.
-Here, we are employing a notion of *size* that concerns the magnitude of a vector's components
-(not its dimensionality).
+Một số toán tử hữu ích nhất trong đại số tuyến tính là *chuẩn*.
+Theo cách hiểu không chính thức, chuẩn của một vector cho biết nó *lớn* đến mức nào.
+Chẳng hạn, chuẩn $\ell_2$ đo
+độ dài (Euclid) của một vector.
+Ở đây, chúng ta sử dụng khái niệm *độ lớn* liên quan đến độ lớn của các thành phần của vector
+(chứ không phải số chiều của nó).
 
-A norm is a function $\| \cdot \|$ that maps a vector
-to a scalar and satisfies the following three properties:
+Chuẩn là một hàm $\| \cdot \|$ ánh xạ một vector
+thành một scalar và thỏa mãn ba tính chất sau:
 
-1. Given any vector $\mathbf{x}$, if we scale (all elements of) the vector
-   by a scalar $\alpha \in \mathbb{R}$, its norm scales accordingly:
+1. Với mọi vector $\mathbf{x}$, nếu chúng ta scale (tất cả phần tử của) vector
+   bằng một scalar $\alpha \in \mathbb{R}$, thì chuẩn của nó cũng scale tương ứng:
    $$\|\alpha \mathbf{x}\| = |\alpha| \|\mathbf{x}\|.$$
-2. For any vectors $\mathbf{x}$ and $\mathbf{y}$:
-   norms satisfy the triangle inequality:
+2. Với mọi vector $\mathbf{x}$ và $\mathbf{y}$:
+   các chuẩn thỏa mãn bất đẳng thức tam giác:
    $$\|\mathbf{x} + \mathbf{y}\| \leq \|\mathbf{x}\| + \|\mathbf{y}\|.$$
-3. The norm of a vector is nonnegative and it only vanishes if the vector is zero:
+3. Chuẩn của một vector không âm và chỉ bằng không khi vector đó là vector không:
    $$\|\mathbf{x}\| > 0 \textrm{ for all } \mathbf{x} \neq 0.$$
 
-Many functions are valid norms and different norms
-encode different notions of size.
-The Euclidean norm that we all learned in elementary school geometry
-when calculating the hypotenuse of a right triangle
-is the square root of the sum of squares of a vector's elements.
-Formally, this is called [**the $\ell_2$ *norm***] and expressed as
+Nhiều hàm là các chuẩn hợp lệ, và các chuẩn khác nhau
+biểu đạt những khái niệm khác nhau về độ lớn.
+Chuẩn Euclid mà chúng ta đã học trong hình học sơ cấp
+khi tính cạnh huyền của một tam giác vuông
+là căn bậc hai của tổng bình phương các phần tử của một vector.
+Về hình thức, đây được gọi là [** *chuẩn* $\ell_2$ **] và được biểu diễn như sau:
 
 (**$$\|\mathbf{x}\|_2 = \sqrt{\sum_{i=1}^n x_i^2}.$$**)
 
-The method `norm` calculates the $\ell_2$ norm.
+Phương thức `norm` tính chuẩn $\ell_2$.
 
 ```{.python .input}
 %%tab mxnet
@@ -986,17 +987,17 @@ u = jnp.array([3.0, -4.0])
 jnp.linalg.norm(u)
 ```
 
-[**The $\ell_1$ norm**] is also common
-and the associated measure is called the Manhattan distance.
-By definition, the $\ell_1$ norm sums
-the absolute values of a vector's elements:
+[**Chuẩn $\ell_1$**] cũng rất phổ biến
+và đại lượng tương ứng được gọi là khoảng cách Manhattan.
+Theo định nghĩa, chuẩn $\ell_1$ tính tổng
+các giá trị tuyệt đối của các phần tử của một vector:
 
 (**$$\|\mathbf{x}\|_1 = \sum_{i=1}^n \left|x_i \right|.$$**)
 
-Compared to the $\ell_2$ norm, it is less sensitive to outliers.
-To compute the $\ell_1$ norm,
-we compose the absolute value
-with the sum operation.
+So với chuẩn $\ell_2$, nó ít nhạy cảm hơn với các giá trị ngoại lệ.
+Để tính chuẩn $\ell_1$,
+chúng ta kết hợp giá trị tuyệt đối
+với phép toán tổng.
 
 ```{.python .input}
 %%tab mxnet
@@ -1018,29 +1019,28 @@ tf.reduce_sum(tf.abs(u))
 jnp.linalg.norm(u, ord=1) # same as jnp.abs(u).sum()
 ```
 
-Both the $\ell_2$ and $\ell_1$ norms are special cases
-of the more general $\ell_p$ *norms*:
+Cả chuẩn $\ell_2$ và $\ell_1$ đều là các trường hợp đặc biệt
+của *các chuẩn* $\ell_p$ tổng quát hơn:
 
 $$\|\mathbf{x}\|_p = \left(\sum_{i=1}^n \left|x_i \right|^p \right)^{1/p}.$$
 
-In the case of matrices, matters are more complicated.
-After all, matrices can be viewed both as collections of individual entries
-*and* as objects that operate on vectors and transform them into other vectors.
-For instance, we can ask by how much longer
-the matrix--vector product $\mathbf{X} \mathbf{v}$
-could be relative to $\mathbf{v}$.
-This line of thought leads to what is called the *spectral* norm.
-For now, we introduce [**the *Frobenius norm*,
-which is much easier to compute**] and defined as
-the square root of the sum of the squares
-of a matrix's elements:
+Trong trường hợp ma trận, vấn đề phức tạp hơn.
+Xét cho cùng, ma trận có thể được xem vừa là tập hợp các phần tử riêng lẻ
+*vừa* là các đối tượng tác động lên vector và biến đổi chúng thành các vector khác.
+Chẳng hạn, chúng ta có thể hỏi tích ma trận--vector $\mathbf{X} \mathbf{v}$
+có thể dài hơn $\mathbf{v}$ bao nhiêu.
+Cách suy nghĩ này dẫn đến khái niệm gọi là chuẩn *phổ*.
+Trước mắt, chúng ta giới thiệu [** *chuẩn Frobenius*,
+dễ tính hơn nhiều**] và được định nghĩa là
+căn bậc hai của tổng bình phương
+các phần tử của một ma trận:
 
 [**$$\|\mathbf{X}\|_\textrm{F} = \sqrt{\sum_{i=1}^m \sum_{j=1}^n x_{ij}^2}.$$**]
 
-The Frobenius norm behaves as if it were
-an $\ell_2$ norm of a matrix-shaped vector.
-Invoking the following function will calculate
-the Frobenius norm of a matrix.
+Chuẩn Frobenius hoạt động như thể nó là
+chuẩn $\ell_2$ của một vector có dạng ma trận.
+Gọi hàm sau sẽ tính
+chuẩn Frobenius của một ma trận.
 
 ```{.python .input}
 %%tab mxnet
@@ -1062,98 +1062,98 @@ tf.norm(tf.ones((4, 9)))
 jnp.linalg.norm(jnp.ones((4, 9)))
 ```
 
-While we do not want to get too far ahead of ourselves,
-we already can plant some intuition about why these concepts are useful.
-In deep learning, we are often trying to solve optimization problems:
-*maximize* the probability assigned to observed data;
-*maximize* the revenue associated with a recommender model;
-*minimize* the distance between predictions
-and the ground truth observations;
-*minimize* the distance between representations
-of photos of the same person
-while *maximizing* the distance between representations
-of photos of different people.
-These distances, which constitute
-the objectives of deep learning algorithms,
-are often expressed as norms.
+Mặc dù chưa muốn đi quá xa,
+chúng ta đã có thể hình thành một phần trực giác về lý do các khái niệm này hữu ích.
+Trong deep learning, chúng ta thường cố gắng giải các bài toán tối ưu:
+*tối đa hóa* xác suất được gán cho dữ liệu quan sát;
+*tối đa hóa* doanh thu gắn với một mô hình recommender;
+*tối thiểu hóa* khoảng cách giữa các dự đoán
+và các quan sát ground truth;
+*tối thiểu hóa* khoảng cách giữa các biểu diễn
+của ảnh chụp cùng một người
+đồng thời *tối đa hóa* khoảng cách giữa các biểu diễn
+của ảnh chụp những người khác nhau.
+Các khoảng cách này, vốn tạo thành
+các mục tiêu của những thuật toán deep learning,
+thường được biểu diễn bằng các chuẩn.
 
 
-## Discussion
+## Thảo luận
 
-In this section, we have reviewed all the linear algebra
-that you will need to understand
-a significant chunk of modern deep learning.
-There is a lot more to linear algebra, though,
-and much of it is useful for machine learning.
-For example, matrices can be decomposed into factors,
-and these decompositions can reveal
-low-dimensional structure in real-world datasets.
-There are entire subfields of machine learning
-that focus on using matrix decompositions
-and their generalizations to high-order tensors
-to discover structure in datasets
-and solve prediction problems.
-But this book focuses on deep learning.
-And we believe you will be more inclined
-to learn more mathematics
-once you have gotten your hands dirty
-applying machine learning to real datasets.
-So while we reserve the right
-to introduce more mathematics later on,
-we wrap up this section here.
+Trong phần này, chúng ta đã ôn lại toàn bộ đại số tuyến tính
+mà bạn cần để hiểu
+một phần đáng kể của deep learning hiện đại.
+Tuy nhiên, đại số tuyến tính còn nhiều nội dung khác,
+và phần lớn trong số đó hữu ích cho machine learning.
+Ví dụ, các ma trận có thể được phân rã thành các nhân tử,
+và những phép phân rã này có thể làm sáng tỏ
+cấu trúc có số chiều thấp trong các tập dữ liệu thực tế.
+Có cả những phân ngành machine learning
+tập trung vào việc sử dụng các phép phân rã ma trận
+và các dạng tổng quát hóa của chúng cho tensor bậc cao
+để khám phá cấu trúc trong các tập dữ liệu
+và giải quyết các bài toán dự đoán.
+Nhưng cuốn sách này tập trung vào deep learning.
+Và chúng tôi tin rằng bạn sẽ có động lực hơn
+để học thêm toán học
+sau khi đã tự mình áp dụng machine learning
+vào các tập dữ liệu thực tế.
+Vì vậy, mặc dù vẫn có thể
+giới thiệu thêm toán học ở những phần sau,
+chúng ta kết thúc phần này tại đây.
 
-If you are eager to learn more linear algebra,
-there are many excellent books and online resources.
-For a more advanced crash course, consider checking out
-:citet:`Strang.1993`, :citet:`Kolter.2008`, and :citet:`Petersen.Pedersen.ea.2008`.
+Nếu muốn tìm hiểu thêm về đại số tuyến tính,
+có rất nhiều sách và tài nguyên trực tuyến xuất sắc.
+Để tham khảo một khóa học cấp tốc nâng cao hơn, hãy xem
+:citet:`Strang.1993`, :citet:`Kolter.2008`, và :citet:`Petersen.Pedersen.ea.2008`.
 
-To recap:
+Tóm tắt:
 
-* Scalars, vectors, matrices, and tensors are
-  the basic mathematical objects used in linear algebra
-  and have zero, one, two, and an arbitrary number of axes, respectively.
-* Tensors can be sliced or reduced along specified axes
-  via indexing, or operations such as `sum` and `mean`, respectively.
-* Elementwise products are called Hadamard products.
-  By contrast, dot products, matrix--vector products, and matrix--matrix products
-  are not elementwise operations and in general return objects
-  having shapes that are different from the the operands.
-* Compared to Hadamard products, matrix--matrix products
-  take considerably longer to compute (cubic rather than quadratic time).
-* Norms capture various notions of the magnitude of a vector (or matrix),
-  and are commonly applied to the difference of two vectors
-  to measure their distance apart.
-* Common vector norms include the $\ell_1$ and $\ell_2$ norms,
-   and common matrix norms include the *spectral* and *Frobenius* norms.
+* Scalar, vector, ma trận và tensor là
+  những đối tượng toán học cơ bản được sử dụng trong đại số tuyến tính
+  và lần lượt có số trục là không, một, hai và tùy ý.
+* Tensor có thể được cắt lát hoặc giảm theo các trục được chỉ định
+  thông qua indexing, hoặc các phép toán như `sum` và `mean`, theo thứ tự tương ứng.
+* Tích theo từng phần tử được gọi là tích Hadamard.
+  Ngược lại, tích vô hướng, tích ma trận--vector và tích ma trận--ma trận
+  không phải là các phép toán theo từng phần tử và nhìn chung trả về các đối tượng
+  có shape khác với các toán hạng.
+* So với tích Hadamard, tích ma trận--ma trận
+  mất nhiều thời gian tính toán hơn đáng kể (thời gian bậc ba thay vì bậc hai).
+* Norm thể hiện nhiều khái niệm khác nhau về độ lớn của một vector (hoặc ma trận),
+  và thường được áp dụng cho hiệu của hai vector
+  để đo khoảng cách giữa chúng.
+* Các norm vector phổ biến gồm norm $\ell_1$ và $\ell_2$,
+   còn các norm ma trận phổ biến gồm norm *spectral* và *Frobenius*.
 
 
-## Exercises
+## Bài tập
 
-1. Prove that the transpose of the transpose of a matrix is the matrix itself: $(\mathbf{A}^\top)^\top = \mathbf{A}$.
-1. Given two matrices $\mathbf{A}$ and $\mathbf{B}$, show that sum and transposition commute: $\mathbf{A}^\top + \mathbf{B}^\top = (\mathbf{A} + \mathbf{B})^\top$.
-1. Given any square matrix $\mathbf{A}$, is $\mathbf{A} + \mathbf{A}^\top$ always symmetric? Can you prove the result by using only the results of the previous two exercises?
-1. We defined the tensor `X` of shape (2, 3, 4) in this section. What is the output of `len(X)`? Write your answer without implementing any code, then check your answer using code.
-1. For a tensor `X` of arbitrary shape, does `len(X)` always correspond to the length of a certain axis of `X`? What is that axis?
-1. Run `A / A.sum(axis=1)` and see what happens. Can you analyze the results?
-1. When traveling between two points in downtown Manhattan, what is the distance that you need to cover in terms of the coordinates, i.e., in terms of avenues and streets? Can you travel diagonally?
-1. Consider a tensor of shape (2, 3, 4). What are the shapes of the summation outputs along axes 0, 1, and 2?
-1. Feed a tensor with three or more axes to the `linalg.norm` function and observe its output. What does this function compute for tensors of arbitrary shape?
-1. Consider three large matrices, say $\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}$, $\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}$ and $\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{14}}$, initialized with Gaussian random variables. You want to compute the product $\mathbf{A} \mathbf{B} \mathbf{C}$. Is there any difference in memory footprint and speed, depending on whether you compute $(\mathbf{A} \mathbf{B}) \mathbf{C}$ or $\mathbf{A} (\mathbf{B} \mathbf{C})$? Why?
-1. Consider three large matrices, say $\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}$, $\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}$ and $\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{16}}$. Is there any difference in speed depending on whether you compute $\mathbf{A} \mathbf{B}$ or $\mathbf{A} \mathbf{C}^\top$? Why? What changes if you initialize $\mathbf{C} = \mathbf{B}^\top$ without cloning memory? Why?
-1. Consider three matrices, say $\mathbf{A}, \mathbf{B}, \mathbf{C} \in \mathbb{R}^{100 \times 200}$. Construct a tensor with three axes by stacking $[\mathbf{A}, \mathbf{B}, \mathbf{C}]$. What is the dimensionality? Slice out the second coordinate of the third axis to recover $\mathbf{B}$. Check that your answer is correct.
+1. Chứng minh rằng phép chuyển vị của phép chuyển vị một ma trận chính là ma trận đó: $(\mathbf{A}^\top)^\top = \mathbf{A}$.
+1. Cho hai ma trận $\mathbf{A}$ và $\mathbf{B}$, hãy chứng minh rằng phép cộng và phép chuyển vị giao hoán: $\mathbf{A}^\top + \mathbf{B}^\top = (\mathbf{A} + \mathbf{B})^\top$.
+1. Với bất kỳ ma trận vuông nào $\mathbf{A}$, liệu $\mathbf{A} + \mathbf{A}^\top$ có luôn đối xứng không? Bạn có thể chứng minh kết quả chỉ bằng cách sử dụng các kết quả của hai bài tập trước không?
+1. Trong phần này, chúng ta đã định nghĩa tensor `X` có shape (2, 3, 4). Kết quả của `len(X)` là gì? Hãy viết câu trả lời mà không triển khai code, sau đó kiểm tra câu trả lời bằng code.
+1. Với một tensor `X` có shape tùy ý, liệu `len(X)` có luôn tương ứng với độ dài của một trục nhất định của `X` không? Đó là trục nào?
+1. Chạy `A / A.sum(axis=1)` và xem điều gì xảy ra. Bạn có thể phân tích các kết quả không?
+1. Khi di chuyển giữa hai điểm ở khu trung tâm Manhattan, khoảng cách cần đi là bao nhiêu nếu biểu diễn theo tọa độ, tức là theo đại lộ và đường phố? Bạn có thể đi theo đường chéo không?
+1. Xét một tensor có shape (2, 3, 4). Shape của các kết quả tổng theo các trục 0, 1 và 2 là gì?
+1. Truyền một tensor có từ ba trục trở lên vào hàm `linalg.norm` và quan sát kết quả. Hàm này tính toán điều gì đối với các tensor có shape tùy ý?
+1. Xét ba ma trận lớn, chẳng hạn $\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}$, $\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}$ và $\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{14}}$, được khởi tạo bằng các biến ngẫu nhiên Gaussian. Bạn muốn tính tích $\mathbf{A} \mathbf{B} \mathbf{C}$. Có sự khác biệt nào về mức sử dụng bộ nhớ và tốc độ tùy thuộc vào việc bạn tính $(\mathbf{A} \mathbf{B}) \mathbf{C}$ hay $\mathbf{A} (\mathbf{B} \mathbf{C})$ không? Tại sao?
+1. Xét ba ma trận lớn, chẳng hạn $\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}$, $\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}$ và $\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{16}}$. Có sự khác biệt nào về tốc độ tùy thuộc vào việc bạn tính $\mathbf{A} \mathbf{B}$ hay $\mathbf{A} \mathbf{C}^\top$ không? Tại sao? Điều gì thay đổi nếu bạn khởi tạo $\mathbf{C} = \mathbf{B}^\top$ mà không sao chép bộ nhớ? Tại sao?
+1. Xét ba ma trận, chẳng hạn $\mathbf{A}, \mathbf{B}, \mathbf{C} \in \mathbb{R}^{100 \times 200}$. Tạo một tensor có ba trục bằng cách xếp chồng $[\mathbf{A}, \mathbf{B}, \mathbf{C}]$. Tensor này có số chiều là bao nhiêu? Lấy ra tọa độ thứ hai của trục thứ ba để khôi phục $\mathbf{B}$. Hãy kiểm tra để đảm bảo câu trả lời của bạn là chính xác.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/30)
+[Thảo luận](https://discuss.d2l.ai/t/30)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/31)
+[Thảo luận](https://discuss.d2l.ai/t/31)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/196)
+[Thảo luận](https://discuss.d2l.ai/t/196)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17968)
+[Thảo luận](https://discuss.d2l.ai/t/17968)
 :end_tab:

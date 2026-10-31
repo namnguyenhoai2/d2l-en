@@ -3,45 +3,45 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Calculus
+# Giải tích
 :label:`sec_calculus`
 
-For a long time, how to calculate 
-the area of a circle remained a mystery.
-Then, in Ancient Greece, the mathematician Archimedes
-came up with the clever idea 
-to inscribe a series of polygons 
-with increasing numbers of vertices
-on the inside of a circle
-(:numref:`fig_circle_area`). 
-For a polygon with $n$ vertices,
-we obtain $n$ triangles.
-The height of each triangle approaches the radius $r$ 
-as we partition the circle more finely. 
-At the same time, its base approaches $2 \pi r/n$, 
-since the ratio between arc and secant approaches 1 
-for a large number of vertices. 
-Thus, the area of the polygon approaches
+Trong một thời gian dài, cách tính
+diện tích của một hình tròn vẫn là một bí ẩn.
+Sau đó, tại Hy Lạp cổ đại, nhà toán học Archimedes
+đã nảy ra ý tưởng thông minh
+là nội tiếp một chuỗi đa giác
+có số lượng đỉnh tăng dần
+bên trong một hình tròn
+(:numref:`fig_circle_area`).
+Với một đa giác có $n$ đỉnh,
+ta thu được $n$ tam giác.
+Chiều cao của mỗi tam giác tiến gần đến bán kính $r$
+khi ta phân hoạch hình tròn ngày càng mịn hơn.
+Đồng thời, đáy của nó tiến gần đến $2 \pi r/n$,
+vì tỷ số giữa cung tròn và dây cung tiến gần đến 1
+khi số lượng đỉnh lớn.
+Do đó, diện tích của đa giác tiến gần đến
 $n \cdot r \cdot \frac{1}{2} (2 \pi r/n) = \pi r^2$.
 
-![Finding the area of a circle as a limit procedure.](../img/polygon-circle.svg)
+![Tìm diện tích hình tròn như một quá trình lấy giới hạn.](../img/polygon-circle.svg)
 :label:`fig_circle_area`
 
-This limiting procedure is at the root of both 
-*differential calculus* and *integral calculus*. 
-The former can tell us how to increase
-or decrease a function's value by
-manipulating its arguments. 
-This comes in handy for the *optimization problems*
-that we face in deep learning,
-where we repeatedly update our parameters 
-in order to decrease the loss function.
-Optimization addresses how to fit our models to training data,
-and calculus is its key prerequisite.
-However, do not forget that our ultimate goal
-is to perform well on *previously unseen* data.
-That problem is called *generalization*
-and will be a key focus of other chapters.
+Quy trình lấy giới hạn này là nền tảng của cả
+*vi phân* và *tích phân*.
+Loại thứ nhất có thể cho chúng ta biết cách tăng
+hoặc giảm giá trị của một hàm
+bằng cách điều chỉnh các đối số của nó.
+Điều này hữu ích cho các *bài toán tối ưu hóa*
+mà chúng ta gặp trong deep learning,
+nơi chúng ta liên tục cập nhật các tham số
+để giảm hàm mất mát.
+Tối ưu hóa giải quyết cách khớp các mô hình với dữ liệu huấn luyện,
+và giải tích là tiền đề then chốt của nó.
+Tuy nhiên, đừng quên rằng mục tiêu cuối cùng của chúng ta
+là hoạt động tốt trên dữ liệu *chưa từng thấy trước đây*.
+Vấn đề đó được gọi là *khái quát hóa*
+và sẽ là trọng tâm chính của các chương khác.
 
 ```{.python .input}
 %%tab mxnet
@@ -76,53 +76,53 @@ from matplotlib_inline import backend_inline
 import numpy as np
 ```
 
-## Derivatives and Differentiation
+## Đạo hàm và Phép vi phân
 
-Put simply, a *derivative* is the rate of change
-in a function with respect to changes in its arguments.
-Derivatives can tell us how rapidly a loss function
-would increase or decrease were we 
-to *increase* or *decrease* each parameter
-by an infinitesimally small amount.
-Formally, for functions $f: \mathbb{R} \rightarrow \mathbb{R}$,
-that map from scalars to scalars,
-[**the *derivative* of $f$ at a point $x$ is defined as**]
+Nói một cách đơn giản, *đạo hàm* là tốc độ thay đổi
+của một hàm theo sự thay đổi trong các đối số của nó.
+Đạo hàm có thể cho chúng ta biết hàm mất mát
+sẽ tăng hoặc giảm nhanh đến mức nào nếu chúng ta
+*tăng* hoặc *giảm* từng tham số
+một lượng nhỏ vô cùng.
+Về mặt hình thức, với các hàm $f: \mathbb{R} \rightarrow \mathbb{R}$
+ánh xạ từ vô hướng sang vô hướng,
+[**đạo hàm của $f$ tại điểm $x$ được định nghĩa là**]
 
 (**$$f'(x) = \lim_{h \rightarrow 0} \frac{f(x+h) - f(x)}{h}.$$**)
 :eqlabel:`eq_derivative`
 
-This term on the right hand side is called a *limit* 
-and it tells us what happens 
-to the value of an expression
-as a specified variable 
-approaches a particular value.
-This limit tells us what 
-the ratio between a perturbation $h$
-and the change in the function value 
-$f(x + h) - f(x)$ converges to 
-as we shrink its size to zero.
+Biểu thức ở vế phải này được gọi là *giới hạn*
+và nó cho chúng ta biết điều gì xảy ra
+với giá trị của một biểu thức
+khi một biến được chỉ định
+tiến đến một giá trị cụ thể.
+Giới hạn này cho chúng ta biết
+tỷ số giữa một nhiễu loạn $h$
+và sự thay đổi trong giá trị hàm
+$f(x + h) - f(x)$ hội tụ về đâu
+khi ta thu nhỏ độ lớn của nó về không.
 
-When $f'(x)$ exists, $f$ is said 
-to be *differentiable* at $x$;
-and when $f'(x)$ exists for all $x$
-on a set, e.g., the interval $[a,b]$, 
-we say that $f$ is differentiable on this set.
-Not all functions are differentiable,
-including many that we wish to optimize,
-such as accuracy and the area under the
-receiving operating characteristic (AUC).
-However, because computing the derivative of the loss 
-is a crucial step in nearly all 
-algorithms for training deep neural networks,
-we often optimize a differentiable *surrogate* instead.
+Khi $f'(x)$ tồn tại, $f$ được gọi
+là *khả vi* tại $x$;
+và khi $f'(x)$ tồn tại với mọi $x$
+trên một tập, ví dụ khoảng $[a,b]$,
+ta nói rằng $f$ khả vi trên tập này.
+Không phải mọi hàm đều khả vi,
+bao gồm nhiều hàm mà ta muốn tối ưu hóa,
+chẳng hạn như accuracy và diện tích dưới
+đường cong đặc trưng hoạt động của bộ thu (AUC).
+Tuy nhiên, vì việc tính đạo hàm của mất mát
+là một bước thiết yếu trong hầu như mọi
+thuật toán huấn luyện mạng nơ-ron sâu,
+chúng ta thường tối ưu hóa một *surrogate* khả vi thay vào đó.
 
 
-We can interpret the derivative 
+Ta có thể diễn giải đạo hàm
 $f'(x)$
-as the *instantaneous* rate of change 
-of $f(x)$ with respect to $x$.
-Let's develop some intuition with an example.
-(**Define $u = f(x) = 3x^2-4x$.**)
+là tốc độ thay đổi *tức thời*
+của $f(x)$ theo $x$.
+Hãy xây dựng trực giác qua một ví dụ.
+(**Đặt $u = f(x) = 3x^2-4x$.**)
 
 ```{.python .input}
 %%tab mxnet
@@ -148,11 +148,11 @@ def f(x):
     return 3 * x ** 2 - 4 * x
 ```
 
-[**Setting $x=1$, we see that $\frac{f(x+h) - f(x)}{h}$**] (**approaches $2$
-as $h$ approaches $0$.**)
-While this experiment lacks 
-the rigor of a mathematical proof,
-we can quickly see that indeed $f'(1) = 2$.
+[**Khi đặt $x=1$, ta thấy $\frac{f(x+h) - f(x)}{h}$**] (**tiến đến $2$
+khi $h$ tiến đến $0$.**)
+Mặc dù thí nghiệm này không có
+tính chặt chẽ của một chứng minh toán học,
+ta có thể nhanh chóng thấy rằng thực sự $f'(1) = 2$.
 
 ```{.python .input}
 %%tab all
@@ -160,49 +160,48 @@ for h in 10.0**np.arange(-1, -6, -1):
     print(f'h={h:.5f}, numerical limit={(f(1+h)-f(1))/h:.5f}')
 ```
 
-There are several equivalent notational conventions for derivatives.
-Given $y = f(x)$, the following expressions are equivalent:
+Có một số quy ước ký hiệu tương đương cho đạo hàm.
+Cho $y = f(x)$, các biểu thức sau là tương đương:
 
 $$f'(x) = y' = \frac{dy}{dx} = \frac{df}{dx} = \frac{d}{dx} f(x) = Df(x) = D_x f(x),$$
 
-where the symbols $\frac{d}{dx}$ and $D$ are *differentiation operators*.
-Below, we present the derivatives of some common functions:
+trong đó các ký hiệu $\frac{d}{dx}$ và $D$ là các *toán tử vi phân*.
+Dưới đây, chúng tôi trình bày đạo hàm của một số hàm phổ biến:
 
 $$\begin{aligned} \frac{d}{dx} C & = 0 && \textrm{for any constant $C$} \\ \frac{d}{dx} x^n & = n x^{n-1} && \textrm{for } n \neq 0 \\ \frac{d}{dx} e^x & = e^x \\ \frac{d}{dx} \ln x & = x^{-1}. \end{aligned}$$
 
-Functions composed from differentiable functions 
-are often themselves differentiable.
-The following rules come in handy 
-for working with compositions 
-of any differentiable functions 
-$f$ and $g$, and constant $C$.
+Các hàm được cấu thành từ những hàm khả vi
+thường cũng tự chúng khả vi.
+Các quy tắc sau hữu ích
+khi làm việc với các tổ hợp
+của bất kỳ hàm khả vi nào
+$f$ và $g$, cùng hằng số $C$.
 
 $$\begin{aligned} \frac{d}{dx} [C f(x)] & = C \frac{d}{dx} f(x) && \textrm{Constant multiple rule} \\ \frac{d}{dx} [f(x) + g(x)] & = \frac{d}{dx} f(x) + \frac{d}{dx} g(x) && \textrm{Sum rule} \\ \frac{d}{dx} [f(x) g(x)] & = f(x) \frac{d}{dx} g(x) + g(x) \frac{d}{dx} f(x) && \textrm{Product rule} \\ \frac{d}{dx} \frac{f(x)}{g(x)} & = \frac{g(x) \frac{d}{dx} f(x) - f(x) \frac{d}{dx} g(x)}{g^2(x)} && \textrm{Quotient rule} \end{aligned}$$
 
-Using this, we can apply the rules 
-to find the derivative of $3 x^2 - 4x$ via
+Dùng các quy tắc này, ta có thể tìm đạo hàm của $3 x^2 - 4x$ bằng
 
 $$\frac{d}{dx} [3 x^2 - 4x] = 3 \frac{d}{dx} x^2 - 4 \frac{d}{dx} x = 6x - 4.$$
 
-Plugging in $x = 1$ shows that, indeed, 
-the derivative equals $2$ at this location. 
-Note that derivatives tell us 
-the *slope* of a function 
-at a particular location.  
+Thay $x = 1$ vào cho thấy rằng thực sự
+đạo hàm bằng $2$ tại vị trí này.
+Lưu ý rằng đạo hàm cho chúng ta biết
+*độ dốc* của một hàm
+tại một vị trí cụ thể.
 
-## Visualization Utilities
+## Tiện ích trực quan hóa
 
-[**We can visualize the slopes of functions using the `matplotlib` library**].
-We need to define a few functions. 
-As its name indicates, `use_svg_display` 
-tells `matplotlib` to output graphics 
-in SVG format for crisper images. 
-The comment `#@save` is a special modifier 
-that allows us to save any function, 
-class, or other code block to the `d2l` package 
-so that we can invoke it later 
-without repeating the code, 
-e.g., via `d2l.use_svg_display()`.
+[**Ta có thể trực quan hóa độ dốc của các hàm bằng thư viện `matplotlib`**].
+Ta cần định nghĩa một vài hàm.
+Đúng như tên gọi, `use_svg_display`
+chỉ dẫn `matplotlib` xuất đồ họa
+ở định dạng SVG để hình ảnh sắc nét hơn.
+Chú thích `#@save` là một modifier đặc biệt
+cho phép ta lưu bất kỳ hàm,
+class hoặc khối mã nào khác vào package `d2l`
+để có thể gọi lại sau này
+mà không cần lặp lại mã,
+ví dụ, thông qua `d2l.use_svg_display()`.
 
 ```{.python .input}
 %%tab all
@@ -211,9 +210,9 @@ def use_svg_display():  #@save
     backend_inline.set_matplotlib_formats('svg')
 ```
 
-Conveniently, we can set figure sizes with `set_figsize`. 
-Since the import statement `from matplotlib import pyplot as plt` 
-was marked via `#@save` in the `d2l` package, we can call `d2l.plt`.
+Một cách thuận tiện, ta có thể đặt kích thước hình bằng `set_figsize`.
+Vì câu lệnh import `from matplotlib import pyplot as plt`
+đã được đánh dấu qua `#@save` trong package `d2l`, ta có thể gọi `d2l.plt`.
 
 ```{.python .input}
 %%tab all
@@ -223,9 +222,9 @@ def set_figsize(figsize=(3.5, 2.5)):  #@save
     d2l.plt.rcParams['figure.figsize'] = figsize
 ```
 
-The `set_axes` function can associate axes
-with properties, including labels, ranges,
-and scales.
+Hàm `set_axes` có thể liên kết các trục
+với các thuộc tính, bao gồm nhãn, phạm vi
+và tỷ lệ.
 
 ```{.python .input}
 %%tab all
@@ -240,10 +239,10 @@ def set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend):
     axes.grid()
 ```
 
-With these three functions, we can define a `plot` function 
-to overlay multiple curves. 
-Much of the code here is just ensuring 
-that the sizes and shapes of inputs match.
+Với ba hàm này, ta có thể định nghĩa một hàm `plot`
+để chồng nhiều đường cong lên nhau.
+Phần lớn mã ở đây chỉ nhằm bảo đảm
+rằng kích thước và hình dạng của các đầu vào khớp nhau.
 
 ```{.python .input}
 %%tab all
@@ -274,8 +273,8 @@ def plot(X, Y=None, xlabel=None, ylabel=None, legend=[], xlim=None,
     set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend)
 ```
 
-Now we can [**plot the function $u = f(x)$ and its tangent line $y = 2x - 3$ at $x=1$**],
-where the coefficient $2$ is the slope of the tangent line.
+Bây giờ ta có thể [**vẽ hàm $u = f(x)$ và tiếp tuyến $y = 2x - 3$ của nó tại $x=1$**],
+trong đó hệ số $2$ là độ dốc của tiếp tuyến.
 
 ```{.python .input}
 %%tab all
@@ -283,167 +282,167 @@ x = np.arange(0, 3, 0.1)
 plot(x, [f(x), 2 * x - 3], 'x', 'f(x)', legend=['f(x)', 'Tangent line (x=1)'])
 ```
 
-## Partial Derivatives and Gradients
+## Đạo hàm riêng và Gradient
 :label:`subsec_calculus-grad`
 
-Thus far, we have been differentiating
-functions of just one variable.
-In deep learning, we also need to work
-with functions of *many* variables.
-We briefly introduce notions of the derivative
-that apply to such *multivariate* functions.
+Cho đến nay, chúng ta chỉ lấy đạo hàm
+các hàm của một biến.
+Trong deep learning, ta cũng cần làm việc
+với các hàm có *nhiều* biến.
+Chúng tôi sẽ giới thiệu ngắn gọn các khái niệm về đạo hàm
+áp dụng cho những hàm *nhiều biến* như vậy.
 
 
-Let $y = f(x_1, x_2, \ldots, x_n)$ be a function with $n$ variables. 
-The *partial derivative* of $y$ 
-with respect to its $i^\textrm{th}$ parameter $x_i$ is
+Cho $y = f(x_1, x_2, \ldots, x_n)$ là một hàm có $n$ biến.
+*Đạo hàm riêng* của $y$
+theo tham số thứ $i^\textrm{th}$ $x_i$ là
 
 $$ \frac{\partial y}{\partial x_i} = \lim_{h \rightarrow 0} \frac{f(x_1, \ldots, x_{i-1}, x_i+h, x_{i+1}, \ldots, x_n) - f(x_1, \ldots, x_i, \ldots, x_n)}{h}.$$
 
 
-To calculate $\frac{\partial y}{\partial x_i}$, 
-we can treat $x_1, \ldots, x_{i-1}, x_{i+1}, \ldots, x_n$ as constants 
-and calculate the derivative of $y$ with respect to $x_i$.
-The following notational conventions for partial derivatives 
-are all common and all mean the same thing:
+Để tính $\frac{\partial y}{\partial x_i}$,
+ta có thể coi $x_1, \ldots, x_{i-1}, x_{i+1}, \ldots, x_n$ là hằng số
+và tính đạo hàm của $y$ theo $x_i$.
+Các quy ước ký hiệu sau cho đạo hàm riêng
+đều phổ biến và đều có cùng nghĩa:
 
 $$\frac{\partial y}{\partial x_i} = \frac{\partial f}{\partial x_i} = \partial_{x_i} f = \partial_i f = f_{x_i} = f_i = D_i f = D_{x_i} f.$$
 
-We can concatenate partial derivatives 
-of a multivariate function 
-with respect to all its variables 
-to obtain a vector that is called
-the *gradient* of the function.
-Suppose that the input of function 
-$f: \mathbb{R}^n \rightarrow \mathbb{R}$ 
-is an $n$-dimensional vector 
-$\mathbf{x} = [x_1, x_2, \ldots, x_n]^\top$ 
-and the output is a scalar. 
-The gradient of the function $f$ 
-with respect to $\mathbf{x}$ 
-is a vector of $n$ partial derivatives:
+Ta có thể ghép các đạo hàm riêng
+của một hàm nhiều biến
+theo tất cả các biến của nó
+để thu được một vector được gọi là
+*gradient* của hàm.
+Giả sử đầu vào của hàm
+$f: \mathbb{R}^n \rightarrow \mathbb{R}$
+là một vector $n$ chiều
+$\mathbf{x} = [x_1, x_2, \ldots, x_n]^\top$
+và đầu ra là một vô hướng.
+Gradient của hàm $f$
+theo $\mathbf{x}$
+là một vector gồm $n$ đạo hàm riêng:
 
 $$\nabla_{\mathbf{x}} f(\mathbf{x}) = \left[\partial_{x_1} f(\mathbf{x}), \partial_{x_2} f(\mathbf{x}), \ldots
-\partial_{x_n} f(\mathbf{x})\right]^\top.$$ 
+\partial_{x_n} f(\mathbf{x})\right]^\top.$$
 
-When there is no ambiguity,
-$\nabla_{\mathbf{x}} f(\mathbf{x})$ 
-is typically replaced 
-by $\nabla f(\mathbf{x})$.
-The following rules come in handy 
-for differentiating multivariate functions:
+Khi không có sự mơ hồ,
+$\nabla_{\mathbf{x}} f(\mathbf{x})$
+thường được thay thế
+bằng $\nabla f(\mathbf{x})$.
+Các quy tắc sau hữu ích
+khi lấy đạo hàm các hàm nhiều biến:
 
-* For all $\mathbf{A} \in \mathbb{R}^{m \times n}$ we have $\nabla_{\mathbf{x}} \mathbf{A} \mathbf{x} = \mathbf{A}^\top$ and $\nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{A}  = \mathbf{A}$.
-* For square matrices $\mathbf{A} \in \mathbb{R}^{n \times n}$ we have that $\nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{A} \mathbf{x}  = (\mathbf{A} + \mathbf{A}^\top)\mathbf{x}$ and in particular
+* Với mọi $\mathbf{A} \in \mathbb{R}^{m \times n}$, ta có $\nabla_{\mathbf{x}} \mathbf{A} \mathbf{x} = \mathbf{A}^\top$ và $\nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{A}  = \mathbf{A}$.
+* Với các ma trận vuông $\mathbf{A} \in \mathbb{R}^{n \times n}$, ta có $\nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{A} \mathbf{x}  = (\mathbf{A} + \mathbf{A}^\top)\mathbf{x}$ và cụ thể là
 $\nabla_{\mathbf{x}} \|\mathbf{x} \|^2 = \nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{x} = 2\mathbf{x}$.
 
-Similarly, for any matrix $\mathbf{X}$, 
-we have $\nabla_{\mathbf{X}} \|\mathbf{X} \|_\textrm{F}^2 = 2\mathbf{X}$. 
+Tương tự, với mọi ma trận $\mathbf{X}$, 
+ta có $\nabla_{\mathbf{X}} \|\mathbf{X} \|_\textrm{F}^2 = 2\mathbf{X}$. 
 
 
 
-## Chain Rule
+## Quy tắc Chuỗi
 
-In deep learning, the gradients of concern
-are often difficult to calculate
-because we are working with 
-deeply nested functions 
-(of functions (of functions...)).
-Fortunately, the *chain rule* takes care of this. 
-Returning to functions of a single variable,
-suppose that $y = f(g(x))$
-and that the underlying functions 
-$y=f(u)$ and $u=g(x)$ 
-are both differentiable.
-The chain rule states that 
+Trong deep learning, các gradient cần quan tâm
+thường khó tính toán
+vì chúng ta làm việc với 
+các hàm lồng nhau sâu 
+(của các hàm (của các hàm...)).
+May mắn thay, *quy tắc chuỗi* xử lý được điều này. 
+Quay lại với các hàm một biến,
+giả sử rằng $y = f(g(x))$
+và các hàm cơ sở 
+$y=f(u)$ và $u=g(x)$ 
+đều khả vi.
+Quy tắc chuỗi phát biểu rằng 
 
 
 $$\frac{dy}{dx} = \frac{dy}{du} \frac{du}{dx}.$$
 
 
 
-Turning back to multivariate functions,
-suppose that $y = f(\mathbf{u})$ has variables
+Quay lại với các hàm nhiều biến,
+giả sử rằng $y = f(\mathbf{u})$ có các biến
 $u_1, u_2, \ldots, u_m$, 
-where each $u_i = g_i(\mathbf{x})$ 
-has variables $x_1, x_2, \ldots, x_n$,
-i.e.,  $\mathbf{u} = g(\mathbf{x})$.
-Then the chain rule states that
+trong đó mỗi $u_i = g_i(\mathbf{x})$ 
+có các biến $x_1, x_2, \ldots, x_n$,
+nghĩa là $\mathbf{u} = g(\mathbf{x})$.
+Khi đó, quy tắc chuỗi phát biểu rằng
 
 $$\frac{\partial y}{\partial x_{i}} = \frac{\partial y}{\partial u_{1}} \frac{\partial u_{1}}{\partial x_{i}} + \frac{\partial y}{\partial u_{2}} \frac{\partial u_{2}}{\partial x_{i}} + \ldots + \frac{\partial y}{\partial u_{m}} \frac{\partial u_{m}}{\partial x_{i}} \ \textrm{ and so } \ \nabla_{\mathbf{x}} y =  \mathbf{A} \nabla_{\mathbf{u}} y,$$
 
-where $\mathbf{A} \in \mathbb{R}^{n \times m}$ is a *matrix*
-that contains the derivative of vector $\mathbf{u}$
-with respect to vector $\mathbf{x}$.
-Thus, evaluating the gradient requires 
-computing a vector--matrix product. 
-This is one of the key reasons why linear algebra 
-is such an integral building block 
-in building deep learning systems. 
+trong đó $\mathbf{A} \in \mathbb{R}^{n \times m}$ là một *ma trận*
+chứa đạo hàm của vector $\mathbf{u}$
+theo vector $\mathbf{x}$.
+Do đó, việc tính gradient yêu cầu 
+tính tích vector--ma trận. 
+Đây là một trong những lý do then chốt khiến đại số tuyến tính 
+là một nền tảng không thể thiếu 
+trong việc xây dựng các hệ thống deep learning. 
 
 
 
-## Discussion
+## Thảo luận
 
-While we have just scratched the surface of a deep topic,
-a number of concepts already come into focus: 
-first, the composition rules for differentiation
-can be applied routinely, enabling
-us to compute gradients *automatically*.
-This task requires no creativity and thus 
-we can focus our cognitive powers elsewhere.
-Second, computing the derivatives of vector-valued functions 
-requires us to multiply matrices as we trace 
-the dependency graph of variables from output to input. 
-In particular, this graph is traversed in a *forward* direction 
-when we evaluate a function 
-and in a *backwards* direction 
-when we compute gradients. 
-Later chapters will formally introduce backpropagation,
-a computational procedure for applying the chain rule.
+Mặc dù chúng ta mới chỉ chạm đến bề mặt của một chủ đề sâu rộng,
+một số khái niệm đã trở nên rõ nét: 
+thứ nhất, các quy tắc hợp thành cho phép lấy đạo hàm
+được áp dụng một cách thường quy, giúp
+chúng ta tính gradient *tự động*.
+Nhiệm vụ này không đòi hỏi sự sáng tạo, do đó 
+chúng ta có thể tập trung năng lực nhận thức vào những việc khác.
+Thứ hai, việc tính đạo hàm của các hàm có giá trị vector 
+yêu cầu chúng ta nhân các ma trận khi lần theo 
+đồ thị phụ thuộc của các biến từ đầu ra đến đầu vào. 
+Cụ thể, đồ thị này được duyệt theo hướng *thuận* 
+khi chúng ta tính giá trị của một hàm 
+và theo hướng *ngược* 
+khi chúng ta tính gradient. 
+Các chương sau sẽ giới thiệu chính thức backpropagation,
+một quy trình tính toán để áp dụng quy tắc chuỗi.
 
-From the viewpoint of optimization, gradients allow us 
-to determine how to move the parameters of a model
-in order to lower the loss,
-and each step of the optimization algorithms used 
-throughout this book will require calculating the gradient.
+Từ góc nhìn của tối ưu hóa, gradient cho phép chúng ta 
+xác định cách di chuyển các tham số của một mô hình
+để giảm loss,
+và mỗi bước của các thuật toán tối ưu hóa được sử dụng 
+xuyên suốt cuốn sách này sẽ cần tính gradient.
 
-## Exercises
+## Bài tập
 
-1. So far we took the rules for derivatives for granted. 
-   Using the definition and limits prove the properties 
-   for (i) $f(x) = c$, (ii) $f(x) = x^n$, (iii) $f(x) = e^x$ and (iv) $f(x) = \log x$.
-1. In the same vein, prove the product, sum, and quotient rule from first principles. 
-1. Prove that the constant multiple rule follows as a special case of the product rule. 
-1. Calculate the derivative of $f(x) = x^x$. 
-1. What does it mean that $f'(x) = 0$ for some $x$? 
-   Give an example of a function $f$ 
-   and a location $x$ for which this might hold. 
-1. Plot the function $y = f(x) = x^3 - \frac{1}{x}$ 
-   and plot its tangent line at $x = 1$.
-1. Find the gradient of the function 
+1. Cho đến nay, chúng ta đã mặc nhiên thừa nhận các quy tắc đạo hàm. 
+   Hãy sử dụng định nghĩa và giới hạn để chứng minh các tính chất 
+   cho (i) $f(x) = c$, (ii) $f(x) = x^n$, (iii) $f(x) = e^x$ và (iv) $f(x) = \log x$.
+1. Tương tự, hãy chứng minh quy tắc tích, tổng và thương từ các nguyên lý cơ bản. 
+1. Chứng minh rằng quy tắc nhân với hằng số là một trường hợp đặc biệt của quy tắc tích. 
+1. Tính đạo hàm của $f(x) = x^x$. 
+1. Việc $f'(x) = 0$ tại một $x$ nào đó có nghĩa là gì? 
+   Hãy đưa ra một ví dụ về hàm $f$ 
+   và một vị trí $x$ mà điều này có thể đúng. 
+1. Vẽ đồ thị hàm số $y = f(x) = x^3 - \frac{1}{x}$ 
+   và vẽ đường tiếp tuyến của nó tại $x = 1$.
+1. Tìm gradient của hàm 
    $f(\mathbf{x}) = 3x_1^2 + 5e^{x_2}$.
-1. What is the gradient of the function 
-   $f(\mathbf{x}) = \|\mathbf{x}\|_2$? What happens for $\mathbf{x} = \mathbf{0}$?
-1. Can you write out the chain rule for the case 
-   where $u = f(x, y, z)$ and $x = x(a, b)$, $y = y(a, b)$, and $z = z(a, b)$?
-1. Given a function $f(x)$ that is invertible, 
-   compute the derivative of its inverse $f^{-1}(x)$. 
-   Here we have that $f^{-1}(f(x)) = x$ and conversely $f(f^{-1}(y)) = y$. 
-   Hint: use these properties in your derivation. 
+1. Gradient của hàm 
+   $f(\mathbf{x}) = \|\mathbf{x}\|_2$ là gì? Điều gì xảy ra khi $\mathbf{x} = \mathbf{0}$?
+1. Bạn có thể viết quy tắc chuỗi cho trường hợp 
+   $u = f(x, y, z)$ và $x = x(a, b)$, $y = y(a, b)$, và $z = z(a, b)$ không?
+1. Cho một hàm khả nghịch $f(x)$, 
+   hãy tính đạo hàm của hàm nghịch đảo $f^{-1}(x)$. 
+   Ở đây, ta có $f^{-1}(f(x)) = x$ và ngược lại $f(f^{-1}(y)) = y$. 
+   Gợi ý: sử dụng các tính chất này trong phép suy diễn của bạn. 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/32)
+[Thảo luận](https://discuss.d2l.ai/t/32)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/33)
+[Thảo luận](https://discuss.d2l.ai/t/33)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/197)
+[Thảo luận](https://discuss.d2l.ai/t/197)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17969)
+[Thảo luận](https://discuss.d2l.ai/t/17969)
 :end_tab:

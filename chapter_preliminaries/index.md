@@ -1,27 +1,27 @@
-#  Preliminaries
+# Kiến thức sơ bộ
 :label:`chap_preliminaries`
 
-To prepare for your dive into deep learning,
-you will need a few survival skills:
-(i) techniques for storing and manipulating data;
-(ii) libraries for ingesting 
-and preprocessing data from a variety of sources;
-(iii) knowledge of the basic linear algebraic operations
-that we apply to high-dimensional data elements;
-(iv) just enough calculus to determine
-which direction to adjust each parameter
-in order to decrease the loss function;
-(v) the ability to automatically compute derivatives
-so that you can forget much of 
-the calculus you just learned;
-(vi) some basic fluency in probability,
-our primary language for reasoning under uncertainty;
-and (vii) some aptitude for finding answers 
-in the official documentation when you get stuck.
+Để chuẩn bị cho hành trình khám phá deep learning,
+bạn sẽ cần một vài kỹ năng sinh tồn:
+(i) các kỹ thuật lưu trữ và thao tác với dữ liệu;
+(ii) các thư viện để tiếp nhận
+và tiền xử lý dữ liệu từ nhiều nguồn khác nhau;
+(iii) kiến thức về các phép toán đại số tuyến tính cơ bản
+được áp dụng cho các phần tử dữ liệu có số chiều cao;
+(iv) đủ kiến thức giải tích để xác định
+nên điều chỉnh từng tham số theo hướng nào
+nhằm giảm hàm mất mát;
+(v) khả năng tự động tính đạo hàm
+để bạn có thể quên đi phần lớn
+kiến thức giải tích vừa học;
+(vi) một mức độ thành thạo cơ bản về xác suất,
+ngôn ngữ chính của chúng ta để suy luận trong điều kiện không chắc chắn;
+và (vii) một chút năng lực tìm câu trả lời
+trong tài liệu chính thức khi gặp bế tắc.
 
-In short, this chapter provides a rapid introduction 
-to the basics that you will need to follow 
-*most* of the technical content in this book.
+Tóm lại, chương này cung cấp phần giới thiệu nhanh
+về những kiến thức cơ bản mà bạn cần để theo dõi
+*hầu hết* nội dung kỹ thuật trong cuốn sách này.
 
 ```toc
 :maxdepth: 2
@@ -34,4 +34,3 @@ autograd
 probability
 lookup-api
 ```
-

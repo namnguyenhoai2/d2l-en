@@ -6,43 +6,43 @@ tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 # Automatic Differentiation
 :label:`sec_autograd`
 
-Recall from :numref:`sec_calculus` 
-that calculating derivatives is the crucial step
-in all the optimization algorithms
-that we will use to train deep networks.
-While the calculations are straightforward,
-working them out by hand can be tedious and error-prone, 
-and these issues only grow
-as our models become more complex.
+Hãy nhớ lại từ :numref:`sec_calculus` 
+rằng việc tính đạo hàm là bước then chốt
+trong tất cả các thuật toán tối ưu hóa
+mà chúng ta sẽ sử dụng để huấn luyện mạng sâu.
+Mặc dù các phép tính khá đơn giản,
+việc tự tính chúng có thể tẻ nhạt và dễ xảy ra sai sót,
+và những vấn đề này chỉ trở nên nghiêm trọng hơn
+khi mô hình của chúng ta ngày càng phức tạp.
 
-Fortunately all modern deep learning frameworks
-take this work off our plates
-by offering *automatic differentiation*
-(often shortened to *autograd*). 
-As we pass data through each successive function,
-the framework builds a *computational graph* 
-that tracks how each value depends on others.
-To calculate derivatives, 
-automatic differentiation 
-works backwards through this graph
-applying the chain rule. 
-The computational algorithm for applying the chain rule
-in this fashion is called *backpropagation*.
+May mắn thay, tất cả các framework deep learning hiện đại
+đều đảm nhiệm công việc này thay chúng ta
+bằng cách cung cấp *automatic differentiation*
+(thường được viết tắt là *autograd*).
+Khi truyền dữ liệu qua từng hàm liên tiếp,
+framework sẽ xây dựng một *computational graph*
+theo dõi cách mỗi giá trị phụ thuộc vào các giá trị khác.
+Để tính đạo hàm,
+automatic differentiation
+sẽ đi ngược qua graph này
+và áp dụng chain rule.
+Thuật toán tính toán áp dụng chain rule
+theo cách này được gọi là *backpropagation*.
 
-While autograd libraries have become
-a hot concern over the past decade,
-they have a long history. 
-In fact the earliest references to autograd
-date back over half of a century :cite:`Wengert.1964`.
-The core ideas behind modern backpropagation
-date to a PhD thesis from 1980 :cite:`Speelpenning.1980`
-and were further developed in the late 1980s :cite:`Griewank.1989`.
-While backpropagation has become the default method 
-for computing gradients, it is not the only option. 
-For instance, the Julia programming language employs 
-forward propagation :cite:`Revels.Lubin.Papamarkou.2016`. 
-Before exploring methods, 
-let's first master the autograd package.
+Mặc dù các thư viện autograd đã trở thành
+một chủ đề được quan tâm nhiều trong thập kỷ qua,
+chúng có lịch sử lâu dài.
+Trên thực tế, những tài liệu tham khảo sớm nhất về autograd
+đã có từ hơn nửa thế kỷ trước :cite:`Wengert.1964`.
+Các ý tưởng cốt lõi đằng sau backpropagation hiện đại
+bắt nguồn từ một luận án tiến sĩ năm 1980 :cite:`Speelpenning.1980`
+và tiếp tục được phát triển vào cuối những năm 1980 :cite:`Griewank.1989`.
+Mặc dù backpropagation đã trở thành phương pháp mặc định
+để tính gradient, đây không phải là lựa chọn duy nhất.
+Chẳng hạn, ngôn ngữ lập trình Julia sử dụng
+forward propagation :cite:`Revels.Lubin.Papamarkou.2016`.
+Trước khi tìm hiểu các phương pháp,
+trước tiên hãy nắm vững package autograd.
 
 ```{.python .input}
 %%tab mxnet
@@ -65,13 +65,13 @@ import tensorflow as tf
 from jax import numpy as jnp
 ```
 
-## A Simple Function
+## Một hàm đơn giản
 
-Let's assume that we are interested
-in (**differentiating the function
+Giả sử rằng chúng ta quan tâm đến việc
+(**lấy đạo hàm của hàm
 $y = 2\mathbf{x}^{\top}\mathbf{x}$
-with respect to the column vector $\mathbf{x}$.**)
-To start, we assign `x` an initial value.
+theo vector cột $\mathbf{x}$.**)
+Để bắt đầu, chúng ta gán cho `x` một giá trị ban đầu.
 
 ```{.python .input  n=1}
 %%tab mxnet
@@ -98,20 +98,20 @@ x
 ```
 
 :begin_tab:`mxnet, pytorch, tensorflow`
-[**Before we calculate the gradient
-of $y$ with respect to $\mathbf{x}$,
-we need a place to store it.**]
-In general, we avoid allocating new memory
-every time we take a derivative 
-because deep learning requires 
-successively computing derivatives
-with respect to the same parameters
-a great many times,
-and we might risk running out of memory.
-Note that the gradient of a scalar-valued function
-with respect to a vector $\mathbf{x}$
-is vector-valued with 
-the same shape as $\mathbf{x}$.
+[**Trước khi tính gradient
+của $y$ theo $\mathbf{x}$,
+chúng ta cần một nơi để lưu gradient.**]
+Nói chung, chúng ta tránh cấp phát bộ nhớ mới
+mỗi khi lấy một đạo hàm
+vì deep learning yêu cầu
+tính liên tiếp các đạo hàm
+theo cùng một tập tham số
+rất nhiều lần,
+và chúng ta có thể có nguy cơ hết bộ nhớ.
+Lưu ý rằng gradient của một hàm vô hướng
+theo một vector $\mathbf{x}$
+là một vector có
+cùng hình dạng với $\mathbf{x}$.
 :end_tab:
 
 ```{.python .input  n=8}
@@ -135,7 +135,7 @@ x.grad  # The gradient is None by default
 x = tf.Variable(x)
 ```
 
-(**We now calculate our function of `x` and assign the result to `y`.**)
+(**Bây giờ chúng ta tính hàm của `x` và gán kết quả cho `y`.**)
 
 ```{.python .input  n=10}
 %%tab mxnet
@@ -167,31 +167,31 @@ y(x)
 ```
 
 :begin_tab:`mxnet`
-[**We can now take the gradient of `y`
-with respect to `x`**] by calling 
-its `backward` method.
-Next, we can access the gradient 
-via `x`'s `grad` attribute.
+[**Bây giờ chúng ta có thể lấy gradient của `y`
+theo `x`**] bằng cách gọi
+method `backward` của nó.
+Tiếp theo, chúng ta có thể truy cập gradient
+thông qua attribute `grad` của `x`.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**We can now take the gradient of `y`
-with respect to `x`**] by calling 
-its `backward` method.
-Next, we can access the gradient 
-via `x`'s `grad` attribute.
+[**Bây giờ chúng ta có thể lấy gradient của `y`
+theo `x`**] bằng cách gọi
+method `backward` của nó.
+Tiếp theo, chúng ta có thể truy cập gradient
+thông qua attribute `grad` của `x`.
 :end_tab:
 
 :begin_tab:`tensorflow`
-[**We can now calculate the gradient of `y`
-with respect to `x`**] by calling 
-the `gradient` method.
+[**Bây giờ chúng ta có thể tính gradient của `y`
+theo `x`**] bằng cách gọi
+method `gradient`.
 :end_tab:
 
 :begin_tab:`jax`
-[**We can now take the gradient of `y`
-with respect to `x`**] by passing through the
-`grad` transform.
+[**Bây giờ chúng ta có thể lấy gradient của `y`
+theo `x`**] bằng cách truyền qua
+phép biến đổi `grad`.
 :end_tab:
 
 ```{.python .input}
@@ -221,10 +221,10 @@ x_grad = grad(y)(x)
 x_grad
 ```
 
-(**We already know that the gradient of the function $y = 2\mathbf{x}^{\top}\mathbf{x}$
-with respect to $\mathbf{x}$ should be $4\mathbf{x}$.**)
-We can now verify that the automatic gradient computation
-and the expected result are identical.
+(**Chúng ta đã biết rằng gradient của hàm $y = 2\mathbf{x}^{\top}\mathbf{x}$
+theo $\mathbf{x}$ phải là $4\mathbf{x}$.**)
+Bây giờ chúng ta có thể kiểm tra rằng phép tính gradient tự động
+và kết quả mong đợi là giống hệt nhau.
 
 ```{.python .input  n=13}
 %%tab mxnet
@@ -247,35 +247,35 @@ x_grad == 4 * x
 ```
 
 :begin_tab:`mxnet`
-[**Now let's calculate 
-another function of `x`
-and take its gradient.**] 
-Note that MXNet resets the gradient buffer 
-whenever we record a new gradient. 
+[**Bây giờ hãy tính
+một hàm khác của `x`
+và lấy gradient của nó.**]
+Lưu ý rằng MXNet đặt lại gradient buffer
+mỗi khi chúng ta ghi nhận một gradient mới.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**Now let's calculate 
-another function of `x`
-and take its gradient.**]
-Note that PyTorch does not automatically 
-reset the gradient buffer 
-when we record a new gradient. 
-Instead, the new gradient
-is added to the already-stored gradient.
-This behavior comes in handy
-when we want to optimize the sum 
-of multiple objective functions.
-To reset the gradient buffer,
-we can call `x.grad.zero_()` as follows:
+[**Bây giờ hãy tính
+một hàm khác của `x`
+và lấy gradient của nó.**]
+Lưu ý rằng PyTorch không tự động
+đặt lại gradient buffer
+khi chúng ta ghi nhận một gradient mới.
+Thay vào đó, gradient mới
+được cộng vào gradient đã lưu trước đó.
+Hành vi này rất hữu ích
+khi chúng ta muốn tối ưu hóa tổng
+của nhiều hàm mục tiêu.
+Để đặt lại gradient buffer,
+chúng ta có thể gọi `x.grad.zero_()` như sau:
 :end_tab:
 
 :begin_tab:`tensorflow`
-[**Now let's calculate 
-another function of `x`
-and take its gradient.**]
-Note that TensorFlow resets the gradient buffer 
-whenever we record a new gradient. 
+[**Bây giờ hãy tính
+một hàm khác của `x`
+và lấy gradient của nó.**]
+Lưu ý rằng TensorFlow đặt lại gradient buffer
+mỗi khi chúng ta ghi nhận một gradient mới.
 :end_tab:
 
 ```{.python .input}
@@ -307,65 +307,66 @@ y = lambda x: x.sum()
 grad(y)(x)
 ```
 
-## Backward for Non-Scalar Variables
+## Backward cho các biến không vô hướng
 
-When `y` is a vector, 
-the most natural representation 
-of the derivative of  `y`
-with respect to a vector `x` 
-is a matrix called the *Jacobian*
-that contains the partial derivatives
-of each component of `y` 
-with respect to each component of `x`.
-Likewise, for higher-order `y` and `x`,
-the result of differentiation could be an even higher-order tensor.
+Khi `y` là một vector,
+cách biểu diễn tự nhiên nhất
+của đạo hàm của `y`
+theo một vector `x`
+là một ma trận được gọi là *Jacobian*
+chứa các đạo hàm riêng
+của từng thành phần của `y`
+theo từng thành phần của `x`.
+Tương tự, với `y` và `x` bậc cao hơn,
+kết quả của phép lấy đạo hàm có thể là một tensor
+có bậc còn cao hơn.
 
-While Jacobians do show up in some
-advanced machine learning techniques,
-more commonly we want to sum up 
-the gradients of each component of `y`
-with respect to the full vector `x`,
-yielding a vector of the same shape as `x`.
-For example, we often have a vector 
-representing the value of our loss function
-calculated separately for each example among
-a *batch* of training examples.
-Here, we just want to (**sum up the gradients
-computed individually for each example**).
+Mặc dù Jacobian xuất hiện trong một số
+kỹ thuật machine learning nâng cao,
+thông thường hơn, chúng ta muốn cộng
+gradient của từng thành phần của `y`
+theo toàn bộ vector `x`,
+tạo ra một vector có cùng hình dạng với `x`.
+Ví dụ, chúng ta thường có một vector
+biểu diễn giá trị của hàm mất mát
+được tính riêng cho từng mẫu trong
+một *batch* gồm các mẫu huấn luyện.
+Ở đây, chúng ta chỉ muốn (**cộng các gradient
+được tính riêng cho từng mẫu**).
 
 :begin_tab:`mxnet`
-MXNet handles this problem by reducing all tensors to scalars 
-by summing before computing a gradient. 
-In other words, rather than returning the Jacobian 
+MXNet xử lý vấn đề này bằng cách giảm tất cả tensor về vô hướng
+bằng phép cộng trước khi tính gradient.
+Nói cách khác, thay vì trả về Jacobian
 $\partial_{\mathbf{x}} \mathbf{y}$,
-it returns the gradient of the sum
-$\partial_{\mathbf{x}} \sum_i y_i$. 
+nó trả về gradient của tổng
+$\partial_{\mathbf{x}} \sum_i y_i$.
 :end_tab:
 
 :begin_tab:`pytorch`
-Because deep learning frameworks vary 
-in how they interpret gradients of
-non-scalar tensors,
-PyTorch takes some steps to avoid confusion.
-Invoking `backward` on a non-scalar elicits an error 
-unless we tell PyTorch how to reduce the object to a scalar. 
-More formally, we need to provide some vector $\mathbf{v}$ 
-such that `backward` will compute 
-$\mathbf{v}^\top \partial_{\mathbf{x}} \mathbf{y}$ 
-rather than $\partial_{\mathbf{x}} \mathbf{y}$. 
-This next part may be confusing,
-but for reasons that will become clear later, 
-this argument (representing $\mathbf{v}$) is named `gradient`. 
-For a more detailed description, see Yang Zhang's 
-[Medium post](https://zhang-yang.medium.com/the-gradient-argument-in-pytorchs-backward-function-explained-by-examples-68f266950c29). 
+Vì các framework deep learning khác nhau
+trong cách diễn giải gradient của
+các tensor không vô hướng,
+PyTorch thực hiện một số bước để tránh nhầm lẫn.
+Việc gọi `backward` trên một giá trị không vô hướng sẽ gây lỗi
+trừ khi chúng ta cho PyTorch biết cách giảm đối tượng đó về một vô hướng.
+Chính xác hơn, chúng ta cần cung cấp một vector $\mathbf{v}$
+sao cho `backward` sẽ tính
+$\mathbf{v}^\top \partial_{\mathbf{x}} \mathbf{y}$
+thay vì $\partial_{\mathbf{x}} \mathbf{y}$.
+Phần tiếp theo có thể gây khó hiểu,
+nhưng vì những lý do sẽ trở nên rõ ràng sau này,
+đối số này (đại diện cho $\mathbf{v}$) được đặt tên là `gradient`.
+Để xem mô tả chi tiết hơn, hãy xem
+[bài đăng trên Medium](https://zhang-yang.medium.com/the-gradient-argument-in-pytorchs-backward-function-explained-by-examples-68f266950c29) của Yang Zhang.
 :end_tab:
 
 :begin_tab:`tensorflow`
-By default, TensorFlow returns the gradient of the sum.
-In other words, rather than returning 
-the Jacobian $\partial_{\mathbf{x}} \mathbf{y}$,
-it returns the gradient of the sum
-$\partial_{\mathbf{x}} \sum_i y_i$. 
+Theo mặc định, TensorFlow trả về gradient của tổng.
+Nói cách khác, thay vì trả về
+Jacobian $\partial_{\mathbf{x}} \mathbf{y}$,
+nó trả về gradient của tổng
+$\partial_{\mathbf{x}} \sum_i y_i$.
 :end_tab:
 
 ```{.python .input}
@@ -398,30 +399,30 @@ y = lambda x: x * x
 grad(lambda x: y(x).sum())(x)
 ```
 
-## Detaching Computation
+## Tách phép tính
 
-Sometimes, we wish to [**move some calculations
-outside of the recorded computational graph.**]
-For example, say that we use the input 
-to create some auxiliary intermediate terms 
-for which we do not want to compute a gradient. 
-In this case, we need to *detach* 
-the respective computational graph
-from the final result. 
-The following toy example makes this clearer: 
-suppose we have `z = x * y` and `y = x * x` 
-but we want to focus on the *direct* influence of `x` on `z` 
-rather than the influence conveyed via `y`. 
-In this case, we can create a new variable `u`
-that takes the same value as `y` 
-but whose *provenance* (how it was created)
-has been wiped out.
-Thus `u` has no ancestors in the graph
-and gradients do not flow through `u` to `x`.
-For example, taking the gradient of `z = x * u`
-will yield the result `u`,
-(not `3 * x * x` as you might have 
-expected since `z = x * x * x`).
+Đôi khi, chúng ta muốn [**đưa một số phép tính
+ra ngoài computational graph đã được ghi nhận.**]
+Ví dụ, giả sử chúng ta sử dụng đầu vào
+để tạo ra một số hạng trung gian phụ
+mà chúng ta không muốn tính gradient.
+Trong trường hợp này, chúng ta cần *detach*
+computational graph tương ứng
+khỏi kết quả cuối cùng.
+Ví dụ minh họa đơn giản sau sẽ làm rõ hơn:
+giả sử chúng ta có `z = x * y` và `y = x * x`
+nhưng muốn tập trung vào ảnh hưởng *trực tiếp* của `x` lên `z`
+thay vì ảnh hưởng truyền qua `y`.
+Trong trường hợp này, chúng ta có thể tạo một biến mới `u`
+có cùng giá trị với `y`
+nhưng *nguồn gốc* của nó (cách nó được tạo ra)
+đã bị xóa.
+Do đó, `u` không có nút tổ tiên nào trong graph
+và gradient không truyền qua `u` đến `x`.
+Ví dụ, lấy gradient của `z = x * u`
+sẽ cho kết quả `u`,
+(không phải `3 * x * x` như bạn có thể
+đã dự đoán vì `z = x * x * x`).
 
 ```{.python .input}
 %%tab mxnet
@@ -469,12 +470,12 @@ z = lambda x: u * x
 grad(lambda x: z(x).sum())(x) == y(x)
 ```
 
-Note that while this procedure
-detaches `y`'s ancestors
-from the graph leading to `z`, 
-the computational graph leading to `y` 
-persists and thus we can calculate
-the gradient of `y` with respect to `x`.
+Lưu ý rằng mặc dù quy trình này
+tách các nút tổ tiên của `y`
+khỏi graph dẫn đến `z`,
+computational graph dẫn đến `y`
+vẫn tồn tại, vì vậy chúng ta có thể tính
+gradient của `y` theo `x`.
 
 ```{.python .input}
 %%tab mxnet
@@ -499,22 +500,20 @@ t.gradient(y, x) == 2 * x
 grad(lambda x: y(x).sum())(x) == 2 * x
 ```
 
-## Gradients and Python Control Flow
+## Gradient và luồng điều khiển Python
 
-So far we reviewed cases where the path from input to output 
-was well defined via a function such as `z = x * x * x`.
-Programming offers us a lot more freedom in how we compute results. 
-For instance, we can make them depend on auxiliary variables 
-or condition choices on intermediate results. 
-One benefit of using automatic differentiation
-is that [**even if**] building the computational graph of 
-(**a function required passing through a maze of Python control flow**)
-(e.g., conditionals, loops, and arbitrary function calls),
-(**we can still calculate the gradient of the resulting variable.**)
-To illustrate this, consider the following code snippet where 
-the number of iterations of the `while` loop
-and the evaluation of the `if` statement
-both depend on the value of the input `a`.
+Cho đến nay, chúng ta đã xem xét các trường hợp trong đó đường đi từ đầu vào đến đầu ra được xác định rõ ràng thông qua một hàm như `z = x * x * x`.
+Lập trình mang lại cho chúng ta nhiều tự do hơn trong cách tính toán kết quả.
+Chẳng hạn, chúng ta có thể khiến chúng phụ thuộc vào các biến phụ hoặc điều kiện hóa các lựa chọn dựa trên những kết quả trung gian.
+Một lợi ích của việc sử dụng automatic differentiation
+là [**ngay cả khi**] việc xây dựng computational graph của
+(**một hàm đòi hỏi phải đi qua mê cung của luồng điều khiển Python**)
+(ví dụ: các câu lệnh điều kiện, vòng lặp và những lời gọi hàm tùy ý),
+(**chúng ta vẫn có thể tính gradient của biến thu được.**)
+Để minh họa điều này, hãy xem đoạn mã sau, trong đó
+số lần lặp của vòng lặp `while`
+và việc đánh giá câu lệnh `if`
+đều phụ thuộc vào giá trị của đầu vào `a`.
 
 ```{.python .input}
 %%tab mxnet
@@ -568,14 +567,13 @@ def f(a):
     return c
 ```
 
-Below, we call this function, passing in a random value, as input.
-Since the input is a random variable, 
-we do not know what form 
-the computational graph will take.
-However, whenever we execute `f(a)` 
-on a specific input, we realize 
-a specific computational graph
-and can subsequently run `backward`.
+Bên dưới, chúng ta gọi hàm này và truyền vào một giá trị ngẫu nhiên làm đầu vào.
+Vì đầu vào là một biến ngẫu nhiên,
+chúng ta không biết computational graph sẽ có dạng nào.
+Tuy nhiên, bất cứ khi nào thực thi `f(a)`
+trên một đầu vào cụ thể, chúng ta sẽ tạo ra
+một computational graph cụ thể
+và sau đó có thể chạy `backward`.
 
 ```{.python .input}
 %%tab mxnet
@@ -610,13 +608,13 @@ d = f(a)
 d_grad = grad(f)(a)
 ```
 
-Even though our function `f` is, for demonstration purposes, a bit contrived,
-its dependence on the input is quite simple: 
-it is a *linear* function of `a` 
-with piecewise defined scale. 
-As such, `f(a) / a` is a vector of constant entries 
-and, moreover, `f(a) / a` needs to match 
-the gradient of `f(a)` with respect to `a`.
+Mặc dù hàm `f` của chúng ta, vì mục đích minh họa, có phần khiên cưỡng,
+sự phụ thuộc của nó vào đầu vào khá đơn giản:
+đó là một hàm *tuyến tính* của `a`
+với hệ số tỷ lệ được xác định từng đoạn.
+Do đó, `f(a) / a` là một vector gồm các phần tử hằng số
+và hơn nữa, `f(a) / a` cần phải khớp với
+gradient của `f(a)` theo `a`.
 
 ```{.python .input}
 %%tab mxnet
@@ -638,60 +636,60 @@ d_grad == d / a
 d_grad == d / a
 ```
 
-Dynamic control flow is very common in deep learning. 
-For instance, when processing text, the computational graph
-depends on the length of the input. 
-In these cases, automatic differentiation 
-becomes vital for statistical modeling 
-since it is impossible to compute the gradient *a priori*. 
+Luồng điều khiển động rất phổ biến trong deep learning.
+Chẳng hạn, khi xử lý văn bản, computational graph
+phụ thuộc vào độ dài của đầu vào.
+Trong những trường hợp này, automatic differentiation
+trở nên thiết yếu đối với việc mô hình hóa thống kê
+vì không thể tính gradient *a priori*.
 
-## Discussion
+## Thảo luận
 
-You have now gotten a taste of the power of automatic differentiation. 
-The development of libraries for calculating derivatives
-both automatically and efficiently 
-has been a massive productivity booster
-for deep learning practitioners,
-liberating them so they can focus on less menial.
-Moreover, autograd lets us design massive models
-for which pen and paper gradient computations 
-would be prohibitively time consuming.
-Interestingly, while we use autograd to *optimize* models
-(in a statistical sense)
-the *optimization* of autograd libraries themselves
-(in a computational sense)
-is a rich subject
-of vital interest to framework designers.
-Here, tools from compilers and graph manipulation 
-are leveraged to compute results 
-in the most expedient and memory-efficient manner. 
+Đến đây, bạn đã có một cái nhìn sơ bộ về sức mạnh của automatic differentiation.
+Việc phát triển các thư viện để tính đạo hàm
+một cách tự động và hiệu quả
+đã thúc đẩy năng suất đáng kể
+cho những người thực hành deep learning,
+giúp họ tập trung vào những công việc ít mang tính thủ công hơn.
+Hơn nữa, autograd cho phép chúng ta thiết kế những mô hình lớn
+mà việc tính gradient bằng giấy bút
+sẽ tốn thời gian đến mức không khả thi.
+Điều thú vị là, trong khi chúng ta sử dụng autograd để *tối ưu hóa* các mô hình
+(theo nghĩa thống kê),
+việc *tối ưu hóa* chính các thư viện autograd
+(theo nghĩa tính toán)
+lại là một chủ đề phong phú
+được các nhà thiết kế framework đặc biệt quan tâm.
+Tại đây, các công cụ từ compiler và thao tác graph
+được tận dụng để tính toán kết quả
+theo cách nhanh chóng và tiết kiệm bộ nhớ nhất.
 
-For now, try to remember these basics: (i) attach gradients to those variables with respect to which we desire derivatives; (ii) record the computation of the target value; (iii) execute the backpropagation function; and  (iv) access the resulting gradient.
+Hiện tại, hãy cố ghi nhớ những điều cơ bản sau: (i) gắn gradient cho những biến mà theo đó chúng ta muốn tính đạo hàm; (ii) ghi lại quá trình tính toán giá trị đích; (iii) thực thi hàm backpropagation; và (iv) truy cập gradient thu được.
 
 
-## Exercises
+## Bài tập
 
-1. Why is the second derivative much more expensive to compute than the first derivative?
-1. After running the function for backpropagation, immediately run it again and see what happens. Investigate.
-1. In the control flow example where we calculate the derivative of `d` with respect to `a`, what would happen if we changed the variable `a` to a random vector or a matrix? At this point, the result of the calculation `f(a)` is no longer a scalar. What happens to the result? How do we analyze this?
-1. Let $f(x) = \sin(x)$. Plot the graph of $f$ and of its derivative $f'$. Do not exploit the fact that $f'(x) = \cos(x)$ but rather use automatic differentiation to get the result. 
-1. Let $f(x) = ((\log x^2) \cdot \sin x) + x^{-1}$. Write out a dependency graph tracing results from $x$ to $f(x)$. 
-1. Use the chain rule to compute the derivative $\frac{df}{dx}$ of the aforementioned function, placing each term on the dependency graph that you constructed previously. 
-1. Given the graph and the intermediate derivative results, you have a number of options when computing the gradient. Evaluate the result once starting from $x$ to $f$ and once from $f$ tracing back to $x$. The path from $x$ to $f$ is commonly known as *forward differentiation*, whereas the path from $f$ to $x$ is known as backward differentiation. 
-1. When might you want to use forward, and when backward, differentiation? Hint: consider the amount of intermediate data needed, the ability to parallelize steps, and the size of matrices and vectors involved. 
+1. Tại sao đạo hàm bậc hai tốn nhiều chi phí tính toán hơn nhiều so với đạo hàm bậc nhất?
+1. Sau khi chạy hàm để thực hiện backpropagation, hãy chạy lại ngay lập tức và xem điều gì xảy ra. Hãy tìm hiểu nguyên nhân.
+1. Trong ví dụ về luồng điều khiển, nơi chúng ta tính đạo hàm của `d` theo `a`, điều gì sẽ xảy ra nếu chúng ta thay đổi biến `a` thành một vector hoặc ma trận ngẫu nhiên? Khi đó, kết quả của phép tính `f(a)` không còn là một scalar. Điều gì sẽ xảy ra với kết quả? Chúng ta phân tích điều này như thế nào?
+1. Cho $f(x) = \sin(x)$. Hãy vẽ đồ thị của $f$ và đạo hàm $f'$. Không được tận dụng thực tế rằng $f'(x) = \cos(x)$, mà hãy sử dụng automatic differentiation để thu được kết quả.
+1. Cho $f(x) = ((\log x^2) \cdot \sin x) + x^{-1}$. Hãy viết dependency graph lần theo các kết quả từ $x$ đến $f(x)$.
+1. Sử dụng chain rule để tính đạo hàm $\frac{df}{dx}$ của hàm nói trên, đặt từng số hạng lên dependency graph mà bạn đã xây dựng trước đó.
+1. Với graph và các kết quả đạo hàm trung gian, bạn có một số lựa chọn khi tính gradient. Hãy đánh giá kết quả một lần, bắt đầu từ $x$ đến $f$, và một lần, bắt đầu từ $f$ rồi lần ngược về $x$. Đường đi từ $x$ đến $f$ thường được gọi là *forward differentiation*, trong khi đường đi từ $f$ đến $x$ được gọi là backward differentiation.
+1. Khi nào bạn nên sử dụng forward differentiation, và khi nào nên sử dụng backward differentiation? Gợi ý: hãy cân nhắc lượng dữ liệu trung gian cần thiết, khả năng song song hóa các bước, cũng như kích thước của các ma trận và vector liên quan.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/34)
+[Thảo luận](https://discuss.d2l.ai/t/34)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/35)
+[Thảo luận](https://discuss.d2l.ai/t/35)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/200)
+[Thảo luận](https://discuss.d2l.ai/t/200)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17970)
+[Thảo luận](https://discuss.d2l.ai/t/17970)
 :end_tab:
