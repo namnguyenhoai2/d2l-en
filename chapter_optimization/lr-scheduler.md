@@ -1,18 +1,18 @@
-# Learning Rate Scheduling
+# Lập lịch tốc độ học
 :label:`sec_scheduler`
 
-So far we primarily focused on optimization *algorithms* for how to update the weight vectors rather than on the *rate* at which they are being updated. Nonetheless, adjusting the learning rate is often just as important as the actual algorithm. There are a number of aspects to consider:
+Cho đến nay, chúng ta chủ yếu tập trung vào các *thuật toán* tối ưu hóa về cách cập nhật các vector trọng số, thay vì vào *tốc độ* mà chúng được cập nhật. Tuy nhiên, việc điều chỉnh tốc độ học thường cũng quan trọng không kém thuật toán thực tế. Có một số khía cạnh cần xem xét:
 
-* Most obviously the *magnitude* of the learning rate matters. If it is too large, optimization diverges, if it is too small, it takes too long to train or we end up with a suboptimal result. We saw previously that the condition number of the problem matters (see e.g., :numref:`sec_momentum` for details). Intuitively it is the ratio of the amount of change in the least sensitive direction vs. the most sensitive one.
-* Secondly, the rate of decay is just as important. If the learning rate remains large we may simply end up bouncing around the minimum and thus not reach optimality. :numref:`sec_minibatch_sgd` discussed this in some detail and we analyzed performance guarantees in :numref:`sec_sgd`. In short, we want the rate to decay, but probably more slowly than $\mathcal{O}(t^{-\frac{1}{2}})$ which would be a good choice for convex problems.
-* Another aspect that is equally important is *initialization*. This pertains both to how the parameters are set initially (review :numref:`sec_numerical_stability` for details) and also how they evolve initially. This goes under the moniker of *warmup*, i.e., how rapidly we start moving towards the solution initially. Large steps in the beginning might not be beneficial, in particular since the initial set of parameters is random. The initial update directions might be quite meaningless, too.
-* Lastly, there are a number of optimization variants that perform cyclical learning rate adjustment. This is beyond the scope of the current chapter. We recommend the reader to review details in :citet:`Izmailov.Podoprikhin.Garipov.ea.2018`, e.g., how to obtain better solutions by averaging over an entire *path* of parameters.
+* Rõ ràng nhất là *độ lớn* của tốc độ học. Nếu quá lớn, quá trình tối ưu hóa sẽ phân kỳ; nếu quá nhỏ, việc huấn luyện sẽ mất quá nhiều thời gian hoặc chúng ta sẽ nhận được kết quả dưới tối ưu. Trước đó, chúng ta đã thấy rằng số điều kiện của bài toán là quan trọng (xem, chẳng hạn, :numref:`sec_momentum` để biết chi tiết). Một cách trực quan, đây là tỷ lệ giữa lượng thay đổi theo hướng ít nhạy cảm nhất và theo hướng nhạy cảm nhất.
+* Thứ hai, tốc độ suy giảm cũng quan trọng không kém. Nếu tốc độ học vẫn lớn, chúng ta có thể chỉ dao động quanh điểm cực tiểu và do đó không đạt được tối ưu. :numref:`sec_minibatch_sgd` đã thảo luận khá chi tiết về điều này và chúng ta đã phân tích các đảm bảo về hiệu năng trong :numref:`sec_sgd`. Tóm lại, chúng ta muốn tốc độ này suy giảm, nhưng có lẽ chậm hơn $\mathcal{O}(t^{-\frac{1}{2}})$, vốn sẽ là một lựa chọn tốt cho các bài toán lồi.
+* Một khía cạnh quan trọng không kém khác là *khởi tạo*. Điều này liên quan cả đến cách các tham số được thiết lập ban đầu (xem lại :numref:`sec_numerical_stability` để biết chi tiết) lẫn cách chúng biến đổi ở giai đoạn đầu. Điều này được gọi là *warmup*, tức là tốc độ chúng ta bắt đầu di chuyển về phía nghiệm ban đầu. Các bước lớn ở giai đoạn đầu có thể không mang lại lợi ích, đặc biệt vì tập tham số ban đầu là ngẫu nhiên. Các hướng cập nhật ban đầu cũng có thể khá vô nghĩa.
+* Cuối cùng, có một số biến thể tối ưu hóa thực hiện điều chỉnh tốc độ học theo chu kỳ. Điều này nằm ngoài phạm vi của chương hiện tại. Chúng tôi khuyến nghị người đọc xem chi tiết trong :citet:`Izmailov.Podoprikhin.Garipov.ea.2018`, chẳng hạn cách thu được các nghiệm tốt hơn bằng cách lấy trung bình trên toàn bộ một *đường đi* của các tham số.
 
-Given the fact that there is a lot of detail needed to manage learning rates, most deep learning frameworks have tools to deal with this automatically. In the current chapter we will review the effects that different schedules have on accuracy and also show how this can be managed efficiently via a *learning rate scheduler*.
+Do cần nhiều chi tiết để quản lý tốc độ học, hầu hết các framework deep learning đều có công cụ để xử lý việc này tự động. Trong chương này, chúng ta sẽ xem xét ảnh hưởng của các lịch khác nhau lên độ chính xác, đồng thời chỉ ra cách quản lý hiệu quả thông qua một *learning rate scheduler*.
 
-## Toy Problem
+## Bài toán đồ chơi
 
-We begin with a toy problem that is cheap enough to compute easily, yet sufficiently nontrivial to illustrate some of the key aspects. For that we pick a slightly modernized version of LeNet (`relu` instead of `sigmoid` activation, MaxPooling rather than AveragePooling), as applied to Fashion-MNIST. Moreover, we hybridize the network for performance. Since most of the code is standard we just introduce the basics without further detailed discussion. See :numref:`chap_cnn` for a refresher as needed.
+Chúng ta bắt đầu với một bài toán đồ chơi đủ rẻ để tính toán dễ dàng, nhưng vẫn đủ không tầm thường để minh họa một số khía cạnh cốt lõi. Để làm điều đó, chúng ta chọn một phiên bản LeNet được hiện đại hóa đôi chút (`relu` thay cho activation `sigmoid`, MaxPooling thay vì AveragePooling), được áp dụng cho Fashion-MNIST. Hơn nữa, chúng ta hybridize mạng để tăng hiệu năng. Vì phần lớn mã là tiêu chuẩn, chúng ta chỉ giới thiệu các phần cơ bản mà không thảo luận chi tiết thêm. Xem :numref:`chap_cnn` để ôn lại khi cần.
 
 ```{.python .input}
 #@tab mxnet
@@ -181,7 +181,7 @@ def train(net_fn, train_iter, test_iter, num_epochs, lr,
     return net
 ```
 
-Let's have a look at what happens if we invoke this algorithm with default settings, such as a learning rate of $0.3$ and train for $30$ iterations. Note how the training accuracy keeps on increasing while progress in terms of test accuracy stalls beyond a point. The gap between both curves indicates overfitting.
+Hãy xem điều gì xảy ra nếu chúng ta gọi thuật toán này với các thiết lập mặc định, chẳng hạn tốc độ học là $0.3$ và huấn luyện trong $30$ vòng lặp. Lưu ý rằng độ chính xác huấn luyện tiếp tục tăng trong khi tiến triển về độ chính xác kiểm tra chững lại sau một thời điểm. Khoảng cách giữa hai đường cong cho thấy hiện tượng overfitting.
 
 ```{.python .input}
 #@tab mxnet
@@ -205,9 +205,9 @@ lr, num_epochs = 0.3, 30
 train(net, train_iter, test_iter, num_epochs, lr)
 ```
 
-## Schedulers
+## Scheduler
 
-One way of adjusting the learning rate is to set it explicitly at each step. This is conveniently achieved by the `set_learning_rate` method. We could adjust it downward after every epoch (or even after every minibatch), e.g., in a dynamic manner in response to how optimization is progressing.
+Một cách để điều chỉnh tốc độ học là thiết lập rõ ràng nó tại mỗi bước. Điều này có thể được thực hiện thuận tiện bằng phương thức `set_learning_rate`. Chúng ta có thể điều chỉnh giảm sau mỗi epoch (hoặc thậm chí sau mỗi minibatch), ví dụ theo cách động dựa trên tiến trình tối ưu hóa.
 
 ```{.python .input}
 #@tab mxnet
@@ -230,7 +230,7 @@ dummy_model.compile(tf.keras.optimizers.SGD(learning_rate=lr), loss='mse')
 print(f'learning rate is now ,', dummy_model.optimizer.lr.numpy())
 ```
 
-More generally we want to define a scheduler. When invoked with the number of updates it returns the appropriate value of the learning rate. Let's define a simple one that sets the learning rate to $\eta = \eta_0 (t + 1)^{-\frac{1}{2}}$.
+Tổng quát hơn, chúng ta muốn định nghĩa một scheduler. Khi được gọi với số lượng cập nhật, nó trả về giá trị tốc độ học phù hợp. Hãy định nghĩa một scheduler đơn giản đặt tốc độ học thành $\eta = \eta_0 (t + 1)^{-\frac{1}{2}}$.
 
 ```{.python .input}
 #@tab all
@@ -242,7 +242,7 @@ class SquareRootScheduler:
         return self.lr * pow(num_update + 1.0, -0.5)
 ```
 
-Let's plot its behavior over a range of values.
+Hãy vẽ đồ thị hành vi của nó trên một khoảng giá trị.
 
 ```{.python .input}
 #@tab all
@@ -250,7 +250,7 @@ scheduler = SquareRootScheduler(lr=0.1)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-Now let's see how this plays out for training on Fashion-MNIST. We simply provide the scheduler as an additional argument to the training algorithm.
+Bây giờ hãy xem điều này diễn ra như thế nào khi huấn luyện trên Fashion-MNIST. Chúng ta chỉ cần cung cấp scheduler làm một đối số bổ sung cho thuật toán huấn luyện.
 
 ```{.python .input}
 #@tab mxnet
@@ -273,15 +273,15 @@ train(net, train_iter, test_iter, num_epochs, lr,
       custom_callback=LearningRateScheduler(scheduler))
 ```
 
-This worked quite a bit better than previously. Two things stand out: the curve was rather more smooth than previously. Secondly, there was less overfitting. Unfortunately it is not a well-resolved question as to why certain strategies lead to less overfitting in *theory*. There is some argument that a smaller stepsize will lead to parameters that are closer to zero and thus simpler. However, this does not explain the phenomenon entirely since we do not really stop early but simply reduce the learning rate gently.
+Cách này hoạt động tốt hơn khá nhiều so với trước. Có hai điểm nổi bật: đường cong mượt hơn đáng kể so với trước. Thứ hai, hiện tượng overfitting ít hơn. Đáng tiếc, trong *lý thuyết*, vẫn chưa có câu trả lời rõ ràng về lý do tại sao một số chiến lược nhất định lại dẫn đến ít overfitting hơn. Có lập luận rằng kích thước bước nhỏ hơn sẽ dẫn đến các tham số gần không hơn và do đó đơn giản hơn. Tuy nhiên, điều này không giải thích hoàn toàn hiện tượng vì chúng ta không thực sự dừng sớm mà chỉ giảm tốc độ học một cách từ tốn.
 
-## Policies
+## Chính sách
 
-While we cannot possibly cover the entire variety of learning rate schedulers, we attempt to give a brief overview of popular policies below. Common choices are polynomial decay and piecewise constant schedules. Beyond that, cosine learning rate schedules have been found to work well empirically on some problems. Lastly, on some problems it is beneficial to warm up the optimizer prior to using large learning rates.
+Dù không thể bao quát toàn bộ các loại learning rate scheduler, dưới đây chúng ta sẽ cố gắng đưa ra tổng quan ngắn gọn về các chính sách phổ biến. Các lựa chọn thường gặp là suy giảm đa thức và lịch hằng số từng đoạn. Ngoài ra, lịch tốc độ học cosine đã được phát hiện là hoạt động tốt về mặt thực nghiệm trên một số bài toán. Cuối cùng, với một số bài toán, sẽ có lợi khi warmup optimizer trước khi dùng tốc độ học lớn.
 
 ### Factor Scheduler
 
-One alternative to a polynomial decay would be a multiplicative one, that is $\eta_{t+1} \leftarrow \eta_t \cdot \alpha$ for $\alpha \in (0, 1)$. To prevent the learning rate from decaying beyond a reasonable lower bound the update equation is often modified to $\eta_{t+1} \leftarrow \mathop{\mathrm{max}}(\eta_{\mathrm{min}}, \eta_t \cdot \alpha)$.
+Một lựa chọn thay thế cho suy giảm đa thức là suy giảm nhân, tức là $\eta_{t+1} \leftarrow \eta_t \cdot \alpha$ với $\alpha \in (0, 1)$. Để ngăn tốc độ học suy giảm vượt quá cận dưới hợp lý, phương trình cập nhật thường được sửa thành $\eta_{t+1} \leftarrow \mathop{\mathrm{max}}(\eta_{\mathrm{min}}, \eta_t \cdot \alpha)$.
 
 ```{.python .input}
 #@tab all
@@ -299,11 +299,11 @@ scheduler = FactorScheduler(factor=0.9, stop_factor_lr=1e-2, base_lr=2.0)
 d2l.plot(d2l.arange(50), [scheduler(t) for t in range(50)])
 ```
 
-This can also be accomplished by a built-in scheduler in MXNet via the `lr_scheduler.FactorScheduler` object. It takes a few more parameters, such as warmup period, warmup mode (linear or constant), the maximum number of desired updates, etc.; Going forward we will use the built-in schedulers as appropriate and only explain their functionality here. As illustrated, it is fairly straightforward to build your own scheduler if needed.
+Điều này cũng có thể được thực hiện bằng scheduler tích hợp sẵn trong MXNet thông qua đối tượng `lr_scheduler.FactorScheduler`. Nó nhận thêm một vài tham số, chẳng hạn giai đoạn warmup, chế độ warmup (linear hoặc constant), số lượng cập nhật tối đa mong muốn, v.v.; từ đây trở đi, chúng ta sẽ sử dụng các scheduler tích hợp sẵn khi phù hợp và chỉ giải thích chức năng của chúng ở đây. Như đã minh họa, việc xây dựng scheduler riêng khi cần là khá đơn giản.
 
 ### Multi Factor Scheduler
 
-A common strategy for training deep networks is to keep the learning rate piecewise constant and to decrease it by a given amount every so often. That is, given a set of times when to decrease the rate, such as $s = \{5, 10, 20\}$ decrease $\eta_{t+1} \leftarrow \eta_t \cdot \alpha$ whenever $t \in s$. Assuming that the values are halved at each step we can implement this as follows.
+Một chiến lược phổ biến để huấn luyện mạng sâu là giữ tốc độ học hằng số từng đoạn và giảm nó một lượng nhất định theo chu kỳ. Tức là, cho một tập các thời điểm để giảm tốc độ, chẳng hạn $s = \{5, 10, 20\}$, giảm $\eta_{t+1} \leftarrow \eta_t \cdot \alpha$ bất cứ khi nào $t \in s$. Giả sử các giá trị được giảm một nửa tại mỗi bước, chúng ta có thể triển khai như sau.
 
 ```{.python .input}
 #@tab mxnet
@@ -347,7 +347,7 @@ scheduler = MultiFactorScheduler(step=[15, 30], factor=0.5, base_lr=0.5)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-The intuition behind this piecewise constant learning rate schedule is that one lets optimization proceed until a stationary point has been reached in terms of the distribution of weight vectors. Then (and only then) do we decrease the rate such as to obtain a higher quality proxy to a good local minimum. The example below shows how this can produce ever slightly better solutions.
+Trực giác đằng sau lịch tốc độ học hằng số từng đoạn này là để quá trình tối ưu hóa tiếp diễn cho đến khi đạt được một điểm dừng xét theo phân phối của các vector trọng số. Sau đó (và chỉ khi đó), chúng ta mới giảm tốc độ để thu được một xấp xỉ chất lượng cao hơn cho một cực tiểu cục bộ tốt. Ví dụ dưới đây cho thấy cách điều này có thể tạo ra các nghiệm tốt hơn từng chút một.
 
 ```{.python .input}
 #@tab mxnet
@@ -370,12 +370,12 @@ train(net, train_iter, test_iter, num_epochs, lr,
 
 ### Cosine Scheduler
 
-A rather perplexing heuristic was proposed by :citet:`Loshchilov.Hutter.2016`. It relies on the observation that we might not want to decrease the learning rate too drastically in the beginning and moreover, that we might want to "refine" the solution in the end using a very small learning rate. This results in a cosine-like schedule with the following functional form for learning rates in the range $t \in [0, T]$.
+Một heuristic khá khó hiểu đã được đề xuất bởi :citet:`Loshchilov.Hutter.2016`. Nó dựa trên quan sát rằng chúng ta có thể không muốn giảm tốc độ học quá mạnh ở giai đoạn đầu và hơn nữa, có thể muốn "tinh chỉnh" nghiệm ở cuối bằng tốc độ học rất nhỏ. Điều này tạo ra một lịch giống cosine với dạng hàm sau cho tốc độ học trong khoảng $t \in [0, T]$.
 
 $$\eta_t = \eta_T + \frac{\eta_0 - \eta_T}{2} \left(1 + \cos(\pi t/T)\right)$$
 
 
-Here $\eta_0$ is the initial learning rate, $\eta_T$ is the target rate at time $T$. Furthermore, for $t > T$ we simply pin the value to $\eta_T$ without increasing it again. In the following example, we set the max update step $T = 20$.
+Ở đây, $\eta_0$ là tốc độ học ban đầu, $\eta_T$ là tốc độ mục tiêu tại thời điểm $T$. Hơn nữa, với $t > T$, chúng ta chỉ cố định giá trị ở $\eta_T$ mà không tăng nó trở lại. Trong ví dụ sau, chúng ta đặt bước cập nhật tối đa $T = 20$.
 
 ```{.python .input}
 #@tab mxnet
@@ -414,7 +414,7 @@ scheduler = CosineScheduler(max_update=20, base_lr=0.3, final_lr=0.01)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-In the context of computer vision this schedule *can* lead to improved results. Note, though, that such improvements are not guaranteed (as can be seen below).
+Trong ngữ cảnh computer vision, lịch này *có thể* mang lại kết quả cải thiện. Tuy nhiên, lưu ý rằng các cải thiện như vậy không được đảm bảo (như có thể thấy bên dưới).
 
 ```{.python .input}
 #@tab mxnet
@@ -439,9 +439,9 @@ train(net, train_iter, test_iter, num_epochs, lr,
 
 ### Warmup
 
-In some cases initializing the parameters is not sufficient to guarantee a good solution. This is particularly a problem for some advanced network designs that may lead to unstable optimization problems. We could address this by choosing a sufficiently small learning rate to prevent divergence in the beginning. Unfortunately this means that progress is slow. Conversely, a large learning rate initially leads to divergence.
+Trong một số trường hợp, việc khởi tạo các tham số là không đủ để đảm bảo một nghiệm tốt. Đây đặc biệt là vấn đề đối với một số thiết kế mạng nâng cao có thể dẫn đến các bài toán tối ưu hóa không ổn định. Chúng ta có thể xử lý việc này bằng cách chọn tốc độ học đủ nhỏ để ngăn phân kỳ ở giai đoạn đầu. Đáng tiếc, điều này khiến tiến trình chậm. Ngược lại, tốc độ học lớn ban đầu dẫn đến phân kỳ.
 
-A rather simple fix for this dilemma is to use a warmup period during which the learning rate *increases* to its initial maximum and to cool down the rate until the end of the optimization process. For simplicity one typically uses a linear increase for this purpose. This leads to a schedule of the form indicated below.
+Một cách khắc phục khá đơn giản cho tình thế tiến thoái lưỡng nan này là sử dụng giai đoạn warmup, trong đó tốc độ học *tăng* lên mức cực đại ban đầu, rồi làm nguội tốc độ cho đến hết quá trình tối ưu hóa. Để đơn giản, người ta thường sử dụng tăng tuyến tính cho mục đích này. Điều này dẫn đến một lịch có dạng như minh họa dưới đây.
 
 ```{.python .input}
 #@tab mxnet
@@ -456,7 +456,7 @@ scheduler = CosineScheduler(20, warmup_steps=5, base_lr=0.3, final_lr=0.01)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-Note that the network converges better initially (in particular observe the performance during the first 5 epochs).
+Lưu ý rằng mạng hội tụ tốt hơn ở giai đoạn đầu (đặc biệt quan sát hiệu năng trong 5 epoch đầu tiên).
 
 ```{.python .input}
 #@tab mxnet
@@ -479,32 +479,32 @@ train(net, train_iter, test_iter, num_epochs, lr,
       custom_callback=LearningRateScheduler(scheduler))
 ```
 
-Warmup can be applied to any scheduler (not just cosine). For a more detailed discussion of learning rate schedules and many more experiments see also :cite:`Gotmare.Keskar.Xiong.ea.2018`. In particular they find that a warmup phase limits the amount of divergence of parameters in very deep networks. This makes intuitively sense since we would expect significant divergence due to random initialization in those parts of the network that take the most time to make progress in the beginning.
+Warmup có thể được áp dụng cho bất kỳ scheduler nào (không chỉ cosine). Để xem thảo luận chi tiết hơn về các lịch tốc độ học và nhiều thí nghiệm hơn, xem thêm :cite:`Gotmare.Keskar.Xiong.ea.2018`. Cụ thể, họ nhận thấy rằng giai đoạn warmup hạn chế mức độ phân kỳ của các tham số trong những mạng rất sâu. Điều này có ý nghĩa trực quan vì chúng ta kỳ vọng sự phân kỳ đáng kể do khởi tạo ngẫu nhiên tại những phần của mạng cần nhiều thời gian nhất để đạt được tiến triển ở giai đoạn đầu.
 
-## Summary
+## Tóm tắt
 
-* Decreasing the learning rate during training can lead to improved accuracy and (most perplexingly) reduced overfitting of the model.
-* A piecewise decrease of the learning rate whenever progress has plateaued is effective in practice. Essentially this ensures that we converge efficiently to a suitable solution and only then reduce the inherent variance of the parameters by reducing the learning rate.
-* Cosine schedulers are popular for some computer vision problems. See e.g., [GluonCV](http://gluon-cv.mxnet.io) for details of such a scheduler.
-* A warmup period before optimization can prevent divergence.
-* Optimization serves multiple purposes in deep learning. Besides minimizing the training objective, different choices of optimization algorithms and learning rate scheduling can lead to rather different amounts of generalization and overfitting on the test set (for the same amount of training error).
+* Việc giảm learning rate trong quá trình huấn luyện có thể cải thiện độ chính xác và (đáng bối rối nhất) giảm overfitting của mô hình.
+* Việc giảm learning rate theo từng giai đoạn mỗi khi tiến độ chững lại tỏ ra hiệu quả trong thực tế. Về cơ bản, điều này đảm bảo rằng chúng ta hội tụ hiệu quả đến một nghiệm phù hợp, rồi chỉ sau đó mới giảm phương sai vốn có của các tham số bằng cách giảm learning rate.
+* Cosine scheduler phổ biến cho một số bài toán computer vision. Xem ví dụ [GluonCV](http://gluon-cv.mxnet.io) để biết chi tiết về một scheduler như vậy.
+* Một giai đoạn warmup trước khi tối ưu hóa có thể ngăn ngừa sự phân kỳ.
+* Tối ưu hóa phục vụ nhiều mục đích trong deep learning. Ngoài việc tối thiểu hóa mục tiêu huấn luyện, các lựa chọn khác nhau về thuật toán tối ưu hóa và lập lịch learning rate có thể dẫn đến mức độ generalization và overfitting trên tập kiểm tra khá khác nhau (với cùng một lượng lỗi huấn luyện).
 
-## Exercises
+## Bài tập
 
-1. Experiment with the optimization behavior for a given fixed learning rate. What is the best model you can obtain this way?
-1. How does convergence change if you change the exponent of the decrease in the learning rate? Use `PolyScheduler` for your convenience in the experiments.
-1. Apply the cosine scheduler to large computer vision problems, e.g., training ImageNet. How does it affect performance relative to other schedulers?
-1. How long should warmup last?
-1. Can you connect optimization and sampling? Start by using results from :citet:`Welling.Teh.2011` on Stochastic Gradient Langevin Dynamics.
+1. Thử nghiệm hành vi tối ưu hóa với một learning rate cố định cho trước. Mô hình tốt nhất bạn có thể thu được theo cách này là gì?
+1. Sự hội tụ thay đổi như thế nào nếu bạn thay đổi số mũ của mức giảm learning rate? Hãy dùng `PolyScheduler` để thuận tiện cho các thí nghiệm.
+1. Áp dụng cosine scheduler cho các bài toán computer vision lớn, chẳng hạn như huấn luyện ImageNet. Nó ảnh hưởng đến hiệu năng như thế nào so với các scheduler khác?
+1. Warmup nên kéo dài bao lâu?
+1. Bạn có thể kết nối tối ưu hóa và lấy mẫu không? Hãy bắt đầu bằng cách sử dụng các kết quả từ :citet:`Welling.Teh.2011` về Stochastic Gradient Langevin Dynamics.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/359)
+[Thảo luận](https://discuss.d2l.ai/t/359)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1080)
+[Thảo luận](https://discuss.d2l.ai/t/1080)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1081)
+[Thảo luận](https://discuss.d2l.ai/t/1081)
 :end_tab:

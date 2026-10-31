@@ -1,38 +1,38 @@
-# Minibatch Stochastic Gradient Descent
+# Hạ dốc Gradient ngẫu nhiên theo Minibatch
 :label:`sec_minibatch_sgd`
 
-So far we encountered two extremes in the approach to gradient-based learning: :numref:`sec_gd` uses the full dataset to compute gradients and to update parameters, one pass at a time. Conversely :numref:`sec_sgd` processes one training example at a time to make progress.
-Either of them has its own drawbacks.
-Gradient descent is not particularly *data efficient* whenever data is very similar.
-Stochastic gradient descent is not particularly *computationally efficient* since CPUs and GPUs cannot exploit the full power of vectorization.
-This suggests that there might be something in between,
-and in fact, that is what we have been using so far in the examples we discussed.
+Cho đến nay, chúng ta đã gặp hai thái cực trong cách tiếp cận học dựa trên gradient: :numref:`sec_gd` sử dụng toàn bộ tập dữ liệu để tính gradient và cập nhật tham số, mỗi lần một lượt quét. Ngược lại, :numref:`sec_sgd` xử lý từng ví dụ huấn luyện riêng lẻ để đạt được tiến triển.
+Mỗi phương pháp đều có những nhược điểm riêng.
+Gradient descent không đặc biệt *hiệu quả về dữ liệu* khi dữ liệu rất tương đồng.
+Stochastic gradient descent không đặc biệt *hiệu quả về tính toán* vì CPU và GPU không thể khai thác toàn bộ sức mạnh của vectorization.
+Điều này gợi ý rằng có thể tồn tại một phương án ở giữa,
+và thực tế đó chính là điều chúng ta đã sử dụng trong các ví dụ đã thảo luận cho đến nay.
 
-## Vectorization and Caches
+## Vectorization và Cache
 
-At the heart of the decision to use minibatches is computational efficiency. This is most easily understood when considering parallelization to multiple GPUs and multiple servers. In this case we need to send at least one image to each GPU. With 8 GPUs per server and 16 servers we already arrive at a minibatch size no smaller than 128.
+Cốt lõi của quyết định sử dụng minibatch là hiệu quả tính toán. Điều này dễ hiểu nhất khi xem xét parallelization trên nhiều GPU và nhiều server. Trong trường hợp này, chúng ta cần gửi ít nhất một ảnh đến mỗi GPU. Với 8 GPU trên mỗi server và 16 server, kích thước minibatch đã không thể nhỏ hơn 128.
 
-Things are a bit more subtle when it comes to single GPUs or even CPUs. These devices have multiple types of memory, often multiple types of computational units and different bandwidth constraints between them.
-For instance, a CPU has a small number of registers and then the L1, L2, and in some cases even L3 cache (which is shared among different processor cores).
-These caches are of increasing size and latency (and at the same time they are of decreasing bandwidth).
-Suffice to say, the processor is capable of performing many more operations than what the main memory interface is able to provide.
+Mọi việc tinh tế hơn đôi chút khi xét GPU đơn lẻ hoặc thậm chí CPU. Các thiết bị này có nhiều loại bộ nhớ, thường có nhiều loại đơn vị tính toán và các ràng buộc băng thông khác nhau giữa chúng.
+Ví dụ, CPU có một số lượng nhỏ thanh ghi, sau đó là cache L1, L2 và trong một số trường hợp cả L3 (được chia sẻ giữa các lõi xử lý khác nhau).
+Các cache này có kích thước và độ trễ tăng dần (đồng thời băng thông giảm dần).
+Chỉ cần nói rằng, bộ xử lý có thể thực hiện nhiều phép toán hơn rất nhiều so với khả năng cung cấp của giao diện bộ nhớ chính.
 
-First, a 2GHz CPU with 16 cores and AVX-512 vectorization can process up to $2 \cdot 10^9 \cdot 16 \cdot 32 = 10^{12}$ bytes per second. The capability of GPUs easily exceeds this number by a factor of 100. On the other hand, a midrange server processor might not have much more than 100 GB/s bandwidth, i.e., less than one tenth of what would be required to keep the processor fed. To make matters worse, not all memory access is created equal: memory interfaces are typically 64 bit wide or wider (e.g., on GPUs up to 384 bit), hence reading a single byte incurs the cost of a much wider access.
+Thứ nhất, một CPU 2GHz với 16 lõi và vectorization AVX-512 có thể xử lý tối đa $2 \cdot 10^9 \cdot 16 \cdot 32 = 10^{12}$ byte mỗi giây. Khả năng của GPU dễ dàng vượt con số này gấp 100 lần. Mặt khác, một bộ xử lý server tầm trung có thể không có băng thông lớn hơn nhiều so với 100 GB/s, tức là chưa đến một phần mười mức cần thiết để cung cấp đủ dữ liệu cho bộ xử lý. Tệ hơn nữa, không phải mọi truy cập bộ nhớ đều như nhau: các giao diện bộ nhớ thường rộng 64 bit hoặc hơn (ví dụ, trên GPU lên đến 384 bit), vì vậy việc đọc một byte đơn lẻ phải chịu chi phí của một lần truy cập rộng hơn nhiều.
 
-Second, there is significant overhead for the first access whereas sequential access is relatively cheap (this is often called a burst read). There are many more things to keep in mind, such as caching when we have multiple sockets, chiplets, and other structures.
-See this [Wikipedia article](https://en.wikipedia.org/wiki/Cache_hierarchy)
-for a more in-depth discussion.
+Thứ hai, lần truy cập đầu tiên có overhead đáng kể, trong khi truy cập tuần tự tương đối rẻ (điều này thường được gọi là burst read). Còn nhiều điều khác cần lưu ý, chẳng hạn như caching khi có nhiều socket, chiplet và các cấu trúc khác.
+Xem [bài viết Wikipedia này](https://en.wikipedia.org/wiki/Cache_hierarchy)
+để thảo luận sâu hơn.
 
-The way to alleviate these constraints is to use a hierarchy of CPU caches that are actually fast enough to supply the processor with data. This is *the* driving force behind batching in deep learning. To keep matters simple, consider matrix-matrix multiplication, say $\mathbf{A} = \mathbf{B}\mathbf{C}$. We have a number of options for calculating $\mathbf{A}$. For instance, we could try the following:
+Cách giảm bớt các ràng buộc này là sử dụng một hệ phân cấp cache CPU đủ nhanh để thực sự cung cấp dữ liệu cho bộ xử lý. Đây *chính là* động lực thúc đẩy batching trong deep learning. Để đơn giản, hãy xét phép nhân ma trận-ma trận, giả sử $\mathbf{A} = \mathbf{B}\mathbf{C}$. Chúng ta có một số lựa chọn để tính $\mathbf{A}$. Ví dụ, chúng ta có thể thử các cách sau:
 
-1. We could compute $\mathbf{A}_{ij} = \mathbf{B}_{i,:} \mathbf{C}_{:,j}$, i.e., we could compute it elementwise by means of dot products.
-1. We could compute $\mathbf{A}_{:,j} = \mathbf{B} \mathbf{C}_{:,j}$, i.e., we could compute it one column at a time. Likewise we could compute $\mathbf{A}$ one row $\mathbf{A}_{i,:}$ at a time.
-1. We could simply compute $\mathbf{A} = \mathbf{B} \mathbf{C}$.
-1. We could break $\mathbf{B}$ and $\mathbf{C}$ into smaller block matrices and compute $\mathbf{A}$ one block at a time.
+1. Chúng ta có thể tính $\mathbf{A}_{ij} = \mathbf{B}_{i,:} \mathbf{C}_{:,j}$, tức là tính theo từng phần tử bằng các dot product.
+1. Chúng ta có thể tính $\mathbf{A}_{:,j} = \mathbf{B} \mathbf{C}_{:,j}$, tức là tính từng cột một. Tương tự, chúng ta có thể tính $\mathbf{A}$ từng hàng $\mathbf{A}_{i,:}$ một.
+1. Chúng ta có thể đơn giản tính $\mathbf{A} = \mathbf{B} \mathbf{C}$.
+1. Chúng ta có thể chia $\mathbf{B}$ và $\mathbf{C}$ thành các ma trận khối nhỏ hơn và tính $\mathbf{A}$ từng khối một.
 
-If we follow the first option, we will need to copy one row and one column vector into the CPU each time we want to compute an element $\mathbf{A}_{ij}$. Even worse, due to the fact that matrix elements are aligned sequentially we are thus required to access many disjoint locations for one of the two vectors as we read them from memory. The second option is much more favorable. In it, we are able to keep the column vector $\mathbf{C}_{:,j}$ in the CPU cache while we keep on traversing through $\mathbf{B}$. This halves the memory bandwidth requirement with correspondingly faster access. Of course, option 3 is most desirable. Unfortunately, most matrices might not entirely fit into cache (this is what we are discussing after all). However, option 4 offers a practically useful alternative: we can move blocks of the matrix into cache and multiply them locally. Optimized libraries take care of this for us. Let's have a look at how efficient these operations are in practice.
+Nếu làm theo lựa chọn đầu tiên, chúng ta sẽ cần sao chép một vector hàng và một vector cột vào CPU mỗi khi muốn tính một phần tử $\mathbf{A}_{ij}$. Tệ hơn nữa, do các phần tử ma trận được căn chỉnh tuần tự, chúng ta phải truy cập nhiều vị trí rời rạc đối với một trong hai vector khi đọc chúng từ bộ nhớ. Lựa chọn thứ hai thuận lợi hơn nhiều. Với lựa chọn này, chúng ta có thể giữ vector cột $\mathbf{C}_{:,j}$ trong cache CPU trong khi tiếp tục duyệt qua $\mathbf{B}$. Điều này giảm một nửa yêu cầu về băng thông bộ nhớ, nhờ đó truy cập nhanh hơn tương ứng. Tất nhiên, lựa chọn 3 là mong muốn nhất. Đáng tiếc, hầu hết ma trận có thể không hoàn toàn vừa cache (xét cho cùng, đây chính là vấn đề chúng ta đang bàn). Tuy nhiên, lựa chọn 4 mang lại một phương án thay thế hữu ích trong thực tế: chúng ta có thể chuyển các khối của ma trận vào cache và nhân chúng cục bộ. Các thư viện được tối ưu hóa sẽ lo việc này cho chúng ta. Hãy xem các phép toán này hiệu quả đến mức nào trong thực tế.
 
-Beyond computational efficiency, the overhead introduced by Python and by the deep learning framework itself is considerable. Recall that each time we execute a command the Python interpreter sends a command to the MXNet engine which needs to insert it into the computational graph and deal with it during scheduling. Such overhead can be quite detrimental. In short, it is highly advisable to use vectorization (and matrices) whenever possible.
+Ngoài hiệu quả tính toán, overhead do Python và chính deep learning framework tạo ra cũng đáng kể. Hãy nhớ rằng mỗi khi thực thi một lệnh, trình thông dịch Python gửi một lệnh đến MXNet engine, nơi cần chèn lệnh đó vào computational graph và xử lý nó trong quá trình scheduling. Overhead như vậy có thể gây bất lợi đáng kể. Tóm lại, nên sử dụng vectorization (và ma trận) bất cứ khi nào có thể.
 
 ```{.python .input}
 #@tab mxnet
@@ -75,7 +75,7 @@ B = tf.Variable(d2l.normal([256, 256], 0, 1))
 C = tf.Variable(d2l.normal([256, 256], 0, 1))
 ```
 
-Since we will benchmark the running time frequently in the rest of the book, let's define a timer.
+Vì chúng ta sẽ thường xuyên benchmark thời gian chạy trong phần còn lại của cuốn sách, hãy định nghĩa một timer.
 
 ```{.python .input}
 #@tab all
@@ -109,7 +109,7 @@ class Timer:  #@save
 timer = Timer()
 ```
 
-Element-wise assignment simply iterates over all rows and columns of $\mathbf{B}$ and $\mathbf{C}$ respectively to assign the value to $\mathbf{A}$.
+Phép gán theo từng phần tử chỉ đơn giản duyệt qua tất cả các hàng và cột của $\mathbf{B}$ và $\mathbf{C}$ tương ứng để gán giá trị cho $\mathbf{A}$.
 
 ```{.python .input}
 #@tab mxnet
@@ -142,7 +142,7 @@ for i in range(256):
 timer.stop()
 ```
 
-A faster strategy is to perform column-wise assignment.
+Một chiến lược nhanh hơn là thực hiện phép gán theo cột.
 
 ```{.python .input}
 #@tab mxnet
@@ -171,12 +171,12 @@ for j in range(256):
 timer.stop()
 ```
 
-Last, the most effective manner is to perform the entire operation in one block. 
-Note that multiplying any two matrices $\mathbf{B} \in \mathbb{R}^{m \times n}$ and $\mathbf{C} \in \mathbb{R}^{n \times p}$ takes approximately $2mnp$ floating point operations,
-when scalar multiplication and addition are counted as separate operations (fused in practice).
-Thus, multiplying two $256 \times 256$ matrices
-takes $0.03$ billion floating point operations.
-Let's see what the respective speed of the operations is.
+Cuối cùng, cách hiệu quả nhất là thực hiện toàn bộ phép toán trong một khối. 
+Lưu ý rằng việc nhân hai ma trận bất kỳ $\mathbf{B} \in \mathbb{R}^{m \times n}$ và $\mathbf{C} \in \mathbb{R}^{n \times p}$ cần xấp xỉ $2mnp$ phép toán dấu phẩy động,
+khi phép nhân vô hướng và phép cộng được tính là các phép toán riêng biệt (trong thực tế chúng được fused).
+Do đó, nhân hai ma trận $256 \times 256$
+cần $0.03$ tỷ phép toán dấu phẩy động.
+Hãy xem tốc độ tương ứng của các phép toán này.
 
 ```{.python .input}
 #@tab mxnet
@@ -214,21 +214,21 @@ print(f'performance in Gigaflops: element {gigaflops[0]:.3f}, '
       f'column {gigaflops[1]:.3f}, full {gigaflops[2]:.3f}')
 ```
 
-## Minibatches
+## Minibatch
 
 :label:`sec_minibatches`
 
-In the past we took it for granted that we would read *minibatches* of data rather than single observations to update parameters. We now give a brief justification for it. Processing single observations requires us to perform many single matrix-vector (or even vector-vector) multiplications, which is quite expensive and which incurs a significant overhead on behalf of the underlying deep learning framework. This applies both to evaluating a network when applied to data (often referred to as inference) and when computing gradients to update parameters. That is, this applies whenever we perform $\mathbf{w} \leftarrow \mathbf{w} - \eta_t \mathbf{g}_t$ where
+Trước đây, chúng ta mặc nhiên cho rằng sẽ đọc *minibatch* dữ liệu thay vì từng quan sát riêng lẻ để cập nhật tham số. Bây giờ, chúng ta sẽ đưa ra một lý giải ngắn gọn cho điều này. Xử lý từng quan sát riêng lẻ yêu cầu thực hiện nhiều phép nhân ma trận-vector (hoặc thậm chí vector-vector) đơn lẻ, vốn khá tốn kém và gây ra overhead đáng kể từ deep learning framework bên dưới. Điều này áp dụng cả khi đánh giá một network trên dữ liệu (thường được gọi là inference) lẫn khi tính gradient để cập nhật tham số. Nghĩa là, điều này áp dụng bất cứ khi nào chúng ta thực hiện $\mathbf{w} \leftarrow \mathbf{w} - \eta_t \mathbf{g}_t$ trong đó
 
 $$\mathbf{g}_t = \partial_{\mathbf{w}} f(\mathbf{x}_{t}, \mathbf{w})$$
 
-We can increase the *computational* efficiency of this operation by applying it to a minibatch of observations at a time. That is, we replace the gradient $\mathbf{g}_t$ over a single observation by one over a small batch
+Chúng ta có thể tăng hiệu quả *tính toán* của phép toán này bằng cách áp dụng nó cho một minibatch các quan sát mỗi lần. Nghĩa là, chúng ta thay gradient $\mathbf{g}_t$ trên một quan sát đơn lẻ bằng gradient trên một batch nhỏ
 
 $$\mathbf{g}_t = \partial_{\mathbf{w}} \frac{1}{|\mathcal{B}_t|} \sum_{i \in \mathcal{B}_t} f(\mathbf{x}_{i}, \mathbf{w})$$
 
-Let's see what this does to the statistical properties of $\mathbf{g}_t$: since both $\mathbf{x}_t$ and also all elements of the minibatch $\mathcal{B}_t$ are drawn uniformly at random from the training set, the expectation of the gradient remains unchanged. The variance, on the other hand, is reduced significantly. Since the minibatch gradient is composed of $b \stackrel{\textrm{def}}{=} |\mathcal{B}_t|$ independent gradients which are being averaged, its standard deviation is reduced by a factor of $b^{-\frac{1}{2}}$. This, by itself, is a good thing, since it means that the updates are more reliably aligned with the full gradient.
+Hãy xem điều này ảnh hưởng thế nào đến các đặc tính thống kê của $\mathbf{g}_t$: vì cả $\mathbf{x}_t$ lẫn mọi phần tử của minibatch $\mathcal{B}_t$ đều được lấy ngẫu nhiên đồng đều từ tập huấn luyện, kỳ vọng của gradient vẫn không đổi. Mặt khác, phương sai giảm đáng kể. Vì gradient minibatch được cấu thành từ $b \stackrel{\textrm{def}}{=} |\mathcal{B}_t|$ gradient độc lập được lấy trung bình, độ lệch chuẩn của nó giảm đi một hệ số $b^{-\frac{1}{2}}$. Bản thân điều này là một điều tốt, vì nó có nghĩa là các cập nhật được căn chỉnh với full gradient một cách đáng tin cậy hơn.
 
-Naively this would indicate that choosing a large minibatch $\mathcal{B}_t$ would be universally desirable. Alas, after some point, the additional reduction in standard deviation is minimal when compared to the linear increase in computational cost. In practice we pick a minibatch that is large enough to offer good computational efficiency while still fitting into the memory of a GPU. To illustrate the savings let's have a look at some code. In it we perform the same matrix-matrix multiplication, but this time broken up into "minibatches" of 64 columns at a time.
+Một cách ngây thơ, điều này có thể cho thấy việc chọn minibatch lớn $\mathcal{B}_t$ sẽ luôn là mong muốn. Than ôi, sau một ngưỡng nào đó, mức giảm thêm về độ lệch chuẩn là tối thiểu so với mức tăng tuyến tính của chi phí tính toán. Trong thực tế, chúng ta chọn minibatch đủ lớn để mang lại hiệu quả tính toán tốt nhưng vẫn vừa với bộ nhớ của GPU. Để minh họa mức tiết kiệm, hãy xem một số code. Trong đó, chúng ta thực hiện cùng phép nhân ma trận-ma trận, nhưng lần này được chia thành các "minibatch" gồm 64 cột mỗi lần.
 
 ```{.python .input}
 #@tab mxnet
@@ -257,11 +257,11 @@ timer.stop()
 print(f'performance in Gigaflops: block {0.03 / timer.times[3]:.3f}')
 ```
 
-As we can see, the computation on the minibatch is essentially as efficient as on the full matrix. A word of caution is in order. In :numref:`sec_batch_norm` we used a type of regularization that was heavily dependent on the amount of variance in a minibatch. As we increase the latter, the variance decreases and with it the benefit of the noise-injection due to batch normalization. See e.g., :citet:`Ioffe.2017` for details on how to rescale and compute the appropriate terms.
+Như có thể thấy, việc tính toán trên minibatch về cơ bản hiệu quả tương đương với trên toàn bộ ma trận. Cần có một lưu ý. Trong :numref:`sec_batch_norm` chúng ta đã sử dụng một dạng regularization phụ thuộc nhiều vào lượng phương sai trong minibatch. Khi tăng kích thước minibatch, phương sai giảm và cùng với đó là lợi ích từ việc chèn nhiễu do batch normalization. Xem, chẳng hạn, :citet:`Ioffe.2017` để biết chi tiết về cách rescale và tính toán các hạng tử phù hợp.
 
-## Reading the Dataset
+## Đọc Dataset
 
-Let's have a look at how minibatches are efficiently generated from data. In the following we use a dataset developed by NASA to test the wing [noise from different aircraft](https://archive.ics.uci.edu/dataset/291/airfoil+self+noise) to compare these optimization algorithms. For convenience we only use the first $1,500$ examples. The data is whitened for preprocessing, i.e., we remove the mean and rescale the variance to $1$ per coordinate.
+Hãy xem cách các minibatch được tạo hiệu quả từ dữ liệu. Trong phần sau, chúng ta sử dụng một dataset do NASA phát triển để kiểm tra tiếng ồn cánh [từ các loại máy bay khác nhau](https://archive.ics.uci.edu/dataset/291/airfoil+self+noise) nhằm so sánh các thuật toán tối ưu hóa này. Để thuận tiện, chúng ta chỉ sử dụng $1,500$ mẫu đầu tiên. Dữ liệu được whitening trong bước preprocessing, tức là chúng ta loại bỏ giá trị trung bình và rescale phương sai về $1$ cho mỗi tọa độ.
 
 ```{.python .input}
 #@tab mxnet
@@ -311,13 +311,9 @@ def get_data_ch11(batch_size=10, n=1500):
     return data_iter, data.shape[1]-1
 ```
 
-## Implementation from Scratch
+## Cài đặt từ đầu
 
-Recall the minibatch stochastic gradient descent implementation from :numref:`sec_linear_scratch`. In the following we provide a slightly more general implementation. For convenience it has the same call signature as the other optimization algorithms introduced later in this chapter. Specifically, we add the status
-input `states` and place the hyperparameter in dictionary `hyperparams`. In
-addition, we will average the loss of each minibatch example in the training
-function, so the gradient in the optimization algorithm does not need to be
-divided by the batch size.
+Hãy nhớ lại phần cài đặt minibatch stochastic gradient descent từ :numref:`sec_linear_scratch`. Sau đây, chúng ta cung cấp một phần cài đặt tổng quát hơn một chút. Để thuận tiện, nó có cùng call signature với các thuật toán tối ưu hóa khác được giới thiệu sau trong chương này. Cụ thể, chúng ta thêm đầu vào trạng thái `states` và đặt hyperparameter trong dictionary `hyperparams`. Ngoài ra, chúng ta sẽ lấy trung bình loss của từng mẫu minibatch trong hàm huấn luyện, do đó gradient trong thuật toán tối ưu hóa không cần được chia cho batch size.
 
 ```{.python .input}
 #@tab mxnet
@@ -341,7 +337,7 @@ def sgd(params, grads, states, hyperparams):
         param.assign_sub(hyperparams['lr']*grad)
 ```
 
-Next, we implement a generic training function to facilitate the use of the other optimization algorithms introduced later in this chapter. It initializes a linear regression model and can be used to train the model with minibatch stochastic gradient descent and other algorithms introduced subsequently.
+Tiếp theo, chúng ta cài đặt một hàm huấn luyện tổng quát để hỗ trợ sử dụng các thuật toán tối ưu hóa khác được giới thiệu sau trong chương này. Hàm này khởi tạo một mô hình linear regression và có thể được dùng để huấn luyện mô hình bằng minibatch stochastic gradient descent cùng các thuật toán khác được giới thiệu tiếp theo.
 
 ```{.python .input}
 #@tab mxnet
@@ -438,7 +434,7 @@ def train_ch11(trainer_fn, states, hyperparams, data_iter,
     return timer.cumsum(), animator.Y[0]
 ```
 
-Let's see how optimization proceeds for batch gradient descent. This can be achieved by setting the minibatch size to 1500 (i.e., to the total number of examples). As a result the model parameters are updated only once per epoch. There is little progress. In fact, after 6 steps progress stalls.
+Hãy xem quá trình tối ưu hóa diễn ra như thế nào với batch gradient descent. Có thể thực hiện điều này bằng cách đặt minibatch size thành 1500 (tức là tổng số mẫu). Kết quả là các tham số mô hình chỉ được cập nhật một lần mỗi epoch. Tiến triển rất ít. Thực tế, sau 6 bước, tiến triển bị chững lại.
 
 ```{.python .input}
 #@tab all
@@ -450,28 +446,28 @@ def train_sgd(lr, batch_size, num_epochs=2):
 gd_res = train_sgd(1, 1500, 10)
 ```
 
-When the batch size equals 1, we use stochastic gradient descent for optimization. For simplicity of implementation we picked a constant (albeit small) learning rate. In stochastic gradient descent, the model parameters are updated whenever an example is processed. In our case this amounts to 1500 updates per epoch. As we can see, the decline in the value of the objective function slows down after one epoch. Although both the procedures processed 1500 examples within one epoch, stochastic gradient descent consumes more time than gradient descent in our experiment. This is because stochastic gradient descent updated the parameters more frequently and since it is less efficient to process single observations one at a time.
+Khi batch size bằng 1, chúng ta sử dụng stochastic gradient descent để tối ưu hóa. Để đơn giản khi cài đặt, chúng ta chọn một learning rate không đổi (dù nhỏ). Trong stochastic gradient descent, các tham số mô hình được cập nhật mỗi khi một mẫu được xử lý. Trong trường hợp của chúng ta, điều này tương ứng với 1500 lần cập nhật mỗi epoch. Như có thể thấy, mức giảm của giá trị hàm mục tiêu chậm lại sau một epoch. Mặc dù cả hai quy trình đều xử lý 1500 mẫu trong một epoch, stochastic gradient descent tốn nhiều thời gian hơn gradient descent trong thử nghiệm của chúng ta. Điều này là do stochastic gradient descent cập nhật tham số thường xuyên hơn và việc xử lý từng quan sát riêng lẻ kém hiệu quả hơn.
 
 ```{.python .input}
 #@tab all
 sgd_res = train_sgd(0.005, 1)
 ```
 
-Finally, when the batch size equals 100, we use minibatch stochastic gradient descent for optimization. The time required per epoch is shorter than the time needed for stochastic gradient descent and the time for batch gradient descent.
+Cuối cùng, khi batch size bằng 100, chúng ta sử dụng minibatch stochastic gradient descent để tối ưu hóa. Thời gian cần thiết cho mỗi epoch ngắn hơn thời gian cần cho stochastic gradient descent và batch gradient descent.
 
 ```{.python .input}
 #@tab all
 mini1_res = train_sgd(.4, 100)
 ```
 
-Reducing the batch size to 10, the time for each epoch increases because the workload for each batch is less efficient to execute.
+Khi giảm batch size xuống 10, thời gian cho mỗi epoch tăng lên vì workload của mỗi batch được thực thi kém hiệu quả hơn.
 
 ```{.python .input}
 #@tab all
 mini2_res = train_sgd(.05, 10)
 ```
 
-Now we can compare the time vs. loss for the previous four experiments. As can be seen, although stochastic gradient descent converges faster than GD in terms of number of examples processed, it uses more time to reach the same loss than GD because computing the gradient example by example is not as efficient. Minibatch stochastic gradient descent is able to trade-off convergence speed and computation efficiency. A minibatch size of 10 is more efficient than stochastic gradient descent; a minibatch size of 100 even outperforms GD in terms of runtime.
+Bây giờ chúng ta có thể so sánh thời gian với loss của bốn thử nghiệm trước đó. Như có thể thấy, mặc dù stochastic gradient descent hội tụ nhanh hơn GD xét theo số lượng mẫu đã xử lý, nó cần nhiều thời gian hơn GD để đạt cùng loss vì việc tính gradient từng mẫu một không hiệu quả bằng. Minibatch stochastic gradient descent có thể cân bằng giữa tốc độ hội tụ và hiệu quả tính toán. Minibatch size là 10 hiệu quả hơn stochastic gradient descent; minibatch size là 100 thậm chí vượt GD xét về runtime.
 
 ```{.python .input}
 #@tab all
@@ -482,9 +478,9 @@ d2l.plot(*list(map(list, zip(gd_res, sgd_res, mini1_res, mini2_res))),
 d2l.plt.gca().set_xscale('log')
 ```
 
-## Concise Implementation
+## Cài đặt ngắn gọn
 
-In Gluon, we can use the `Trainer` class to call optimization algorithms. This is used to implement a generic training function. We will use this throughout the current chapter.
+Trong Gluon, chúng ta có thể sử dụng lớp `Trainer` để gọi các thuật toán tối ưu hóa. Lớp này được dùng để cài đặt một hàm huấn luyện tổng quát. Chúng ta sẽ sử dụng nó xuyên suốt chương hiện tại.
 
 ```{.python .input}
 #@tab mxnet
@@ -582,7 +578,7 @@ def train_concise_ch11(trainer_fn, hyperparams, data_iter, num_epochs=2):
     print(f'loss: {animator.Y[0][-1]:.3f}, {timer.sum()/num_epochs:.3f} sec/epoch')
 ```
 
-Using Gluon to repeat the last experiment shows identical behavior.
+Sử dụng Gluon để lặp lại thử nghiệm trước cho thấy hành vi giống hệt.
 
 ```{.python .input}
 #@tab mxnet
@@ -604,30 +600,30 @@ trainer = tf.keras.optimizers.SGD
 train_concise_ch11(trainer, {'learning_rate': 0.05}, data_iter)
 ```
 
-## Summary
+## Tóm tắt
 
-* Vectorization makes code more efficient due to reduced overhead arising from the deep learning framework and due to better memory locality and caching on CPUs and GPUs.
-* There is a trade-off between statistical efficiency arising from stochastic gradient descent and computational efficiency arising from processing large batches of data at a time.
-* Minibatch stochastic gradient descent offers the best of both worlds: computational and statistical efficiency.
-* In minibatch stochastic gradient descent we process batches of data obtained by a random permutation of the training data (i.e., each observation is processed only once per epoch, albeit in random order).
-* It is advisable to decay the learning rates during training.
-* In general, minibatch stochastic gradient descent is faster than stochastic gradient descent and gradient descent for convergence to a smaller risk, when measured in terms of clock time.
+* Vectorization giúp code hiệu quả hơn nhờ giảm overhead từ deep learning framework và nhờ tính cục bộ bộ nhớ cùng caching tốt hơn trên CPU và GPU.
+* Có sự đánh đổi giữa hiệu quả thống kê từ stochastic gradient descent và hiệu quả tính toán từ việc xử lý các batch dữ liệu lớn cùng lúc.
+* Minibatch stochastic gradient descent mang lại ưu điểm của cả hai: hiệu quả tính toán và hiệu quả thống kê.
+* Trong minibatch stochastic gradient descent, chúng ta xử lý các batch dữ liệu thu được từ một hoán vị ngẫu nhiên của dữ liệu huấn luyện (tức là mỗi quan sát chỉ được xử lý một lần mỗi epoch, dù theo thứ tự ngẫu nhiên).
+* Nên giảm dần learning rate trong quá trình huấn luyện.
+* Nhìn chung, minibatch stochastic gradient descent nhanh hơn stochastic gradient descent và gradient descent để hội tụ đến rủi ro nhỏ hơn, khi đo theo thời gian thực.
 
-## Exercises
+## Bài tập
 
-1. Modify the batch size and learning rate and observe the rate of decline for the value of the objective function and the time consumed in each epoch.
-1. Read the MXNet documentation and use the `Trainer` class `set_learning_rate` function to reduce the learning rate of the minibatch stochastic gradient descent to 1/10 of its previous value after each epoch.
-1. Compare minibatch stochastic gradient descent with a variant that actually *samples with replacement* from the training set. What happens?
-1. An evil genie replicates your dataset without telling you (i.e., each observation occurs twice and your dataset grows to twice its original size, but nobody told you). How does the behavior of stochastic gradient descent, minibatch stochastic gradient descent and that of gradient descent change?
+1. Thay đổi batch size và learning rate, rồi quan sát tốc độ giảm của giá trị hàm mục tiêu và thời gian tiêu tốn trong mỗi epoch.
+1. Đọc tài liệu MXNet và sử dụng hàm `set_learning_rate` của lớp `Trainer` để giảm learning rate của minibatch stochastic gradient descent xuống 1/10 giá trị trước đó sau mỗi epoch.
+1. So sánh minibatch stochastic gradient descent với một biến thể thực sự *lấy mẫu có hoàn lại* từ tập huấn luyện. Điều gì xảy ra?
+1. Một vị thần đèn độc ác sao chép dataset của bạn mà không cho bạn biết (tức là mỗi quan sát xuất hiện hai lần và dataset của bạn tăng lên gấp đôi kích thước ban đầu, nhưng không ai nói cho bạn biết). Hành vi của stochastic gradient descent, minibatch stochastic gradient descent và gradient descent thay đổi như thế nào?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/353)
+[Thảo luận](https://discuss.d2l.ai/t/353)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1068)
+[Thảo luận](https://discuss.d2l.ai/t/1068)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1069)
+[Thảo luận](https://discuss.d2l.ai/t/1069)
 :end_tab:

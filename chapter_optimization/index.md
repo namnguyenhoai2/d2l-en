@@ -1,20 +1,20 @@
-# Optimization Algorithms
+# Thuật toán tối ưu hóa
 :label:`chap_optimization`
 
-If you read the book in sequence up to this point you already used a number of optimization algorithms to train deep learning models.
-They were the tools that allowed us to continue updating model parameters and to minimize the value of the loss function, as evaluated on the training set. Indeed, anyone content with treating optimization as a black box device to minimize objective functions in a simple setting might well content oneself with the knowledge that there exists an array of incantations of such a procedure (with names such as "SGD" and "Adam").
+Nếu bạn đã đọc cuốn sách theo trình tự đến thời điểm này, bạn đã sử dụng một số thuật toán tối ưu hóa để huấn luyện các mô hình deep learning.
+Chúng là những công cụ cho phép chúng ta tiếp tục cập nhật các tham số của mô hình và tối thiểu hóa giá trị của hàm mất mát, được đánh giá trên tập huấn luyện. Thật vậy, bất kỳ ai hài lòng với việc xem tối ưu hóa như một thiết bị hộp đen để tối thiểu hóa các hàm mục tiêu trong một bối cảnh đơn giản có lẽ cũng sẽ hài lòng với hiểu biết rằng tồn tại một loạt các câu thần chú cho quy trình như vậy (với các tên như "SGD" và "Adam").
 
-To do well, however, some deeper knowledge is required.
-Optimization algorithms are important for deep learning.
-On the one hand, training a complex deep learning model can take hours, days, or even weeks.
-The performance of the optimization algorithm directly affects the model's training efficiency.
-On the other hand, understanding the principles of different optimization algorithms and the role of their hyperparameters
-will enable us to tune the hyperparameters in a targeted manner to improve the performance of deep learning models.
+Tuy nhiên, để làm tốt, cần có một số kiến thức sâu hơn.
+Các thuật toán tối ưu hóa rất quan trọng đối với deep learning.
+Một mặt, việc huấn luyện một mô hình deep learning phức tạp có thể mất hàng giờ, hàng ngày, hoặc thậm chí hàng tuần.
+Hiệu năng của thuật toán tối ưu hóa ảnh hưởng trực tiếp đến hiệu quả huấn luyện của mô hình.
+Mặt khác, việc hiểu các nguyên lý của những thuật toán tối ưu hóa khác nhau và vai trò của các hyperparameter của chúng
+sẽ cho phép chúng ta điều chỉnh hyperparameter một cách có mục tiêu nhằm cải thiện hiệu năng của các mô hình deep learning.
 
-In this chapter, we explore common deep learning optimization algorithms in depth.
-Almost all optimization problems arising in deep learning are *nonconvex*.
-Nonetheless, the design and analysis of algorithms in the context of *convex* problems have proven to be very instructive.
-It is for that reason that this chapter includes a primer on convex optimization and the proof for a very simple stochastic gradient descent algorithm on a convex objective function.
+Trong chương này, chúng ta sẽ khám phá sâu các thuật toán tối ưu hóa phổ biến trong deep learning.
+Hầu như mọi bài toán tối ưu hóa phát sinh trong deep learning đều *không lồi*.
+Tuy vậy, việc thiết kế và phân tích các thuật toán trong bối cảnh các bài toán *lồi* đã chứng tỏ là rất bổ ích.
+Vì lý do đó, chương này bao gồm phần nhập môn về tối ưu hóa lồi và chứng minh cho một thuật toán stochastic gradient descent rất đơn giản trên một hàm mục tiêu lồi.
 
 ```toc
 :maxdepth: 2
@@ -31,4 +31,3 @@ adadelta
 adam
 lr-scheduler
 ```
-

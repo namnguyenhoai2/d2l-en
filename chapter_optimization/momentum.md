@@ -1,45 +1,45 @@
 # Momentum
 :label:`sec_momentum`
 
-In :numref:`sec_sgd` we reviewed what happens when performing stochastic gradient descent, i.e., when performing optimization where only a noisy variant of the gradient is available. In particular, we noticed that for noisy gradients we need to be extra cautious when it comes to choosing the learning rate in the face of noise. If we decrease it too rapidly, convergence stalls. If we are too lenient, we fail to converge to a good enough solution since noise keeps on driving us away from optimality.
+Trong :numref:`sec_sgd`, chúng ta đã xem xét điều gì xảy ra khi thực hiện stochastic gradient descent, tức là khi thực hiện tối ưu hóa mà chỉ có một biến thể nhiễu của gradient. Cụ thể, chúng ta nhận thấy rằng với gradient nhiễu, cần đặc biệt thận trọng khi chọn learning rate trước sự hiện diện của nhiễu. Nếu giảm nó quá nhanh, sự hội tụ sẽ đình trệ. Nếu quá nới lỏng, chúng ta sẽ không hội tụ đến một nghiệm đủ tốt vì nhiễu liên tục đẩy chúng ta rời xa điểm tối ưu.
 
-## Basics
+## Kiến thức cơ bản
 
-In this section, we will explore more effective optimization algorithms, especially for certain types of optimization problems that are common in practice.
+Trong phần này, chúng ta sẽ khám phá các thuật toán tối ưu hóa hiệu quả hơn, đặc biệt dành cho một số loại bài toán tối ưu hóa thường gặp trong thực tế.
 
 
-### Leaky Averages
+### Trung bình rò rỉ
 
-The previous section saw us discussing minibatch SGD as a means for accelerating computation. It also had the nice side-effect that averaging gradients reduced the amount of variance. The minibatch stochastic gradient descent can be calculated by:
+Phần trước đã thảo luận về minibatch SGD như một cách để tăng tốc tính toán. Nó cũng có tác dụng phụ hữu ích là việc lấy trung bình các gradient làm giảm lượng phương sai. Minibatch stochastic gradient descent có thể được tính như sau:
 
 $$\mathbf{g}_{t, t-1} = \partial_{\mathbf{w}} \frac{1}{|\mathcal{B}_t|} \sum_{i \in \mathcal{B}_t} f(\mathbf{x}_{i}, \mathbf{w}_{t-1}) = \frac{1}{|\mathcal{B}_t|} \sum_{i \in \mathcal{B}_t} \mathbf{h}_{i, t-1}.
 $$
 
-To keep the notation simple, here we used $\mathbf{h}_{i, t-1} = \partial_{\mathbf{w}} f(\mathbf{x}_i, \mathbf{w}_{t-1})$ as the stochastic gradient descent for sample $i$ using the weights updated at time $t-1$.
-It would be nice if we could benefit from the effect of variance reduction even beyond averaging gradients on a minibatch. One option to accomplish this task is to replace the gradient computation by a "leaky average":
+Để giữ ký hiệu đơn giản, ở đây chúng ta dùng $\mathbf{h}_{i, t-1} = \partial_{\mathbf{w}} f(\mathbf{x}_i, \mathbf{w}_{t-1})$ làm stochastic gradient descent cho mẫu $i$ sử dụng các trọng số được cập nhật tại thời điểm $t-1$.
+Sẽ rất tốt nếu chúng ta có thể hưởng lợi từ hiệu ứng giảm phương sai ngay cả ngoài việc lấy trung bình gradient trên một minibatch. Một lựa chọn để thực hiện điều này là thay thế phép tính gradient bằng một "trung bình rò rỉ":
 
 $$\mathbf{v}_t = \beta \mathbf{v}_{t-1} + \mathbf{g}_{t, t-1}$$
 
-for some $\beta \in (0, 1)$. This effectively replaces the instantaneous gradient by one that is been averaged over multiple *past* gradients. $\mathbf{v}$ is called *velocity*. It accumulates past gradients similar to how a heavy ball rolling down the objective function landscape integrates over past forces. To see what is happening in more detail let's expand $\mathbf{v}_t$ recursively into
+với một $\beta \in (0, 1)$. Điều này thực chất thay gradient tức thời bằng một gradient đã được lấy trung bình trên nhiều gradient *trong quá khứ*. $\mathbf{v}$ được gọi là *vận tốc*. Nó tích lũy các gradient trong quá khứ, tương tự như cách một quả bóng nặng lăn xuống địa hình của hàm mục tiêu tích hợp các lực trong quá khứ. Để xem chi tiết hơn điều gì đang xảy ra, hãy khai triển đệ quy $\mathbf{v}_t$ thành
 
 $$\begin{aligned}
 \mathbf{v}_t = \beta^2 \mathbf{v}_{t-2} + \beta \mathbf{g}_{t-1, t-2} + \mathbf{g}_{t, t-1}
 = \ldots, = \sum_{\tau = 0}^{t-1} \beta^{\tau} \mathbf{g}_{t-\tau, t-\tau-1}.
 \end{aligned}$$
 
-Large $\beta$ amounts to a long-range average, whereas small $\beta$ amounts to only a slight correction relative to a gradient method. The new gradient replacement no longer points into the direction of steepest descent on a particular instance any longer but rather in the direction of a weighted average of past gradients. This allows us to realize most of the benefits of averaging over a batch without the cost of actually computing the gradients on it. We will revisit this averaging procedure in more detail later.
+$\beta$ lớn tương ứng với việc lấy trung bình trên phạm vi dài, trong khi $\beta$ nhỏ chỉ tương ứng với một hiệu chỉnh nhẹ so với phương pháp gradient. Gradient thay thế mới không còn chỉ theo hướng giảm dốc nhất trên một mẫu cụ thể, mà theo hướng trung bình có trọng số của các gradient trong quá khứ. Điều này cho phép chúng ta đạt được phần lớn lợi ích của việc lấy trung bình trên một batch mà không phải trả chi phí thực sự tính gradient trên batch đó. Chúng ta sẽ xem lại quy trình lấy trung bình này chi tiết hơn sau.
 
-The above reasoning formed the basis for what is now known as *accelerated* gradient methods, such as gradients with momentum. They enjoy the additional benefit of being much more effective in cases where the optimization problem is ill-conditioned (i.e., where there are some directions where progress is much slower than in others, resembling a narrow canyon). Furthermore, they allow us to average over subsequent gradients to obtain more stable directions of descent. Indeed, the aspect of acceleration even for noise-free convex problems is one of the key reasons why momentum works and why it works so well.
+Lập luận trên là nền tảng cho những gì ngày nay được gọi là các phương pháp gradient *tăng tốc*, chẳng hạn như gradient có momentum. Chúng có thêm lợi ích là hiệu quả hơn nhiều trong những trường hợp bài toán tối ưu hóa kém điều kiện (tức là có một số hướng mà tiến độ chậm hơn nhiều so với các hướng khác, giống như một hẻm núi hẹp). Hơn nữa, chúng cho phép chúng ta lấy trung bình các gradient liên tiếp để có được các hướng giảm ổn định hơn. Thật vậy, khía cạnh tăng tốc ngay cả đối với các bài toán lồi không nhiễu là một trong những lý do chính khiến momentum hoạt động và hoạt động hiệu quả đến vậy.
 
-As one would expect, due to its efficacy momentum is a well-studied subject in optimization for deep learning and beyond. See e.g., the beautiful [expository article](https://distill.pub/2017/momentum/) by :citet:`Goh.2017` for an in-depth analysis and interactive animation. It was proposed by :citet:`Polyak.1964`. :citet:`Nesterov.2018` has a detailed theoretical discussion in the context of convex optimization. Momentum in deep learning has been known to be beneficial for a long time. See e.g., the discussion by :citet:`Sutskever.Martens.Dahl.ea.2013` for details.
+Như có thể mong đợi, nhờ hiệu quả của nó, momentum là một chủ đề được nghiên cứu kỹ trong tối ưu hóa cho deep learning và nhiều lĩnh vực khác. Xem, chẳng hạn, [bài viết trình bày](https://distill.pub/2017/momentum/) xuất sắc của :citet:`Goh.2017` để có phân tích chuyên sâu và hình động tương tác. Nó được đề xuất bởi :citet:`Polyak.1964`. :citet:`Nesterov.2018` có thảo luận lý thuyết chi tiết trong bối cảnh tối ưu hóa lồi. Momentum trong deep learning đã được biết là có lợi từ lâu. Xem, chẳng hạn, thảo luận của :citet:`Sutskever.Martens.Dahl.ea.2013` để biết chi tiết.
 
-### An Ill-conditioned Problem
+### Một bài toán kém điều kiện
 
-To get a better understanding of the geometric properties of the momentum method we revisit gradient descent, albeit with a significantly less pleasant objective function. Recall that in :numref:`sec_gd` we used $f(\mathbf{x}) = x_1^2 + 2 x_2^2$, i.e., a moderately distorted ellipsoid objective. We distort this function further by stretching it out in the $x_1$ direction via
+Để hiểu rõ hơn các đặc tính hình học của phương pháp momentum, chúng ta xem lại gradient descent, dù với một hàm mục tiêu kém dễ chịu hơn đáng kể. Nhớ rằng trong :numref:`sec_gd` chúng ta đã dùng $f(\mathbf{x}) = x_1^2 + 2 x_2^2$, tức là một hàm mục tiêu ellipsoid bị biến dạng vừa phải. Chúng ta tiếp tục làm biến dạng hàm này bằng cách kéo giãn nó theo hướng $x_1$ thông qua
 
 $$f(\mathbf{x}) = 0.1 x_1^2 + 2 x_2^2.$$
 
-As before $f$ has its minimum at $(0, 0)$. This function is *very* flat in the direction of $x_1$. Let's see what happens when we perform gradient descent as before on this new function. We pick a learning rate of $0.4$.
+Như trước, $f$ đạt cực tiểu tại $(0, 0)$. Hàm này *rất* phẳng theo hướng $x_1$. Hãy xem điều gì xảy ra khi chúng ta thực hiện gradient descent như trước trên hàm mới này. Chúng ta chọn learning rate là $0.4$.
 
 ```{.python .input}
 #@tab mxnet
@@ -87,7 +87,7 @@ def gd_2d(x1, x2, s1, s2):
 d2l.show_trace_2d(f_2d, d2l.train_2d(gd_2d))
 ```
 
-By construction, the gradient in the $x_2$ direction is *much* higher and changes much more rapidly than in the horizontal $x_1$ direction. Thus we are stuck between two undesirable choices: if we pick a small learning rate we ensure that the solution does not diverge in the $x_2$ direction but we are saddled with slow convergence in the $x_1$ direction. Conversely, with a large learning rate we progress rapidly in the $x_1$ direction but diverge in $x_2$. The example below illustrates what happens even after a slight increase in learning rate from $0.4$ to $0.6$. Convergence in the $x_1$ direction improves but the overall solution quality is much worse.
+Theo cấu trúc, gradient theo hướng $x_2$ *lớn hơn nhiều* và thay đổi nhanh hơn nhiều so với theo hướng ngang $x_1$. Do đó, chúng ta mắc kẹt giữa hai lựa chọn không mong muốn: nếu chọn learning rate nhỏ, chúng ta đảm bảo nghiệm không phân kỳ theo hướng $x_2$ nhưng phải chấp nhận hội tụ chậm theo hướng $x_1$. Ngược lại, với learning rate lớn, chúng ta tiến nhanh theo hướng $x_1$ nhưng phân kỳ theo $x_2$. Ví dụ dưới đây minh họa điều gì xảy ra ngay cả sau khi tăng nhẹ learning rate từ $0.4$ lên $0.6$. Sự hội tụ theo hướng $x_1$ được cải thiện nhưng chất lượng nghiệm tổng thể kém hơn nhiều.
 
 ```{.python .input}
 #@tab all
@@ -95,11 +95,10 @@ eta = 0.6
 d2l.show_trace_2d(f_2d, d2l.train_2d(gd_2d))
 ```
 
-### The Momentum Method
+### Phương pháp Momentum
 
-The momentum method allows us to solve the gradient descent problem described
-above. Looking at the optimization trace above we might intuit that averaging gradients over the past would work well. After all, in the $x_1$ direction this will aggregate well-aligned gradients, thus increasing the distance we cover with every step. Conversely, in the $x_2$ direction where gradients oscillate, an aggregate gradient will reduce step size due to oscillations that cancel each other out.
-Using $\mathbf{v}_t$ instead of the gradient $\mathbf{g}_t$ yields the following update equations:
+Phương pháp momentum cho phép chúng ta giải quyết bài toán gradient descent được mô tả ở trên. Quan sát quỹ đạo tối ưu hóa ở trên, chúng ta có thể trực giác rằng việc lấy trung bình các gradient trong quá khứ sẽ hoạt động tốt. Xét cho cùng, theo hướng $x_1$, điều này sẽ tổng hợp các gradient cùng hướng tốt, từ đó tăng quãng đường chúng ta đi được ở mỗi bước. Ngược lại, theo hướng $x_2$, nơi các gradient dao động, một gradient tổng hợp sẽ giảm kích thước bước do các dao động triệt tiêu lẫn nhau.
+Sử dụng $\mathbf{v}_t$ thay cho gradient $\mathbf{g}_t$ cho ta các phương trình cập nhật sau:
 
 $$
 \begin{aligned}
@@ -108,7 +107,7 @@ $$
 \end{aligned}
 $$
 
-Note that for $\beta = 0$ we recover regular gradient descent. Before delving deeper into the mathematical properties let's have a quick look at how the algorithm behaves in practice.
+Lưu ý rằng với $\beta = 0$, chúng ta thu được gradient descent thông thường. Trước khi đi sâu hơn vào các đặc tính toán học, hãy nhanh chóng xem thuật toán hoạt động thế nào trong thực tế.
 
 ```{.python .input}
 #@tab all
@@ -121,7 +120,7 @@ eta, beta = 0.6, 0.5
 d2l.show_trace_2d(f_2d, d2l.train_2d(momentum_2d))
 ```
 
-As we can see, even with the same learning rate that we used before, momentum still converges well. Let's see what happens when we decrease the momentum parameter. Halving it to $\beta = 0.25$ leads to a trajectory that barely converges at all. Nonetheless, it is a lot better than without momentum (when the solution diverges).
+Như có thể thấy, ngay cả với cùng learning rate đã dùng trước đó, momentum vẫn hội tụ tốt. Hãy xem điều gì xảy ra khi chúng ta giảm tham số momentum. Giảm một nửa xuống $\beta = 0.25$ dẫn đến một quỹ đạo hầu như không hội tụ. Tuy vậy, nó vẫn tốt hơn nhiều so với không dùng momentum (khi nghiệm phân kỳ).
 
 ```{.python .input}
 #@tab all
@@ -129,11 +128,11 @@ eta, beta = 0.6, 0.25
 d2l.show_trace_2d(f_2d, d2l.train_2d(momentum_2d))
 ```
 
-Note that we can combine momentum with stochastic gradient descent and in particular, minibatch stochastic gradient descent. The only change is that in that case we replace the gradients $\mathbf{g}_{t, t-1}$ with $\mathbf{g}_t$. Last, for convenience we initialize $\mathbf{v}_0 = 0$ at time $t=0$. Let's look at what leaky averaging actually does to the updates.
+Lưu ý rằng chúng ta có thể kết hợp momentum với stochastic gradient descent và đặc biệt là minibatch stochastic gradient descent. Thay đổi duy nhất là trong trường hợp đó, chúng ta thay các gradient $\mathbf{g}_{t, t-1}$ bằng $\mathbf{g}_t$. Cuối cùng, để thuận tiện, chúng ta khởi tạo $\mathbf{v}_0 = 0$ tại thời điểm $t=0$. Hãy xem việc lấy trung bình rò rỉ thực sự tác động thế nào đến các cập nhật.
 
-### Effective Sample Weight
+### Trọng số mẫu hiệu dụng
 
-Recall that $\mathbf{v}_t = \sum_{\tau = 0}^{t-1} \beta^{\tau} \mathbf{g}_{t-\tau, t-\tau-1}$. In the limit the terms add up to $\sum_{\tau=0}^\infty \beta^\tau = \frac{1}{1-\beta}$. In other words, rather than taking a step of size $\eta$ in gradient descent or stochastic gradient descent we take a step of size $\frac{\eta}{1-\beta}$ while at the same time, dealing with a potentially much better behaved descent direction. These are two benefits in one. To illustrate how weighting behaves for different choices of $\beta$ consider the diagram below.
+Nhớ rằng $\mathbf{v}_t = \sum_{\tau = 0}^{t-1} \beta^{\tau} \mathbf{g}_{t-\tau, t-\tau-1}$. Ở giới hạn, các hạng tử cộng lại thành $\sum_{\tau=0}^\infty \beta^\tau = \frac{1}{1-\beta}$. Nói cách khác, thay vì thực hiện một bước có kích thước $\eta$ trong gradient descent hoặc stochastic gradient descent, chúng ta thực hiện một bước có kích thước $\frac{\eta}{1-\beta}$, đồng thời xử lý một hướng giảm có khả năng ổn định hơn nhiều. Đây là hai lợi ích trong một. Để minh họa cách trọng số hoạt động với các lựa chọn $\beta$ khác nhau, hãy xem sơ đồ bên dưới.
 
 ```{.python .input}
 #@tab all
@@ -146,13 +145,13 @@ d2l.plt.xlabel('time')
 d2l.plt.legend();
 ```
 
-## Practical Experiments
+## Thí nghiệm thực tế
 
-Let's see how momentum works in practice, i.e., when used within the context of a proper optimizer. For this we need a somewhat more scalable implementation.
+Hãy xem momentum hoạt động thế nào trong thực tế, tức là khi được sử dụng trong bối cảnh của một optimizer phù hợp. Để làm điều này, chúng ta cần một implementation có khả năng mở rộng hơn đôi chút.
 
-### Implementation from Scratch
+### Implementation từ đầu
 
-Compared with (minibatch) stochastic gradient descent the momentum method needs to maintain a set of  auxiliary variables, i.e., velocity. It has the same shape as the gradients (and variables of the optimization problem). In the implementation below we call these variables `states`.
+So với stochastic gradient descent (minibatch), phương pháp momentum cần duy trì một tập các biến phụ trợ, tức là vận tốc. Nó có cùng hình dạng với các gradient (và các biến của bài toán tối ưu hóa). Trong implementation bên dưới, chúng ta gọi các biến này là `states`.
 
 ```{.python .input}
 #@tab mxnet,pytorch
@@ -196,7 +195,7 @@ def sgd_momentum(params, grads, states, hyperparams):
             p[:].assign(p - hyperparams['lr'] * v)
 ```
 
-Let's see how this works in practice.
+Hãy xem cách này hoạt động trong thực tế.
 
 ```{.python .input}
 #@tab all
@@ -209,23 +208,23 @@ data_iter, feature_dim = d2l.get_data_ch11(batch_size=10)
 train_momentum(0.02, 0.5)
 ```
 
-When we increase the momentum hyperparameter `momentum` to 0.9, it amounts to a significantly larger effective sample size of $\frac{1}{1 - 0.9} = 10$. We reduce the learning rate slightly to $0.01$ to keep matters under control.
+Khi tăng hyperparameter momentum `momentum` lên 0.9, nó tương ứng với một kích thước mẫu hiệu dụng lớn hơn đáng kể là $\frac{1}{1 - 0.9} = 10$. Chúng ta giảm nhẹ learning rate xuống $0.01$ để giữ mọi thứ trong tầm kiểm soát.
 
 ```{.python .input}
 #@tab all
 train_momentum(0.01, 0.9)
 ```
 
-Reducing the learning rate further addresses any issue of non-smooth optimization problems. Setting it to $0.005$ yields good convergence properties.
+Việc giảm thêm learning rate sẽ xử lý mọi vấn đề của các bài toán tối ưu hóa không trơn. Đặt nó thành $0.005$ sẽ mang lại các đặc tính hội tụ tốt.
 
 ```{.python .input}
 #@tab all
 train_momentum(0.005, 0.9)
 ```
 
-### Concise Implementation
+### Cài đặt Ngắn gọn
 
-There is very little to do in Gluon since the standard `sgd` solver already had momentum built in. Setting matching parameters yields a very similar trajectory.
+Có rất ít việc cần làm trong Gluon vì solver `sgd` tiêu chuẩn đã tích hợp sẵn momentum. Việc đặt các tham số tương ứng sẽ cho quỹ đạo rất tương tự.
 
 ```{.python .input}
 #@tab mxnet
@@ -246,31 +245,31 @@ d2l.train_concise_ch11(trainer, {'learning_rate': 0.005, 'momentum': 0.9},
                        data_iter)
 ```
 
-## Theoretical Analysis
+## Phân tích Lý thuyết
 
-So far the 2D example of $f(x) = 0.1 x_1^2 + 2 x_2^2$ seemed rather contrived. We will now see that this is actually quite representative of the types of problem one might encounter, at least in the case of minimizing convex quadratic objective functions.
+Cho đến nay, ví dụ 2D về $f(x) = 0.1 x_1^2 + 2 x_2^2$ có vẻ khá gượng ép. Bây giờ chúng ta sẽ thấy rằng ví dụ này thực ra khá điển hình cho các loại bài toán có thể gặp, ít nhất là trong trường hợp tối thiểu hóa các hàm mục tiêu bậc hai lồi.
 
-### Quadratic Convex Functions
+### Hàm Lồi Bậc hai
 
-Consider the function
+Xét hàm
 
 $$h(\mathbf{x}) = \frac{1}{2} \mathbf{x}^\top \mathbf{Q} \mathbf{x} + \mathbf{x}^\top \mathbf{c} + b.$$
 
-This is a general quadratic function. For positive definite matrices $\mathbf{Q} \succ 0$, i.e., for matrices with positive eigenvalues this has a minimizer at $\mathbf{x}^* = -\mathbf{Q}^{-1} \mathbf{c}$ with minimum value $b - \frac{1}{2} \mathbf{c}^\top \mathbf{Q}^{-1} \mathbf{c}$. Hence we can rewrite $h$ as
+Đây là một hàm bậc hai tổng quát. Với các ma trận xác định dương $\mathbf{Q} \succ 0$, tức là các ma trận có các trị riêng dương, hàm này có một điểm tối thiểu tại $\mathbf{x}^* = -\mathbf{Q}^{-1} \mathbf{c}$ với giá trị nhỏ nhất là $b - \frac{1}{2} \mathbf{c}^\top \mathbf{Q}^{-1} \mathbf{c}$. Do đó, chúng ta có thể viết lại $h$ thành
 
 $$h(\mathbf{x}) = \frac{1}{2} (\mathbf{x} - \mathbf{Q}^{-1} \mathbf{c})^\top \mathbf{Q} (\mathbf{x} - \mathbf{Q}^{-1} \mathbf{c}) + b - \frac{1}{2} \mathbf{c}^\top \mathbf{Q}^{-1} \mathbf{c}.$$
 
-The gradient is given by $\partial_{\mathbf{x}} h(\mathbf{x}) = \mathbf{Q} (\mathbf{x} - \mathbf{Q}^{-1} \mathbf{c})$. That is, it is given by the distance between $\mathbf{x}$ and the minimizer, multiplied by $\mathbf{Q}$. Consequently also the velocity  is a linear combination of terms $\mathbf{Q} (\mathbf{x}_t - \mathbf{Q}^{-1} \mathbf{c})$.
+Gradient được cho bởi $\partial_{\mathbf{x}} h(\mathbf{x}) = \mathbf{Q} (\mathbf{x} - \mathbf{Q}^{-1} \mathbf{c})$. Nghĩa là, nó được xác định bởi khoảng cách giữa $\mathbf{x}$ và điểm tối thiểu, nhân với $\mathbf{Q}$. Do đó, vận tốc cũng là một tổ hợp tuyến tính của các hạng tử $\mathbf{Q} (\mathbf{x}_t - \mathbf{Q}^{-1} \mathbf{c})$.
 
-Since $\mathbf{Q}$ is positive definite it can be decomposed into its eigensystem via $\mathbf{Q} = \mathbf{O}^\top \boldsymbol{\Lambda} \mathbf{O}$ for an orthogonal (rotation) matrix $\mathbf{O}$ and a diagonal matrix $\boldsymbol{\Lambda}$ of positive eigenvalues. This allows us to perform a change of variables from $\mathbf{x}$ to $\mathbf{z} \stackrel{\textrm{def}}{=} \mathbf{O} (\mathbf{x} - \mathbf{Q}^{-1} \mathbf{c})$ to obtain a much simplified expression:
+Vì $\mathbf{Q}$ là xác định dương, nó có thể được phân rã thành hệ riêng thông qua $\mathbf{Q} = \mathbf{O}^\top \boldsymbol{\Lambda} \mathbf{O}$ với ma trận trực giao (quay) $\mathbf{O}$ và ma trận đường chéo $\boldsymbol{\Lambda}$ gồm các trị riêng dương. Điều này cho phép chúng ta thực hiện phép đổi biến từ $\mathbf{x}$ sang $\mathbf{z} \stackrel{\textrm{def}}{=} \mathbf{O} (\mathbf{x} - \mathbf{Q}^{-1} \mathbf{c})$ để thu được biểu thức đơn giản hơn nhiều:
 
 $$h(\mathbf{z}) = \frac{1}{2} \mathbf{z}^\top \boldsymbol{\Lambda} \mathbf{z} + b'.$$
 
-Here $b' = b - \frac{1}{2} \mathbf{c}^\top \mathbf{Q}^{-1} \mathbf{c}$. Since $\mathbf{O}$ is only an orthogonal matrix this does not perturb the gradients in a meaningful way. Expressed in terms of $\mathbf{z}$ gradient descent becomes
+Ở đây $b' = b - \frac{1}{2} \mathbf{c}^\top \mathbf{Q}^{-1} \mathbf{c}$. Vì $\mathbf{O}$ chỉ là một ma trận trực giao, điều này không làm nhiễu loạn gradient theo cách đáng kể. Biểu diễn theo $\mathbf{z}$, gradient descent trở thành
 
 $$\mathbf{z}_t = \mathbf{z}_{t-1} - \boldsymbol{\Lambda} \mathbf{z}_{t-1} = (\mathbf{I} - \boldsymbol{\Lambda}) \mathbf{z}_{t-1}.$$
 
-The important fact in this expression is that gradient descent *does not mix* between different eigenspaces. That is, when expressed in terms of the eigensystem of $\mathbf{Q}$ the optimization problem proceeds in a coordinate-wise manner. This also holds for
+Điểm quan trọng trong biểu thức này là gradient descent *không trộn lẫn* giữa các không gian riêng khác nhau. Nghĩa là, khi được biểu diễn theo hệ riêng của $\mathbf{Q}$, bài toán tối ưu hóa diễn ra theo từng tọa độ. Điều này cũng đúng với
 
 $$\begin{aligned}
 \mathbf{v}_t & = \beta \mathbf{v}_{t-1} + \boldsymbol{\Lambda} \mathbf{z}_{t-1} \\
@@ -278,15 +277,15 @@ $$\begin{aligned}
     & = (\mathbf{I} - \eta \boldsymbol{\Lambda}) \mathbf{z}_{t-1} - \eta \beta \mathbf{v}_{t-1}.
 \end{aligned}$$
 
-In doing this we just proved the following theorem: gradient descent with and without momentum for a convex quadratic function decomposes into coordinate-wise optimization in the direction of the eigenvectors of the quadratic matrix.
+Qua đó, chúng ta vừa chứng minh định lý sau: gradient descent có và không có momentum đối với một hàm bậc hai lồi có thể được phân rã thành tối ưu hóa theo từng tọa độ theo hướng của các vector riêng của ma trận bậc hai.
 
-### Scalar Functions
+### Hàm Vô hướng
 
-Given the above result let's see what happens when we minimize the function $f(x) = \frac{\lambda}{2} x^2$. For gradient descent we have
+Dựa trên kết quả trên, hãy xem điều gì xảy ra khi chúng ta tối thiểu hóa hàm $f(x) = \frac{\lambda}{2} x^2$. Với gradient descent, ta có
 
 $$x_{t+1} = x_t - \eta \lambda x_t = (1 - \eta \lambda) x_t.$$
 
-Whenever $|1 - \eta \lambda| < 1$ this optimization converges at an exponential rate since after $t$ steps we have $x_t = (1 - \eta \lambda)^t x_0$. This shows how the rate of convergence improves initially as we increase the learning rate $\eta$ until $\eta \lambda = 1$. Beyond that things diverge and for $\eta \lambda > 2$ the optimization problem diverges.
+Bất cứ khi nào $|1 - \eta \lambda| < 1$, quá trình tối ưu hóa này hội tụ với tốc độ mũ vì sau $t$ bước ta có $x_t = (1 - \eta \lambda)^t x_0$. Điều này cho thấy tốc độ hội tụ ban đầu được cải thiện khi chúng ta tăng learning rate $\eta$ cho đến khi $\eta \lambda = 1$. Vượt quá mức đó, mọi thứ sẽ phân kỳ, và khi $\eta \lambda > 2$, bài toán tối ưu hóa sẽ phân kỳ.
 
 ```{.python .input}
 #@tab all
@@ -300,7 +299,7 @@ d2l.plt.xlabel('time')
 d2l.plt.legend();
 ```
 
-To analyze convergence in the case of momentum we begin by rewriting the update equations in terms of two scalars: one for $x$ and one for velocity $v$. This yields:
+Để phân tích sự hội tụ trong trường hợp có momentum, chúng ta bắt đầu bằng cách viết lại các phương trình cập nhật theo hai đại lượng vô hướng: một cho $x$ và một cho vận tốc $v$. Điều này cho:
 
 $$
 \begin{bmatrix} v_{t+1} \\ x_{t+1} \end{bmatrix} =
@@ -308,32 +307,32 @@ $$
 \begin{bmatrix} v_{t} \\ x_{t} \end{bmatrix} = \mathbf{R}(\beta, \eta, \lambda) \begin{bmatrix} v_{t} \\ x_{t} \end{bmatrix}.
 $$
 
-We used $\mathbf{R}$ to denote the $2 \times 2$ governing convergence behavior. After $t$ steps the initial choice $[v_0, x_0]$ becomes $\mathbf{R}(\beta, \eta, \lambda)^t [v_0, x_0]$. Hence, it is up to the eigenvalues of $\mathbf{R}$ to determine the speed of convergence. See the [Distill post](https://distill.pub/2017/momentum/) of :citet:`Goh.2017` for a great animation and :citet:`Flammarion.Bach.2015` for a detailed analysis. One can show that $0 < \eta \lambda < 2 + 2 \beta$ velocity converges. This is a larger range of feasible parameters when compared to $0 < \eta \lambda < 2$ for gradient descent. It also suggests that in general large values of $\beta$ are desirable. Further details require a fair amount of technical detail and we suggest that the interested reader consult the original publications.
+Chúng ta dùng $\mathbf{R}$ để ký hiệu ma trận $2 \times 2$ chi phối hành vi hội tụ. Sau $t$ bước, lựa chọn ban đầu $[v_0, x_0]$ trở thành $\mathbf{R}(\beta, \eta, \lambda)^t [v_0, x_0]$. Do đó, tốc độ hội tụ được quyết định bởi các trị riêng của $\mathbf{R}$. Xem bài viết [Distill post](https://distill.pub/2017/momentum/) của :citet:`Goh.2017` để xem một hình động tuyệt vời và :citet:`Flammarion.Bach.2015` để xem phân tích chi tiết. Có thể chứng minh rằng với $0 < \eta \lambda < 2 + 2 \beta$, vận tốc hội tụ. Đây là một khoảng tham số khả thi lớn hơn so với $0 < \eta \lambda < 2$ của gradient descent. Điều này cũng gợi ý rằng nhìn chung các giá trị lớn của $\beta$ là mong muốn. Các chi tiết sâu hơn đòi hỏi một lượng đáng kể kiến thức kỹ thuật, và chúng tôi đề xuất người đọc quan tâm tham khảo các ấn phẩm gốc.
 
-## Summary
+## Tóm tắt
 
-* Momentum replaces gradients with a leaky average over past gradients. This accelerates convergence significantly.
-* It is desirable for both noise-free gradient descent and (noisy) stochastic gradient descent.
-* Momentum prevents stalling of the optimization process that is much more likely to occur for stochastic gradient descent.
-* The effective number of gradients is given by $\frac{1}{1-\beta}$ due to exponentiated downweighting of past data.
-* In the case of convex quadratic problems this can be analyzed explicitly in detail.
-* Implementation is quite straightforward but it requires us to store an additional state vector (velocity $\mathbf{v}$).
+* Momentum thay thế gradient bằng trung bình suy giảm của các gradient trong quá khứ. Điều này tăng tốc hội tụ đáng kể.
+* Nó hữu ích cho cả gradient descent không nhiễu và stochastic gradient descent có nhiễu.
+* Momentum ngăn quá trình tối ưu hóa bị đình trệ, điều vốn dễ xảy ra hơn nhiều với stochastic gradient descent.
+* Số lượng gradient hiệu dụng được cho bởi $\frac{1}{1-\beta}$ do việc giảm trọng số theo hàm mũ của dữ liệu quá khứ.
+* Trong trường hợp các bài toán bậc hai lồi, điều này có thể được phân tích tường minh và chi tiết.
+* Việc cài đặt khá đơn giản nhưng yêu cầu chúng ta lưu trữ thêm một vector trạng thái (vận tốc $\mathbf{v}$).
 
-## Exercises
+## Bài tập
 
-1. Use other combinations of momentum hyperparameters and learning rates and observe and analyze the different experimental results.
-1. Try out gradient descent and momentum for a quadratic problem where you have multiple eigenvalues, i.e., $f(x) = \frac{1}{2} \sum_i \lambda_i x_i^2$, e.g., $\lambda_i = 2^{-i}$. Plot how the values of $x$ decrease for the initialization $x_i = 1$.
-1. Derive minimum value and minimizer for $h(\mathbf{x}) = \frac{1}{2} \mathbf{x}^\top \mathbf{Q} \mathbf{x} + \mathbf{x}^\top \mathbf{c} + b$.
-1. What changes when we perform stochastic gradient descent with momentum? What happens when we use minibatch stochastic gradient descent with momentum? Experiment with the parameters?
+1. Sử dụng các tổ hợp khác của hyperparameter momentum và learning rate, rồi quan sát và phân tích các kết quả thực nghiệm khác nhau.
+1. Thử gradient descent và momentum cho một bài toán bậc hai có nhiều trị riêng, tức là $f(x) = \frac{1}{2} \sum_i \lambda_i x_i^2$, ví dụ $\lambda_i = 2^{-i}$. Vẽ biểu đồ cách các giá trị của $x$ giảm dần với khởi tạo $x_i = 1$.
+1. Suy ra giá trị nhỏ nhất và điểm tối thiểu của $h(\mathbf{x}) = \frac{1}{2} \mathbf{x}^\top \mathbf{Q} \mathbf{x} + \mathbf{x}^\top \mathbf{c} + b$.
+1. Điều gì thay đổi khi chúng ta thực hiện stochastic gradient descent với momentum? Điều gì xảy ra khi dùng minibatch stochastic gradient descent với momentum? Hãy thử nghiệm với các tham số?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/354)
+[Thảo luận](https://discuss.d2l.ai/t/354)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1070)
+[Thảo luận](https://discuss.d2l.ai/t/1070)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1071)
+[Thảo luận](https://discuss.d2l.ai/t/1071)
 :end_tab:

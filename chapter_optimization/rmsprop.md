@@ -2,22 +2,22 @@
 :label:`sec_rmsprop`
 
 
-One of the key issues in :numref:`sec_adagrad` is that the learning rate decreases at a predefined schedule of effectively $\mathcal{O}(t^{-\frac{1}{2}})$. While this is generally appropriate for convex problems, it might not be ideal for nonconvex ones, such as those encountered in deep learning. Yet, the coordinate-wise adaptivity of Adagrad is highly desirable as a preconditioner.
+Một trong những vấn đề chính ở :numref:`sec_adagrad` là learning rate giảm theo một lịch trình được xác định trước, thực chất là $\mathcal{O}(t^{-\frac{1}{2}})$. Mặc dù điều này nhìn chung phù hợp với các bài toán lồi, nó có thể không lý tưởng cho các bài toán không lồi, chẳng hạn như những bài toán gặp phải trong deep learning. Tuy vậy, tính thích ứng theo từng tọa độ của Adagrad lại rất đáng mong muốn với vai trò là một preconditioner.
 
-:citet:`Tieleman.Hinton.2012` proposed the RMSProp algorithm as a simple fix to decouple rate scheduling from coordinate-adaptive learning rates. The issue is that Adagrad accumulates the squares of the gradient $\mathbf{g}_t$ into a state vector $\mathbf{s}_t = \mathbf{s}_{t-1} + \mathbf{g}_t^2$. As a result $\mathbf{s}_t$ keeps on growing without bound due to the lack of normalization, essentially linearly as the algorithm converges.
+:citet:`Tieleman.Hinton.2012` đã đề xuất thuật toán RMSProp như một cách khắc phục đơn giản nhằm tách việc lập lịch tốc độ khỏi learning rate thích ứng theo tọa độ. Vấn đề là Adagrad tích lũy bình phương của gradient $\mathbf{g}_t$ vào một vector trạng thái $\mathbf{s}_t = \mathbf{s}_{t-1} + \mathbf{g}_t^2$. Do đó, $\mathbf{s}_t$ tiếp tục tăng không giới hạn do thiếu chuẩn hóa, về cơ bản tăng tuyến tính khi thuật toán hội tụ.
 
-One way of fixing this problem would be to use $\mathbf{s}_t / t$. For reasonable distributions of $\mathbf{g}_t$ this will converge. Unfortunately it might take a very long time until the limit behavior starts to matter since the procedure remembers the full trajectory of values. An alternative is to use a leaky average in the same way we used in the momentum method, i.e., $\mathbf{s}_t \leftarrow \gamma \mathbf{s}_{t-1} + (1-\gamma) \mathbf{g}_t^2$ for some parameter $\gamma > 0$. Keeping all other parts unchanged yields RMSProp.
+Một cách khắc phục vấn đề này là sử dụng $\mathbf{s}_t / t$. Với các phân phối hợp lý của $\mathbf{g}_t$, đại lượng này sẽ hội tụ. Không may là có thể mất rất lâu trước khi hành vi giới hạn bắt đầu trở nên đáng kể, vì quy trình ghi nhớ toàn bộ quỹ đạo của các giá trị. Một phương án khác là sử dụng trung bình rò rỉ (leaky average) theo cùng cách đã dùng trong phương pháp momentum, tức là $\mathbf{s}_t \leftarrow \gamma \mathbf{s}_{t-1} + (1-\gamma) \mathbf{g}_t^2$ với một tham số $\gamma > 0$. Giữ nguyên mọi phần khác sẽ tạo ra RMSProp.
 
-## The Algorithm
+## Thuật toán
 
-Let's write out the equations in detail.
+Hãy viết chi tiết các phương trình.
 
 $$\begin{aligned}
     \mathbf{s}_t & \leftarrow \gamma \mathbf{s}_{t-1} + (1 - \gamma) \mathbf{g}_t^2, \\
     \mathbf{x}_t & \leftarrow \mathbf{x}_{t-1} - \frac{\eta}{\sqrt{\mathbf{s}_t + \epsilon}} \odot \mathbf{g}_t.
 \end{aligned}$$
 
-The constant $\epsilon > 0$ is typically set to $10^{-6}$ to ensure that we do not suffer from division by zero or overly large step sizes. Given this expansion we are now free to control the learning rate $\eta$ independently of the scaling that is applied on a per-coordinate basis. In terms of leaky averages we can apply the same reasoning as previously applied in the case of the momentum method. Expanding the definition of $\mathbf{s}_t$ yields
+Hằng số $\epsilon > 0$ thường được đặt thành $10^{-6}$ để đảm bảo rằng chúng ta không gặp phải phép chia cho 0 hoặc kích thước bước quá lớn. Với phần mở rộng này, giờ đây chúng ta có thể kiểm soát learning rate $\eta$ độc lập với việc scale được áp dụng theo từng tọa độ. Xét theo các trung bình rò rỉ, chúng ta có thể áp dụng cùng lập luận như đã áp dụng trước đó cho phương pháp momentum. Khai triển định nghĩa của $\mathbf{s}_t$ ta được
 
 $$
 \begin{aligned}
@@ -26,7 +26,7 @@ $$
 \end{aligned}
 $$
 
-As before in :numref:`sec_momentum` we use $1 + \gamma + \gamma^2 + \ldots, = \frac{1}{1-\gamma}$. Hence the sum of weights is normalized to $1$ with a half-life time of an observation of $\gamma^{-1}$. Let's visualize the weights for the past 40 time steps for various choices of $\gamma$.
+Như trước đây trong :numref:`sec_momentum`, chúng ta sử dụng $1 + \gamma + \gamma^2 + \ldots, = \frac{1}{1-\gamma}$. Do đó, tổng các trọng số được chuẩn hóa thành $1$, với thời gian bán rã của một quan sát là $\gamma^{-1}$. Hãy trực quan hóa các trọng số cho 40 bước thời gian trước đó với nhiều lựa chọn khác nhau của $\gamma$.
 
 ```{.python .input}
 #@tab mxnet
@@ -62,9 +62,9 @@ for gamma in gammas:
 d2l.plt.xlabel('time');
 ```
 
-## Implementation from Scratch
+## Triển khai từ đầu
 
-As before we use the quadratic function $f(\mathbf{x})=0.1x_1^2+2x_2^2$ to observe the trajectory of RMSProp. Recall that in :numref:`sec_adagrad`, when we used Adagrad with a learning rate of 0.4, the variables moved only very slowly in the later stages of the algorithm since the learning rate decreased too quickly. Since $\eta$ is controlled separately this does not happen with RMSProp.
+Như trước, chúng ta sử dụng hàm bậc hai $f(\mathbf{x})=0.1x_1^2+2x_2^2$ để quan sát quỹ đạo của RMSProp. Hãy nhớ rằng trong :numref:`sec_adagrad`, khi sử dụng Adagrad với learning rate là 0.4, các biến chỉ di chuyển rất chậm ở các giai đoạn sau của thuật toán vì learning rate giảm quá nhanh. Vì $\eta$ được kiểm soát riêng, điều này không xảy ra với RMSProp.
 
 ```{.python .input}
 #@tab all
@@ -83,7 +83,7 @@ eta, gamma = 0.4, 0.9
 d2l.show_trace_2d(f_2d, d2l.train_2d(rmsprop_2d))
 ```
 
-Next, we implement RMSProp to be used in a deep network. This is equally straightforward.
+Tiếp theo, chúng ta triển khai RMSProp để sử dụng trong một deep network. Việc này cũng đơn giản tương tự.
 
 ```{.python .input}
 #@tab mxnet,pytorch
@@ -130,7 +130,7 @@ def rmsprop(params, grads, states, hyperparams):
         p[:].assign(p - hyperparams['lr'] * g / tf.math.sqrt(s + eps))
 ```
 
-We set the initial learning rate to 0.01 and the weighting term $\gamma$ to 0.9. That is, $\mathbf{s}$ aggregates on average over the past $1/(1-\gamma) = 10$ observations of the square gradient.
+Chúng ta đặt learning rate ban đầu là 0.01 và hạng trọng số $\gamma$ là 0.9. Nghĩa là, $\mathbf{s}$ tổng hợp trung bình trên $1/(1-\gamma) = 10$ quan sát gần nhất của gradient bình phương.
 
 ```{.python .input}
 #@tab all
@@ -139,9 +139,9 @@ d2l.train_ch11(rmsprop, init_rmsprop_states(feature_dim),
                {'lr': 0.01, 'gamma': 0.9}, data_iter, feature_dim);
 ```
 
-## Concise Implementation
+## Triển khai ngắn gọn
 
-Since RMSProp is a rather popular algorithm it is also available in the `Trainer` instance. All we need to do is instantiate it using an algorithm named `rmsprop`, assigning $\gamma$ to the parameter `gamma1`.
+Vì RMSProp là một thuật toán khá phổ biến, nó cũng có sẵn trong instance `Trainer`. Tất cả những gì chúng ta cần làm là khởi tạo nó bằng một thuật toán có tên `rmsprop`, gán $\gamma$ cho tham số `gamma1`.
 
 ```{.python .input}
 #@tab mxnet
@@ -163,28 +163,28 @@ d2l.train_concise_ch11(trainer, {'learning_rate': 0.01, 'rho': 0.9},
                        data_iter)
 ```
 
-## Summary
+## Tóm tắt
 
-* RMSProp is very similar to Adagrad insofar as both use the square of the gradient to scale coefficients.
-* RMSProp shares with momentum the leaky averaging. However, RMSProp uses the technique to adjust the coefficient-wise preconditioner.
-* The learning rate needs to be scheduled by the experimenter in practice.
-* The coefficient $\gamma$ determines how long the history is when adjusting the per-coordinate scale.
+* RMSProp rất giống Adagrad ở chỗ cả hai đều sử dụng bình phương của gradient để scale các hệ số.
+* RMSProp có điểm chung với momentum là phép lấy trung bình rò rỉ. Tuy nhiên, RMSProp sử dụng kỹ thuật này để điều chỉnh preconditioner theo từng hệ số.
+* Trên thực tế, learning rate cần được người thực nghiệm lập lịch.
+* Hệ số $\gamma$ quyết định độ dài lịch sử khi điều chỉnh scale theo từng tọa độ.
 
-## Exercises
+## Bài tập
 
-1. What happens experimentally if we set $\gamma = 1$? Why?
-1. Rotate the optimization problem to minimize $f(\mathbf{x}) = 0.1 (x_1 + x_2)^2 + 2 (x_1 - x_2)^2$. What happens to the convergence?
-1. Try out what happens to RMSProp on a real machine learning problem, such as training on Fashion-MNIST. Experiment with different choices for adjusting the learning rate.
-1. Would you want to adjust $\gamma$ as optimization progresses? How sensitive is RMSProp to this?
+1. Điều gì xảy ra trong thực nghiệm nếu đặt $\gamma = 1$? Tại sao?
+1. Xoay bài toán tối ưu để tối thiểu hóa $f(\mathbf{x}) = 0.1 (x_1 + x_2)^2 + 2 (x_1 - x_2)^2$. Điều gì xảy ra với sự hội tụ?
+1. Hãy thử xem RMSProp hoạt động thế nào trên một bài toán machine learning thực tế, chẳng hạn như huấn luyện trên Fashion-MNIST. Thử nghiệm các lựa chọn khác nhau để điều chỉnh learning rate.
+1. Bạn có muốn điều chỉnh $\gamma$ khi quá trình tối ưu tiến triển không? RMSProp nhạy cảm với điều này đến mức nào?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/356)
+[Thảo luận](https://discuss.d2l.ai/t/356)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1074)
+[Thảo luận](https://discuss.d2l.ai/t/1074)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1075)
+[Thảo luận](https://discuss.d2l.ai/t/1075)
 :end_tab:

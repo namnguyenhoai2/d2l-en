@@ -1,12 +1,12 @@
-# Convexity
+# Tính lồi
 :label:`sec_convexity`
 
-Convexity plays a vital role in the design of optimization algorithms. 
-This is largely due to the fact that it is much easier to analyze and test algorithms in such a context. 
-In other words,
-if the algorithm performs poorly even in the convex setting,
-typically we should not hope to see great results otherwise. 
-Furthermore, even though the optimization problems in deep learning are generally nonconvex, they often exhibit some properties of convex ones near local minima. This can lead to exciting new optimization variants such as :cite:`Izmailov.Podoprikhin.Garipov.ea.2018`.
+Tính lồi đóng vai trò thiết yếu trong việc thiết kế các thuật toán tối ưu hóa. 
+Điều này phần lớn là do việc phân tích và kiểm thử các thuật toán trong bối cảnh như vậy dễ dàng hơn nhiều. 
+Nói cách khác,
+nếu thuật toán hoạt động kém ngay cả trong bối cảnh lồi,
+thì thông thường chúng ta không nên kỳ vọng vào kết quả tốt trong các trường hợp khác. 
+Hơn nữa, mặc dù các bài toán tối ưu hóa trong deep learning nhìn chung là không lồi, chúng thường thể hiện một số đặc tính của các bài toán lồi ở gần cực tiểu cục bộ. Điều này có thể dẫn đến các biến thể tối ưu hóa mới thú vị như :cite:`Izmailov.Podoprikhin.Garipov.ea.2018`.
 
 ```{.python .input}
 #@tab mxnet
@@ -35,51 +35,51 @@ from mpl_toolkits import mplot3d
 import tensorflow as tf
 ```
 
-## Definitions
+## Định nghĩa
 
-Before convex analysis,
-we need to define *convex sets* and *convex functions*.
-They lead to mathematical tools that are commonly applied to machine learning.
+Trước khi phân tích tính lồi,
+chúng ta cần định nghĩa *tập lồi* và *hàm lồi*.
+Chúng dẫn đến các công cụ toán học thường được áp dụng trong machine learning.
 
 
-### Convex Sets
+### Tập lồi
 
-Sets are the basis of convexity. Simply put, a set $\mathcal{X}$ in a vector space is *convex* if for any $a, b \in \mathcal{X}$ the line segment connecting $a$ and $b$ is also in $\mathcal{X}$. In mathematical terms this means that for all $\lambda \in [0, 1]$ we have
+Tập hợp là nền tảng của tính lồi. Nói đơn giản, một tập $\mathcal{X}$ trong không gian vector là *lồi* nếu với mọi $a, b \in \mathcal{X}$, đoạn thẳng nối $a$ và $b$ cũng nằm trong $\mathcal{X}$. Về mặt toán học, điều này có nghĩa là với mọi $\lambda \in [0, 1]$, ta có
 
 $$\lambda  a + (1-\lambda)  b \in \mathcal{X} \textrm{ whenever } a, b \in \mathcal{X}.$$
 
-This sounds a bit abstract. Consider :numref:`fig_pacman`. The first set is not convex since there exist line segments that are not contained in it.
-The other two sets suffer no such problem.
+Điều này nghe có vẻ hơi trừu tượng. Hãy xem :numref:`fig_pacman`. Tập đầu tiên không lồi vì tồn tại các đoạn thẳng không được chứa trong nó.
+Hai tập còn lại không có vấn đề này.
 
-![The first set is nonconvex and the other two are convex.](../img/pacman.svg)
+![Tập thứ nhất là không lồi, còn hai tập còn lại là lồi.](../img/pacman.svg)
 :label:`fig_pacman`
 
-Definitions on their own are not particularly useful unless you can do something with them.
-In this case we can look at intersections as shown in :numref:`fig_convex_intersect`.
-Assume that $\mathcal{X}$ and $\mathcal{Y}$ are convex sets. Then $\mathcal{X} \cap \mathcal{Y}$ is also convex. To see this, consider any $a, b \in \mathcal{X} \cap \mathcal{Y}$. Since $\mathcal{X}$ and $\mathcal{Y}$ are convex, the line segments connecting $a$ and $b$ are contained in both $\mathcal{X}$ and $\mathcal{Y}$. Given that, they also need to be contained in $\mathcal{X} \cap \mathcal{Y}$, thus proving our theorem.
+Các định nghĩa tự chúng không đặc biệt hữu ích nếu bạn không thể làm gì với chúng.
+Trong trường hợp này, chúng ta có thể xem xét các giao như minh họa trong :numref:`fig_convex_intersect`.
+Giả sử $\mathcal{X}$ và $\mathcal{Y}$ là các tập lồi. Khi đó $\mathcal{X} \cap \mathcal{Y}$ cũng lồi. Để thấy điều này, xét bất kỳ $a, b \in \mathcal{X} \cap \mathcal{Y}$. Vì $\mathcal{X}$ và $\mathcal{Y}$ là các tập lồi, các đoạn thẳng nối $a$ và $b$ đều nằm trong cả $\mathcal{X}$ lẫn $\mathcal{Y}$. Do đó, chúng cũng phải nằm trong $\mathcal{X} \cap \mathcal{Y}$, qua đó chứng minh định lý của chúng ta.
 
-![The intersection between two convex sets is convex.](../img/convex-intersect.svg)
+![Giao của hai tập lồi là lồi.](../img/convex-intersect.svg)
 :label:`fig_convex_intersect`
 
-We can strengthen this result with little effort: given convex sets $\mathcal{X}_i$, their intersection $\cap_{i} \mathcal{X}_i$ is convex.
-To see that the converse is not true, consider two disjoint sets $\mathcal{X} \cap \mathcal{Y} = \emptyset$. Now pick $a \in \mathcal{X}$ and $b \in \mathcal{Y}$. The line segment in :numref:`fig_nonconvex` connecting $a$ and $b$ needs to contain some part that is neither in $\mathcal{X}$ nor in $\mathcal{Y}$, since we assumed that $\mathcal{X} \cap \mathcal{Y} = \emptyset$. Hence the line segment is not in $\mathcal{X} \cup \mathcal{Y}$ either, thus proving that in general unions of convex sets need not be convex.
+Ta có thể củng cố kết quả này mà không cần nhiều nỗ lực: với các tập lồi $\mathcal{X}_i$, giao của chúng $\cap_{i} \mathcal{X}_i$ là lồi.
+Để thấy mệnh đề đảo không đúng, hãy xét hai tập rời nhau $\mathcal{X} \cap \mathcal{Y} = \emptyset$. Bây giờ chọn $a \in \mathcal{X}$ và $b \in \mathcal{Y}$. Đoạn thẳng trong :numref:`fig_nonconvex` nối $a$ và $b$ phải chứa một phần không nằm trong cả $\mathcal{X}$ lẫn $\mathcal{Y}$, vì ta đã giả sử $\mathcal{X} \cap \mathcal{Y} = \emptyset$. Do đó, đoạn thẳng cũng không nằm trong $\mathcal{X} \cup \mathcal{Y}$, từ đó chứng minh rằng nói chung hợp của các tập lồi không nhất thiết là lồi.
 
-![The union of two convex sets need not be convex.](../img/nonconvex.svg)
+![Hợp của hai tập lồi không nhất thiết là lồi.](../img/nonconvex.svg)
 :label:`fig_nonconvex`
 
-Typically the problems in deep learning are defined on convex sets. For instance, $\mathbb{R}^d$,
-the set of $d$-dimensional vectors of real numbers,
-is a convex set (after all, the line between any two points in $\mathbb{R}^d$ remains in $\mathbb{R}^d$). In some cases we work with variables of bounded length, such as balls of radius $r$ as defined by $\{\mathbf{x} | \mathbf{x} \in \mathbb{R}^d \textrm{ and } \|\mathbf{x}\| \leq r\}$.
+Thông thường, các bài toán trong deep learning được xác định trên các tập lồi. Ví dụ, $\mathbb{R}^d$,
+tập các vector số thực $d$ chiều,
+là một tập lồi (xét cho cùng, đoạn thẳng giữa bất kỳ hai điểm nào trong $\mathbb{R}^d$ vẫn nằm trong $\mathbb{R}^d$). Trong một số trường hợp, chúng ta làm việc với các biến có độ dài bị chặn, chẳng hạn như các quả cầu bán kính $r$ được xác định bởi $\{\mathbf{x} | \mathbf{x} \in \mathbb{R}^d \textrm{ and } \|\mathbf{x}\| \leq r\}$.
 
-### Convex Functions
+### Hàm lồi
 
-Now that we have convex sets we can introduce *convex functions* $f$.
-Given a convex set $\mathcal{X}$, a function $f: \mathcal{X} \to \mathbb{R}$ is *convex* if for all $x, x' \in \mathcal{X}$ and for all $\lambda \in [0, 1]$ we have
+Giờ đây khi đã có các tập lồi, ta có thể giới thiệu *hàm lồi* $f$.
+Với một tập lồi $\mathcal{X}$, một hàm $f: \mathcal{X} \to \mathbb{R}$ là *lồi* nếu với mọi $x, x' \in \mathcal{X}$ và mọi $\lambda \in [0, 1]$, ta có
 
 $$\lambda f(x) + (1-\lambda) f(x') \geq f(\lambda x + (1-\lambda) x').$$
 
-To illustrate this let's plot a few functions and check which ones satisfy the requirement.
-Below we define a few functions, both convex and nonconvex.
+Để minh họa, hãy vẽ một vài hàm và kiểm tra hàm nào thỏa mãn yêu cầu.
+Bên dưới, chúng ta định nghĩa một vài hàm, bao gồm cả hàm lồi và không lồi.
 
 ```{.python .input}
 #@tab all
@@ -94,61 +94,61 @@ for ax, func in zip(axes, [f, g, h]):
     d2l.plot([x, segment], [func(x), func(segment)], axes=ax)
 ```
 
-As expected, the cosine function is *nonconvex*, whereas the parabola and the exponential function are. Note that the requirement that $\mathcal{X}$ is a convex set is necessary for the condition to make sense. Otherwise the outcome of $f(\lambda x + (1-\lambda) x')$ might not be well defined.
+Đúng như dự kiến, hàm cosine là *không lồi*, trong khi parabol và hàm mũ là lồi. Lưu ý rằng yêu cầu $\mathcal{X}$ là một tập lồi là cần thiết để điều kiện này có ý nghĩa. Nếu không, kết quả của $f(\lambda x + (1-\lambda) x')$ có thể không được xác định rõ ràng.
 
 
-### Jensen's Inequality
+### Bất đẳng thức Jensen
 
-Given a convex function $f$,
-one of the most useful mathematical tools
-is *Jensen's inequality*.
-It amounts to a generalization of the definition of convexity:
+Với một hàm lồi $f$,
+một trong những công cụ toán học hữu ích nhất
+là *bất đẳng thức Jensen*.
+Đây là sự khái quát hóa của định nghĩa tính lồi:
 
 $$\sum_i \alpha_i f(x_i)  \geq f\left(\sum_i \alpha_i x_i\right)    \textrm{ and }    E_X[f(X)]  \geq f\left(E_X[X]\right),$$
 :eqlabel:`eq_jensens-inequality`
 
-where $\alpha_i$ are nonnegative real numbers such that $\sum_i \alpha_i = 1$ and $X$ is a random variable.
-In other words, the expectation of a convex function is no less than the convex function of an expectation, where the latter is usually a simpler expression. 
-To prove the first inequality we repeatedly apply the definition of convexity to one term in the sum at a time.
+trong đó $\alpha_i$ là các số thực không âm sao cho $\sum_i \alpha_i = 1$ và $X$ là một biến ngẫu nhiên.
+Nói cách khác, kỳ vọng của một hàm lồi không nhỏ hơn hàm lồi của một kỳ vọng, trong đó biểu thức sau thường đơn giản hơn. 
+Để chứng minh bất đẳng thức thứ nhất, ta áp dụng lặp lại định nghĩa tính lồi cho từng hạng tử trong tổng.
 
 
-One of the common applications of Jensen's inequality is
-to bound a more complicated expression by a simpler one.
-For example,
-its application can be
-with regard to the log-likelihood of partially observed random variables. That is, we use
+Một ứng dụng phổ biến của bất đẳng thức Jensen là
+chặn một biểu thức phức tạp hơn bằng một biểu thức đơn giản hơn.
+Ví dụ,
+nó có thể được áp dụng
+cho log-likelihood của các biến ngẫu nhiên được quan sát một phần. Cụ thể, ta dùng
 
 $$E_{Y \sim P(Y)}[-\log P(X \mid Y)] \geq -\log P(X),$$
 
-since $\int P(Y) P(X \mid Y) dY = P(X)$.
-This can be used in variational methods. Here $Y$ is typically the unobserved random variable, $P(Y)$ is the best guess of how it might be distributed, and $P(X)$ is the distribution with $Y$ integrated out. For instance, in clustering $Y$ might be the cluster labels and $P(X \mid Y)$ is the generative model when applying cluster labels.
+vì $\int P(Y) P(X \mid Y) dY = P(X)$.
+Điều này có thể được sử dụng trong các phương pháp biến phân. Ở đây, $Y$ thường là biến ngẫu nhiên không được quan sát, $P(Y)$ là ước đoán tốt nhất về cách nó có thể được phân phối, và $P(X)$ là phân phối sau khi đã tích phân $Y$. Chẳng hạn, trong phân cụm, $Y$ có thể là các nhãn cụm và $P(X \mid Y)$ là mô hình sinh khi áp dụng các nhãn cụm.
 
 
 
-## Properties
+## Tính chất
 
-Convex functions have many useful properties. We describe a few commonly-used ones below.
+Các hàm lồi có nhiều tính chất hữu ích. Dưới đây, chúng ta mô tả một vài tính chất thường dùng.
 
 
-### Local Minima Are Global Minima
+### Cực tiểu cục bộ là cực tiểu toàn cục
 
-First and foremost, the local minima of convex functions are also the global minima. 
-We can prove it by contradiction as follows.
+Trước hết và quan trọng nhất, các cực tiểu cục bộ của hàm lồi cũng là các cực tiểu toàn cục. 
+Ta có thể chứng minh điều này bằng phản chứng như sau.
 
-Consider a convex function $f$ defined on a convex set $\mathcal{X}$.
-Suppose that $x^{\ast} \in \mathcal{X}$ is a local minimum:
-there exists a small positive value $p$ so that for $x \in \mathcal{X}$ that satisfies $0 < |x - x^{\ast}| \leq p$ we have $f(x^{\ast}) < f(x)$.
+Xét một hàm lồi $f$ được xác định trên một tập lồi $\mathcal{X}$.
+Giả sử $x^{\ast} \in \mathcal{X}$ là một cực tiểu cục bộ:
+tồn tại một giá trị dương nhỏ $p$ sao cho với $x \in \mathcal{X}$ thỏa mãn $0 < |x - x^{\ast}| \leq p$, ta có $f(x^{\ast}) < f(x)$.
 
-Assume that the local minimum $x^{\ast}$
-is not the global minimum of $f$:
-there exists $x' \in \mathcal{X}$ for which $f(x') < f(x^{\ast})$. 
-There also exists 
-$\lambda \in [0, 1)$ such as $\lambda = 1 - \frac{p}{|x^{\ast} - x'|}$
-so that
+Giả sử cực tiểu cục bộ $x^{\ast}$
+không phải là cực tiểu toàn cục của $f$:
+tồn tại $x' \in \mathcal{X}$ sao cho $f(x') < f(x^{\ast})$. 
+Cũng tồn tại 
+$\lambda \in [0, 1)$ chẳng hạn như $\lambda = 1 - \frac{p}{|x^{\ast} - x'|}$
+sao cho
 $0 < |\lambda x^{\ast} + (1-\lambda) x' - x^{\ast}| \leq p$. 
 
-However,
-according to the definition of convex functions, we have
+Tuy nhiên,
+theo định nghĩa của hàm lồi, ta có
 
 $$\begin{aligned}
     f(\lambda x^{\ast} + (1-\lambda) x') &\leq \lambda f(x^{\ast}) + (1-\lambda) f(x') \\
@@ -156,10 +156,10 @@ $$\begin{aligned}
     &= f(x^{\ast}),
 \end{aligned}$$
 
-which contradicts with our statement that $x^{\ast}$ is a local minimum.
-Therefore, there does not exist $x' \in \mathcal{X}$ for which $f(x') < f(x^{\ast})$. The local minimum $x^{\ast}$ is also the global minimum.
+điều này mâu thuẫn với phát biểu rằng $x^{\ast}$ là một cực tiểu cục bộ.
+Do đó, không tồn tại $x' \in \mathcal{X}$ sao cho $f(x') < f(x^{\ast})$. Cực tiểu cục bộ $x^{\ast}$ cũng là cực tiểu toàn cục.
 
-For instance, the convex function $f(x) = (x-1)^2$ has a local minimum at $x=1$, which is also the global minimum.
+Ví dụ, hàm lồi $f(x) = (x-1)^2$ có một cực tiểu cục bộ tại $x=1$, đồng thời cũng là cực tiểu toàn cục.
 
 ```{.python .input}
 #@tab all
@@ -168,88 +168,88 @@ d2l.set_figsize()
 d2l.plot([x, segment], [f(x), f(segment)], 'x', 'f(x)')
 ```
 
-The fact that the local minima for convex functions are also the global minima is very convenient. 
-It means that if we minimize functions we cannot "get stuck". 
-Note, though, that this does not mean that there cannot be more than one global minimum or that there might even exist one. For instance, the function $f(x) = \mathrm{max}(|x|-1, 0)$ attains its minimum value over the interval $[-1, 1]$. Conversely, the function $f(x) = \exp(x)$ does not attain a minimum value on $\mathbb{R}$: for $x \to -\infty$ it asymptotes to $0$, but there is no $x$ for which $f(x) = 0$.
+Việc các cực tiểu cục bộ của hàm lồi cũng là các cực tiểu toàn cục là rất thuận tiện. 
+Điều này có nghĩa rằng khi ta tối thiểu hóa các hàm, ta không thể “mắc kẹt”. 
+Tuy nhiên, lưu ý rằng điều này không có nghĩa là không thể có nhiều hơn một cực tiểu toàn cục, hoặc thậm chí có thể không tồn tại cực tiểu nào. Ví dụ, hàm $f(x) = \mathrm{max}(|x|-1, 0)$ đạt giá trị nhỏ nhất trên khoảng $[-1, 1]$. Ngược lại, hàm $f(x) = \exp(x)$ không đạt giá trị nhỏ nhất trên $\mathbb{R}$: khi $x \to -\infty$, nó tiệm cận về $0$, nhưng không có $x$ nào để $f(x) = 0$.
 
-### Below Sets of Convex Functions Are Convex
+### Tập dưới của hàm lồi là lồi
 
-We can conveniently 
-define convex sets 
-via *below sets* of convex functions.
-Concretely,
-given a convex function $f$ defined on a convex set $\mathcal{X}$,
-any below set
+Ta có thể thuận tiện
+định nghĩa các tập lồi
+thông qua *tập dưới* của các hàm lồi.
+Cụ thể,
+với một hàm lồi $f$ được xác định trên tập lồi $\mathcal{X}$,
+bất kỳ tập dưới nào
 
 $$\mathcal{S}_b \stackrel{\textrm{def}}{=} \{x | x \in \mathcal{X} \textrm{ and } f(x) \leq b\}$$
 
-is convex. 
+đều lồi. 
 
-Let's prove this quickly. Recall that for any $x, x' \in \mathcal{S}_b$ we need to show that $\lambda x + (1-\lambda) x' \in \mathcal{S}_b$ as long as $\lambda \in [0, 1]$. 
-Since $f(x) \leq b$ and $f(x') \leq b$,
-by the definition of convexity we have 
+Hãy chứng minh nhanh điều này. Nhắc lại rằng với mọi $x, x' \in \mathcal{S}_b$, ta cần chỉ ra rằng $\lambda x + (1-\lambda) x' \in \mathcal{S}_b$ miễn là $\lambda \in [0, 1]$. 
+Vì $f(x) \leq b$ và $f(x') \leq b$,
+theo định nghĩa tính lồi, ta có 
 
 $$f(\lambda x + (1-\lambda) x') \leq \lambda f(x) + (1-\lambda) f(x') \leq b.$$
 
 
-### Convexity and Second Derivatives
+### Tính lồi và đạo hàm bậc hai
 
-Whenever the second derivative of a function $f: \mathbb{R}^n \rightarrow \mathbb{R}$ exists it is very easy to check whether $f$ is convex. 
-All we need to do is check whether the Hessian of $f$ is positive semidefinite: $\nabla^2f \succeq 0$, i.e., 
-denoting the Hessian matrix $\nabla^2f$ by $\mathbf{H}$,
+Bất cứ khi nào đạo hàm bậc hai của một hàm $f: \mathbb{R}^n \rightarrow \mathbb{R}$ tồn tại, việc kiểm tra xem $f$ có lồi hay không là rất dễ dàng. 
+Tất cả những gì ta cần làm là kiểm tra liệu Hessian của $f$ có nửa xác định dương hay không: $\nabla^2f \succeq 0$, tức là, 
+ký hiệu ma trận Hessian $\nabla^2f$ là $\mathbf{H}$,
 $\mathbf{x}^\top \mathbf{H} \mathbf{x} \geq 0$
-for all $\mathbf{x} \in \mathbb{R}^n$.
-For instance, the function $f(\mathbf{x}) = \frac{1}{2} \|\mathbf{x}\|^2$ is convex since $\nabla^2 f = \mathbf{1}$, i.e., its Hessian is an identity matrix.
+với mọi $\mathbf{x} \in \mathbb{R}^n$.
+Chẳng hạn, hàm $f(\mathbf{x}) = \frac{1}{2} \|\mathbf{x}\|^2$ là lồi vì $\nabla^2 f = \mathbf{1}$, tức là Hessian của nó là một ma trận đơn vị.
 
 
-Formally, a twice-differentiable one-dimensional function $f: \mathbb{R} \rightarrow \mathbb{R}$ is convex
-if and only if its second derivative $f'' \geq 0$. For any twice-differentiable multidimensional function $f: \mathbb{R}^{n} \rightarrow \mathbb{R}$,
-it is convex if and only if its Hessian $\nabla^2f \succeq 0$.
+Về mặt hình thức, một hàm một chiều khả vi hai lần $f: \mathbb{R} \rightarrow \mathbb{R}$ là lồi
+khi và chỉ khi đạo hàm bậc hai của nó $f'' \geq 0$. Với mọi hàm đa chiều khả vi hai lần $f: \mathbb{R}^{n} \rightarrow \mathbb{R}$,
+nó là lồi khi và chỉ khi Hessian $\nabla^2f \succeq 0$.
 
-First, we need to prove the one-dimensional case.
-To see that 
-convexity of $f$ implies 
-$f'' \geq 0$  we use the fact that
+Trước hết, ta cần chứng minh trường hợp một chiều.
+Để thấy rằng 
+tính lồi của $f$ kéo theo 
+$f'' \geq 0$, ta sử dụng thực tế rằng
 
 $$\frac{1}{2} f(x + \epsilon) + \frac{1}{2} f(x - \epsilon) \geq f\left(\frac{x + \epsilon}{2} + \frac{x - \epsilon}{2}\right) = f(x).$$
 
-Since the second derivative is given by the limit over finite differences it follows that
+Vì đạo hàm bậc hai được cho bởi giới hạn của các sai phân hữu hạn, suy ra rằng
 
 $$f''(x) = \lim_{\epsilon \to 0} \frac{f(x+\epsilon) + f(x - \epsilon) - 2f(x)}{\epsilon^2} \geq 0.$$
 
-To see that 
-$f'' \geq 0$ implies that $f$ is convex
-we use the fact that $f'' \geq 0$ implies that $f'$ is a monotonically nondecreasing function. Let $a < x < b$ be three points in $\mathbb{R}$,
-where $x = (1-\lambda)a + \lambda b$ and $\lambda \in (0, 1)$.
-According to the mean value theorem,
-there exist $\alpha \in [a, x]$ and $\beta \in [x, b]$
-such that
+Để thấy rằng 
+$f'' \geq 0$ kéo theo $f$ là lồi,
+ta sử dụng thực tế rằng $f'' \geq 0$ kéo theo $f'$ là một hàm đơn điệu không giảm. Gọi $a < x < b$ là ba điểm trong $\mathbb{R}$,
+trong đó $x = (1-\lambda)a + \lambda b$ và $\lambda \in (0, 1)$.
+Theo định lý giá trị trung bình,
+tồn tại $\alpha \in [a, x]$ và $\beta \in [x, b]$
+sao cho
 
 $$f'(\alpha) = \frac{f(x) - f(a)}{x-a} \textrm{ and } f'(\beta) = \frac{f(b) - f(x)}{b-x}.$$
 
 
-By monotonicity $f'(\beta) \geq f'(\alpha)$, hence
+Theo tính đơn điệu, $f'(\beta) \geq f'(\alpha)$, do đó
 
 $$\frac{x-a}{b-a}f(b) + \frac{b-x}{b-a}f(a) \geq f(x).$$
 
-Since $x = (1-\lambda)a + \lambda b$,
-we have
+Vì $x = (1-\lambda)a + \lambda b$,
+ta có
 
 $$\lambda f(b) + (1-\lambda)f(a) \geq f((1-\lambda)a + \lambda b),$$
 
-thus proving convexity.
+qua đó chứng minh tính lồi.
 
-Second, we need a lemma before 
-proving the multidimensional case:
+Tiếp theo, ta cần một bổ đề trước khi 
+chứng minh trường hợp đa chiều:
 $f: \mathbb{R}^n \rightarrow \mathbb{R}$
-is convex if and only if for all $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$
+là lồi khi và chỉ khi với mọi $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$
 
 $$g(z) \stackrel{\textrm{def}}{=} f(z \mathbf{x} + (1-z)  \mathbf{y}) \textrm{ where } z \in [0,1]$$ 
 
-is convex.
+là lồi.
 
-To prove that convexity of $f$ implies that $g$ is convex,
-we can show that for all $a, b, \lambda \in [0, 1]$ (thus
+Để chứng minh rằng tính lồi của $f$ kéo theo $g$ là lồi,
+ta có thể chỉ ra rằng với mọi $a, b, \lambda \in [0, 1]$ (do đó
 $0 \leq \lambda a + (1-\lambda) b \leq 1$)
 
 $$\begin{aligned} &g(\lambda a + (1-\lambda) b)\\
@@ -259,9 +259,9 @@ $$\begin{aligned} &g(\lambda a + (1-\lambda) b)\\
 =& \lambda g(a) + (1-\lambda) g(b).
 \end{aligned}$$
 
-To prove the converse,
-we can show that for 
-all $\lambda \in [0, 1]$ 
+Để chứng minh chiều ngược lại,
+ta có thể chỉ ra rằng với 
+mọi $\lambda \in [0, 1]$ 
 
 $$\begin{aligned} &f(\lambda \mathbf{x} + (1-\lambda) \mathbf{y})\\
 =&g(\lambda \cdot 1 + (1-\lambda) \cdot 0)\\
@@ -270,106 +270,106 @@ $$\begin{aligned} &f(\lambda \mathbf{x} + (1-\lambda) \mathbf{y})\\
 \end{aligned}$$
 
 
-Finally,
-using the lemma above and the result of the one-dimensional case,
-the multidimensional case
-can be proven as follows.
-A multidimensional function $f: \mathbb{R}^n \rightarrow \mathbb{R}$ is convex
-if and only if for all $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$ $g(z) \stackrel{\textrm{def}}{=} f(z \mathbf{x} + (1-z)  \mathbf{y})$, where $z \in [0,1]$,
-is convex.
-According to the one-dimensional case,
-this holds if and only if
+Cuối cùng,
+sử dụng bổ đề ở trên và kết quả của trường hợp một chiều,
+trường hợp đa chiều
+có thể được chứng minh như sau.
+Một hàm đa chiều $f: \mathbb{R}^n \rightarrow \mathbb{R}$ là lồi
+khi và chỉ khi với mọi $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$ $g(z) \stackrel{\textrm{def}}{=} f(z \mathbf{x} + (1-z)  \mathbf{y})$, trong đó $z \in [0,1]$,
+là lồi.
+Theo trường hợp một chiều,
+điều này đúng khi và chỉ khi
 $g'' = (\mathbf{x} - \mathbf{y})^\top \mathbf{H}(\mathbf{x} - \mathbf{y}) \geq 0$ ($\mathbf{H} \stackrel{\textrm{def}}{=} \nabla^2f$)
-for all $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$,
-which is equivalent to $\mathbf{H} \succeq 0$
-per the definition of positive semidefinite matrices.
+với mọi $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$,
+điều này tương đương với $\mathbf{H} \succeq 0$
+theo định nghĩa về ma trận nửa xác định dương.
 
 
-## Constraints
+## Ràng buộc
 
-One of the nice properties of convex optimization is that it allows us to handle constraints efficiently. That is, it allows us to solve *constrained optimization* problems of the form:
+Một trong những đặc tính hay của tối ưu hóa lồi là nó cho phép chúng ta xử lý các ràng buộc một cách hiệu quả. Nghĩa là, nó cho phép ta giải các bài toán *tối ưu hóa có ràng buộc* có dạng:
 
 $$\begin{aligned} \mathop{\textrm{minimize~}}_{\mathbf{x}} & f(\mathbf{x}) \\
     \textrm{ subject to } & c_i(\mathbf{x}) \leq 0 \textrm{ for all } i \in \{1, \ldots, n\},
 \end{aligned}$$
 
-where $f$ is the objective and the functions $c_i$ are constraint functions. To see what this does consider the case where $c_1(\mathbf{x}) = \|\mathbf{x}\|_2 - 1$. In this case the parameters $\mathbf{x}$ are constrained to the unit ball. If a second constraint is $c_2(\mathbf{x}) = \mathbf{v}^\top \mathbf{x} + b$, then this corresponds to all $\mathbf{x}$ lying on a half-space. Satisfying both constraints simultaneously amounts to selecting a slice of a ball.
+trong đó $f$ là hàm mục tiêu và các hàm $c_i$ là các hàm ràng buộc. Để thấy điều này có ý nghĩa gì, xét trường hợp $c_1(\mathbf{x}) = \|\mathbf{x}\|_2 - 1$. Trong trường hợp này, các tham số $\mathbf{x}$ bị ràng buộc trong quả cầu đơn vị. Nếu ràng buộc thứ hai là $c_2(\mathbf{x}) = \mathbf{v}^\top \mathbf{x} + b$, thì điều này tương ứng với mọi $\mathbf{x}$ nằm trong một nửa không gian. Thỏa mãn đồng thời cả hai ràng buộc tương đương với việc chọn một lát cắt của một quả cầu.
 
 ### Lagrangian
 
-In general, solving a constrained optimization problem is difficult. One way of addressing it stems from physics with a rather simple intuition. Imagine a ball inside a box. The ball will roll to the place that is lowest and the forces of gravity will be balanced out with the forces that the sides of the box can impose on the ball. In short, the gradient of the objective function (i.e., gravity) will be offset by the gradient of the constraint function (the ball need to remain inside the box by virtue of the walls "pushing back"). 
-Note that some constraints may not be active:
-the walls that are not touched by the ball
-will not be able to exert any force on the ball.
+Nhìn chung, giải một bài toán tối ưu hóa có ràng buộc là khó. Một cách tiếp cận xuất phát từ vật lý với trực giác khá đơn giản. Hãy tưởng tượng một quả bóng bên trong một chiếc hộp. Quả bóng sẽ lăn đến vị trí thấp nhất và lực hấp dẫn sẽ được cân bằng bởi các lực mà các mặt của hộp có thể tác động lên quả bóng. Tóm lại, gradient của hàm mục tiêu (tức là trọng lực) sẽ được bù bởi gradient của hàm ràng buộc (quả bóng cần ở trong hộp nhờ các thành hộp “đẩy ngược lại”). 
+Lưu ý rằng một số ràng buộc có thể không hoạt động:
+các thành hộp không chạm vào quả bóng
+sẽ không thể tác động bất kỳ lực nào lên quả bóng.
 
 
-Skipping over the derivation of the *Lagrangian* $L$,
-the above reasoning
-can be expressed via the following saddle point optimization problem:
+Bỏ qua phép suy dẫn của *Lagrangian* $L$,
+lập luận trên
+có thể được biểu diễn thông qua bài toán tối ưu hóa điểm yên ngựa sau:
 
 $$L(\mathbf{x}, \alpha_1, \ldots, \alpha_n) = f(\mathbf{x}) + \sum_{i=1}^n \alpha_i c_i(\mathbf{x}) \textrm{ where } \alpha_i \geq 0.$$
 
-Here the variables $\alpha_i$ ($i=1,\ldots,n$) are the so-called *Lagrange multipliers* that ensure that constraints are properly enforced. They are chosen just large enough to ensure that $c_i(\mathbf{x}) \leq 0$ for all $i$. For instance, for any $\mathbf{x}$ where $c_i(\mathbf{x}) < 0$ naturally, we'd end up picking $\alpha_i = 0$. Moreover, this is a saddle point optimization problem where one wants to *maximize* $L$ with respect to all $\alpha_i$ and simultaneously *minimize* it with respect to $\mathbf{x}$. There is a rich body of literature explaining how to arrive at the function $L(\mathbf{x}, \alpha_1, \ldots, \alpha_n)$. For our purposes it is sufficient to know that the saddle point of $L$ is where the original constrained optimization problem is solved optimally.
+Ở đây, các biến $\alpha_i$ ($i=1,\ldots,n$) là những *bội số Lagrange* đảm bảo rằng các ràng buộc được thực thi đúng cách. Chúng được chọn vừa đủ lớn để đảm bảo $c_i(\mathbf{x}) \leq 0$ với mọi $i$. Chẳng hạn, với bất kỳ $\mathbf{x}$ nào mà $c_i(\mathbf{x}) < 0$ một cách tự nhiên, ta sẽ chọn $\alpha_i = 0$. Hơn nữa, đây là một bài toán tối ưu hóa điểm yên ngựa, trong đó ta muốn *tối đa hóa* $L$ theo tất cả $\alpha_i$ và đồng thời *tối thiểu hóa* nó theo $\mathbf{x}$. Có rất nhiều tài liệu giải thích cách suy ra hàm $L(\mathbf{x}, \alpha_1, \ldots, \alpha_n)$. Với mục đích của chúng ta, chỉ cần biết rằng điểm yên ngựa của $L$ là nơi bài toán tối ưu hóa có ràng buộc ban đầu được giải một cách tối ưu.
 
-### Penalties
+### Phạt
 
-One way of satisfying constrained optimization problems at least *approximately* is to adapt the Lagrangian $L$. 
-Rather than satisfying $c_i(\mathbf{x}) \leq 0$ we simply add $\alpha_i c_i(\mathbf{x})$ to the objective function $f(x)$. This ensures that the constraints will not be violated too badly.
+Một cách để thỏa mãn các bài toán tối ưu hóa có ràng buộc, ít nhất là *xấp xỉ*, là điều chỉnh Lagrangian $L$. 
+Thay vì thỏa mãn $c_i(\mathbf{x}) \leq 0$, ta chỉ cần thêm $\alpha_i c_i(\mathbf{x})$ vào hàm mục tiêu $f(x)$. Điều này đảm bảo rằng các ràng buộc sẽ không bị vi phạm quá nghiêm trọng.
 
-In fact, we have been using this trick all along. Consider weight decay in :numref:`sec_weight_decay`. In it we add $\frac{\lambda}{2} \|\mathbf{w}\|^2$ to the objective function to ensure that $\mathbf{w}$ does not grow too large. From the constrained optimization point of view we can see that this will ensure that $\|\mathbf{w}\|^2 - r^2 \leq 0$ for some radius $r$. Adjusting the value of $\lambda$ allows us to vary the size of $\mathbf{w}$.
+Thực tế, chúng ta đã luôn sử dụng thủ thuật này. Hãy xét weight decay trong :numref:`sec_weight_decay`. Trong đó, ta thêm $\frac{\lambda}{2} \|\mathbf{w}\|^2$ vào hàm mục tiêu để đảm bảo rằng $\mathbf{w}$ không tăng quá lớn. Theo quan điểm tối ưu hóa có ràng buộc, ta có thể thấy rằng điều này sẽ đảm bảo $\|\mathbf{w}\|^2 - r^2 \leq 0$ với một bán kính $r$ nào đó. Điều chỉnh giá trị của $\lambda$ cho phép ta thay đổi kích thước của $\mathbf{w}$.
 
-In general, adding penalties is a good way of ensuring approximate constraint satisfaction. In practice this turns out to be much more robust than exact satisfaction. Furthermore, for nonconvex problems many of the properties that make the exact approach so appealing in the convex case (e.g., optimality) no longer hold.
+Nhìn chung, thêm các khoản phạt là một cách tốt để đảm bảo sự thỏa mãn ràng buộc xấp xỉ. Trên thực tế, điều này tỏ ra ổn định hơn nhiều so với việc thỏa mãn chính xác. Hơn nữa, đối với các bài toán không lồi, nhiều đặc tính khiến cách tiếp cận chính xác trở nên hấp dẫn trong trường hợp lồi (ví dụ: tính tối ưu) không còn đúng nữa.
 
-### Projections
+### Phép chiếu
 
-An alternative strategy for satisfying constraints is projections. Again, we encountered them before, e.g., when dealing with gradient clipping in :numref:`sec_rnn-scratch`. There we ensured that a gradient has length bounded by $\theta$ via
+Một chiến lược thay thế để thỏa mãn các ràng buộc là phép chiếu. Một lần nữa, chúng ta đã gặp chúng trước đây, ví dụ khi xử lý gradient clipping trong :numref:`sec_rnn-scratch`. Ở đó, chúng ta đảm bảo rằng gradient có độ dài bị chặn bởi $\theta$ thông qua
 
 $$\mathbf{g} \leftarrow \mathbf{g} \cdot \mathrm{min}(1, \theta/\|\mathbf{g}\|).$$
 
-This turns out to be a *projection* of $\mathbf{g}$ onto the ball of radius $\theta$. More generally, a projection on a convex set $\mathcal{X}$ is defined as
+Điều này hóa ra là một *phép chiếu* của $\mathbf{g}$ lên quả cầu có bán kính $\theta$. Tổng quát hơn, phép chiếu lên một tập lồi $\mathcal{X}$ được định nghĩa là
 
 $$\textrm{Proj}_\mathcal{X}(\mathbf{x}) = \mathop{\mathrm{argmin}}_{\mathbf{x}' \in \mathcal{X}} \|\mathbf{x} - \mathbf{x}'\|,$$
 
-which is the closest point in $\mathcal{X}$ to $\mathbf{x}$. 
+tức là điểm gần $\mathbf{x}$ nhất trong $\mathcal{X}$. 
 
-![Convex Projections.](../img/projections.svg)
+![Phép Chiếu Lồi.](../img/projections.svg)
 :label:`fig_projections`
 
-The mathematical definition of projections may sound a bit abstract. :numref:`fig_projections` explains it somewhat more clearly. In it we have two convex sets, a circle and a diamond. 
-Points inside both sets (yellow) remain unchanged during projections. 
-Points outside both sets (black) are projected to 
-the points inside the sets (red) that are closet to the original points (black).
-While for $\ell_2$ balls this leaves the direction unchanged, this need not be the case in general, as can be seen in the case of the diamond.
+Định nghĩa toán học của phép chiếu có thể nghe hơi trừu tượng. :numref:`fig_projections` giải thích điều này rõ ràng hơn một chút. Trong đó, chúng ta có hai tập lồi, một hình tròn và một hình thoi. 
+Các điểm nằm bên trong cả hai tập (màu vàng) không thay đổi trong quá trình chiếu. 
+Các điểm nằm ngoài cả hai tập (màu đen) được chiếu tới 
+các điểm nằm trong tập (màu đỏ) gần nhất với các điểm ban đầu (màu đen).
+Mặc dù với các quả cầu $\ell_2$, điều này giữ nguyên hướng, nhưng nói chung không nhất thiết phải như vậy, như có thể thấy trong trường hợp hình thoi.
 
 
-One of the uses for convex projections is to compute sparse weight vectors. In this case we project weight vectors onto an $\ell_1$ ball,
-which is a generalized version of the diamond case in :numref:`fig_projections`.
+Một trong những ứng dụng của phép chiếu lồi là tính toán các vector trọng số thưa. Trong trường hợp này, chúng ta chiếu các vector trọng số lên một quả cầu $\ell_1$,
+đây là phiên bản tổng quát của trường hợp hình thoi trong :numref:`fig_projections`.
 
 
-## Summary
+## Tóm tắt
 
-In the context of deep learning the main purpose of convex functions is to motivate optimization algorithms and help us understand them in detail. In the following we will see how gradient descent and stochastic gradient descent can be derived accordingly.
+Trong ngữ cảnh deep learning, mục đích chính của các hàm lồi là tạo cơ sở cho các thuật toán tối ưu hóa và giúp chúng ta hiểu chúng một cách chi tiết. Tiếp theo, chúng ta sẽ xem cách gradient descent và stochastic gradient descent có thể được suy ra tương ứng.
 
 
-* Intersections of convex sets are convex. Unions are not.
-* The expectation of a convex function is no less than the convex function of an expectation (Jensen's inequality).
-* A twice-differentiable function is convex if and only if its Hessian (a matrix of second derivatives) is positive semidefinite.
-* Convex constraints can be added via the Lagrangian. In practice we may simply add them with a penalty to the objective function.
-* Projections map to points in the convex set closest to the original points.
+* Giao của các tập lồi là lồi. Hợp của chúng thì không.
+* Kỳ vọng của một hàm lồi không nhỏ hơn hàm lồi của một kỳ vọng (bất đẳng thức Jensen).
+* Một hàm khả vi hai lần là lồi khi và chỉ khi Hessian của nó (một ma trận các đạo hàm cấp hai) là nửa xác định dương.
+* Các ràng buộc lồi có thể được thêm vào thông qua Lagrangian. Trong thực tế, ta có thể đơn giản thêm chúng dưới dạng một penalty vào hàm mục tiêu.
+* Phép chiếu ánh xạ tới các điểm trong tập lồi gần nhất với các điểm ban đầu.
 
-## Exercises
+## Bài tập
 
-1. Assume that we want to verify convexity of a set by drawing all lines between points within the set and checking whether the lines are contained.
-    1. Prove that it is sufficient to check only the points on the boundary.
-    1. Prove that it is sufficient to check only the vertices of the set.
-1. Denote by $\mathcal{B}_p[r] \stackrel{\textrm{def}}{=} \{\mathbf{x} | \mathbf{x} \in \mathbb{R}^d \textrm{ and } \|\mathbf{x}\|_p \leq r\}$ the ball of radius $r$ using the $p$-norm. Prove that $\mathcal{B}_p[r]$ is convex for all $p \geq 1$.
-1. Given convex functions $f$ and $g$, show that $\mathrm{max}(f, g)$ is convex, too. Prove that $\mathrm{min}(f, g)$ is not convex.
-1. Prove that the normalization of the softmax function is convex. More specifically prove the convexity of
+1. Giả sử rằng chúng ta muốn kiểm tra tính lồi của một tập bằng cách vẽ tất cả các đoạn thẳng giữa các điểm trong tập và kiểm tra xem các đoạn thẳng đó có nằm trong tập hay không.
+    1. Chứng minh rằng chỉ cần kiểm tra các điểm trên biên là đủ.
+    1. Chứng minh rằng chỉ cần kiểm tra các đỉnh của tập là đủ.
+1. Ký hiệu $\mathcal{B}_p[r] \stackrel{\textrm{def}}{=} \{\mathbf{x} | \mathbf{x} \in \mathbb{R}^d \textrm{ and } \|\mathbf{x}\|_p \leq r\}$ là quả cầu bán kính $r$ sử dụng chuẩn $p$. Chứng minh rằng $\mathcal{B}_p[r]$ là lồi với mọi $p \geq 1$.
+1. Với các hàm lồi $f$ và $g$, hãy chỉ ra rằng $\mathrm{max}(f, g)$ cũng lồi. Chứng minh rằng $\mathrm{min}(f, g)$ không lồi.
+1. Chứng minh rằng phép chuẩn hóa của hàm softmax là lồi. Cụ thể hơn, hãy chứng minh tính lồi của
     $f(x) = \log \sum_i \exp(x_i)$.
-1. Prove that linear subspaces, i.e., $\mathcal{X} = \{\mathbf{x} | \mathbf{W} \mathbf{x} = \mathbf{b}\}$, are convex sets.
-1. Prove that in the case of linear subspaces with $\mathbf{b} = \mathbf{0}$ the projection $\textrm{Proj}_\mathcal{X}$ can be written as $\mathbf{M} \mathbf{x}$ for some matrix $\mathbf{M}$.
-1. Show that for  twice-differentiable convex functions $f$ we can write $f(x + \epsilon) = f(x) + \epsilon f'(x) + \frac{1}{2} \epsilon^2 f''(x + \xi)$ for some $\xi \in [0, \epsilon]$.
-1. Given a convex set $\mathcal{X}$ and two vectors $\mathbf{x}$ and $\mathbf{y}$, prove that projections never increase distances, i.e., $\|\mathbf{x} - \mathbf{y}\| \geq \|\textrm{Proj}_\mathcal{X}(\mathbf{x}) - \textrm{Proj}_\mathcal{X}(\mathbf{y})\|$.
+1. Chứng minh rằng các không gian con tuyến tính, tức là $\mathcal{X} = \{\mathbf{x} | \mathbf{W} \mathbf{x} = \mathbf{b}\}$, là các tập lồi.
+1. Chứng minh rằng trong trường hợp các không gian con tuyến tính với $\mathbf{b} = \mathbf{0}$, phép chiếu $\textrm{Proj}_\mathcal{X}$ có thể được viết là $\mathbf{M} \mathbf{x}$ với một ma trận $\mathbf{M}$ nào đó.
+1. Chỉ ra rằng với các hàm lồi khả vi hai lần $f$, ta có thể viết $f(x + \epsilon) = f(x) + \epsilon f'(x) + \frac{1}{2} \epsilon^2 f''(x + \xi)$ với một $\xi \in [0, \epsilon]$ nào đó.
+1. Với một tập lồi $\mathcal{X}$ và hai vector $\mathbf{x}$ và $\mathbf{y}$, hãy chứng minh rằng phép chiếu không bao giờ làm tăng khoảng cách, tức là $\|\mathbf{x} - \mathbf{y}\| \geq \|\textrm{Proj}_\mathcal{X}(\mathbf{x}) - \textrm{Proj}_\mathcal{X}(\mathbf{y})\|$.
 
 
-[Discussions](https://discuss.d2l.ai/t/350)
+[Thảo luận](https://discuss.d2l.ai/t/350)

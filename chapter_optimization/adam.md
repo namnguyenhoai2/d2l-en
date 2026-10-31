@@ -1,44 +1,44 @@
 # Adam
 :label:`sec_adam`
 
-In the discussions leading up to this section we encountered a number of techniques for efficient optimization. Let's recap them in detail here:
+Trong các phần thảo luận dẫn đến phần này, chúng ta đã gặp một số kỹ thuật để tối ưu hóa hiệu quả. Hãy cùng điểm lại chi tiết chúng tại đây:
 
-* We saw that :numref:`sec_sgd` is more effective than Gradient Descent when solving optimization problems, e.g., due to its inherent resilience to redundant data. 
-* We saw that :numref:`sec_minibatch_sgd` affords significant additional efficiency arising from vectorization, using larger sets of observations in one minibatch. This is the key to efficient multi-machine, multi-GPU and overall parallel processing. 
-* :numref:`sec_momentum` added a mechanism for aggregating a history of past gradients to accelerate convergence.
-* :numref:`sec_adagrad` used per-coordinate scaling to allow for a computationally efficient preconditioner. 
-* :numref:`sec_rmsprop` decoupled per-coordinate scaling from a learning rate adjustment. 
+* Chúng ta đã thấy rằng :numref:`sec_sgd` hiệu quả hơn Gradient Descent khi giải các bài toán tối ưu hóa, chẳng hạn nhờ khả năng chống chịu vốn có đối với dữ liệu dư thừa.
+* Chúng ta đã thấy rằng :numref:`sec_minibatch_sgd` mang lại hiệu quả bổ sung đáng kể nhờ vectorization, sử dụng các tập quan sát lớn hơn trong một minibatch. Đây là chìa khóa để xử lý song song hiệu quả trên nhiều máy, nhiều GPU và nói chung.
+* :numref:`sec_momentum` đã bổ sung một cơ chế tổng hợp lịch sử các gradient trước đó để tăng tốc hội tụ.
+* :numref:`sec_adagrad` đã sử dụng scaling theo từng tọa độ để cho phép một preconditioner hiệu quả về mặt tính toán.
+* :numref:`sec_rmsprop` đã tách scaling theo từng tọa độ khỏi việc điều chỉnh learning rate.
 
-Adam :cite:`Kingma.Ba.2014` combines all these techniques into one efficient learning algorithm. As expected, this is an algorithm that has become rather popular as one of the more robust and effective optimization algorithms to use in deep learning. It is not without issues, though. In particular, :cite:`Reddi.Kale.Kumar.2019` show that there are situations where Adam can diverge due to poor variance control. In a follow-up work :citet:`Zaheer.Reddi.Sachan.ea.2018` proposed a hotfix to Adam, called Yogi which addresses these issues. More on this later. For now let's review the Adam algorithm. 
+Adam :cite:`Kingma.Ba.2014` kết hợp tất cả các kỹ thuật này thành một thuật toán học hiệu quả. Đúng như dự đoán, đây là một thuật toán đã trở nên khá phổ biến, là một trong những thuật toán tối ưu hóa mạnh mẽ và hiệu quả hơn để sử dụng trong deep learning. Tuy nhiên, nó không hoàn toàn không có vấn đề. Cụ thể, :cite:`Reddi.Kale.Kumar.2019` chỉ ra rằng có những tình huống Adam có thể phân kỳ do kiểm soát phương sai kém. Trong một công trình tiếp theo, :citet:`Zaheer.Reddi.Sachan.ea.2018` đã đề xuất một bản vá nhanh cho Adam, gọi là Yogi, nhằm giải quyết các vấn đề này. Chúng ta sẽ tìm hiểu thêm về điều này sau. Bây giờ, hãy xem lại thuật toán Adam.
 
-## The Algorithm
+## Thuật toán
 
-One of the key components of Adam is that it uses exponential weighted moving averages (also known as leaky averaging) to obtain an estimate of both the momentum and also the second moment of the gradient. That is, it uses the state variables
+Một trong những thành phần then chốt của Adam là nó sử dụng trung bình động có trọng số theo hàm mũ (exponential weighted moving averages, còn gọi là leaky averaging) để ước lượng cả momentum lẫn moment bậc hai của gradient. Nghĩa là, nó sử dụng các biến trạng thái
 
 $$\begin{aligned}
     \mathbf{v}_t & \leftarrow \beta_1 \mathbf{v}_{t-1} + (1 - \beta_1) \mathbf{g}_t, \\
     \mathbf{s}_t & \leftarrow \beta_2 \mathbf{s}_{t-1} + (1 - \beta_2) \mathbf{g}_t^2.
 \end{aligned}$$
 
-Here $\beta_1$ and $\beta_2$ are nonnegative weighting parameters. Common choices for them are $\beta_1 = 0.9$ and $\beta_2 = 0.999$. That is, the variance estimate moves *much more slowly* than the momentum term. Note that if we initialize $\mathbf{v}_0 = \mathbf{s}_0 = 0$ we have a significant amount of bias initially towards smaller values. This can be addressed by using the fact that $\sum_{i=0}^{t-1} \beta^i = \frac{1 - \beta^t}{1 - \beta}$ to re-normalize terms. Correspondingly the normalized state variables are given by 
+Ở đây $\beta_1$ và $\beta_2$ là các tham số trọng số không âm. Các lựa chọn thường dùng là $\beta_1 = 0.9$ và $\beta_2 = 0.999$. Nghĩa là, ước lượng phương sai thay đổi *chậm hơn nhiều* so với hạng momentum. Lưu ý rằng nếu khởi tạo $\mathbf{v}_0 = \mathbf{s}_0 = 0$, ban đầu chúng ta sẽ có một lượng bias đáng kể hướng về các giá trị nhỏ hơn. Điều này có thể được xử lý bằng cách sử dụng thực tế rằng $\sum_{i=0}^{t-1} \beta^i = \frac{1 - \beta^t}{1 - \beta}$ để chuẩn hóa lại các hạng. Tương ứng, các biến trạng thái đã chuẩn hóa được cho bởi
 
 $$\hat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1 - \beta_1^t} \textrm{ and } \hat{\mathbf{s}}_t = \frac{\mathbf{s}_t}{1 - \beta_2^t}.$$
 
-Armed with the proper estimates we can now write out the update equations. First, we rescale the gradient in a manner very much akin to that of RMSProp to obtain
+Với các ước lượng phù hợp, giờ đây chúng ta có thể viết các phương trình cập nhật. Trước hết, chúng ta rescale gradient theo cách rất giống RMSProp để thu được
 
 $$\mathbf{g}_t' = \frac{\eta \hat{\mathbf{v}}_t}{\sqrt{\hat{\mathbf{s}}_t} + \epsilon}.$$
 
-Unlike RMSProp our update uses the momentum $\hat{\mathbf{v}}_t$ rather than the gradient itself. Moreover, there is a slight cosmetic difference as the rescaling happens using $\frac{1}{\sqrt{\hat{\mathbf{s}}_t} + \epsilon}$ instead of $\frac{1}{\sqrt{\hat{\mathbf{s}}_t + \epsilon}}$. The former works arguably slightly better in practice, hence the deviation from RMSProp. Typically we pick $\epsilon = 10^{-6}$ for a good trade-off between numerical stability and fidelity. 
+Không giống RMSProp, bản cập nhật của chúng ta sử dụng momentum $\hat{\mathbf{v}}_t$ thay vì chính gradient. Hơn nữa, có một khác biệt nhỏ về hình thức là việc rescale diễn ra bằng $\frac{1}{\sqrt{\hat{\mathbf{s}}_t} + \epsilon}$ thay vì $\frac{1}{\sqrt{\hat{\mathbf{s}}_t + \epsilon}}$. Cách đầu tiên có thể hoạt động tốt hơn một chút trong thực tế, do đó có sự khác biệt so với RMSProp. Thông thường, chúng ta chọn $\epsilon = 10^{-6}$ để đạt sự cân bằng tốt giữa tính ổn định số và độ chính xác.
 
-Now we have all the pieces in place to compute updates. This is slightly anticlimactic and we have a simple update of the form
+Giờ đây chúng ta đã có đầy đủ các thành phần để tính toán các cập nhật. Điều này có phần hơi thiếu kịch tính, và chúng ta có một cập nhật đơn giản có dạng
 
 $$\mathbf{x}_t \leftarrow \mathbf{x}_{t-1} - \mathbf{g}_t'.$$
 
-Reviewing the design of Adam its inspiration is clear. Momentum and scale are clearly visible in the state variables. Their rather peculiar definition forces us to debias terms (this could be fixed by a slightly different initialization and update condition). Second, the combination of both terms is pretty straightforward, given RMSProp. Last, the explicit learning rate $\eta$ allows us to control the step length to address issues of convergence. 
+Khi xem xét thiết kế của Adam, nguồn cảm hứng của nó rất rõ ràng. Momentum và scale hiện diện rõ trong các biến trạng thái. Định nghĩa khá đặc biệt của chúng buộc chúng ta phải khử bias cho các hạng (điều này có thể được khắc phục bằng một điều kiện khởi tạo và cập nhật hơi khác). Thứ hai, việc kết hợp cả hai hạng khá trực tiếp, dựa trên RMSProp. Cuối cùng, learning rate tường minh $\eta$ cho phép chúng ta kiểm soát độ dài bước để giải quyết các vấn đề hội tụ.
 
-## Implementation 
+## Triển khai
 
-Implementing Adam from scratch is not very daunting. For convenience we store the time step counter $t$ in the `hyperparams` dictionary. Beyond that all is straightforward.
+Việc triển khai Adam từ đầu không quá khó. Để thuận tiện, chúng ta lưu bộ đếm bước thời gian $t$ trong dictionary `hyperparams`. Ngoài ra, mọi thứ đều đơn giản.
 
 ```{.python .input}
 #@tab mxnet
@@ -112,7 +112,7 @@ def adam(params, grads, states, hyperparams):
                     / tf.math.sqrt(s_bias_corr) + eps)
 ```
 
-We are ready to use Adam to train the model. We use a learning rate of $\eta = 0.01$.
+Chúng ta đã sẵn sàng sử dụng Adam để huấn luyện mô hình. Chúng ta dùng learning rate $\eta = 0.01$.
 
 ```{.python .input}
 #@tab all
@@ -121,7 +121,7 @@ d2l.train_ch11(adam, init_adam_states(feature_dim),
                {'lr': 0.01, 't': 1}, data_iter, feature_dim);
 ```
 
-A more concise implementation is straightforward since `adam` is one of the algorithms provided as part of the Gluon `trainer` optimization library. Hence we only need to pass configuration parameters for an implementation in Gluon.
+Một cách triển khai ngắn gọn hơn rất trực tiếp vì `adam` là một trong các thuật toán được cung cấp như một phần của thư viện tối ưu hóa Gluon `trainer`. Do đó, chúng ta chỉ cần truyền các tham số cấu hình cho một bản triển khai trong Gluon.
 
 ```{.python .input}
 #@tab mxnet
@@ -142,15 +142,15 @@ d2l.train_concise_ch11(trainer, {'learning_rate': 0.01}, data_iter)
 
 ## Yogi
 
-One of the problems of Adam is that it can fail to converge even in convex settings when the second moment estimate in $\mathbf{s}_t$ blows up. As a fix :citet:`Zaheer.Reddi.Sachan.ea.2018` proposed a refined update (and initialization) for $\mathbf{s}_t$. To understand what's going on, let's rewrite the Adam update as follows:
+Một trong các vấn đề của Adam là nó có thể không hội tụ ngay cả trong các thiết lập lồi khi ước lượng moment bậc hai trong $\mathbf{s}_t$ tăng vọt. Để khắc phục, :citet:`Zaheer.Reddi.Sachan.ea.2018` đã đề xuất một cập nhật (và khởi tạo) tinh chỉnh cho $\mathbf{s}_t$. Để hiểu điều gì đang xảy ra, hãy viết lại cập nhật Adam như sau:
 
 $$\mathbf{s}_t \leftarrow \mathbf{s}_{t-1} + (1 - \beta_2) \left(\mathbf{g}_t^2 - \mathbf{s}_{t-1}\right).$$
 
-Whenever $\mathbf{g}_t^2$ has high variance or updates are sparse, $\mathbf{s}_t$ might forget past values too quickly. A possible fix for this is to replace $\mathbf{g}_t^2 - \mathbf{s}_{t-1}$ by $\mathbf{g}_t^2 \odot \mathop{\textrm{sgn}}(\mathbf{g}_t^2 - \mathbf{s}_{t-1})$. Now the magnitude of the update no longer depends on the amount of deviation. This yields the Yogi updates
+Bất cứ khi nào $\mathbf{g}_t^2$ có phương sai lớn hoặc các cập nhật thưa thớt, $\mathbf{s}_t$ có thể quên các giá trị trước đó quá nhanh. Một cách khắc phục khả dĩ là thay $\mathbf{g}_t^2 - \mathbf{s}_{t-1}$ bằng $\mathbf{g}_t^2 \odot \mathop{\textrm{sgn}}(\mathbf{g}_t^2 - \mathbf{s}_{t-1})$. Giờ đây, độ lớn của cập nhật không còn phụ thuộc vào mức độ sai lệch. Điều này cho ra các cập nhật Yogi
 
 $$\mathbf{s}_t \leftarrow \mathbf{s}_{t-1} + (1 - \beta_2) \mathbf{g}_t^2 \odot \mathop{\textrm{sgn}}(\mathbf{g}_t^2 - \mathbf{s}_{t-1}).$$
 
-The authors furthermore advise to initialize the momentum on a larger initial batch rather than just initial pointwise estimate. We omit the details since they are not material to the discussion and since even without this convergence remains pretty good.
+Các tác giả cũng khuyên nên khởi tạo momentum trên một batch ban đầu lớn hơn thay vì chỉ dựa trên ước lượng điểm ban đầu. Chúng ta bỏ qua chi tiết vì chúng không thiết yếu cho phần thảo luận và vì ngay cả không có điều này, khả năng hội tụ vẫn khá tốt.
 
 ```{.python .input}
 #@tab mxnet
@@ -210,29 +210,29 @@ d2l.train_ch11(yogi, init_adam_states(feature_dim),
                {'lr': 0.01, 't': 1}, data_iter, feature_dim);
 ```
 
-## Summary
+## Tóm tắt
 
-* Adam combines features of many optimization algorithms into a fairly robust update rule. 
-* Created on the basis of RMSProp, Adam also uses EWMA on the minibatch stochastic gradient.
-* Adam uses bias correction to adjust for a slow startup when estimating momentum and a second moment. 
-* For gradients with significant variance we may encounter issues with convergence. They can be amended by using larger minibatches or by switching to an improved estimate for $\mathbf{s}_t$. Yogi offers such an alternative. 
+* Adam kết hợp các đặc điểm của nhiều thuật toán tối ưu hóa thành một quy tắc cập nhật khá mạnh mẽ.
+* Được xây dựng dựa trên RMSProp, Adam cũng sử dụng EWMA trên gradient ngẫu nhiên của minibatch.
+* Adam sử dụng hiệu chỉnh bias để điều chỉnh cho khởi đầu chậm khi ước lượng momentum và moment bậc hai.
+* Với các gradient có phương sai đáng kể, chúng ta có thể gặp các vấn đề về hội tụ. Chúng có thể được cải thiện bằng cách sử dụng minibatch lớn hơn hoặc chuyển sang một ước lượng được cải tiến cho $\mathbf{s}_t$. Yogi cung cấp một lựa chọn thay thế như vậy.
 
-## Exercises
+## Bài tập
 
-1. Adjust the learning rate and observe and analyze the experimental results.
-1. Can you rewrite momentum and second moment updates such that it does not require bias correction?
-1. Why do you need to reduce the learning rate $\eta$ as we converge?
-1. Try to construct a case for which Adam diverges and Yogi converges?
+1. Điều chỉnh learning rate và quan sát, phân tích các kết quả thực nghiệm.
+1. Bạn có thể viết lại các cập nhật momentum và moment bậc hai sao cho không cần hiệu chỉnh bias không?
+1. Tại sao bạn cần giảm learning rate $\eta$ khi chúng ta hội tụ?
+1. Hãy thử xây dựng một trường hợp mà Adam phân kỳ và Yogi hội tụ.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/358)
+[Thảo luận](https://discuss.d2l.ai/t/358)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1078)
+[Thảo luận](https://discuss.d2l.ai/t/1078)
 :end_tab:
 
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1079)
+[Thảo luận](https://discuss.d2l.ai/t/1079)
 :end_tab:
