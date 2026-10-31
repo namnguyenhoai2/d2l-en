@@ -3,11 +3,11 @@
 tab.interact_select(['pytorch'])
 ```
 
-# Gaussian Process Priors
+# Prior của Gaussian Process
 
-Understanding Gaussian processes (GPs) is important for reasoning about model construction and generalization, and for achieving state-of-the-art performance in a variety of applications, including active learning, and hyperparameter tuning in deep learning. GPs are everywhere, and it is in our interests to know what they are and how we can use them.
+Hiểu về Gaussian process (GP) rất quan trọng để suy luận về việc xây dựng mô hình và khả năng tổng quát hóa, cũng như đạt được hiệu năng tiên tiến trong nhiều ứng dụng, bao gồm active learning và tinh chỉnh hyperparameter trong deep learning. GP xuất hiện ở khắp nơi, và chúng ta nên biết chúng là gì cũng như cách sử dụng chúng.
 
-In this section, we introduce Gaussian process _priors_ over functions. In the next notebook, we show how to use these priors to do _posterior inference_ and make predictions. The next section can be viewed as "GPs in a nutshell", quickly giving what you need to apply Gaussian processes in practice.
+Trong phần này, chúng ta giới thiệu các _prior_ của Gaussian process trên các hàm. Trong notebook tiếp theo, chúng ta sẽ trình bày cách sử dụng các prior này để thực hiện _suy luận posterior_ và đưa ra dự đoán. Phần tiếp theo có thể được xem như “GP tóm lược”, nhanh chóng cung cấp những gì bạn cần để áp dụng Gaussian process trong thực tế.
 
 ```{.python .input}
 from d2l import torch as d2l
@@ -17,24 +17,24 @@ from scipy.spatial import distance_matrix
 d2l.set_figsize()
 ```
 
-## Definition
+## Định nghĩa
 
-A Gaussian process is defined as _a collection of random variables, any finite number of which have a joint Gaussian distribution_. If a function $f(x)$ is a Gaussian process, with _mean function_ $m(x)$ and _covariance function_ or _kernel_ $k(x,x')$, $f(x) \sim \mathcal{GP}(m, k)$, then any collection of function values queried at any collection of input points $x$ (times, spatial locations, image pixels, etc.), has a joint multivariate Gaussian distribution with mean vector $\mu$ and covariance matrix $K$: $f(x_1),\dots,f(x_n) \sim \mathcal{N}(\mu, K)$, where $\mu_i = E[f(x_i)] = m(x_i)$ and $K_{ij} = \textrm{Cov}(f(x_i),f(x_j)) = k(x_i,x_j)$.
+Gaussian process được định nghĩa là _một tập hợp các biến ngẫu nhiên, trong đó mọi số lượng hữu hạn biến đều có phân phối Gaussian đồng thời_. Nếu hàm $f(x)$ là một Gaussian process, với _hàm trung bình_ $m(x)$ và _hàm hiệp phương sai_ hoặc _kernel_ $k(x,x')$, $f(x) \sim \mathcal{GP}(m, k)$, thì mọi tập hợp các giá trị hàm được truy vấn tại mọi tập hợp các điểm đầu vào $x$ (thời điểm, vị trí không gian, pixel ảnh, v.v.) đều có phân phối Gaussian đa biến đồng thời với vector trung bình $\mu$ và ma trận hiệp phương sai $K$: $f(x_1),\dots,f(x_n) \sim \mathcal{N}(\mu, K)$, trong đó $\mu_i = E[f(x_i)] = m(x_i)$ và $K_{ij} = \textrm{Cov}(f(x_i),f(x_j)) = k(x_i,x_j)$.
 
-This definition may seem abstract and inaccessible, but Gaussian processes are in fact very simple objects. Any function
+Định nghĩa này có vẻ trừu tượng và khó tiếp cận, nhưng thực tế Gaussian process là những đối tượng rất đơn giản. Mọi hàm
 
 $$f(x) = w^{\top} \phi(x) = \langle w, \phi(x) \rangle,$$ :eqlabel:`eq_gp-function`
 
-with $w$ drawn from a Gaussian (normal) distribution, and $\phi$ being any vector of basis functions, for example $\phi(x) = (1, x, x^2, ..., x^d)^{\top}$,
-is a Gaussian process. Moreover, any Gaussian process f(x) can be expressed in the form of equation :eqref:`eq_gp-function`. Let's consider a few concrete examples, to begin getting acquainted with Gaussian processes, after which we can appreciate how simple and useful they really are.
+với $w$ được lấy từ một phân phối Gaussian (chuẩn), và $\phi$ là một vector bất kỳ gồm các hàm cơ sở, chẳng hạn $\phi(x) = (1, x, x^2, ..., x^d)^{\top}$,
+đều là một Gaussian process. Hơn nữa, mọi Gaussian process f(x) đều có thể được biểu diễn dưới dạng phương trình :eqref:`eq_gp-function`. Hãy cùng xem xét một vài ví dụ cụ thể để bắt đầu làm quen với Gaussian process, từ đó chúng ta có thể thấy chúng thực sự đơn giản và hữu ích như thế nào.
 
-## A Simple Gaussian Process
+## Một Gaussian Process đơn giản
 
-Suppose $f(x) = w_0 + w_1 x$, and $w_0, w_1 \sim \mathcal{N}(0,1)$, with $w_0, w_1, x$ all in one dimension. We can equivalently write this function as the inner product $f(x) = (w_0, w_1)(1, x)^{\top}$. In :eqref:`eq_gp-function` above, $w = (w_0, w_1)^{\top}$ and $\phi(x) = (1,x)^{\top}$.
+Giả sử $f(x) = w_0 + w_1 x$, và $w_0, w_1 \sim \mathcal{N}(0,1)$, trong đó $w_0, w_1, x$ đều là các đại lượng một chiều. Ta có thể viết tương đương hàm này dưới dạng tích vô hướng $f(x) = (w_0, w_1)(1, x)^{\top}$. Trong :eqref:`eq_gp-function` ở trên, $w = (w_0, w_1)^{\top}$ và $\phi(x) = (1,x)^{\top}$.
 
-For any $x$, $f(x)$ is a sum of two Gaussian random variables. Since Gaussians are closed under addition, $f(x)$ is also a Gaussian random variable for any $x$. In fact, we can compute for any particular $x$ that $f(x)$ is $\mathcal{N}(0,1+x^2)$. Similarly, the joint distribution for any collection of function values, $(f(x_1),\dots,f(x_n))$, for any collection of inputs $x_1,\dots,x_n$, is a multivariate Gaussian distribution. Therefore $f(x)$ is a Gaussian process.
+Với mọi $x$, $f(x)$ là tổng của hai biến ngẫu nhiên Gaussian. Vì các biến Gaussian đóng dưới phép cộng, $f(x)$ cũng là một biến ngẫu nhiên Gaussian với mọi $x$. Cụ thể, với mọi $x$ cụ thể, ta có thể tính được $f(x)$ là $\mathcal{N}(0,1+x^2)$. Tương tự, phân phối đồng thời của mọi tập hợp các giá trị hàm, $(f(x_1),\dots,f(x_n))$, với mọi tập hợp đầu vào $x_1,\dots,x_n$, là một phân phối Gaussian đa biến. Do đó, $f(x)$ là một Gaussian process.
 
-In short, $f(x)$ is a _random function_, or a _distribution over functions_. We can gain some insights into this distribution by repeatedly sampling values for $w_0, w_1$, and visualizing the corresponding functions $f(x)$, which are straight lines with slopes and different intercepts, as follows:
+Tóm lại, $f(x)$ là một _hàm ngẫu nhiên_, hay một _phân phối trên các hàm_. Ta có thể hiểu thêm về phân phối này bằng cách lấy mẫu lặp lại các giá trị của $w_0, w_1$ và trực quan hóa các hàm $f(x)$ tương ứng, vốn là những đường thẳng có độ dốc và tung độ gốc khác nhau, như sau:
 
 ```{.python .input}
 def lin_func(x, n_sample):
@@ -58,61 +58,61 @@ d2l.plt.ylabel("f(x)", fontsize=20)
 d2l.plt.show()
 ```
 
-If $w_0$ and $w_1$ are instead drawn from $\mathcal{N}(0,\alpha^2)$, how do you imagine varying $\alpha$ affects the distribution over functions?
+Nếu thay vào đó $w_0$ và $w_1$ được lấy từ $\mathcal{N}(0,\alpha^2)$, bạn hình dung việc thay đổi $\alpha$ sẽ ảnh hưởng đến phân phối trên các hàm như thế nào?
 
-## From Weight Space to Function Space
+## Từ không gian trọng số đến không gian hàm
 
-In the plot above, we saw how a distribution over parameters in a model induces a distribution over functions. While we often have ideas about the functions we want to model --- whether they're smooth, periodic, quickly varying, etc. --- it is relatively tedious to reason about the parameters, which are largely uninterpretable. Fortunately, Gaussian processes provide an easy mechanism to reason _directly_ about functions. Since a Gaussian distribution is entirely defined by its first two moments, its mean and covariance matrix, a Gaussian process by extension is defined by its mean function and covariance function.
+Trong biểu đồ trên, chúng ta đã thấy cách một phân phối trên các tham số của mô hình tạo ra một phân phối trên các hàm. Mặc dù chúng ta thường có hình dung về những hàm mình muốn mô hình hóa --- chẳng hạn chúng trơn, tuần hoàn, biến thiên nhanh, v.v. --- việc suy luận về các tham số, vốn phần lớn không thể diễn giải được, lại tương đối tẻ nhạt. May mắn thay, Gaussian process cung cấp một cơ chế đơn giản để suy luận _trực tiếp_ về các hàm. Vì một phân phối Gaussian được xác định hoàn toàn bởi hai moment đầu tiên của nó, tức trung bình và ma trận hiệp phương sai, nên Gaussian process cũng được xác định bởi hàm trung bình và hàm hiệp phương sai.
 
-In the above example, the mean function
+Trong ví dụ trên, hàm trung bình là
 
 $$m(x) = E[f(x)] = E[w_0 + w_1x] = E[w_0] + E[w_1]x = 0+0 = 0.$$
 
-Similarly, the covariance function is
+Tương tự, hàm hiệp phương sai là
 
 $$k(x,x') = \textrm{Cov}(f(x),f(x')) = E[f(x)f(x')]-E[f(x)]E[f(x')] = E[w_0^2 + w_0w_1x' + w_1w_0x + w_1^2xx'] = 1 + xx'.$$
 
-Our distribution over functions can now be directly specified and sampled from, without needing to sample from the distribution over parameters. For example, to draw from $f(x)$, we can simply form our multivariate Gaussian distribution associated with any collection of $x$ we want to query, and sample from it directly. We will begin to see just how advantageous this formulation will be.
+Giờ đây, ta có thể chỉ định và lấy mẫu trực tiếp từ phân phối trên các hàm mà không cần lấy mẫu từ phân phối trên các tham số. Chẳng hạn, để lấy mẫu từ $f(x)$, ta chỉ cần tạo phân phối Gaussian đa biến tương ứng với bất kỳ tập hợp $x$ nào mà ta muốn truy vấn, rồi lấy mẫu trực tiếp từ phân phối đó. Chúng ta sẽ dần thấy cách biểu diễn này mang lại nhiều lợi thế như thế nào.
 
-First, we note that essentially the same derivation for the simple straight line model above can be applied to find the mean and covariance function for _any_ model of the form $f(x) = w^{\top} \phi(x)$, with $w \sim \mathcal{N}(u,S)$. In this case, the mean function $m(x) = u^{\top}\phi(x)$, and the covariance function $k(x,x') = \phi(x)^{\top}S\phi(x')$. Since $\phi(x)$ can represent a vector of any non-linear basis functions, we are considering a very general model class, including models with an even an _infinite_ number of parameters.
+Trước hết, ta lưu ý rằng về cơ bản, cùng một phép suy diễn cho mô hình đường thẳng đơn giản ở trên có thể được áp dụng để tìm hàm trung bình và hàm hiệp phương sai cho _bất kỳ_ mô hình nào có dạng $f(x) = w^{\top} \phi(x)$, với $w \sim \mathcal{N}(u,S)$. Trong trường hợp này, hàm trung bình $m(x) = u^{\top}\phi(x)$, và hàm hiệp phương sai $k(x,x') = \phi(x)^{\top}S\phi(x')$. Vì $\phi(x)$ có thể biểu diễn một vector gồm bất kỳ hàm cơ sở phi tuyến nào, ta đang xét một lớp mô hình rất tổng quát, bao gồm cả các mô hình có số lượng tham số _vô hạn_.
 
-## The Radial Basis Function (RBF) Kernel
+## Kernel Radial Basis Function (RBF)
 
-The _radial basis function_ (RBF) kernel is the most popular covariance function for Gaussian processes, and kernel machines in general.
-This kernel has the form $k_{\textrm{RBF}}(x,x') = a^2\exp\left(-\frac{1}{2\ell^2}||x-x'||^2\right)$, where $a$ is an amplitude parameter, and $\ell$ is a _lengthscale_ hyperparameter.
+Kernel _radial basis function_ (RBF) là hàm hiệp phương sai phổ biến nhất đối với Gaussian process, cũng như đối với các kernel machine nói chung.
+Kernel này có dạng $k_{\textrm{RBF}}(x,x') = a^2\exp\left(-\frac{1}{2\ell^2}||x-x'||^2\right)$, trong đó $a$ là tham số biên độ, còn $\ell$ là hyperparameter _lengthscale_.
 
-Let's derive this kernel starting from weight space. Consider the function
+Hãy suy diễn kernel này bắt đầu từ không gian trọng số. Xét hàm
 
 $$f(x) = \sum_{i=1}^J w_i \phi_i(x), w_i  \sim \mathcal{N}\left(0,\frac{\sigma^2}{J}\right), \phi_i(x) = \exp\left(-\frac{(x-c_i)^2}{2\ell^2 }\right).$$
 
-$f(x)$ is a sum of radial basis functions, with width $\ell$, centred at the points $c_i$, as shown in the following figure.
+$f(x)$ là tổng của các hàm radial basis, có độ rộng $\ell$, tâm tại các điểm $c_i$, như minh họa trong hình dưới đây.
 
 
-We can recognize $f(x)$ as having the form $w^{\top} \phi(x)$, where $w = (w_1,\dots,w_J)^{\top}$ and $\phi(x)$ is a vector containing each of the radial basis functions. The covariance function of this Gaussian process is then
+Ta có thể nhận ra $f(x)$ có dạng $w^{\top} \phi(x)$, trong đó $w = (w_1,\dots,w_J)^{\top}$ và $\phi(x)$ là một vector chứa từng hàm radial basis. Khi đó, hàm hiệp phương sai của Gaussian process này là
 
 $$k(x,x') = \frac{\sigma^2}{J} \sum_{i=1}^{J} \phi_i(x)\phi_i(x').$$
 
-Now let's consider what happens as we take the number of parameters (and basis functions) to infinity. Let $c_J = \log J$, $c_1 = -\log J$, and $c_{i+1}-c_{i} = \Delta c = 2\frac{\log J}{J}$, and $J \to \infty$. The covariance function becomes the Riemann sum:
+Bây giờ hãy xem điều gì xảy ra khi ta tăng số lượng tham số (và hàm cơ sở) lên vô hạn. Đặt $c_J = \log J$, $c_1 = -\log J$, và $c_{i+1}-c_{i} = \Delta c = 2\frac{\log J}{J}$, và $J \to \infty$. Hàm hiệp phương sai trở thành tổng Riemann:
 
 $$k(x,x') = \lim_{J \to \infty} \frac{\sigma^2}{J} \sum_{i=1}^{J} \phi_i(x)\phi_i(x') = \int_{c_0}^{c_\infty} \phi_c(x)\phi_c(x') dc.$$
 
-By setting $c_0 = -\infty$ and $c_\infty = \infty$, we spread the infinitely many basis functions across the whole real line, each
-a distance $\Delta c \to 0$ apart:
+Bằng cách đặt $c_0 = -\infty$ và $c_\infty = \infty$, ta trải vô hạn hàm cơ sở trên toàn bộ trục số thực, mỗi hàm
+cách nhau một khoảng $\Delta c \to 0$:
 
 $$k(x,x') = \int_{-\infty}^{\infty} \exp(-\frac{(x-c)^2}{2\ell^2}) \exp(-\frac{(x'-c)^2}{2\ell^2 }) dc = \sqrt{\pi}\ell \sigma^2 \exp(-\frac{(x-x')^2}{2(\sqrt{2} \ell)^2}) \propto k_{\textrm{RBF}}(x,x').$$
 
-It is worth taking a moment to absorb what we have done here. By moving into the function space representation, we have derived how to represent a model with an _infinite_ number of parameters, using a finite amount of computation. A Gaussian process with an RBF kernel is a _universal approximator_, capable of representing any continuous function to arbitrary precision. We can intuitively see why from the above derivation. We can collapse each radial basis function to a point mass taking $\ell \to 0$, and give each point mass any height we wish.
+Ta nên dừng lại một chút để nắm rõ những gì vừa thực hiện. Bằng cách chuyển sang biểu diễn trong không gian hàm, ta đã suy ra cách biểu diễn một mô hình có số lượng tham số _vô hạn_ bằng một lượng tính toán hữu hạn. Gaussian process với kernel RBF là một _bộ xấp xỉ phổ quát_, có khả năng biểu diễn mọi hàm liên tục với độ chính xác tùy ý. Ta có thể hình dung trực giác lý do qua phép suy diễn ở trên. Ta có thể thu gọn mỗi hàm radial basis thành một khối lượng điểm bằng cách cho $\ell \to 0$, rồi gán cho mỗi khối lượng điểm một độ cao bất kỳ.
 
-So a Gaussian process with an RBF kernel is a model with an infinite number of parameters and much more flexibility than any finite neural network. Perhaps all the fuss about _overparametrized_ neural networks is misplaced. As we will see, GPs with RBF kernels do not overfit, and in fact provide especially compelling generalization performance on small datasets. Moreover, the examples in :cite:`zhang2021understanding`, such as the ability to fit images with random labels perfectly, but still generalize well on structured problems, (can be perfectly reproduced using Gaussian processes) :cite:`wilson2020bayesian`. Neural networks are not as distinct as we make them out to be.
+Vì vậy, Gaussian process với kernel RBF là một mô hình có số lượng tham số vô hạn và linh hoạt hơn nhiều so với bất kỳ neural network hữu hạn nào. Có lẽ mọi ồn ào về các neural network _thừa tham số_ là không đúng trọng tâm. Như chúng ta sẽ thấy, GP với kernel RBF không overfit, mà thực tế còn mang lại khả năng tổng quát hóa đặc biệt thuyết phục trên các tập dữ liệu nhỏ. Hơn nữa, các ví dụ trong :cite:`zhang2021understanding`, chẳng hạn như khả năng khớp hoàn hảo các ảnh có nhãn ngẫu nhiên nhưng vẫn tổng quát hóa tốt trên các bài toán có cấu trúc, (có thể được tái tạo hoàn hảo bằng Gaussian process) :cite:`wilson2020bayesian`. Neural network không khác biệt rõ rệt như cách chúng ta thường nghĩ.
 
-We can build further intuition about Gaussian processes with RBF kernels, and hyperparameters such as _length-scale_, by sampling directly from the distribution over functions. As before, this involves a simple procedure:
+Ta có thể xây dựng thêm trực giác về Gaussian process với kernel RBF và các hyperparameter như _length-scale_ bằng cách lấy mẫu trực tiếp từ phân phối trên các hàm. Như trước đây, quy trình này gồm các bước đơn giản:
 
-1. Choose the input $x$ points we want to query the GP: $x_1,\dots,x_n$.
-2. Evaluate $m(x_i)$, $i = 1,\dots,n$, and $k(x_i,x_j)$ for $i,j = 1,\dots,n$ to respectively form the mean vector and covariance matrix $\mu$ and $K$, where $(f(x_1),\dots,f(x_n)) \sim \mathcal{N}(\mu, K)$.
-3. Sample from this multivariate Gaussian distribution to obtain the sample function values.
-4. Sample more times to visualize more sample functions queried at those points.
+1. Chọn các điểm đầu vào $x$ mà ta muốn truy vấn GP: $x_1,\dots,x_n$.
+2. Tính $m(x_i)$, $i = 1,\dots,n$, và $k(x_i,x_j)$ với $i,j = 1,\dots,n$ để lần lượt tạo vector trung bình và ma trận hiệp phương sai $\mu$ và $K$, trong đó $(f(x_1),\dots,f(x_n)) \sim \mathcal{N}(\mu, K)$.
+3. Lấy mẫu từ phân phối Gaussian đa biến này để thu được các giá trị hàm của mẫu.
+4. Lấy mẫu thêm nhiều lần để trực quan hóa nhiều hàm mẫu hơn được truy vấn tại các điểm đó.
 
-We illustrate this process in the figure below.
+Chúng ta minh họa quy trình này trong hình dưới đây.
 
 ```{.python .input}
 def rbfkernel(x1, x2, ls=4.):  #@save
@@ -128,48 +128,48 @@ d2l.plt.plot(x_points, prior_samples.T, alpha=0.5)
 d2l.plt.show()
 ```
 
-## The Neural Network Kernel
+## Kernel Neural Network
 
-Research on Gaussian processes in machine learning was triggered by research on neural networks. Radford Neal was pursuing ever larger Bayesian neural networks, ultimately showing in 1994 (later published in 1996, as it was one of the most infamous NeurIPS rejections) that such networks with an infinite number of hidden units become Gaussian processes with particular kernel functions :cite:`neal1996bayesian`. Interest in this derivation has re-surfaced, with ideas like the neural tangent kernel being used to investigate the generalization properties of neural networks :cite:`matthews2018gaussian` :cite:`novak2018bayesian`. We can derive the neural network kernel as follows.
+Nghiên cứu về quá trình Gaussian trong machine learning bắt nguồn từ nghiên cứu về neural network. Radford Neal đang theo đuổi các Bayesian neural network ngày càng lớn hơn, và cuối cùng đã chỉ ra vào năm 1994 (sau đó được công bố vào năm 1996, vì đây là một trong những bài bị NeurIPS từ chối tai tiếng nhất) rằng các mạng như vậy với số lượng hidden unit vô hạn sẽ trở thành các quá trình Gaussian với những hàm kernel cụ thể :cite:`neal1996bayesian`. Mối quan tâm đối với phép suy luận này đã xuất hiện trở lại, với những ý tưởng như neural tangent kernel được sử dụng để nghiên cứu các tính chất tổng quát hóa của neural network :cite:`matthews2018gaussian` :cite:`novak2018bayesian`. Ta có thể suy ra kernel của neural network như sau.
 
-Consider a neural network function $f(x)$ with one hidden layer:
+Xét một hàm neural network $f(x)$ với một hidden layer:
 
 $$f(x) = b + \sum_{i=1}^{J} v_i h(x; u_i).$$
 
-$b$ is a bias, $v_i$ are the hidden to output weights, $h$ is any bounded hidden unit transfer function, $u_i$ are the input to hidden weights, and $J$ is the number of hidden units. Let $b$ and $v_i$ be independent with zero mean and variances $\sigma_b^2$ and $\sigma_v^2/J$, respectively, and let the $u_i$ have independent identical distributions. We can then use the central limit theorem to show that any collection of function values $f(x_1),\dots,f(x_n)$ has a joint multivariate Gaussian distribution.
+$b$ là bias, $v_i$ là các trọng số từ hidden layer đến output, $h$ là một hàm truyền của hidden unit bất kỳ bị chặn, $u_i$ là các trọng số từ input đến hidden layer, và $J$ là số lượng hidden unit. Cho $b$ và $v_i$ độc lập với kỳ vọng bằng 0 và phương sai lần lượt là $\sigma_b^2$ và $\sigma_v^2/J$, đồng thời cho $u_i$ có các phân phối độc lập và đồng nhất. Khi đó, ta có thể sử dụng định lý giới hạn trung tâm để chỉ ra rằng mọi tập hợp các giá trị hàm $f(x_1),\dots,f(x_n)$ đều có phân phối Gaussian đa biến đồng thời.
 
-The mean and covariance function of the corresponding Gaussian process are:
+Hàm trung bình và hàm hiệp phương sai của quá trình Gaussian tương ứng là:
 
 $$m(x) = E[f(x)] = 0$$
 
 $$k(x,x') = \textrm{cov}[f(x),f(x')] = E[f(x)f(x')] = \sigma_b^2 + \frac{1}{J} \sum_{i=1}^{J} \sigma_v^2 E[h_i(x; u_i)h_i(x'; u_i)]$$
 
-In some cases, we can essentially evaluate this covariance function in closed form. Let $h(x; u) = \textrm{erf}(u_0 + \sum_{j=1}^{P} u_j x_j)$, where $\textrm{erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt$, and $u \sim \mathcal{N}(0,\Sigma)$. Then $k(x,x') = \frac{2}{\pi} \textrm{sin}(\frac{2 \tilde{x}^{\top} \Sigma \tilde{x}'}{\sqrt{(1 + 2 \tilde{x}^{\top} \Sigma \tilde{x})(1 + 2 \tilde{x}'^{\top} \Sigma \tilde{x}')}})$.
+Trong một số trường hợp, về cơ bản ta có thể tính hàm hiệp phương sai này dưới dạng đóng. Cho $h(x; u) = \textrm{erf}(u_0 + \sum_{j=1}^{P} u_j x_j)$, trong đó $\textrm{erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt$, và $u \sim \mathcal{N}(0,\Sigma)$. Khi đó $k(x,x') = \frac{2}{\pi} \textrm{sin}(\frac{2 \tilde{x}^{\top} \Sigma \tilde{x}'}{\sqrt{(1 + 2 \tilde{x}^{\top} \Sigma \tilde{x})(1 + 2 \tilde{x}'^{\top} \Sigma \tilde{x}')}})$.
 
-The RBF kernel is _stationary_, meaning that it is _translation invariant_, and therefore can be written as a function of $\tau = x-x'$. Intuitively, stationarity means that the high-level properties of the function, such as rate of variation, do not change as we move in input space. The neural network kernel, however, is _non-stationary_. Below, we show sample functions from a Gaussian process with this kernel. We can see that the function looks qualitatively different near the origin.
+RBF kernel là _stationary_, nghĩa là _bất biến theo phép tịnh tiến_ (_translation invariant_), và do đó có thể được viết dưới dạng một hàm của $\tau = x-x'$. Theo trực giác, tính stationary có nghĩa là các thuộc tính cấp cao của hàm, chẳng hạn như tốc độ biến thiên, không thay đổi khi ta di chuyển trong không gian input. Tuy nhiên, neural network kernel là _non-stationary_. Bên dưới, ta minh họa các hàm mẫu từ một quá trình Gaussian với kernel này. Có thể thấy hàm này có diện mạo khác biệt về mặt định tính khi ở gần gốc tọa độ.
 
-## Summary
-
-
-The first step in performing Bayesian inference involves specifying a prior. Gaussian processes can be used to specify a whole prior over functions. Starting from a traditional "weight space" view of modelling, we can induce a prior over functions by starting with the functional form of a model, and introducing a distribution over its parameters. We can alternatively specify a prior distribution directly in function space, with properties controlled by a kernel. The function-space approach has many advantages. We can build models that actually correspond to an infinite number of parameters, but use a finite amount of computation! Moreover, while these models have a great amount of flexibility, they also make strong assumptions about what types of functions are a priori likely, leading to relatively good generalization on small datasets.
-
-The assumptions of models in function space are intuitively controlled by kernels, which often encode higher level properties of functions, such as smoothness and periodicity. Many kernels are stationary, meaning that they are translation invariant. Functions drawn from a Gaussian process with a stationary kernel have roughly the same high-level properties (such as rate of variation) regardless of where we look in the input space.
-
-Gaussian processes are a relatively general model class, containing many examples of models we are already familiar with, including polynomials, Fourier series, and so on, as long as we have a Gaussian prior over the parameters. They also include neural networks with an infinite number of parameters, even without Gaussian distributions over the parameters. This connection, discovered by Radford Neal, triggered machine learning researchers to move away from neural networks, and towards Gaussian processes.
+## Tóm tắt
 
 
-## Exercises
+Bước đầu tiên khi thực hiện Bayesian inference là xác định một prior. Quá trình Gaussian có thể được sử dụng để xác định toàn bộ một prior trên các hàm. Bắt đầu từ cách nhìn nhận mô hình truyền thống trong “weight space”, ta có thể tạo ra một prior trên các hàm bằng cách bắt đầu với dạng hàm của một mô hình và đưa vào một phân phối trên các tham số của mô hình đó. Ngoài ra, ta có thể xác định trực tiếp một phân phối prior trong function space, với các thuộc tính được kernel kiểm soát. Cách tiếp cận trong function space có nhiều ưu điểm. Ta có thể xây dựng các mô hình thực sự tương ứng với vô hạn tham số, nhưng chỉ cần sử dụng một lượng tính toán hữu hạn! Hơn nữa, mặc dù các mô hình này rất linh hoạt, chúng cũng đưa ra những giả định mạnh về loại hàm nào có khả năng xảy ra theo prior, từ đó dẫn đến khả năng tổng quát hóa tương đối tốt trên các tập dữ liệu nhỏ.
 
-1. Draw sample prior functions from a GP with an Ornstein-Uhlenbeck (OU) kernel, $k_{\textrm{OU}}(x,x') = \exp\left(-\frac{1}{2\ell}||x - x'|\right)$. If you fix the lengthscale $\ell$ to be the same, how do these functions look different than sample functions from a GP with an RBF kernel?
+Các giả định của những mô hình trong function space được kernel kiểm soát một cách trực quan; các kernel thường mã hóa những thuộc tính cấp cao hơn của hàm, chẳng hạn như độ trơn và tính tuần hoàn. Nhiều kernel là stationary, nghĩa là bất biến theo phép tịnh tiến. Các hàm được lấy mẫu từ một quá trình Gaussian với stationary kernel có gần như cùng các thuộc tính cấp cao (chẳng hạn như tốc độ biến thiên), bất kể ta quan sát ở đâu trong không gian input.
 
-2. How does changing the _amplitude_ $a^2$ of the RBF kernel affect the distribution over functions?
+Quá trình Gaussian là một lớp mô hình tương đối tổng quát, bao gồm nhiều ví dụ về các mô hình mà ta đã quen thuộc, chẳng hạn như đa thức, chuỗi Fourier, v.v., miễn là ta có Gaussian prior trên các tham số. Chúng cũng bao gồm các neural network với số lượng tham số vô hạn, ngay cả khi các tham số không có phân phối Gaussian. Mối liên hệ này, được Radford Neal phát hiện, đã thúc đẩy các nhà nghiên cứu machine learning rời xa neural network và chuyển sang quá trình Gaussian.
 
-3. Suppose we form $u(x) = f(x) + 2g(x)$, where $f(x) \sim \mathcal{GP}(m_1,k_1)$ and $g(x) \sim \mathcal{GP}(m_2,k_2)$. Is $u(x)$ a Gaussian process, and if so, what is its mean and covariance function?
 
-4. Suppose we form $g(x) = a(x)f(x)$, where $f(x) \sim \mathcal{GP}(0,k)$ and $a(x) = x^2$. Is $g(x)$ a Gaussian process, and if so, what is its mean and covariance function? What is the effect of $a(x)$? What do sample functions drawn from $g(x)$ look like?
+## Bài tập
 
-5. Suppose we form $u(x) = f(x)g(x)$, where $f(x) \sim \mathcal{GP}(m_1,k_1)$ and $g(x) \sim \mathcal{GP}(m_2,k_2)$. Is $u(x)$ a Gaussian process, and if so, what is its mean and covariance function?
+1. Vẽ các hàm prior mẫu từ một GP với Ornstein-Uhlenbeck (OU) kernel, $k_{\textrm{OU}}(x,x') = \exp\left(-\frac{1}{2\ell}||x - x'|\right)$. Nếu cố định lengthscale $\ell$ ở cùng một giá trị, các hàm này trông khác với các hàm mẫu từ một GP với RBF kernel như thế nào?
+
+2. Việc thay đổi _amplitude_ $a^2$ của RBF kernel ảnh hưởng thế nào đến phân phối trên các hàm?
+
+3. Giả sử ta tạo thành $u(x) = f(x) + 2g(x)$, trong đó $f(x) \sim \mathcal{GP}(m_1,k_1)$ và $g(x) \sim \mathcal{GP}(m_2,k_2)$. $u(x)$ có phải là một quá trình Gaussian không, và nếu có thì hàm trung bình và hàm hiệp phương sai của nó là gì?
+
+4. Giả sử ta tạo thành $g(x) = a(x)f(x)$, trong đó $f(x) \sim \mathcal{GP}(0,k)$ và $a(x) = x^2$. $g(x)$ có phải là một quá trình Gaussian không, và nếu có thì hàm trung bình và hàm hiệp phương sai của nó là gì? $a(x)$ có tác động gì? Các hàm mẫu được lấy từ $g(x)$ trông như thế nào?
+
+5. Giả sử ta tạo thành $u(x) = f(x)g(x)$, trong đó $f(x) \sim \mathcal{GP}(m_1,k_1)$ và $g(x) \sim \mathcal{GP}(m_2,k_2)$. $u(x)$ có phải là một quá trình Gaussian không, và nếu có thì hàm trung bình và hàm hiệp phương sai của nó là gì?
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/12116)
+[Thảo luận](https://discuss.d2l.ai/t/12116)
 :end_tab:
