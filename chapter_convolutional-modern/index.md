@@ -1,65 +1,11 @@
-# Modern Convolutional Neural Networks
+# Mạng nơ-ron tích chập hiện đại
 :label:`chap_modern_cnn`
 
-Now that we understand the basics of wiring together CNNs, let's take
-a tour of modern CNN architectures. This tour is, by
-necessity, incomplete, thanks to the plethora of exciting new designs
-being added. Their importance derives from the fact that not only can
-they be used directly for vision tasks, but they also serve as basic
-feature generators for more advanced tasks such as tracking
-:cite:`Zhang.Sun.Jiang.ea.2021`, segmentation :cite:`Long.Shelhamer.Darrell.2015`, object
-detection :cite:`Redmon.Farhadi.2018`, or style transformation
-:cite:`Gatys.Ecker.Bethge.2016`.  In this chapter, most sections
-correspond to a significant CNN architecture that was at some point
-(or currently) the base model upon which many research projects and
-deployed systems were built.  Each of these networks was briefly a
-dominant architecture and many were winners or runners-up in the
-[ImageNet competition](https://www.image-net.org/challenges/LSVRC/)
-which has served as a barometer of progress on supervised learning in
-computer vision since 2010. It is only recently that Transformers have begun
-to displace CNNs, starting with :citet:`Dosovitskiy.Beyer.Kolesnikov.ea.2021` and 
-followed by the Swin Transformer :cite:`liu2021swin`. We will cover this development later 
-in :numref:`chap_attention-and-transformers`. 
+Giờ đây khi đã hiểu những kiến thức cơ bản về cách kết nối các CNN với nhau, hãy cùng tham quan các kiến trúc CNN hiện đại. Chuyến tham quan này tất yếu là chưa đầy đủ, bởi có vô số thiết kế mới đầy thú vị liên tục được bổ sung. Tầm quan trọng của chúng xuất phát từ việc chúng không chỉ có thể được dùng trực tiếp cho các tác vụ thị giác, mà còn đóng vai trò là các bộ tạo đặc trưng cơ bản cho những tác vụ nâng cao hơn như theo dõi :cite:`Zhang.Sun.Jiang.ea.2021`, phân đoạn :cite:`Long.Shelhamer.Darrell.2015`, phát hiện đối tượng :cite:`Redmon.Farhadi.2018`, hoặc biến đổi phong cách :cite:`Gatys.Ecker.Bethge.2016`. Trong chương này, đa số các phần tương ứng với một kiến trúc CNN quan trọng đã từng (hoặc hiện đang) là mô hình cơ sở để xây dựng nhiều dự án nghiên cứu và hệ thống đã deploy. Mỗi mạng trong số này từng có một thời gian ngắn là kiến trúc thống trị, và nhiều mạng đã chiến thắng hoặc về nhì trong cuộc thi [ImageNet competition](https://www.image-net.org/challenges/LSVRC/), vốn đóng vai trò là thước đo tiến bộ của supervised learning trong computer vision kể từ năm 2010. Chỉ gần đây, Transformers mới bắt đầu thay thế CNN, khởi đầu với :citet:`Dosovitskiy.Beyer.Kolesnikov.ea.2021` và tiếp nối bởi Swin Transformer :cite:`liu2021swin`. Chúng ta sẽ đề cập đến sự phát triển này sau trong :numref:`chap_attention-and-transformers`.
 
-While the idea of *deep* neural networks is quite simple (stack
-together a bunch of layers), performance can vary wildly across
-architectures and hyperparameter choices.  The neural networks
-described in this chapter are the product of intuition, a few
-mathematical insights, and a lot of trial and error.  We present these
-models in chronological order, partly to convey a sense of the history
-so that you can form your own intuitions about where the field is
-heading and perhaps develop your own architectures.  For instance,
-batch normalization and residual connections described in this chapter
-have offered two popular ideas for training and designing deep models,
-both of which have since also been applied to architectures beyond computer
-vision.
+Mặc dù ý tưởng về các mạng nơ-ron *sâu* khá đơn giản (xếp chồng nhiều layer lên nhau), hiệu năng có thể khác biệt rất lớn tùy theo kiến trúc và lựa chọn hyperparameter. Các mạng nơ-ron được mô tả trong chương này là sản phẩm của trực giác, một vài hiểu biết toán học, và rất nhiều thử và sai. Chúng tôi trình bày các mô hình này theo thứ tự thời gian, một phần để truyền tải cảm nhận về lịch sử, giúp bạn có thể hình thành trực giác riêng về hướng đi của lĩnh vực này và có lẽ phát triển các kiến trúc của riêng mình. Chẳng hạn, batch normalization và residual connections được mô tả trong chương này đã đưa ra hai ý tưởng phổ biến để huấn luyện và thiết kế các mô hình sâu; từ đó, cả hai cũng đã được áp dụng cho các kiến trúc ngoài computer vision.
 
-We begin our tour of modern CNNs with AlexNet :cite:`Krizhevsky.Sutskever.Hinton.2012`,
-the first large-scale network deployed to beat conventional computer
-vision methods on a large-scale vision challenge; the VGG network
-:cite:`Simonyan.Zisserman.2014`, which makes use of a number of
-repeating blocks of elements; the network in network (NiN) that
-convolves whole neural networks patch-wise over inputs
-:cite:`Lin.Chen.Yan.2013`; GoogLeNet that uses networks with
-multi-branch convolutions :cite:`Szegedy.Liu.Jia.ea.2015`; the residual
-network (ResNet) :cite:`He.Zhang.Ren.ea.2016`, which remains one of
-the most popular off-the-shelf architectures in computer vision;
-ResNeXt blocks :cite:`Xie.Girshick.Dollar.ea.2017`
-for sparser connections;
-and DenseNet
-:cite:`Huang.Liu.Van-Der-Maaten.ea.2017` for a generalization of the
-residual architecture. Over time many special optimizations for efficient 
-networks have been developed, such as coordinate shifts (ShiftNet) :cite:`wu2018shift`. This 
-culminated in the automatic search for efficient architectures such as 
-MobileNet v3 :cite:`Howard.Sandler.Chu.ea.2019`. It also includes the 
-semi-automatic design exploration of :citet:`Radosavovic.Kosaraju.Girshick.ea.2020`
-that led to the RegNetX/Y which we will discuss later in this chapter. 
-The work is instructive insofar as it offers a path for marrying brute force computation with 
-the ingenuity of an experimenter in the search for efficient design spaces. Of note is
-also the work of :citet:`liu2022convnet` as it shows that training techniques (e.g., optimizers, data augmentation, and regularization)
-play a pivotal role in improving accuracy. It also shows that long-held assumptions, such as 
-the size of a convolution window, may need to be revisited, given the increase in 
-computation and data. We will cover this and many more questions in due course throughout this chapter.
+Chúng ta bắt đầu chuyến tham quan CNN hiện đại với AlexNet :cite:`Krizhevsky.Sutskever.Hinton.2012`, mạng quy mô lớn đầu tiên được triển khai để vượt qua các phương pháp computer vision truyền thống trong một thử thách thị giác quy mô lớn; mạng VGG :cite:`Simonyan.Zisserman.2014`, sử dụng một số block phần tử lặp lại; network in network (NiN), áp dụng phép convolution của toàn bộ các mạng nơ-ron theo từng patch trên đầu vào :cite:`Lin.Chen.Yan.2013`; GoogLeNet, sử dụng các mạng có convolution nhiều nhánh :cite:`Szegedy.Liu.Jia.ea.2015`; residual network (ResNet) :cite:`He.Zhang.Ren.ea.2016`, vẫn là một trong những kiến trúc dựng sẵn phổ biến nhất trong computer vision; các block ResNeXt :cite:`Xie.Girshick.Dollar.ea.2017` dành cho các kết nối thưa hơn; và DenseNet :cite:`Huang.Liu.Van-Der-Maaten.ea.2017` cho một sự khái quát hóa của kiến trúc residual. Theo thời gian, nhiều tối ưu hóa chuyên biệt cho các mạng hiệu quả đã được phát triển, chẳng hạn như dịch chuyển tọa độ (ShiftNet) :cite:`wu2018shift`. Điều này đạt đến đỉnh điểm với việc tìm kiếm tự động các kiến trúc hiệu quả như MobileNet v3 :cite:`Howard.Sandler.Chu.ea.2019`. Nó cũng bao gồm việc khám phá thiết kế bán tự động của :citet:`Radosavovic.Kosaraju.Girshick.ea.2020`, dẫn đến RegNetX/Y mà chúng ta sẽ thảo luận sau trong chương này. Công trình này mang tính hướng dẫn ở chỗ nó đưa ra một con đường kết hợp tính toán brute force với sự khéo léo của người thực nghiệm trong quá trình tìm kiếm các không gian thiết kế hiệu quả. Cũng đáng chú ý là công trình của :citet:`liu2022convnet`, vì nó cho thấy các kỹ thuật huấn luyện (ví dụ: optimizer, data augmentation và regularization) đóng vai trò then chốt trong việc cải thiện độ chính xác. Nó cũng cho thấy rằng các giả định lâu nay, chẳng hạn như kích thước của một cửa sổ convolution, có thể cần được xem xét lại trước sự gia tăng về tính toán và dữ liệu. Chúng ta sẽ lần lượt đề cập đến điều này và nhiều câu hỏi khác xuyên suốt chương này.
 
 ```toc
 :maxdepth: 2
@@ -73,4 +19,3 @@ resnet
 densenet
 cnn-design
 ```
-

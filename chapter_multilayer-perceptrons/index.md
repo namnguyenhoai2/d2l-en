@@ -1,28 +1,28 @@
-# Multilayer Perceptrons
+# Perceptron đa tầng
 :label:`chap_perceptrons`
 
-In this chapter, we will introduce your first truly *deep* network.
-The simplest deep networks are called *multilayer perceptrons*,
-and they consist of multiple layers of neurons
-each fully connected to those in the layer below
-(from which they receive input)
-and those above (which they, in turn, influence).
-Although automatic differentiation
-significantly simplifies the implementation of deep learning algorithms,
-we will dive deep into how these gradients
-are calculated in deep networks.
-Then we will
-be ready to
-discuss issues relating to numerical stability and parameter initialization
-that are key to successfully training deep networks.
-When we train such high-capacity models we run the risk of overfitting. Thus, we will
-revisit regularization and generalization
-for deep networks.
-Throughout, we aim
-to give you a firm grasp not just of the concepts but also of the practice of using deep networks.
-At the end of this chapter, we apply what we have introduced so far to a real case: house price
-prediction. We punt matters relating to the computational performance, scalability, and efficiency
-of our models to subsequent chapters.
+Trong chương này, chúng ta sẽ giới thiệu mạng *sâu* thực sự đầu tiên của bạn.
+Các mạng sâu đơn giản nhất được gọi là *perceptron đa tầng*,
+và chúng bao gồm nhiều tầng nơ-ron,
+mỗi tầng được kết nối đầy đủ với các nơ-ron ở tầng bên dưới
+(từ đó chúng nhận đầu vào)
+và các nơ-ron ở tầng bên trên (mà chúng lần lượt tác động đến).
+Mặc dù vi phân tự động
+đơn giản hóa đáng kể việc triển khai các thuật toán deep learning,
+chúng ta sẽ đi sâu vào cách các gradient này
+được tính toán trong các mạng sâu.
+Sau đó, chúng ta sẽ
+sẵn sàng để
+thảo luận về các vấn đề liên quan đến tính ổn định số và khởi tạo tham số,
+những yếu tố then chốt để huấn luyện thành công các mạng sâu.
+Khi huấn luyện các mô hình có năng lực cao như vậy, chúng ta có nguy cơ overfitting. Vì thế, chúng ta sẽ
+xem lại regularization và khả năng khái quát hóa
+đối với các mạng sâu.
+Xuyên suốt chương này, chúng tôi hướng tới
+việc giúp bạn nắm vững không chỉ các khái niệm mà còn cả thực hành sử dụng mạng sâu.
+Ở cuối chương, chúng ta áp dụng những gì đã giới thiệu cho đến nay vào một trường hợp thực tế: dự đoán giá nhà.
+Các vấn đề liên quan đến hiệu năng tính toán, khả năng mở rộng và hiệu quả
+của các mô hình sẽ được để lại cho các chương tiếp theo.
 
 ```toc
 :maxdepth: 2
@@ -35,4 +35,3 @@ generalization-deep
 dropout
 kaggle-house-price
 ```
-

@@ -3,30 +3,30 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Predicting House Prices on Kaggle
+# Dự đoán Giá Nhà trên Kaggle
 :label:`sec_kaggle_house`
 
-Now that we have introduced some basic tools
-for building and training deep networks
-and regularizing them with techniques including
-weight decay and dropout,
-we are ready to put all this knowledge into practice
-by participating in a Kaggle competition.
-The house price prediction competition
-is a great place to start.
-The data is fairly generic and do not exhibit exotic structure
-that might require specialized models (as audio or video might).
-This dataset, collected by :citet:`De-Cock.2011`,
-covers house prices in Ames, Iowa from the period 2006--2010.
-It is considerably larger than the famous [Boston housing dataset](https://archive.ics.uci.edu/ml/machine-learning-databases/housing/housing.names) of Harrison and Rubinfeld (1978),
-boasting both more examples and more features.
+Giờ đây, khi chúng ta đã giới thiệu một số công cụ cơ bản
+để xây dựng và huấn luyện các mạng sâu
+cũng như regularize chúng bằng các kỹ thuật bao gồm
+weight decay và dropout,
+chúng ta đã sẵn sàng áp dụng toàn bộ kiến thức này vào thực tế
+bằng cách tham gia một cuộc thi Kaggle.
+Cuộc thi dự đoán giá nhà
+là một nơi tuyệt vời để bắt đầu.
+Dữ liệu khá phổ quát và không có cấu trúc đặc biệt
+có thể yêu cầu các mô hình chuyên biệt (như âm thanh hoặc video có thể cần).
+Bộ dữ liệu này, do :citet:`De-Cock.2011` thu thập,
+bao gồm giá nhà tại Ames, Iowa trong giai đoạn 2006--2010.
+Nó lớn hơn đáng kể so với bộ dữ liệu nhà ở [Boston housing dataset](https://archive.ics.uci.edu/ml/machine-learning-databases/housing/housing.names) nổi tiếng của Harrison và Rubinfeld (1978),
+với cả nhiều mẫu hơn lẫn nhiều đặc trưng hơn.
 
 
-In this section, we will walk you through details of
-data preprocessing, model design, and hyperparameter selection.
-We hope that through a hands-on approach,
-you will gain some intuitions that will guide you
-in your career as a data scientist.
+Trong phần này, chúng tôi sẽ hướng dẫn chi tiết
+về tiền xử lý dữ liệu, thiết kế mô hình và lựa chọn hyperparameter.
+Chúng tôi hy vọng rằng thông qua cách tiếp cận thực hành,
+bạn sẽ có được những trực giác giúp định hướng
+cho sự nghiệp của mình với tư cách là một nhà khoa học dữ liệu.
 
 ```{.python .input}
 %%tab mxnet
@@ -66,14 +66,14 @@ import numpy as np
 import pandas as pd
 ```
 
-## Downloading Data
+## Tải xuống Dữ liệu
 
-Throughout the book, we will train and test models
-on various downloaded datasets.
-Here, we (**implement two utility functions**)
-for downloading and extracting zip or tar files.
-Again, we skip implementation details of
-such utility functions.
+Xuyên suốt cuốn sách, chúng ta sẽ huấn luyện và kiểm thử mô hình
+trên nhiều bộ dữ liệu đã tải xuống khác nhau.
+Tại đây, chúng ta (**triển khai hai hàm tiện ích**)
+để tải xuống và giải nén các tệp zip hoặc tar.
+Một lần nữa, chúng ta bỏ qua các chi tiết triển khai
+của những hàm tiện ích như vậy.
 
 ```{.python .input  n=2}
 %%tab all
@@ -86,72 +86,72 @@ def extract(filename, folder):
 
 ## Kaggle
 
-[Kaggle](https://www.kaggle.com) is a popular platform
-that hosts machine learning competitions.
-Each competition centers on a dataset and many
-are sponsored by stakeholders who offer prizes
-to the winning solutions.
-The platform helps users to interact
-via forums and shared code,
-fostering both collaboration and competition.
-While leaderboard chasing often spirals out of control,
-with researchers focusing myopically on preprocessing steps
-rather than asking fundamental questions,
-there is also tremendous value in the objectivity of a platform
-that facilitates direct quantitative comparisons
-among competing approaches as well as code sharing
-so that everyone can learn what did and did not work.
-If you want to participate in a Kaggle competition,
-you will first need to register for an account
-(see :numref:`fig_kaggle`).
+[Kaggle](https://www.kaggle.com) là một nền tảng phổ biến
+tổ chức các cuộc thi machine learning.
+Mỗi cuộc thi xoay quanh một bộ dữ liệu và nhiều cuộc thi
+được tài trợ bởi các bên liên quan trao giải thưởng
+cho những giải pháp chiến thắng.
+Nền tảng này giúp người dùng tương tác
+thông qua diễn đàn và mã nguồn được chia sẻ,
+thúc đẩy cả cộng tác lẫn cạnh tranh.
+Mặc dù việc chạy theo bảng xếp hạng thường trở nên mất kiểm soát,
+khi các nhà nghiên cứu chỉ tập trung thiển cận vào các bước tiền xử lý
+thay vì đặt ra những câu hỏi nền tảng,
+nền tảng này vẫn mang lại giá trị to lớn nhờ tính khách quan
+trong việc hỗ trợ so sánh định lượng trực tiếp
+giữa các phương pháp cạnh tranh, cũng như chia sẻ mã nguồn
+để mọi người có thể học được điều gì hiệu quả và điều gì không.
+Nếu muốn tham gia một cuộc thi Kaggle,
+trước tiên bạn cần đăng ký tài khoản
+(xem :numref:`fig_kaggle`).
 
-![The Kaggle website.](../img/kaggle.png)
+![Trang web Kaggle.](../img/kaggle.png)
 :width:`400px`
 :label:`fig_kaggle`
 
-On the house price prediction competition page, as illustrated
-in :numref:`fig_house_pricing`,
-you can find the dataset (under the "Data" tab),
-submit predictions, and see your ranking,
-The URL is right here:
+Trên trang cuộc thi dự đoán giá nhà, như minh họa
+trong :numref:`fig_house_pricing`,
+bạn có thể tìm bộ dữ liệu (trong tab "Data"),
+gửi dự đoán và xem thứ hạng của mình.
+URL ở ngay đây:
 
 > https://www.kaggle.com/c/house-prices-advanced-regression-techniques
 
-![The house price prediction competition page.](../img/house-pricing.png)
+![Trang cuộc thi dự đoán giá nhà.](../img/house-pricing.png)
 :width:`400px`
 :label:`fig_house_pricing`
 
-## Accessing and Reading the Dataset
+## Truy cập và Đọc Bộ dữ liệu
 
-Note that the competition data is separated
-into training and test sets.
-Each record includes the property value of the house
-and attributes such as street type, year of construction,
-roof type, basement condition, etc.
-The features consist of various data types.
-For example, the year of construction
-is represented by an integer,
-the roof type by discrete categorical assignments,
-and other features by floating point numbers.
-And here is where reality complicates things:
-for some examples, some data is altogether missing
-with the missing value marked simply as "na".
-The price of each house is included
-for the training set only
-(it is a competition after all).
-We will want to partition the training set
-to create a validation set,
-but we only get to evaluate our models on the official test set
-after uploading predictions to Kaggle.
-The "Data" tab on the competition tab
-in :numref:`fig_house_pricing`
-has links for downloading the data.
+Lưu ý rằng dữ liệu cuộc thi được chia thành
+tập huấn luyện và tập kiểm thử.
+Mỗi bản ghi bao gồm giá trị bất động sản của ngôi nhà
+và các thuộc tính như loại đường, năm xây dựng,
+loại mái, tình trạng tầng hầm, v.v.
+Các đặc trưng gồm nhiều kiểu dữ liệu khác nhau.
+Ví dụ, năm xây dựng
+được biểu diễn bằng một số nguyên,
+loại mái bằng các nhãn phân loại rời rạc,
+và những đặc trưng khác bằng số dấu phẩy động.
+Và đây là lúc thực tế làm mọi thứ phức tạp hơn:
+đối với một số mẫu, một số dữ liệu bị thiếu hoàn toàn,
+trong đó giá trị thiếu được đánh dấu đơn giản là "na".
+Giá của mỗi ngôi nhà chỉ được bao gồm
+trong tập huấn luyện
+(dù sao đây cũng là một cuộc thi).
+Chúng ta sẽ cần phân chia tập huấn luyện
+để tạo tập validation,
+nhưng chỉ có thể đánh giá các mô hình trên tập kiểm thử chính thức
+sau khi tải dự đoán lên Kaggle.
+Tab "Data" trên trang cuộc thi
+trong :numref:`fig_house_pricing`
+có các liên kết để tải dữ liệu xuống.
 
-To get started, we will [**read in and process the data
-using `pandas`**], which we introduced in :numref:`sec_pandas`.
-For convenience, we can download and cache
-the Kaggle housing dataset.
-If a file corresponding to this dataset already exists in the cache directory and its SHA-1 matches `sha1_hash`, our code will use the cached file to avoid clogging up your Internet with redundant downloads.
+Để bắt đầu, chúng ta sẽ [**đọc và xử lý dữ liệu
+bằng `pandas`**], công cụ mà chúng ta đã giới thiệu trong :numref:`sec_pandas`.
+Để thuận tiện, chúng ta có thể tải xuống và lưu cache
+bộ dữ liệu nhà ở Kaggle.
+Nếu một tệp tương ứng với bộ dữ liệu này đã tồn tại trong thư mục cache và SHA-1 của nó khớp với `sha1_hash`, mã của chúng ta sẽ sử dụng tệp đã cache để tránh làm nghẽn Internet của bạn bằng các lượt tải xuống dư thừa.
 
 ```{.python .input  n=30}
 %%tab all
@@ -168,9 +168,9 @@ class KaggleHouse(d2l.DataModule):
                 sha1_hash='fa19780a7b011d9b009e8bff8e99922a8ee2eb90'))
 ```
 
-The training dataset includes 1460 examples,
-80 features, and one label, while the validation data
-contains 1459 examples and 80 features.
+Bộ dữ liệu huấn luyện gồm 1460 mẫu,
+80 đặc trưng và một nhãn, trong khi dữ liệu validation
+chứa 1459 mẫu và 80 đặc trưng.
 
 ```{.python .input  n=31}
 %%tab all
@@ -179,62 +179,62 @@ print(data.raw_train.shape)
 print(data.raw_val.shape)
 ```
 
-## Data Preprocessing
+## Tiền xử lý Dữ liệu
 
-Let's [**take a look at the first four and final two features
-as well as the label (SalePrice)**] from the first four examples.
+Hãy [**xem bốn đặc trưng đầu tiên và hai đặc trưng cuối cùng
+cùng với nhãn (SalePrice)**] từ bốn mẫu đầu tiên.
 
 ```{.python .input  n=10}
 %%tab all
 print(data.raw_train.iloc[:4, [0, 1, 2, 3, -3, -2, -1]])
 ```
 
-We can see that in each example, the first feature is the identifier.
-This helps the model determine each training example.
-While this is convenient, it does not carry
-any information for prediction purposes.
-Hence, we will remove it from the dataset
-before feeding the data into the model.
-Furthermore, given a wide variety of data types,
-we will need to preprocess the data before we can start modeling.
+Chúng ta có thể thấy rằng trong mỗi mẫu, đặc trưng đầu tiên là mã định danh.
+Điều này giúp mô hình xác định từng mẫu huấn luyện.
+Dù thuận tiện, nó không mang
+bất kỳ thông tin nào phục vụ mục đích dự đoán.
+Do đó, chúng ta sẽ loại bỏ nó khỏi bộ dữ liệu
+trước khi đưa dữ liệu vào mô hình.
+Hơn nữa, do có nhiều kiểu dữ liệu khác nhau,
+chúng ta cần tiền xử lý dữ liệu trước khi bắt đầu xây dựng mô hình.
 
 
-Let's start with the numerical features.
-First, we apply a heuristic,
-[**replacing all missing values
-by the corresponding feature's mean.**]
-Then, to put all features on a common scale,
-we (***standardize* the data by
-rescaling features to zero mean and unit variance**):
+Hãy bắt đầu với các đặc trưng số.
+Trước tiên, chúng ta áp dụng một heuristic,
+[**thay thế mọi giá trị thiếu
+bằng giá trị trung bình của đặc trưng tương ứng.**]
+Sau đó, để đưa mọi đặc trưng về một thang đo chung,
+chúng ta (***chuẩn hóa* dữ liệu bằng cách
+rescale các đặc trưng về trung bình bằng không và phương sai đơn vị**):
 
 $$x \leftarrow \frac{x - \mu}{\sigma},$$
 
-where $\mu$ and $\sigma$ denote mean and standard deviation, respectively.
-To verify that this indeed transforms
-our feature (variable) such that it has zero mean and unit variance,
-note that $E[\frac{x-\mu}{\sigma}] = \frac{\mu - \mu}{\sigma} = 0$
-and that $E[(x-\mu)^2] = (\sigma^2 + \mu^2) - 2\mu^2+\mu^2 = \sigma^2$.
-Intuitively, we standardize the data
-for two reasons.
-First, it proves convenient for optimization.
-Second, because we do not know *a priori*
-which features will be relevant,
-we do not want to penalize coefficients
-assigned to one feature more than any other.
+trong đó $\mu$ và $\sigma$ lần lượt biểu thị trung bình và độ lệch chuẩn.
+Để xác minh rằng điều này thực sự biến đổi
+đặc trưng (biến) của chúng ta sao cho có trung bình bằng không và phương sai đơn vị,
+lưu ý rằng $E[\frac{x-\mu}{\sigma}] = \frac{\mu - \mu}{\sigma} = 0$
+và $E[(x-\mu)^2] = (\sigma^2 + \mu^2) - 2\mu^2+\mu^2 = \sigma^2$.
+Theo trực giác, chúng ta chuẩn hóa dữ liệu
+vì hai lý do.
+Thứ nhất, điều này thuận tiện cho việc optimization.
+Thứ hai, bởi vì chúng ta không biết *a priori*
+đặc trưng nào sẽ liên quan,
+chúng ta không muốn phạt các hệ số
+được gán cho một đặc trưng nhiều hơn bất kỳ đặc trưng nào khác.
 
-[**Next we deal with discrete values.**]
-These include features such as "MSZoning".
-(**We replace them by a one-hot encoding**)
-in the same way that we earlier transformed
-multiclass labels into vectors (see :numref:`subsec_classification-problem`).
-For instance, "MSZoning" assumes the values "RL" and "RM".
-Dropping the "MSZoning" feature,
-two new indicator features
-"MSZoning_RL" and "MSZoning_RM" are created with values being either 0 or 1.
-According to one-hot encoding,
-if the original value of "MSZoning" is "RL",
-then "MSZoning_RL" is 1 and "MSZoning_RM" is 0.
-The `pandas` package does this automatically for us.
+[**Tiếp theo, chúng ta xử lý các giá trị rời rạc.**]
+Chúng bao gồm các đặc trưng như "MSZoning".
+(**Chúng ta thay thế chúng bằng one-hot encoding**)
+theo cùng cách mà trước đó chúng ta đã biến đổi
+các nhãn đa lớp thành vector (xem :numref:`subsec_classification-problem`).
+Ví dụ, "MSZoning" nhận các giá trị "RL" và "RM".
+Sau khi loại bỏ đặc trưng "MSZoning",
+hai đặc trưng chỉ báo mới
+"MSZoning_RL" và "MSZoning_RM" được tạo ra với các giá trị là 0 hoặc 1.
+Theo one-hot encoding,
+nếu giá trị gốc của "MSZoning" là "RL",
+thì "MSZoning_RL" là 1 và "MSZoning_RM" là 0.
+Package `pandas` tự động thực hiện việc này cho chúng ta.
 
 ```{.python .input  n=32}
 %%tab all
@@ -259,8 +259,8 @@ def preprocess(self):
     self.val = features[self.raw_train.shape[0]:].copy()
 ```
 
-You can see that this conversion increases
-the number of features from 79 to 331 (excluding ID and label columns).
+Bạn có thể thấy rằng phép chuyển đổi này làm tăng
+số lượng đặc trưng từ 79 lên 331 (không tính các cột ID và nhãn).
 
 ```{.python .input  n=33}
 %%tab all
@@ -268,32 +268,32 @@ data.preprocess()
 data.train.shape
 ```
 
-## Error Measure
+## Thước đo Sai số
 
-To get started we will train a linear model with squared loss. Not surprisingly, our linear model will not lead to a competition-winning submission but it does provide a sanity check to see whether there is meaningful information in the data. If we cannot do better than random guessing here, then there might be a good chance that we have a data processing bug. And if things work, the linear model will serve as a baseline giving us some intuition about how close the simple model gets to the best reported models, giving us a sense of how much gain we should expect from fancier models.
+Để bắt đầu, chúng ta sẽ huấn luyện một mô hình tuyến tính với squared loss. Không có gì ngạc nhiên, mô hình tuyến tính của chúng ta sẽ không tạo ra một bài nộp chiến thắng trong cuộc thi, nhưng nó cung cấp một kiểm tra hợp lý để xem liệu dữ liệu có chứa thông tin có ý nghĩa hay không. Nếu ở đây chúng ta không thể làm tốt hơn việc đoán ngẫu nhiên, thì rất có thể đã có lỗi trong quá trình xử lý dữ liệu. Và nếu mọi thứ hoạt động, mô hình tuyến tính sẽ đóng vai trò baseline, cho chúng ta trực giác về mức độ gần của mô hình đơn giản này so với các mô hình tốt nhất được báo cáo, từ đó biết được mức cải thiện có thể kỳ vọng từ các mô hình phức tạp hơn.
 
-With house prices, as with stock prices,
-we care about relative quantities
-more than absolute quantities.
-Thus [**we tend to care more about
-the relative error $\frac{y - \hat{y}}{y}$**]
-than about the absolute error $y - \hat{y}$.
-For instance, if our prediction is off by \$100,000
-when estimating the price of a house in rural Ohio,
-where the value of a typical house is \$125,000,
-then we are probably doing a horrible job.
-On the other hand, if we err by this amount
-in Los Altos Hills, California,
-this might represent a stunningly accurate prediction
-(there, the median house price exceeds \$4 million).
+Với giá nhà, cũng như giá cổ phiếu,
+chúng ta quan tâm đến các đại lượng tương đối
+hơn là các đại lượng tuyệt đối.
+Do đó, [**chúng ta thường quan tâm nhiều hơn đến
+sai số tương đối $\frac{y - \hat{y}}{y}$**]
+so với sai số tuyệt đối $y - \hat{y}$.
+Ví dụ, nếu dự đoán của chúng ta sai lệch \$100,000
+khi ước tính giá một ngôi nhà ở vùng nông thôn Ohio,
+nơi giá trị của một ngôi nhà điển hình là \$125,000,
+thì có lẽ chúng ta đang làm rất tệ.
+Mặt khác, nếu sai lệch cùng số tiền này
+tại Los Altos Hills, California,
+đó có thể là một dự đoán chính xác đáng kinh ngạc
+(ở đó, giá nhà trung vị vượt quá \$4 triệu).
 
-(**One way to address this problem is to
-measure the discrepancy in the logarithm of the price estimates.**)
-In fact, this is also the official error measure
-used by the competition to evaluate the quality of submissions.
-After all, a small value $\delta$ for $|\log y - \log \hat{y}| \leq \delta$
-translates into $e^{-\delta} \leq \frac{\hat{y}}{y} \leq e^\delta$.
-This leads to the following root-mean-squared-error between the logarithm of the predicted price and the logarithm of the label price:
+(**Một cách để giải quyết vấn đề này là
+đo chênh lệch trong logarit của các ước lượng giá.**)
+Trên thực tế, đây cũng là thước đo sai số chính thức
+mà cuộc thi sử dụng để đánh giá chất lượng các bài nộp.
+Xét cho cùng, một giá trị nhỏ $\delta$ với $|\log y - \log \hat{y}| \leq \delta$
+tương ứng với $e^{-\delta} \leq \frac{\hat{y}}{y} \leq e^\delta$.
+Điều này dẫn đến root-mean-squared-error sau đây giữa logarit của giá dự đoán và logarit của giá nhãn:
 
 $$\sqrt{\frac{1}{n}\sum_{i=1}^n\left(\log y_i -\log \hat{y}_i\right)^2}.$$
 
@@ -312,23 +312,23 @@ def get_dataloader(self, train):
     return self.get_tensorloader(tensors, train)
 ```
 
-## $K$-Fold Cross-Validation
+## Cross-Validation $K$-Fold
 
-You might recall that we introduced [**cross-validation**]
-in :numref:`subsec_generalization-model-selection`, where we discussed how to deal
-with model selection.
-We will put this to good use to select the model design
-and to adjust the hyperparameters.
-We first need a function that returns
-the $i^\textrm{th}$ fold of the data
-in a $K$-fold cross-validation procedure.
-It proceeds by slicing out the $i^\textrm{th}$ segment
-as validation data and returning the rest as training data.
-Note that this is not the most efficient way of handling data
-and we would definitely do something much smarter
-if our dataset was considerably larger.
-But this added complexity might obfuscate our code unnecessarily
-so we can safely omit it here owing to the simplicity of our problem.
+Bạn có thể nhớ rằng chúng ta đã giới thiệu [**cross-validation**]
+trong :numref:`subsec_generalization-model-selection`, nơi chúng ta đã thảo luận
+cách xử lý việc lựa chọn mô hình.
+Chúng ta sẽ tận dụng kỹ thuật này để chọn thiết kế mô hình
+và điều chỉnh các hyperparameter.
+Trước tiên, chúng ta cần một hàm trả về
+fold thứ $i^\textrm{th}$ của dữ liệu
+trong quy trình cross-validation $K$-fold.
+Hàm này tiến hành bằng cách tách đoạn thứ $i^\textrm{th}$
+làm dữ liệu validation và trả về phần còn lại làm dữ liệu huấn luyện.
+Lưu ý rằng đây không phải là cách xử lý dữ liệu hiệu quả nhất
+và chắc chắn chúng ta sẽ làm điều gì đó thông minh hơn nhiều
+nếu bộ dữ liệu lớn hơn đáng kể.
+Nhưng sự phức tạp bổ sung này có thể làm mã nguồn của chúng ta khó hiểu không cần thiết,
+vì vậy chúng ta có thể bỏ qua nó một cách an toàn ở đây nhờ tính đơn giản của bài toán.
 
 ```{.python .input}
 %%tab all
@@ -342,8 +342,8 @@ def k_fold_data(data, k):
     return rets
 ```
 
-[**The average validation error is returned**]
-when we train $K$ times in the $K$-fold cross-validation.
+[**Sai số validation trung bình được trả về**]
+khi chúng ta huấn luyện $K$ lần trong cross-validation $K$-fold.
 
 ```{.python .input}
 %%tab all
@@ -360,19 +360,19 @@ def k_fold(trainer, data, k, lr):
     return models
 ```
 
-## [**Model Selection**]
+## [**Lựa chọn Mô hình**]
 
-In this example, we pick an untuned set of hyperparameters
-and leave it up to the reader to improve the model.
-Finding a good choice can take time,
-depending on how many variables one optimizes over.
-With a large enough dataset,
-and the normal sorts of hyperparameters,
-$K$-fold cross-validation tends to be
-reasonably resilient against multiple testing.
-However, if we try an unreasonably large number of options
-we might find that our validation
-performance is no longer representative of the true error.
+Trong ví dụ này, chúng ta chọn một tập hyperparameter chưa được tinh chỉnh
+và để người đọc tự cải thiện mô hình.
+Việc tìm ra một lựa chọn tốt có thể mất thời gian,
+tùy thuộc vào số lượng biến mà ta tối ưu.
+Với một tập dữ liệu đủ lớn,
+và các loại hyperparameter thông thường,
+cross-validation $K$-fold thường
+khá vững vàng trước multiple testing.
+Tuy nhiên, nếu thử một số lượng lựa chọn lớn một cách không hợp lý,
+ta có thể thấy rằng hiệu năng validation
+không còn đại diện cho lỗi thực tế.
 
 ```{.python .input}
 %%tab all
@@ -380,26 +380,26 @@ trainer = d2l.Trainer(max_epochs=10)
 models = k_fold(trainer, data, k=5, lr=0.01)
 ```
 
-Notice that sometimes the number of training errors
-for a set of hyperparameters can be very low,
-even as the number of errors on $K$-fold cross-validation
-grows considerably higher.
-This indicates that we are overfitting.
-Throughout training you will want to monitor both numbers.
-Less overfitting might indicate that our data can support a more powerful model.
-Massive overfitting might suggest that we can gain
-by incorporating regularization techniques.
+Lưu ý rằng đôi khi số lỗi training
+đối với một tập hyperparameter có thể rất thấp,
+ngay cả khi số lỗi trên cross-validation $K$-fold
+tăng cao đáng kể.
+Điều này cho thấy chúng ta đang overfitting.
+Trong suốt quá trình training, bạn nên theo dõi cả hai con số.
+Ít overfitting hơn có thể cho thấy dữ liệu của chúng ta có thể hỗ trợ một mô hình mạnh hơn.
+Overfitting nghiêm trọng có thể gợi ý rằng chúng ta có thể cải thiện
+bằng cách áp dụng các kỹ thuật regularization.
 
-##  [**Submitting Predictions on Kaggle**]
+##  [**Gửi Dự đoán lên Kaggle**]
 
-Now that we know what a good choice of hyperparameters should be,
-we might 
-calculate the average predictions 
-on the test set
-by all the $K$ models.
-Saving the predictions in a csv file
-will simplify uploading the results to Kaggle.
-The following code will generate a file called `submission.csv`.
+Bây giờ khi đã biết một lựa chọn hyperparameter tốt nên như thế nào,
+chúng ta có thể 
+tính trung bình các dự đoán
+trên tập test
+từ toàn bộ $K$ mô hình.
+Lưu các dự đoán trong một tệp csv
+sẽ đơn giản hóa việc tải kết quả lên Kaggle.
+Đoạn mã sau sẽ tạo một tệp có tên `submission.csv`.
 
 ```{.python .input}
 %%tab all
@@ -417,55 +417,55 @@ submission = pd.DataFrame({'Id':data.raw_val.Id,
 submission.to_csv('submission.csv', index=False)
 ```
 
-Next, as demonstrated in :numref:`fig_kaggle_submit2`,
-we can submit our predictions on Kaggle
-and see how they compare with the actual house prices (labels)
-on the test set.
-The steps are quite simple:
+Tiếp theo, như được minh họa trong :numref:`fig_kaggle_submit2`,
+chúng ta có thể gửi các dự đoán lên Kaggle
+và xem chúng so sánh như thế nào với giá nhà thực tế (nhãn)
+trong tập test.
+Các bước khá đơn giản:
 
-* Log in to the Kaggle website and visit the house price prediction competition page.
-* Click the “Submit Predictions” or “Late Submission” button.
-* Click the “Upload Submission File” button in the dashed box at the bottom of the page and select the prediction file you wish to upload.
-* Click the “Make Submission” button at the bottom of the page to view your results.
+* Đăng nhập vào trang web Kaggle và truy cập trang cuộc thi dự đoán giá nhà.
+* Nhấp vào nút “Submit Predictions” hoặc “Late Submission”.
+* Nhấp vào nút “Upload Submission File” trong khung nét đứt ở cuối trang và chọn tệp dự đoán bạn muốn tải lên.
+* Nhấp vào nút “Make Submission” ở cuối trang để xem kết quả.
 
-![Submitting data to Kaggle.](../img/kaggle-submit2.png)
+![Gửi dữ liệu lên Kaggle.](../img/kaggle-submit2.png)
 :width:`400px`
 :label:`fig_kaggle_submit2`
 
-## Summary and Discussion
+## Tóm tắt và Thảo luận
 
-Real data often contains a mix of different data types and needs to be preprocessed.
-Rescaling real-valued data to zero mean and unit variance is a good default. So is replacing missing values with their mean.
-Furthermore, transforming categorical features into indicator features allows us to treat them like one-hot vectors.
-When we tend to care more about
-the relative error than about the absolute error,
-we can 
-measure the discrepancy in the logarithm of the prediction.
-To select the model and adjust the hyperparameters,
-we can use $K$-fold cross-validation .
+Dữ liệu thực tế thường chứa sự kết hợp của nhiều kiểu dữ liệu khác nhau và cần được tiền xử lý.
+Chuẩn hóa lại dữ liệu có giá trị thực về trung bình bằng không và phương sai đơn vị là một lựa chọn mặc định tốt. Thay thế các giá trị thiếu bằng giá trị trung bình của chúng cũng vậy.
+Hơn nữa, chuyển đổi các đặc trưng categorical thành các đặc trưng indicator cho phép chúng ta xử lý chúng như các vector one-hot.
+Khi chúng ta có xu hướng quan tâm nhiều hơn đến
+lỗi tương đối thay vì lỗi tuyệt đối,
+chúng ta có thể 
+đo độ chênh lệch trong logarit của dự đoán.
+Để chọn mô hình và điều chỉnh hyperparameter,
+chúng ta có thể sử dụng cross-validation $K$-fold .
 
 
 
-## Exercises
+## Bài tập
 
-1. Submit your predictions for this section to Kaggle. How good are they?
-1. Is it always a good idea to replace missing values by a mean? Hint: can you construct a situation where the values are not missing at random?
-1. Improve the score by tuning the hyperparameters through $K$-fold cross-validation.
-1. Improve the score by improving the model (e.g., layers, weight decay, and dropout).
-1. What happens if we do not standardize the continuous numerical features as we have done in this section?
+1. Gửi các dự đoán của bạn trong phần này lên Kaggle. Chúng tốt đến mức nào?
+1. Có phải lúc nào thay thế các giá trị thiếu bằng giá trị trung bình cũng là một ý tưởng tốt không? Gợi ý: bạn có thể xây dựng một tình huống trong đó các giá trị không bị thiếu ngẫu nhiên không?
+1. Cải thiện điểm số bằng cách tinh chỉnh hyperparameter thông qua cross-validation $K$-fold.
+1. Cải thiện điểm số bằng cách cải thiện mô hình (ví dụ: layers, weight decay và dropout).
+1. Điều gì xảy ra nếu chúng ta không chuẩn hóa các đặc trưng số liên tục như đã làm trong phần này?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/106)
+[Thảo luận](https://discuss.d2l.ai/t/106)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/107)
+[Thảo luận](https://discuss.d2l.ai/t/107)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/237)
+[Thảo luận](https://discuss.d2l.ai/t/237)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17988)
+[Thảo luận](https://discuss.d2l.ai/t/17988)
 :end_tab:

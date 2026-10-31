@@ -3,84 +3,84 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# GPUs
+# GPU
 :label:`sec_use_gpu`
 
-In :numref:`tab_intro_decade`, we illustrated the rapid growth
-of computation over the past two decades.
-In a nutshell, GPU performance has increased
-by a factor of 1000 every decade since 2000.
-This offers great opportunities but it also suggests
-that there was significant demand for such performance.
+Trong :numref:`tab_intro_decade`, chúng tôi đã minh họa sự tăng trưởng nhanh chóng
+của năng lực tính toán trong hai thập kỷ qua.
+Tóm lại, hiệu năng GPU đã tăng
+gấp 1000 lần mỗi thập kỷ kể từ năm 2000.
+Điều này mang lại những cơ hội to lớn, nhưng cũng cho thấy
+đã có nhu cầu đáng kể đối với hiệu năng như vậy.
 
 
-In this section, we begin to discuss how to harness
-this computational performance for your research.
-First by using a single GPU and at a later point,
-how to use multiple GPUs and multiple servers (with multiple GPUs).
+Trong phần này, chúng ta bắt đầu thảo luận cách khai thác
+hiệu năng tính toán này cho nghiên cứu của bạn.
+Trước tiên là sử dụng một GPU đơn lẻ và sau đó,
+cách sử dụng nhiều GPU và nhiều máy chủ (với nhiều GPU).
 
-Specifically, we will discuss how
-to use a single NVIDIA GPU for calculations.
-First, make sure you have at least one NVIDIA GPU installed.
-Then, download the [NVIDIA driver and CUDA](https://developer.nvidia.com/cuda-downloads)
-and follow the prompts to set the appropriate path.
-Once these preparations are complete,
-the `nvidia-smi` command can be used
-to (**view the graphics card information**).
+Cụ thể, chúng ta sẽ thảo luận cách
+sử dụng một GPU NVIDIA đơn lẻ để tính toán.
+Trước hết, hãy bảo đảm bạn đã cài đặt ít nhất một GPU NVIDIA.
+Sau đó, tải xuống [trình điều khiển NVIDIA và CUDA](https://developer.nvidia.com/cuda-downloads)
+và làm theo các lời nhắc để thiết lập đường dẫn phù hợp.
+Sau khi hoàn tất các bước chuẩn bị này,
+có thể sử dụng lệnh `nvidia-smi`
+để (**xem thông tin card đồ họa**).
 
 :begin_tab:`mxnet`
-You might have noticed that a MXNet tensor
-looks almost identical to a NumPy `ndarray`.
-But there are a few crucial differences.
-One of the key features that distinguishes MXNet
-from NumPy is its support for diverse hardware devices.
+Bạn có thể đã nhận thấy rằng một tensor MXNet
+trông gần như giống hệt một `ndarray` NumPy.
+Nhưng có một vài khác biệt quan trọng.
+Một trong những tính năng then chốt giúp phân biệt MXNet
+với NumPy là khả năng hỗ trợ nhiều thiết bị phần cứng khác nhau.
 
-In MXNet, every array has a context.
-So far, by default, all variables
-and associated computation
-have been assigned to the CPU.
-Typically, other contexts might be various GPUs.
-Things can get even hairier when
-we deploy jobs across multiple servers.
-By assigning arrays to contexts intelligently,
-we can minimize the time spent
-transferring data between devices.
-For example, when training neural networks on a server with a GPU,
-we typically prefer for the model's parameters to live on the GPU.
+Trong MXNet, mỗi mảng đều có một context.
+Cho đến nay, theo mặc định, tất cả biến
+và các phép tính liên quan
+đều được gán cho CPU.
+Thông thường, các context khác có thể là nhiều GPU khác nhau.
+Mọi thứ có thể còn phức tạp hơn khi
+chúng ta deploy công việc trên nhiều máy chủ.
+Bằng cách gán mảng cho các context một cách hợp lý,
+chúng ta có thể giảm thiểu thời gian dành cho việc
+truyền dữ liệu giữa các thiết bị.
+Ví dụ, khi huấn luyện mạng nơ-ron trên máy chủ có GPU,
+chúng ta thường muốn các tham số của mô hình nằm trên GPU.
 
-Next, we need to confirm that
-the GPU version of MXNet is installed.
-If a CPU version of MXNet is already installed,
-we need to uninstall it first.
-For example, use the `pip uninstall mxnet` command,
-then install the corresponding MXNet version
-according to your CUDA version.
-Assuming you have CUDA 10.0 installed,
-you can install the MXNet version
-that supports CUDA 10.0 via `pip install mxnet-cu100`.
+Tiếp theo, chúng ta cần xác nhận rằng
+đã cài đặt phiên bản MXNet dành cho GPU.
+Nếu đã cài đặt phiên bản MXNet dành cho CPU,
+trước tiên chúng ta cần gỡ cài đặt nó.
+Ví dụ, sử dụng lệnh `pip uninstall mxnet`,
+sau đó cài đặt phiên bản MXNet tương ứng
+với phiên bản CUDA của bạn.
+Giả sử bạn đã cài đặt CUDA 10.0,
+bạn có thể cài đặt phiên bản MXNet
+hỗ trợ CUDA 10.0 thông qua `pip install mxnet-cu100`.
 :end_tab:
 
 :begin_tab:`pytorch`
-In PyTorch, every array has a device; we often refer it as a *context*.
-So far, by default, all variables
-and associated computation
-have been assigned to the CPU.
-Typically, other contexts might be various GPUs.
-Things can get even hairier when
-we deploy jobs across multiple servers.
-By assigning arrays to contexts intelligently,
-we can minimize the time spent
-transferring data between devices.
-For example, when training neural networks on a server with a GPU,
-we typically prefer for the model's parameters to live on the GPU.
+Trong PyTorch, mỗi mảng đều có một device; chúng ta thường gọi nó là một *context*.
+Cho đến nay, theo mặc định, tất cả biến
+và các phép tính liên quan
+đều được gán cho CPU.
+Thông thường, các context khác có thể là nhiều GPU khác nhau.
+Mọi thứ có thể còn phức tạp hơn khi
+chúng ta deploy công việc trên nhiều máy chủ.
+Bằng cách gán mảng cho các context một cách hợp lý,
+chúng ta có thể giảm thiểu thời gian dành cho việc
+truyền dữ liệu giữa các thiết bị.
+Ví dụ, khi huấn luyện mạng nơ-ron trên máy chủ có GPU,
+chúng ta thường muốn các tham số của mô hình nằm trên GPU.
 :end_tab:
 
-To run the programs in this section,
-you need at least two GPUs.
-Note that this might be extravagant for most desktop computers
-but it is easily available in the cloud, e.g.,
-by using the AWS EC2 multi-GPU instances.
-Almost all other sections do *not* require multiple GPUs, but here we simply wish to illustrate data flow between different devices.
+Để chạy các chương trình trong phần này,
+bạn cần ít nhất hai GPU.
+Lưu ý rằng điều này có thể là quá mức đối với hầu hết máy tính để bàn,
+nhưng lại dễ dàng có được trên đám mây, ví dụ,
+bằng cách sử dụng các instance AWS EC2 nhiều GPU.
+Hầu như tất cả các phần khác đều *không* yêu cầu nhiều GPU, nhưng ở đây chúng ta chỉ muốn minh họa luồng dữ liệu giữa các thiết bị khác nhau.
 
 ```{.python .input}
 %%tab mxnet
@@ -111,38 +111,38 @@ import jax
 from jax import numpy as jnp
 ```
 
-## [**Computing Devices**]
+## [**Thiết bị tính toán**]
 
-We can specify devices, such as CPUs and GPUs,
-for storage and calculation.
-By default, tensors are created in the main memory
-and then the CPU is used for calculations.
+Chúng ta có thể chỉ định các thiết bị, chẳng hạn như CPU và GPU,
+để lưu trữ và tính toán.
+Theo mặc định, tensor được tạo trong bộ nhớ chính
+và sau đó CPU được sử dụng để tính toán.
 
 :begin_tab:`mxnet`
-In MXNet, the CPU and GPU can be indicated by `cpu()` and `gpu()`.
-It should be noted that `cpu()`
-(or any integer in the parentheses)
-means all physical CPUs and memory.
-This means that MXNet's calculations
-will try to use all CPU cores.
-However, `gpu()` only represents one card
-and the corresponding memory.
-If there are multiple GPUs, we use `gpu(i)`
-to represent the $i^\textrm{th}$ GPU ($i$ starts from 0).
-Also, `gpu(0)` and `gpu()` are equivalent.
+Trong MXNet, CPU và GPU có thể được biểu thị bằng `cpu()` và `gpu()`.
+Cần lưu ý rằng `cpu()`
+(hoặc bất kỳ số nguyên nào trong dấu ngoặc đơn)
+có nghĩa là tất cả CPU vật lý và bộ nhớ.
+Điều này có nghĩa là các phép tính của MXNet
+sẽ cố gắng sử dụng tất cả lõi CPU.
+Tuy nhiên, `gpu()` chỉ biểu thị một card
+và bộ nhớ tương ứng.
+Nếu có nhiều GPU, chúng ta dùng `gpu(i)`
+để biểu thị GPU thứ $i^\textrm{th}$ ($i$ bắt đầu từ 0).
+Ngoài ra, `gpu(0)` và `gpu()` là tương đương.
 :end_tab:
 
 :begin_tab:`pytorch`
-In PyTorch, the CPU and GPU can be indicated by `torch.device('cpu')` and `torch.device('cuda')`.
-It should be noted that the `cpu` device
-means all physical CPUs and memory.
-This means that PyTorch's calculations
-will try to use all CPU cores.
-However, a `gpu` device only represents one card
-and the corresponding memory.
-If there are multiple GPUs, we use `torch.device(f'cuda:{i}')`
-to represent the $i^\textrm{th}$ GPU ($i$ starts at 0).
-Also, `gpu:0` and `gpu` are equivalent.
+Trong PyTorch, CPU và GPU có thể được biểu thị bằng `torch.device('cpu')` và `torch.device('cuda')`.
+Cần lưu ý rằng thiết bị `cpu`
+có nghĩa là tất cả CPU vật lý và bộ nhớ.
+Điều này có nghĩa là các phép tính của PyTorch
+sẽ cố gắng sử dụng tất cả lõi CPU.
+Tuy nhiên, một thiết bị `gpu` chỉ biểu thị một card
+và bộ nhớ tương ứng.
+Nếu có nhiều GPU, chúng ta dùng `torch.device(f'cuda:{i}')`
+để biểu thị GPU thứ $i^\textrm{th}$ ($i$ bắt đầu từ 0).
+Ngoài ra, `gpu:0` và `gpu` là tương đương.
 :end_tab:
 
 ```{.python .input}
@@ -181,7 +181,7 @@ def gpu(i=0):  #@save
 cpu(), gpu(), gpu(1)
 ```
 
-We can (**query the number of available GPUs.**)
+Chúng ta có thể (**truy vấn số lượng GPU khả dụng.**)
 
 ```{.python .input}
 %%tab pytorch
@@ -209,8 +209,8 @@ def num_gpus():  #@save
 num_gpus()
 ```
 
-Now we [**define two convenient functions that allow us
-to run code even if the requested GPUs do not exist.**]
+Bây giờ chúng ta [**định nghĩa hai hàm tiện dụng cho phép chạy mã
+ngay cả khi các GPU được yêu cầu không tồn tại.**]
 
 ```{.python .input}
 %%tab all
@@ -227,22 +227,22 @@ def try_all_gpus():  #@save
 try_gpu(), try_gpu(10), try_all_gpus()
 ```
 
-## Tensors and GPUs
+## Tensor và GPU
 
 :begin_tab:`pytorch`
-By default, tensors are created on the CPU.
-We can [**query the device where the tensor is located.**]
+Theo mặc định, tensor được tạo trên CPU.
+Chúng ta có thể [**truy vấn thiết bị nơi tensor được đặt.**]
 :end_tab:
 
 :begin_tab:`mxnet`
-By default, tensors are created on the CPU.
-We can [**query the device where the tensor is located.**]
+Theo mặc định, tensor được tạo trên CPU.
+Chúng ta có thể [**truy vấn thiết bị nơi tensor được đặt.**]
 :end_tab:
 
 :begin_tab:`tensorflow, jax`
-By default, tensors are created on the GPU/TPU if they are available,
-else CPU is used if not available.
-We can [**query the device where the tensor is located.**]
+Theo mặc định, tensor được tạo trên GPU/TPU nếu chúng khả dụng,
+nếu không thì CPU sẽ được sử dụng.
+Chúng ta có thể [**truy vấn thiết bị nơi tensor được đặt.**]
 :end_tab:
 
 ```{.python .input}
@@ -269,23 +269,23 @@ x = jnp.array([1, 2, 3])
 x.device()
 ```
 
-It is important to note that whenever we want
-to operate on multiple terms,
-they need to be on the same device.
-For instance, if we sum two tensors,
-we need to make sure that both arguments
-live on the same device---otherwise the framework
-would not know where to store the result
-or even how to decide where to perform the computation.
+Điều quan trọng cần lưu ý là bất cứ khi nào chúng ta muốn
+thao tác trên nhiều hạng tử,
+chúng cần nằm trên cùng một thiết bị.
+Ví dụ, nếu cộng hai tensor,
+chúng ta cần bảo đảm rằng cả hai đối số
+đều nằm trên cùng một thiết bị---nếu không framework
+sẽ không biết lưu kết quả ở đâu
+hoặc thậm chí quyết định thực hiện phép tính ở đâu.
 
-### Storage on the GPU
+### Lưu trữ trên GPU
 
-There are several ways to [**store a tensor on the GPU.**]
-For example, we can specify a storage device when creating a tensor.
-Next, we create the tensor variable `X` on the first `gpu`.
-The tensor created on a GPU only consumes the memory of this GPU.
-We can use the `nvidia-smi` command to view GPU memory usage.
-In general, we need to make sure that we do not create data that exceeds the GPU memory limit.
+Có một số cách để [**lưu tensor trên GPU.**]
+Ví dụ, chúng ta có thể chỉ định thiết bị lưu trữ khi tạo tensor.
+Tiếp theo, chúng ta tạo biến tensor `X` trên `gpu` đầu tiên.
+Tensor được tạo trên GPU chỉ sử dụng bộ nhớ của GPU này.
+Chúng ta có thể dùng lệnh `nvidia-smi` để xem mức sử dụng bộ nhớ GPU.
+Nói chung, chúng ta cần bảo đảm không tạo dữ liệu vượt quá giới hạn bộ nhớ GPU.
 
 ```{.python .input}
 %%tab mxnet
@@ -313,7 +313,7 @@ X = jax.device_put(jnp.ones((2, 3)), try_gpu())
 X
 ```
 
-Assuming that you have at least two GPUs, the following code will (**create a random tensor, `Y`, on the second GPU.**)
+Giả sử bạn có ít nhất hai GPU, đoạn mã sau sẽ (**tạo một tensor ngẫu nhiên, `Y`, trên GPU thứ hai.**)
 
 ```{.python .input}
 %%tab mxnet
@@ -341,21 +341,21 @@ Y = jax.device_put(jax.random.uniform(jax.random.PRNGKey(0), (2, 3)),
 Y
 ```
 
-### Copying
+### Sao chép
 
-[**If we want to compute `X + Y`,
-we need to decide where to perform this operation.**]
-For instance, as shown in :numref:`fig_copyto`,
-we can transfer `X` to the second GPU
-and perform the operation there.
-*Do not* simply add `X` and `Y`,
-since this will result in an exception.
-The runtime engine would not know what to do:
-it cannot find data on the same device and it fails.
-Since `Y` lives on the second GPU,
-we need to move `X` there before we can add the two.
+[**Nếu muốn tính `X + Y`,
+chúng ta cần quyết định thực hiện phép toán này ở đâu.**]
+Ví dụ, như minh họa trong :numref:`fig_copyto`,
+chúng ta có thể chuyển `X` sang GPU thứ hai
+và thực hiện phép toán ở đó.
+*Đừng* chỉ cộng `X` và `Y`,
+vì điều này sẽ gây ra ngoại lệ.
+Runtime engine sẽ không biết phải làm gì:
+nó không thể tìm thấy dữ liệu trên cùng một thiết bị và thất bại.
+Vì `Y` nằm trên GPU thứ hai,
+chúng ta cần chuyển `X` đến đó trước khi có thể cộng hai tensor.
 
-![Copy data to perform an operation on the same device.](../img/copyto.svg)
+![Sao chép dữ liệu để thực hiện phép toán trên cùng một thiết bị.](../img/copyto.svg)
 :label:`fig_copyto`
 
 ```{.python .input}
@@ -387,7 +387,7 @@ print(X)
 print(Z)
 ```
 
-Now that [**the data (both `Z` and `Y`) are on the same GPU), we can add them up.**]
+Bây giờ [**dữ liệu (cả `Z` và `Y`) đều nằm trên cùng một GPU, chúng ta có thể cộng chúng lại.**]
 
 ```{.python .input}
 %%tab all
@@ -395,37 +395,37 @@ Y + Z
 ```
 
 :begin_tab:`mxnet`
-Imagine that your variable `Z` already lives on your second GPU.
-What happens if we still call  `Z.copyto(gpu(1))`?
-It will make a copy and allocate new memory,
-even though that variable already lives on the desired device.
-There are times where, depending on the environment our code is running in,
-two variables may already live on the same device.
-So we want to make a copy only if the variables
-currently live in different devices.
-In these cases, we can call `as_in_ctx`.
-If the variable already live in the specified device
-then this is a no-op.
-Unless you specifically want to make a copy,
-`as_in_ctx` is the method of choice.
+Hãy tưởng tượng biến `Z` của bạn đã nằm trên GPU thứ hai.
+Điều gì xảy ra nếu chúng ta vẫn gọi `Z.copyto(gpu(1))`?
+Nó sẽ tạo một bản sao và cấp phát bộ nhớ mới,
+mặc dù biến đó đã nằm trên thiết bị mong muốn.
+Đôi khi, tùy thuộc vào môi trường mà mã của chúng ta đang chạy,
+hai biến có thể đã nằm trên cùng một thiết bị.
+Vì vậy, chúng ta chỉ muốn tạo bản sao nếu các biến
+hiện đang nằm trên các thiết bị khác nhau.
+Trong các trường hợp này, chúng ta có thể gọi `as_in_ctx`.
+Nếu biến đã nằm trên thiết bị được chỉ định
+thì đây là một no-op.
+Trừ khi bạn đặc biệt muốn tạo bản sao,
+`as_in_ctx` là phương thức nên dùng.
 :end_tab:
 
 :begin_tab:`pytorch`
-But what if your variable `Z` already lived on your second GPU?
-What happens if we still call `Z.cuda(1)`?
-It will return `Z` instead of making a copy and allocating new memory.
+Nhưng nếu biến `Z` của bạn đã nằm trên GPU thứ hai thì sao?
+Điều gì xảy ra nếu chúng ta vẫn gọi `Z.cuda(1)`?
+Nó sẽ trả về `Z` thay vì tạo một bản sao và cấp phát bộ nhớ mới.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Imagine that your variable `Z` already lives on your second GPU.
-What happens if we still call `Z2 = Z` under the same device scope?
-It will return `Z` instead of making a copy and allocating new memory.
+Hãy tưởng tượng biến `Z` của bạn đã nằm trên GPU thứ hai.
+Điều gì xảy ra nếu chúng ta vẫn gọi `Z2 = Z` trong cùng device scope?
+Nó sẽ trả về `Z` thay vì tạo một bản sao và cấp phát bộ nhớ mới.
 :end_tab:
 
 :begin_tab:`jax`
-Imagine that your variable `Z` already lives on your second GPU.
-What happens if we still call `Z2 = Z` under the same device scope?
-It will return `Z` instead of making a copy and allocating new memory.
+Hãy tưởng tượng biến `Z` của bạn đã nằm trên GPU thứ hai.
+Điều gì xảy ra nếu chúng ta vẫn gọi `Z2 = Z` trong cùng device scope?
+Nó sẽ trả về `Z` thay vì tạo một bản sao và cấp phát bộ nhớ mới.
 :end_tab:
 
 ```{.python .input}
@@ -451,44 +451,44 @@ Z2 = jax.device_put(Z, try_gpu(1))
 Z2 is Z
 ```
 
-### Side Notes
+### Ghi chú thêm
 
-People use GPUs to do machine learning
-because they expect them to be fast.
-But transferring variables between devices is slow: much slower than computation.
-So we want you to be 100% certain
-that you want to do something slow before we let you do it.
-If the deep learning framework just did the copy automatically
-without crashing then you might not realize
-that you had written some slow code.
+Mọi người sử dụng GPU để làm machine learning
+vì họ kỳ vọng chúng sẽ nhanh.
+Nhưng việc truyền biến giữa các thiết bị lại chậm: chậm hơn nhiều so với tính toán.
+Vì vậy, chúng tôi muốn bạn chắc chắn 100%
+rằng bạn muốn làm một việc chậm trước khi cho phép bạn thực hiện.
+Nếu framework deep learning tự động sao chép
+mà không gặp lỗi thì bạn có thể không nhận ra
+rằng mình đã viết một đoạn mã chậm.
 
-Transferring data is not only slow, it also makes parallelization a lot more difficult,
-since we have to wait for data to be sent (or rather to be received)
-before we can proceed with more operations.
-This is why copy operations should be taken with great care.
-As a rule of thumb, many small operations
-are much worse than one big operation.
-Moreover, several operations at a time
-are much better than many single operations interspersed in the code
-unless you know what you are doing.
-This is the case since such operations can block if one device
-has to wait for the other before it can do something else.
-It is a bit like ordering your coffee in a queue
-rather than pre-ordering it by phone
-and finding out that it is ready when you are.
+Việc truyền dữ liệu không chỉ chậm mà còn khiến việc song song hóa trở nên khó khăn hơn nhiều,
+vì chúng ta phải chờ dữ liệu được gửi đi (hay chính xác hơn là được nhận)
+trước khi có thể tiếp tục thực hiện thêm các thao tác.
+Đây là lý do các thao tác sao chép cần được thực hiện hết sức cẩn thận.
+Theo một quy tắc kinh nghiệm, nhiều thao tác nhỏ
+tệ hơn rất nhiều so với một thao tác lớn.
+Hơn nữa, thực hiện nhiều thao tác cùng lúc
+tốt hơn nhiều so với nhiều thao tác đơn lẻ xen kẽ trong mã
+trừ khi bạn biết rõ mình đang làm gì.
+Điều này xảy ra vì các thao tác như vậy có thể bị chặn nếu một thiết bị
+phải chờ thiết bị kia trước khi có thể làm việc khác.
+Điều này hơi giống như xếp hàng gọi cà phê
+thay vì đặt trước qua điện thoại
+và biết rằng cà phê đã sẵn sàng khi bạn đến.
 
-Last, when we print tensors or convert tensors to the NumPy format,
-if the data is not in the main memory,
-the framework will copy it to the main memory first,
-resulting in additional transmission overhead.
-Even worse, it is now subject to the dreaded global interpreter lock
-that makes everything wait for Python to complete.
+Cuối cùng, khi chúng ta in tensor hoặc chuyển đổi tensor sang định dạng NumPy,
+nếu dữ liệu không nằm trong bộ nhớ chính,
+framework trước tiên sẽ sao chép dữ liệu vào bộ nhớ chính,
+dẫn đến thêm overhead truyền dữ liệu.
+Tệ hơn nữa, lúc này dữ liệu chịu ảnh hưởng của global interpreter lock đáng sợ,
+khiến mọi thứ phải chờ Python hoàn tất.
 
 
-## [**Neural Networks and GPUs**]
+## [**Neural Networks và GPUs**]
 
-Similarly, a neural network model can specify devices.
-The following code puts the model parameters on the GPU.
+Tương tự, một mô hình neural network có thể chỉ định thiết bị.
+Đoạn mã sau đặt các tham số mô hình lên GPU.
 
 ```{.python .input}
 %%tab mxnet
@@ -520,11 +520,11 @@ x = jax.random.normal(key1, (10,))  # Dummy input
 params = net.init(key2, x)  # Initialization call
 ```
 
-We will see many more examples of
-how to run models on GPUs in the following chapters,
-simply because the models will become somewhat more computationally intensive.
+Chúng ta sẽ thấy thêm nhiều ví dụ
+về cách chạy mô hình trên GPU trong các chương sau,
+đơn giản vì các mô hình sẽ trở nên chuyên sâu về tính toán hơn đôi chút.
 
-For example, when the input is a tensor on the GPU, the model will calculate the result on the same GPU.
+Ví dụ, khi đầu vào là một tensor trên GPU, mô hình sẽ tính kết quả trên chính GPU đó.
 
 ```{.python .input}
 %%tab mxnet, pytorch, tensorflow
@@ -536,7 +536,7 @@ net(X)
 net.apply(params, x)
 ```
 
-Let's (**confirm that the model parameters are stored on the same GPU.**)
+Hãy (**xác nhận rằng các tham số mô hình được lưu trữ trên cùng một GPU.**)
 
 ```{.python .input}
 %%tab mxnet
@@ -558,7 +558,7 @@ net.layers[0].weights[0].device, net.layers[0].weights[1].device
 print(jax.tree_util.tree_map(lambda x: x.device(), params))
 ```
 
-Let the trainer support GPU.
+Hãy để trainer hỗ trợ GPU.
 
 ```{.python .input}
 %%tab mxnet
@@ -617,49 +617,49 @@ def prepare_batch(self, batch):
     return batch
 ```
 
-In short, as long as all data and parameters are on the same device, we can learn models efficiently. In the following chapters we will see several such examples.
+Tóm lại, miễn là tất cả dữ liệu và tham số nằm trên cùng một thiết bị, chúng ta có thể huấn luyện mô hình hiệu quả. Trong các chương tiếp theo, chúng ta sẽ thấy một số ví dụ như vậy.
 
-## Summary
+## Tóm tắt
 
-We can specify devices for storage and calculation, such as the CPU or GPU.
-  By default, data is created in the main memory
-  and then uses the CPU for calculations.
-The deep learning framework requires all input data for calculation
-  to be on the same device,
-  be it CPU or the same GPU.
-You can lose significant performance by moving data without care.
-  A typical mistake is as follows: computing the loss
-  for every minibatch on the GPU and reporting it back
-  to the user on the command line (or logging it in a NumPy `ndarray`)
-  will trigger a global interpreter lock which stalls all GPUs.
-  It is much better to allocate memory
-  for logging inside the GPU and only move larger logs.
+Chúng ta có thể chỉ định thiết bị để lưu trữ và tính toán, chẳng hạn như CPU hoặc GPU.
+  Theo mặc định, dữ liệu được tạo trong bộ nhớ chính
+  rồi sử dụng CPU để tính toán.
+Framework deep learning yêu cầu tất cả dữ liệu đầu vào cho tính toán
+  phải nằm trên cùng một thiết bị,
+  dù là CPU hay cùng một GPU.
+Bạn có thể mất hiệu năng đáng kể nếu di chuyển dữ liệu thiếu cẩn thận.
+  Một lỗi điển hình như sau: tính loss
+  cho mọi minibatch trên GPU rồi báo cáo lại
+  cho người dùng trên command line (hoặc ghi log vào một NumPy `ndarray`)
+  sẽ kích hoạt global interpreter lock, làm tất cả GPU bị đình trệ.
+  Tốt hơn nhiều là cấp phát bộ nhớ
+  để ghi log bên trong GPU và chỉ di chuyển các log lớn hơn.
 
-## Exercises
+## Bài tập
 
-1. Try a larger computation task, such as the multiplication of large matrices,
-   and see the difference in speed between the CPU and GPU.
-   What about a task with a small number of calculations?
-1. How should we read and write model parameters on the GPU?
-1. Measure the time it takes to compute 1000
-   matrix--matrix multiplications of $100 \times 100$ matrices
-   and log the Frobenius norm of the output matrix one result at a time. Compare it with keeping a log on the GPU and transferring only the final result.
-1. Measure how much time it takes to perform two matrix--matrix multiplications
-   on two GPUs at the same time. Compare it with computing in in sequence
-   on one GPU. Hint: you should see almost linear scaling.
+1. Hãy thử một tác vụ tính toán lớn hơn, chẳng hạn như nhân các ma trận lớn,
+   và xem sự khác biệt về tốc độ giữa CPU và GPU.
+   Còn một tác vụ có số lượng phép tính nhỏ thì sao?
+1. Chúng ta nên đọc và ghi các tham số mô hình trên GPU như thế nào?
+1. Đo thời gian cần thiết để tính 1000
+   phép nhân ma trận--ma trận của các ma trận $100 \times 100$
+   và ghi log chuẩn Frobenius của ma trận đầu ra từng kết quả một. So sánh với việc giữ log trên GPU và chỉ truyền kết quả cuối cùng.
+1. Đo thời gian cần thiết để thực hiện hai phép nhân ma trận--ma trận
+   trên hai GPU cùng lúc. So sánh với việc tính tuần tự
+   trên một GPU. Gợi ý: bạn sẽ thấy khả năng mở rộng gần như tuyến tính.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/62)
+[Thảo luận](https://discuss.d2l.ai/t/62)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/63)
+[Thảo luận](https://discuss.d2l.ai/t/63)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/270)
+[Thảo luận](https://discuss.d2l.ai/t/270)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17995)
+[Thảo luận](https://discuss.d2l.ai/t/17995)
 :end_tab:

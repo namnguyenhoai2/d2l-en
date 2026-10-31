@@ -3,30 +3,30 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Numerical Stability and Initialization
+# Tính ổn định số và Khởi tạo
 :label:`sec_numerical_stability`
 
 
-Thus far, every model that we have implemented
-required that we initialize its parameters
-according to some pre-specified distribution.
-Until now, we took the initialization scheme for granted,
-glossing over the details of how these choices are made.
-You might have even gotten the impression that these choices
-are not especially important.
-On the contrary, the choice of initialization scheme
-plays a significant role in neural network learning,
-and it can be crucial for maintaining numerical stability.
-Moreover, these choices can be tied up in interesting ways
-with the choice of the nonlinear activation function.
-Which function we choose and how we initialize parameters
-can determine how quickly our optimization algorithm converges.
-Poor choices here can cause us to encounter
-exploding or vanishing gradients while training.
-In this section, we delve into these topics in greater detail
-and discuss some useful heuristics
-that you will find useful
-throughout your career in deep learning.
+Cho đến nay, mọi mô hình mà chúng ta đã triển khai
+đều yêu cầu khởi tạo các tham số
+theo một phân phối được chỉ định trước nào đó.
+Cho đến lúc này, chúng ta đã mặc nhiên chấp nhận sơ đồ khởi tạo,
+bỏ qua các chi tiết về cách đưa ra những lựa chọn này.
+Bạn thậm chí có thể đã có ấn tượng rằng những lựa chọn này
+không đặc biệt quan trọng.
+Ngược lại, việc lựa chọn sơ đồ khởi tạo
+đóng vai trò đáng kể trong quá trình học của mạng nơ-ron,
+và có thể là yếu tố then chốt để duy trì tính ổn định số.
+Hơn nữa, các lựa chọn này có thể liên hệ theo những cách thú vị
+với việc lựa chọn hàm kích hoạt phi tuyến.
+Hàm chúng ta chọn và cách khởi tạo tham số
+có thể quyết định tốc độ hội tụ của thuật toán tối ưu hóa.
+Những lựa chọn kém ở đây có thể khiến chúng ta gặp phải
+gradient bùng nổ hoặc tiêu biến trong khi huấn luyện.
+Trong phần này, chúng ta sẽ tìm hiểu các chủ đề này chi tiết hơn
+và thảo luận một số kinh nghiệm thực hành hữu ích
+mà bạn sẽ thấy hữu ích
+trong suốt sự nghiệp deep learning của mình.
 
 ```{.python .input}
 %%tab mxnet
@@ -59,66 +59,66 @@ from jax import numpy as jnp
 from jax import grad, vmap
 ```
 
-## Vanishing and Exploding Gradients
+## Gradient tiêu biến và bùng nổ
 
-Consider a deep network with $L$ layers,
-input $\mathbf{x}$ and output $\mathbf{o}$.
-With each layer $l$ defined by a transformation $f_l$
-parametrized by weights $\mathbf{W}^{(l)}$,
-whose hidden layer output is $\mathbf{h}^{(l)}$ (let $\mathbf{h}^{(0)} = \mathbf{x}$),
-our network can be expressed as:
+Xét một mạng sâu có $L$ lớp,
+đầu vào $\mathbf{x}$ và đầu ra $\mathbf{o}$.
+Với mỗi lớp $l$ được xác định bởi một phép biến đổi $f_l$
+được tham số hóa bởi các trọng số $\mathbf{W}^{(l)}$,
+có đầu ra lớp ẩn là $\mathbf{h}^{(l)}$ (đặt $\mathbf{h}^{(0)} = \mathbf{x}$),
+mạng của chúng ta có thể được biểu diễn như sau:
 
 $$\mathbf{h}^{(l)} = f_l (\mathbf{h}^{(l-1)}) \textrm{ and thus } \mathbf{o} = f_L \circ \cdots \circ f_1(\mathbf{x}).$$
 
-If all the hidden layer output and the input are vectors,
-we can write the gradient of $\mathbf{o}$ with respect to
-any set of parameters $\mathbf{W}^{(l)}$ as follows:
+Nếu tất cả đầu ra lớp ẩn và đầu vào đều là vector,
+ta có thể viết gradient của $\mathbf{o}$ theo
+bất kỳ tập tham số $\mathbf{W}^{(l)}$ nào như sau:
 
 $$\partial_{\mathbf{W}^{(l)}} \mathbf{o} = \underbrace{\partial_{\mathbf{h}^{(L-1)}} \mathbf{h}^{(L)}}_{ \mathbf{M}^{(L)} \stackrel{\textrm{def}}{=}} \cdots \underbrace{\partial_{\mathbf{h}^{(l)}} \mathbf{h}^{(l+1)}}_{ \mathbf{M}^{(l+1)} \stackrel{\textrm{def}}{=}} \underbrace{\partial_{\mathbf{W}^{(l)}} \mathbf{h}^{(l)}}_{ \mathbf{v}^{(l)} \stackrel{\textrm{def}}{=}}.$$
 
-In other words, this gradient is
-the product of $L-l$ matrices
+Nói cách khác, gradient này là
+tích của $L-l$ ma trận
 $\mathbf{M}^{(L)} \cdots \mathbf{M}^{(l+1)}$
-and the gradient vector $\mathbf{v}^{(l)}$.
-Thus we are susceptible to the same
-problems of numerical underflow that often crop up
-when multiplying together too many probabilities.
-When dealing with probabilities, a common trick is to
-switch into log-space, i.e., shifting
-pressure from the mantissa to the exponent
-of the numerical representation.
-Unfortunately, our problem above is more serious:
-initially the matrices $\mathbf{M}^{(l)}$ may have a wide variety of eigenvalues.
-They might be small or large, and
-their product might be *very large* or *very small*.
+và vector gradient $\mathbf{v}^{(l)}$.
+Do đó, chúng ta dễ gặp phải cùng các
+vấn đề tràn dưới số học thường xuất hiện
+khi nhân quá nhiều xác suất với nhau.
+Khi xử lý xác suất, một thủ thuật phổ biến là
+chuyển sang không gian log, tức là chuyển
+áp lực từ phần định trị sang số mũ
+của biểu diễn số.
+Đáng tiếc, vấn đề ở trên của chúng ta nghiêm trọng hơn:
+ban đầu, các ma trận $\mathbf{M}^{(l)}$ có thể có rất nhiều trị riêng khác nhau.
+Chúng có thể nhỏ hoặc lớn, và
+tích của chúng có thể *rất lớn* hoặc *rất nhỏ*.
 
-The risks posed by unstable gradients
-go beyond numerical representation.
-Gradients of unpredictable magnitude
-also threaten the stability of our optimization algorithms.
-We may be facing parameter updates that are either
-(i) excessively large, destroying our model
-(the *exploding gradient* problem);
-or (ii) excessively small
-(the *vanishing gradient* problem),
-rendering learning impossible as parameters
-hardly move on each update.
+Các rủi ro do gradient không ổn định gây ra
+không chỉ dừng ở biểu diễn số.
+Gradient có độ lớn khó đoán
+cũng đe dọa sự ổn định của các thuật toán tối ưu hóa.
+Chúng ta có thể phải đối mặt với các cập nhật tham số
+hoặc (i) quá lớn, phá hủy mô hình
+(vấn đề *gradient bùng nổ*);
+hoặc (ii) quá nhỏ
+(vấn đề *gradient tiêu biến*),
+khiến việc học trở nên bất khả thi vì các tham số
+hầu như không thay đổi ở mỗi lần cập nhật.
 
 
-### (**Vanishing Gradients**)
+### (**Gradient tiêu biến**)
 
-One frequent culprit causing the vanishing gradient problem
-is the choice of the activation function $\sigma$
-that is appended following each layer's linear operations.
-Historically, the sigmoid function
-$1/(1 + \exp(-x))$ (introduced in :numref:`sec_mlp`)
-was popular because it resembles a thresholding function.
-Since early artificial neural networks were inspired
-by biological neural networks,
-the idea of neurons that fire either *fully* or *not at all*
-(like biological neurons) seemed appealing.
-Let's take a closer look at the sigmoid
-to see why it can cause vanishing gradients.
+Một nguyên nhân thường gặp gây ra vấn đề gradient tiêu biến
+là lựa chọn hàm kích hoạt $\sigma$
+được thêm sau các phép toán tuyến tính của mỗi lớp.
+Trong lịch sử, hàm sigmoid
+$1/(1 + \exp(-x))$ (được giới thiệu trong :numref:`sec_mlp`)
+từng phổ biến vì nó giống một hàm ngưỡng.
+Do các mạng nơ-ron nhân tạo thời kỳ đầu được lấy cảm hứng
+từ mạng nơ-ron sinh học,
+ý tưởng về các nơ-ron hoặc kích hoạt *hoàn toàn* hoặc *không hề*
+(như các nơ-ron sinh học) có vẻ hấp dẫn.
+Hãy xem kỹ hơn sigmoid
+để hiểu tại sao nó có thể gây ra gradient tiêu biến.
 
 ```{.python .input}
 %%tab mxnet
@@ -159,34 +159,34 @@ d2l.plot(x, [y, grad_sigmoid(x)],
          legend=['sigmoid', 'gradient'], figsize=(4.5, 2.5))
 ```
 
-As you can see, (**the sigmoid's gradient vanishes
-both when its inputs are large and when they are small**).
-Moreover, when backpropagating through many layers,
-unless we are in the Goldilocks zone, where
-the inputs to many of the sigmoids are close to zero,
-the gradients of the overall product may vanish.
-When our network boasts many layers,
-unless we are careful, the gradient
-will likely be cut off at some layer.
-Indeed, this problem used to plague deep network training.
-Consequently, ReLUs, which are more stable
-(but less neurally plausible),
-have emerged as the default choice for practitioners.
+Như bạn có thể thấy, (**gradient của sigmoid tiêu biến
+cả khi đầu vào của nó lớn lẫn khi đầu vào của nó nhỏ**).
+Hơn nữa, khi lan truyền ngược qua nhiều lớp,
+trừ khi chúng ta nằm trong vùng Goldilocks, nơi
+đầu vào của nhiều sigmoid gần bằng không,
+gradient của tích tổng thể có thể tiêu biến.
+Khi mạng của chúng ta có nhiều lớp,
+trừ khi cẩn thận, gradient
+có khả năng sẽ bị chặn tại một lớp nào đó.
+Thực tế, vấn đề này từng gây khó khăn cho việc huấn luyện mạng sâu.
+Do đó, ReLU, vốn ổn định hơn
+(nhưng kém hợp lý hơn về mặt sinh học thần kinh),
+đã trở thành lựa chọn mặc định của các practitioner.
 
 
-### [**Exploding Gradients**]
+### [**Gradient bùng nổ**]
 
-The opposite problem, when gradients explode,
-can be similarly vexing.
-To illustrate this a bit better,
-we draw 100 Gaussian random matrices
-and multiply them with some initial matrix.
-For the scale that we picked
-(the choice of the variance $\sigma^2=1$),
-the matrix product explodes.
-When this happens because of the initialization
-of a deep network, we have no chance of getting
-a gradient descent optimizer to converge.
+Vấn đề ngược lại, khi gradient bùng nổ,
+cũng có thể gây bối rối tương tự.
+Để minh họa rõ hơn,
+chúng ta lấy 100 ma trận ngẫu nhiên Gaussian
+và nhân chúng với một ma trận ban đầu.
+Với thang đo mà chúng ta đã chọn
+(lựa chọn phương sai $\sigma^2=1$),
+tích ma trận bùng nổ.
+Khi điều này xảy ra do việc khởi tạo
+một mạng sâu, chúng ta không có cơ hội nào để khiến
+một optimizer gradient descent hội tụ.
 
 ```{.python .input}
 %%tab mxnet
@@ -225,98 +225,97 @@ for i in range(100):
 print('after multiplying 100 matrices\n', M)
 ```
 
-### Breaking the Symmetry
+### Phá vỡ tính đối xứng
 
-Another problem in neural network design
-is the symmetry inherent in their parametrization.
-Assume that we have a simple MLP
-with one hidden layer and two units.
-In this case, we could permute the weights $\mathbf{W}^{(1)}$
-of the first layer and likewise permute
-the weights of the output layer
-to obtain the same function.
-There is nothing special differentiating
-the first and second hidden units.
-In other words, we have permutation symmetry
-among the hidden units of each layer.
+Một vấn đề khác trong thiết kế mạng nơ-ron
+là tính đối xứng vốn có trong quá trình tham số hóa chúng.
+Giả sử chúng ta có một MLP đơn giản
+với một lớp ẩn và hai đơn vị.
+Trong trường hợp này, ta có thể hoán vị các trọng số $\mathbf{W}^{(1)}$
+của lớp thứ nhất và tương tự hoán vị
+các trọng số của lớp đầu ra
+để thu được cùng một hàm.
+Không có gì đặc biệt để phân biệt
+đơn vị ẩn thứ nhất và thứ hai.
+Nói cách khác, ta có tính đối xứng hoán vị
+giữa các đơn vị ẩn của mỗi lớp.
 
-This is more than just a theoretical nuisance.
-Consider the aforementioned one-hidden-layer MLP
-with two hidden units.
-For illustration,
-suppose that the output layer transforms the two hidden units into only one output unit.
-Imagine what would happen if we initialized
-all the parameters of the hidden layer
-as $\mathbf{W}^{(1)} = c$ for some constant $c$.
-In this case, during forward propagation
-either hidden unit takes the same inputs and parameters
-producing the same activation
-which is fed to the output unit.
-During backpropagation,
-differentiating the output unit with respect to parameters $\mathbf{W}^{(1)}$ gives a gradient all of whose elements take the same value.
-Thus, after gradient-based iteration (e.g., minibatch stochastic gradient descent),
-all the elements of $\mathbf{W}^{(1)}$ still take the same value.
-Such iterations would
-never *break the symmetry* on their own
-and we might never be able to realize
-the network's expressive power.
-The hidden layer would behave
-as if it had only a single unit.
-Note that while minibatch stochastic gradient descent would not break this symmetry,
-dropout regularization (to be introduced later) would!
-
-
-## Parameter Initialization
-
-One way of addressing---or at least mitigating---the
-issues raised above is through careful initialization.
-As we will see later,
-additional care during optimization
-and suitable regularization can further enhance stability.
+Đây không chỉ là một phiền toái về mặt lý thuyết.
+Xét MLP một lớp ẩn với hai đơn vị ẩn đã đề cập ở trên.
+Để minh họa,
+giả sử lớp đầu ra biến đổi hai đơn vị ẩn thành chỉ một đơn vị đầu ra.
+Hãy hình dung điều gì xảy ra nếu chúng ta khởi tạo
+tất cả tham số của lớp ẩn
+là $\mathbf{W}^{(1)} = c$ với một hằng số $c$ nào đó.
+Trong trường hợp này, khi lan truyền xuôi,
+mỗi đơn vị ẩn nhận cùng đầu vào và tham số
+nên tạo ra cùng một kích hoạt
+được đưa vào đơn vị đầu ra.
+Trong quá trình lan truyền ngược,
+lấy đạo hàm của đơn vị đầu ra theo các tham số $\mathbf{W}^{(1)}$ sẽ cho gradient mà mọi phần tử đều có cùng giá trị.
+Vì vậy, sau mỗi lần lặp dựa trên gradient (ví dụ: minibatch stochastic gradient descent),
+mọi phần tử của $\mathbf{W}^{(1)}$ vẫn có cùng giá trị.
+Các lần lặp như vậy
+sẽ không bao giờ tự *phá vỡ tính đối xứng*
+và chúng ta có thể không bao giờ khai thác được
+khả năng biểu đạt của mạng.
+Lớp ẩn sẽ hoạt động
+như thể nó chỉ có một đơn vị duy nhất.
+Lưu ý rằng mặc dù minibatch stochastic gradient descent không phá vỡ tính đối xứng này,
+regularization dropout (sẽ được giới thiệu sau) thì có thể!
 
 
-### Default Initialization
+## Khởi tạo tham số
 
-In the previous sections, e.g., in :numref:`sec_linear_concise`,
-we used a normal distribution
-to initialize the values of our weights.
-If we do not specify the initialization method, the framework will
-use a default random initialization method, which often works well in practice
-for moderate problem sizes.
+Một cách để giải quyết---hoặc ít nhất giảm nhẹ---
+các vấn đề nêu trên là khởi tạo cẩn thận.
+Như chúng ta sẽ thấy sau,
+sự cẩn thận bổ sung trong quá trình tối ưu hóa
+và regularization phù hợp có thể cải thiện thêm tính ổn định.
 
+
+### Khởi tạo mặc định
+
+Trong các phần trước, ví dụ trong :numref:`sec_linear_concise`,
+chúng ta đã dùng phân phối chuẩn
+để khởi tạo giá trị các trọng số.
+Nếu không chỉ định phương thức khởi tạo, framework sẽ
+dùng phương thức khởi tạo ngẫu nhiên mặc định, thường hoạt động tốt trong thực tế
+với các bài toán có quy mô vừa phải.
 
 
 
 
 
-### Xavier Initialization
+
+### Khởi tạo Xavier
 :label:`subsec_xavier`
 
-Let's look at the scale distribution of
-an output $o_{i}$ for some fully connected layer
-*without nonlinearities*.
-With $n_\textrm{in}$ inputs $x_j$
-and their associated weights $w_{ij}$ for this layer,
-an output is given by
+Hãy xem xét phân phối thang đo của
+một đầu ra $o_{i}$ cho một lớp fully connected nào đó
+*không có phi tuyến tính*.
+Với $n_\textrm{in}$ đầu vào $x_j$
+và các trọng số tương ứng $w_{ij}$ của lớp này,
+một đầu ra được cho bởi
 
 $$o_{i} = \sum_{j=1}^{n_\textrm{in}} w_{ij} x_j.$$
 
-The weights $w_{ij}$ are all drawn
-independently from the same distribution.
-Furthermore, let's assume that this distribution
-has zero mean and variance $\sigma^2$.
-Note that this does not mean that the distribution has to be Gaussian,
-just that the mean and variance need to exist.
-For now, let's assume that the inputs to the layer $x_j$
-also have zero mean and variance $\gamma^2$
-and that they are independent of $w_{ij}$ and independent of each other.
-In this case, we can compute the mean of $o_i$:
+Các trọng số $w_{ij}$ đều được lấy mẫu
+độc lập từ cùng một phân phối.
+Hơn nữa, giả sử rằng phân phối này
+có trung bình bằng không và phương sai $\sigma^2$.
+Lưu ý rằng điều này không có nghĩa phân phối phải là Gaussian,
+mà chỉ cần trung bình và phương sai tồn tại.
+Hiện tại, giả sử rằng các đầu vào của lớp $x_j$
+cũng có trung bình bằng không và phương sai $\gamma^2$
+và chúng độc lập với $w_{ij}$ cũng như độc lập với nhau.
+Trong trường hợp này, ta có thể tính trung bình của $o_i$:
 
 $$
 \begin{aligned}
     E[o_i] & = \sum_{j=1}^{n_\textrm{in}} E[w_{ij} x_j] \\&= \sum_{j=1}^{n_\textrm{in}} E[w_{ij}] E[x_j] \\&= 0, \end{aligned}$$
 
-and the variance:
+và phương sai:
 
 $$
 \begin{aligned}
@@ -327,18 +326,18 @@ $$
 \end{aligned}
 $$
 
-One way to keep the variance fixed
-is to set $n_\textrm{in} \sigma^2 = 1$.
-Now consider backpropagation.
-There we face a similar problem,
-albeit with gradients being propagated from the layers closer to the output.
-Using the same reasoning as for forward propagation,
-we see that the gradients' variance can blow up
-unless $n_\textrm{out} \sigma^2 = 1$,
-where $n_\textrm{out}$ is the number of outputs of this layer.
-This leaves us in a dilemma:
-we cannot possibly satisfy both conditions simultaneously.
-Instead, we simply try to satisfy:
+Một cách để giữ phương sai cố định
+là đặt $n_\textrm{in} \sigma^2 = 1$.
+Bây giờ hãy xét backpropagation.
+Ở đây, chúng ta gặp một vấn đề tương tự,
+mặc dù các gradient được truyền từ những layer gần đầu ra hơn.
+Sử dụng cùng lập luận như đối với forward propagation,
+ta thấy rằng phương sai của các gradient có thể bùng nổ
+trừ khi $n_\textrm{out} \sigma^2 = 1$,
+trong đó $n_\textrm{out}$ là số lượng đầu ra của layer này.
+Điều này đặt chúng ta vào tình thế tiến thoái lưỡng nan:
+ta không thể đồng thời thỏa mãn cả hai điều kiện.
+Thay vào đó, ta chỉ cố gắng thỏa mãn:
 
 $$
 \begin{aligned}
@@ -347,80 +346,80 @@ $$
 \end{aligned}
 $$
 
-This is the reasoning underlying the now-standard
-and practically beneficial *Xavier initialization*,
-named after the first author of its creators :cite:`Glorot.Bengio.2010`.
-Typically, the Xavier initialization
-samples weights from a Gaussian distribution
-with zero mean and variance
+Đây là lập luận nền tảng cho *Xavier initialization*,
+hiện nay đã trở thành tiêu chuẩn và mang lại lợi ích thực tế,
+được đặt theo tên tác giả đầu tiên trong nhóm tạo ra nó :cite:`Glorot.Bengio.2010`.
+Thông thường, Xavier initialization
+lấy mẫu các trọng số từ một phân phối Gaussian
+có trung bình bằng không và phương sai
 $\sigma^2 = \frac{2}{n_\textrm{in} + n_\textrm{out}}$.
-We can also adapt this to
-choose the variance when sampling weights
-from a uniform distribution.
-Note that the uniform distribution $U(-a, a)$ has variance $\frac{a^2}{3}$.
-Plugging $\frac{a^2}{3}$ into our condition on $\sigma^2$
-prompts us to initialize according to
+Ta cũng có thể điều chỉnh điều này để
+chọn phương sai khi lấy mẫu trọng số
+từ một phân phối đều.
+Lưu ý rằng phân phối đều $U(-a, a)$ có phương sai $\frac{a^2}{3}$.
+Thay $\frac{a^2}{3}$ vào điều kiện của ta đối với $\sigma^2$
+cho ta khởi tạo theo
 
 $$U\left(-\sqrt{\frac{6}{n_\textrm{in} + n_\textrm{out}}}, \sqrt{\frac{6}{n_\textrm{in} + n_\textrm{out}}}\right).$$
 
-Though the assumption for nonexistence of nonlinearities
-in the above mathematical reasoning
-can be easily violated in neural networks,
-the Xavier initialization method
-turns out to work well in practice.
+Mặc dù giả định về việc không có các phi tuyến
+trong lập luận toán học ở trên
+có thể dễ dàng bị vi phạm trong neural network,
+phương pháp Xavier initialization
+lại cho thấy hiệu quả tốt trong thực tế.
 
 
-### Beyond
+### Mở rộng
 
-The reasoning above barely scratches the surface
-of modern approaches to parameter initialization.
-A deep learning framework often implements over a dozen different heuristics.
-Moreover, parameter initialization continues to be
-a hot area of fundamental research in deep learning.
-Among these are heuristics specialized for
-tied (shared) parameters, super-resolution,
-sequence models, and other situations.
-For instance,
-:citet:`Xiao.Bahri.Sohl-Dickstein.ea.2018` demonstrated the possibility of training
-10,000-layer neural networks without architectural tricks
-by using a carefully-designed initialization method.
+Lập luận ở trên mới chỉ chạm nhẹ vào bề mặt
+của các phương pháp hiện đại để khởi tạo tham số.
+Một deep learning framework thường triển khai hơn một tá heuristic khác nhau.
+Hơn nữa, khởi tạo tham số vẫn tiếp tục là
+một lĩnh vực nghiên cứu cơ bản sôi động trong deep learning.
+Trong số đó có các heuristic chuyên biệt cho
+các tham số được ràng buộc (chia sẻ), super-resolution,
+sequence model, và những tình huống khác.
+Ví dụ,
+:citet:`Xiao.Bahri.Sohl-Dickstein.ea.2018` đã chứng minh khả năng huấn luyện
+neural network 10.000 layer mà không cần các thủ thuật kiến trúc
+bằng cách sử dụng một phương pháp khởi tạo được thiết kế cẩn thận.
 
-If the topic interests you we suggest
-a deep dive into this module's offerings,
-reading the papers that proposed and analyzed each heuristic,
-and then exploring the latest publications on the topic.
-Perhaps you will stumble across or even invent
-a clever idea and contribute an implementation to deep learning frameworks.
+Nếu bạn quan tâm đến chủ đề này, chúng tôi gợi ý
+tìm hiểu sâu các nội dung của module này,
+đọc các bài báo đã đề xuất và phân tích từng heuristic,
+sau đó khám phá các công bố mới nhất về chủ đề này.
+Có lẽ bạn sẽ tình cờ bắt gặp, hoặc thậm chí phát minh,
+một ý tưởng thông minh và đóng góp một implementation cho các deep learning framework.
 
 
-## Summary
+## Tóm tắt
 
-Vanishing and exploding gradients are common issues in deep networks. Great care in parameter initialization is required to ensure that gradients and parameters remain well controlled.
-Initialization heuristics are needed to ensure that the initial gradients are neither too large nor too small.
-Random initialization is key to ensuring that symmetry is broken before optimization.
-Xavier initialization suggests that, for each layer, variance of any output is not affected by the number of inputs, and variance of any gradient is not affected by the number of outputs.
-ReLU activation functions mitigate the vanishing gradient problem. This can accelerate convergence.
+Gradient biến mất và bùng nổ là những vấn đề phổ biến trong deep network. Cần hết sức cẩn thận khi khởi tạo tham số để bảo đảm gradient và tham số luôn được kiểm soát tốt.
+Cần có các heuristic khởi tạo để bảo đảm các gradient ban đầu không quá lớn cũng không quá nhỏ.
+Khởi tạo ngẫu nhiên là yếu tố then chốt để bảo đảm tính đối xứng được phá vỡ trước khi tối ưu hóa.
+Xavier initialization đề xuất rằng, đối với mỗi layer, phương sai của bất kỳ đầu ra nào không bị ảnh hưởng bởi số lượng đầu vào, và phương sai của bất kỳ gradient nào không bị ảnh hưởng bởi số lượng đầu ra.
+Hàm kích hoạt ReLU giảm nhẹ vấn đề gradient biến mất. Điều này có thể tăng tốc độ hội tụ.
 
-## Exercises
+## Bài tập
 
-1. Can you design other cases where a neural network might exhibit symmetry that needs breaking, besides the permutation symmetry in an MLP's layers?
-1. Can we initialize all weight parameters in linear regression or in softmax regression to the same value?
-1. Look up analytic bounds on the eigenvalues of the product of two matrices. What does this tell you about ensuring that gradients are well conditioned?
-1. If we know that some terms diverge, can we fix this after the fact? Look at the paper on layerwise adaptive rate scaling  for inspiration :cite:`You.Gitman.Ginsburg.2017`.
+1. Bạn có thể thiết kế những trường hợp khác mà neural network có thể thể hiện tính đối xứng cần được phá vỡ, ngoài tính đối xứng hoán vị trong các layer của một MLP không?
+1. Ta có thể khởi tạo tất cả tham số trọng số trong linear regression hoặc softmax regression bằng cùng một giá trị không?
+1. Hãy tìm các cận giải tích cho các trị riêng của tích hai ma trận. Điều này cho bạn biết gì về việc bảo đảm gradient được điều kiện hóa tốt?
+1. Nếu biết rằng một số hạng phân kỳ, ta có thể khắc phục điều này sau đó không? Hãy xem bài báo về layerwise adaptive rate scaling để lấy cảm hứng :cite:`You.Gitman.Ginsburg.2017`.
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/103)
+[Thảo luận](https://discuss.d2l.ai/t/103)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/104)
+[Thảo luận](https://discuss.d2l.ai/t/104)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/235)
+[Thảo luận](https://discuss.d2l.ai/t/235)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17986)
+[Thảo luận](https://discuss.d2l.ai/t/17986)
 :end_tab:

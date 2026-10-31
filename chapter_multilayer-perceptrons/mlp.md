@@ -3,25 +3,25 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Multilayer Perceptrons
+# Perceptron đa tầng
 :label:`sec_mlp`
 
-In :numref:`sec_softmax`, we introduced
-softmax regression,
-implementing the algorithm from scratch
-(:numref:`sec_softmax_scratch`) and using high-level APIs
-(:numref:`sec_softmax_concise`). This allowed us to
-train classifiers capable of recognizing
-10 categories of clothing from low-resolution images.
-Along the way, we learned how to wrangle data,
-coerce our outputs into a valid probability distribution,
-apply an appropriate loss function,
-and minimize it with respect to our model's parameters.
-Now that we have mastered these mechanics
-in the context of simple linear models,
-we can launch our exploration of deep neural networks,
-the comparatively rich class of models
-with which this book is primarily concerned.
+Trong :numref:`sec_softmax`, chúng ta đã giới thiệu
+hồi quy softmax,
+triển khai thuật toán từ đầu
+(:numref:`sec_softmax_scratch`) và sử dụng các API cấp cao
+(:numref:`sec_softmax_concise`). Điều này cho phép chúng ta
+huấn luyện các bộ phân loại có khả năng nhận diện
+10 loại trang phục từ các hình ảnh độ phân giải thấp.
+Trong quá trình đó, chúng ta đã học cách xử lý dữ liệu,
+ép đầu ra thành một phân phối xác suất hợp lệ,
+áp dụng một hàm mất mát phù hợp,
+và tối thiểu hóa hàm này theo các tham số của mô hình.
+Giờ đây, sau khi đã nắm vững các cơ chế này
+trong bối cảnh của các mô hình tuyến tính đơn giản,
+chúng ta có thể bắt đầu khám phá mạng nơ-ron sâu,
+lớp mô hình phong phú hơn đáng kể
+mà cuốn sách này chủ yếu tập trung vào.
 
 ```{.python .input}
 %%tab mxnet
@@ -54,146 +54,146 @@ from jax import numpy as jnp
 from jax import grad, vmap
 ```
 
-## Hidden Layers
+## Lớp ẩn
 
-We described affine transformations in
-:numref:`subsec_linear_model` as
-linear transformations with added bias.
-To begin, recall the model architecture
-corresponding to our softmax regression example,
-illustrated in  :numref:`fig_softmaxreg`.
-This model maps inputs directly to outputs
-via a single affine transformation,
-followed by a softmax operation.
-If our labels truly were related
-to the input data by a simple affine transformation,
-then this approach would be sufficient.
-However, linearity (in affine transformations) is a *strong* assumption.
+Trong :numref:`subsec_linear_model`, chúng ta đã mô tả
+các phép biến đổi affine là
+các phép biến đổi tuyến tính có thêm bias.
+Để bắt đầu, hãy nhắc lại kiến trúc mô hình
+tương ứng với ví dụ hồi quy softmax của chúng ta,
+được minh họa trong :numref:`fig_softmaxreg`.
+Mô hình này ánh xạ trực tiếp đầu vào sang đầu ra
+thông qua một phép biến đổi affine duy nhất,
+tiếp theo là một phép toán softmax.
+Nếu nhãn thực sự có quan hệ với
+dữ liệu đầu vào qua một phép biến đổi affine đơn giản,
+thì cách tiếp cận này là đủ.
+Tuy nhiên, tính tuyến tính (trong các phép biến đổi affine) là một giả định *mạnh*.
 
-### Limitations of Linear Models
+### Các hạn chế của mô hình tuyến tính
 
-For example, linearity implies the *weaker*
-assumption of *monotonicity*, i.e.,
-that any increase in our feature must
-either always cause an increase in our model's output
-(if the corresponding weight is positive),
-or always cause a decrease in our model's output
-(if the corresponding weight is negative).
-Sometimes that makes sense.
-For example, if we were trying to predict
-whether an individual will repay a loan,
-we might reasonably assume that all other things being equal,
-an applicant with a higher income
-would always be more likely to repay
-than one with a lower income.
-While monotonic, this relationship likely
-is not linearly associated with the probability of
-repayment. An increase in income from \$0 to \$50,000
-likely corresponds to a bigger increase
-in likelihood of repayment
-than an increase from \$1 million to \$1.05 million.
-One way to handle this might be to postprocess our outcome
-such that linearity becomes more plausible,
-by using the logistic map (and thus the logarithm of the probability of outcome).
+Ví dụ, tính tuyến tính hàm ý giả định *yếu hơn*
+về *tính đơn điệu*, tức là
+bất kỳ sự tăng nào của feature cũng phải
+hoặc luôn làm tăng đầu ra của mô hình
+(nếu trọng số tương ứng dương),
+hoặc luôn làm giảm đầu ra của mô hình
+(nếu trọng số tương ứng âm).
+Đôi khi điều này hợp lý.
+Ví dụ, nếu chúng ta cố gắng dự đoán
+liệu một cá nhân có hoàn trả khoản vay hay không,
+ta có thể hợp lý khi giả định rằng, nếu các yếu tố khác không đổi,
+một người nộp đơn có thu nhập cao hơn
+sẽ luôn có khả năng hoàn trả cao hơn
+người có thu nhập thấp hơn.
+Dù đơn điệu, mối quan hệ này có lẽ
+không liên hệ tuyến tính với xác suất
+hoàn trả. Việc tăng thu nhập từ \$0 lên \$50,000
+có lẽ tương ứng với mức tăng lớn hơn
+về khả năng hoàn trả
+so với việc tăng từ \$1 triệu lên \$1.05 triệu.
+Một cách để xử lý điều này có thể là hậu xử lý kết quả
+để tính tuyến tính trở nên hợp lý hơn,
+bằng cách sử dụng ánh xạ logistic (và do đó là logarit của xác suất kết quả).
 
-Note that we can easily come up with examples
-that violate monotonicity.
-Say for example that we want to predict health as a function
-of body temperature.
-For individuals with a normal body temperature
-above 37°C (98.6°F),
-higher temperatures indicate greater risk.
-However, if the body temperatures drops
-below 37°C, lower temperatures indicate greater risk!
-Again, we might resolve the problem
-with some clever preprocessing, such as using the distance from 37°C
-as a feature.
+Lưu ý rằng chúng ta có thể dễ dàng đưa ra các ví dụ
+vi phạm tính đơn điệu.
+Chẳng hạn, giả sử chúng ta muốn dự đoán sức khỏe theo
+nhiệt độ cơ thể.
+Với những người có nhiệt độ cơ thể bình thường
+trên 37°C (98.6°F),
+nhiệt độ cao hơn cho thấy rủi ro lớn hơn.
+Tuy nhiên, nếu nhiệt độ cơ thể giảm
+xuống dưới 37°C, nhiệt độ thấp hơn lại cho thấy rủi ro lớn hơn!
+Một lần nữa, chúng ta có thể giải quyết vấn đề
+bằng một số tiền xử lý khéo léo, chẳng hạn dùng khoảng cách đến 37°C
+làm feature.
 
 
-But what about classifying images of cats and dogs?
-Should increasing the intensity
-of the pixel at location (13, 17)
-always increase (or always decrease)
-the likelihood that the image depicts a dog?
-Reliance on a linear model corresponds to the implicit
-assumption that the only requirement
-for differentiating cats and dogs is to assess
-the brightness of individual pixels.
-This approach is doomed to fail in a world
-where inverting an image preserves the category.
+Nhưng còn việc phân loại hình ảnh mèo và chó thì sao?
+Việc tăng cường độ
+của pixel tại vị trí (13, 17)
+có phải luôn làm tăng (hoặc luôn làm giảm)
+khả năng hình ảnh đó mô tả một con chó không?
+Việc dựa vào mô hình tuyến tính tương ứng với giả định ngầm
+rằng yêu cầu duy nhất
+để phân biệt mèo và chó là đánh giá
+độ sáng của từng pixel riêng lẻ.
+Cách tiếp cận này chắc chắn thất bại trong một thế giới
+mà việc đảo ngược hình ảnh vẫn giữ nguyên danh mục.
 
-And yet despite the apparent absurdity of linearity here,
-as compared with our previous examples,
-it is less obvious that we could address the problem
-with a simple preprocessing fix.
-That is, because the significance of any pixel
-depends in complex ways on its context
-(the values of the surrounding pixels).
-While there might exist a representation of our data
-that would take into account
-the relevant interactions among our features,
-on top of which a linear model would be suitable,
-we simply do not know how to calculate it by hand.
-With deep neural networks, we used observational data
-to jointly learn both a representation via hidden layers
-and a linear predictor that acts upon that representation.
+Tuy vậy, mặc dù tính tuyến tính trong trường hợp này có vẻ phi lý
+so với các ví dụ trước đó của chúng ta,
+không rõ ràng rằng ta có thể xử lý vấn đề
+bằng một cách sửa tiền xử lý đơn giản.
+Đó là vì ý nghĩa của bất kỳ pixel nào
+phụ thuộc phức tạp vào ngữ cảnh của nó
+(các giá trị của những pixel xung quanh).
+Mặc dù có thể tồn tại một cách biểu diễn dữ liệu
+có tính đến
+các tương tác liên quan giữa các feature,
+mà trên đó mô hình tuyến tính sẽ phù hợp,
+chúng ta đơn giản là không biết cách tính nó thủ công.
+Với mạng nơ-ron sâu, chúng ta sử dụng dữ liệu quan sát
+để cùng lúc học cả biểu diễn thông qua các lớp ẩn
+và một bộ dự đoán tuyến tính hoạt động trên biểu diễn đó.
 
-This problem of nonlinearity has been studied for at least a
-century :cite:`Fisher.1928`. For instance, decision trees
-in their most basic form use a sequence of binary decisions to
-decide upon class membership :cite:`quinlan2014c4`. Likewise, kernel
-methods have been used for many decades to model nonlinear dependencies
-:cite:`Aronszajn.1950`. This has found its way into
-nonparametric spline models :cite:`Wahba.1990` and kernel methods
-:cite:`Scholkopf.Smola.2002`. It is also something that the brain solves
-quite naturally. After all, neurons feed into other neurons which,
-in turn, feed into other neurons again :cite:`Cajal.Azoulay.1894`.
-Consequently we have a sequence of relatively simple transformations.
+Vấn đề phi tuyến tính này đã được nghiên cứu ít nhất trong
+một thế kỷ :cite:`Fisher.1928`. Ví dụ, cây quyết định
+ở dạng cơ bản nhất sử dụng một chuỗi quyết định nhị phân để
+quyết định việc thuộc về một lớp :cite:`quinlan2014c4`. Tương tự, các phương pháp kernel
+đã được sử dụng trong nhiều thập kỷ để mô hình hóa các phụ thuộc phi tuyến
+:cite:`Aronszajn.1950`. Điều này đã được đưa vào
+các mô hình spline phi tham số :cite:`Wahba.1990` và các phương pháp kernel
+:cite:`Scholkopf.Smola.2002`. Đây cũng là điều mà não bộ giải quyết
+khá tự nhiên. Xét cho cùng, các nơ-ron truyền tín hiệu đến các nơ-ron khác,
+rồi các nơ-ron này lại truyền tín hiệu đến các nơ-ron khác nữa :cite:`Cajal.Azoulay.1894`.
+Do đó, chúng ta có một chuỗi các phép biến đổi tương đối đơn giản.
 
-### Incorporating Hidden Layers
+### Tích hợp các lớp ẩn
 
-We can overcome the limitations of linear models
-by incorporating one or more hidden layers.
-The easiest way to do this is to stack
-many fully connected layers on top of one another.
-Each layer feeds into the layer above it,
-until we generate outputs.
-We can think of the first $L-1$ layers
-as our representation and the final layer
-as our linear predictor.
-This architecture is commonly called
-a *multilayer perceptron*,
-often abbreviated as *MLP* (:numref:`fig_mlp`).
+Chúng ta có thể vượt qua các hạn chế của mô hình tuyến tính
+bằng cách tích hợp một hoặc nhiều lớp ẩn.
+Cách dễ nhất để làm điều này là xếp chồng
+nhiều lớp kết nối đầy đủ lên nhau.
+Mỗi lớp truyền đầu ra vào lớp phía trên,
+cho đến khi tạo ra đầu ra cuối cùng.
+Ta có thể xem $L-1$ lớp đầu tiên
+là biểu diễn của mình và lớp cuối cùng
+là bộ dự đoán tuyến tính.
+Kiến trúc này thường được gọi là
+*mạng perceptron đa tầng*,
+thường viết tắt là *MLP* (:numref:`fig_mlp`).
 
-![An MLP with a hidden layer of five hidden units.](../img/mlp.svg)
+![Một MLP có một lớp ẩn gồm năm đơn vị ẩn.](../img/mlp.svg)
 :label:`fig_mlp`
 
-This MLP has four inputs, three outputs,
-and its hidden layer contains five hidden units.
-Since the input layer does not involve any calculations,
-producing outputs with this network
-requires implementing the computations
-for both the hidden and output layers;
-thus, the number of layers in this MLP is two.
-Note that both layers are fully connected.
-Every input influences every neuron in the hidden layer,
-and each of these in turn influences
-every neuron in the output layer. Alas, we are not quite
-done yet.
+MLP này có bốn đầu vào, ba đầu ra,
+và lớp ẩn của nó chứa năm đơn vị ẩn.
+Vì lớp đầu vào không thực hiện bất kỳ phép tính nào,
+việc tạo đầu ra bằng mạng này
+đòi hỏi triển khai các phép tính
+cho cả lớp ẩn lẫn lớp đầu ra;
+do đó, số lớp trong MLP này là hai.
+Lưu ý rằng cả hai lớp đều được kết nối đầy đủ.
+Mọi đầu vào đều ảnh hưởng đến mọi nơ-ron trong lớp ẩn,
+và mỗi nơ-ron trong số này lại ảnh hưởng đến
+mọi nơ-ron trong lớp đầu ra. Tuy nhiên, chúng ta vẫn chưa
+hoàn tất.
 
-### From Linear to Nonlinear
+### Từ tuyến tính sang phi tuyến
 
-As before, we denote by the matrix $\mathbf{X} \in \mathbb{R}^{n \times d}$
-a minibatch of $n$ examples where each example has $d$ inputs (features).
-For a one-hidden-layer MLP whose hidden layer has $h$ hidden units,
-we denote by $\mathbf{H} \in \mathbb{R}^{n \times h}$
-the outputs of the hidden layer, which are
-*hidden representations*.
-Since the hidden and output layers are both fully connected,
-we have hidden-layer weights $\mathbf{W}^{(1)} \in \mathbb{R}^{d \times h}$ and biases $\mathbf{b}^{(1)} \in \mathbb{R}^{1 \times h}$
-and output-layer weights $\mathbf{W}^{(2)} \in \mathbb{R}^{h \times q}$ and biases $\mathbf{b}^{(2)} \in \mathbb{R}^{1 \times q}$.
-This allows us to calculate the outputs $\mathbf{O} \in \mathbb{R}^{n \times q}$
-of the one-hidden-layer MLP as follows:
+Như trước đây, chúng ta ký hiệu ma trận $\mathbf{X} \in \mathbb{R}^{n \times d}$
+là một minibatch gồm $n$ mẫu, trong đó mỗi mẫu có $d$ đầu vào (feature).
+Với một MLP có một lớp ẩn mà lớp ẩn có $h$ đơn vị ẩn,
+chúng ta ký hiệu $\mathbf{H} \in \mathbb{R}^{n \times h}$
+là đầu ra của lớp ẩn, tức là
+*các biểu diễn ẩn*.
+Vì cả lớp ẩn và lớp đầu ra đều được kết nối đầy đủ,
+ta có trọng số lớp ẩn $\mathbf{W}^{(1)} \in \mathbb{R}^{d \times h}$ và bias $\mathbf{b}^{(1)} \in \mathbb{R}^{1 \times h}$
+cùng trọng số lớp đầu ra $\mathbf{W}^{(2)} \in \mathbb{R}^{h \times q}$ và bias $\mathbf{b}^{(2)} \in \mathbb{R}^{1 \times q}$.
+Điều này cho phép chúng ta tính đầu ra $\mathbf{O} \in \mathbb{R}^{n \times q}$
+của MLP một lớp ẩn như sau:
 
 $$
 \begin{aligned}
@@ -202,42 +202,42 @@ $$
 \end{aligned}
 $$
 
-Note that after adding the hidden layer,
-our model now requires us to track and update
-additional sets of parameters.
-So what have we gained in exchange?
-You might be surprised to find out
-that---in the model defined above---*we
-gain nothing for our troubles*!
-The reason is plain.
-The hidden units above are given by
-an affine function of the inputs,
-and the outputs (pre-softmax) are just
-an affine function of the hidden units.
-An affine function of an affine function
-is itself an affine function.
-Moreover, our linear model was already
-capable of representing any affine function.
+Lưu ý rằng sau khi thêm lớp ẩn,
+mô hình của chúng ta giờ đây yêu cầu theo dõi và cập nhật
+các tập tham số bổ sung.
+Vậy đổi lại chúng ta thu được gì?
+Bạn có thể ngạc nhiên khi biết rằng
+---trong mô hình được định nghĩa ở trên---*chúng ta
+không thu được gì cho công sức của mình*!
+Lý do rất rõ ràng.
+Các đơn vị ẩn ở trên được xác định bởi
+một hàm affine của đầu vào,
+và đầu ra (trước softmax) chỉ là
+một hàm affine của các đơn vị ẩn.
+Một hàm affine của một hàm affine
+vẫn là một hàm affine.
+Hơn nữa, mô hình tuyến tính của chúng ta vốn đã
+có thể biểu diễn bất kỳ hàm affine nào.
 
-To see this formally we can just collapse out the hidden layer in the above definition,
-yielding an equivalent single-layer model with parameters
-$\mathbf{W} = \mathbf{W}^{(1)}\mathbf{W}^{(2)}$ and $\mathbf{b} = \mathbf{b}^{(1)} \mathbf{W}^{(2)} + \mathbf{b}^{(2)}$:
+Để thấy điều này một cách hình thức, ta chỉ cần triệt tiêu lớp ẩn trong định nghĩa trên,
+thu được một mô hình một lớp tương đương với các tham số
+$\mathbf{W} = \mathbf{W}^{(1)}\mathbf{W}^{(2)}$ và $\mathbf{b} = \mathbf{b}^{(1)} \mathbf{W}^{(2)} + \mathbf{b}^{(2)}$:
 
 $$
 \mathbf{O} = (\mathbf{X} \mathbf{W}^{(1)} + \mathbf{b}^{(1)})\mathbf{W}^{(2)} + \mathbf{b}^{(2)} = \mathbf{X} \mathbf{W}^{(1)}\mathbf{W}^{(2)} + \mathbf{b}^{(1)} \mathbf{W}^{(2)} + \mathbf{b}^{(2)} = \mathbf{X} \mathbf{W} + \mathbf{b}.
 $$
 
-In order to realize the potential of multilayer architectures,
-we need one more key ingredient: a
-nonlinear *activation function* $\sigma$
-to be applied to each hidden unit
-following the affine transformation. For instance, a popular
-choice is the ReLU (rectified linear unit) activation function :cite:`Nair.Hinton.2010`
-$\sigma(x) = \mathrm{max}(0, x)$ operating on its arguments elementwise.
-The outputs of activation functions $\sigma(\cdot)$
-are called *activations*.
-In general, with activation functions in place,
-it is no longer possible to collapse our MLP into a linear model:
+Để hiện thực hóa tiềm năng của các kiến trúc nhiều tầng,
+chúng ta cần thêm một thành phần then chốt: một
+*hàm kích hoạt* (activation function) phi tuyến $\sigma$
+được áp dụng cho mỗi đơn vị ẩn
+sau phép biến đổi affine. Chẳng hạn, một lựa chọn
+phổ biến là hàm kích hoạt ReLU (rectified linear unit) :cite:`Nair.Hinton.2010`
+$\sigma(x) = \mathrm{max}(0, x)$ hoạt động trên từng phần tử của các đối số.
+Đầu ra của các hàm kích hoạt $\sigma(\cdot)$
+được gọi là *activation*.
+Nhìn chung, khi có các hàm kích hoạt,
+chúng ta không còn có thể rút gọn MLP thành một mô hình tuyến tính:
 
 $$
 \begin{aligned}
@@ -246,81 +246,81 @@ $$
 \end{aligned}
 $$
 
-Since each row in $\mathbf{X}$ corresponds to an example in the minibatch,
-with some abuse of notation, we define the nonlinearity
-$\sigma$ to apply to its inputs in a rowwise fashion,
-i.e., one example at a time.
-Note that we used the same notation for softmax
-when we denoted a rowwise operation in :numref:`subsec_softmax_vectorization`.
-Quite frequently the activation functions we use apply not merely rowwise but
-elementwise. That means that after computing the linear portion of the layer,
-we can calculate each activation
-without looking at the values taken by the other hidden units.
+Vì mỗi hàng trong $\mathbf{X}$ tương ứng với một ví dụ trong minibatch,
+với một chút lạm dụng ký hiệu, chúng ta định nghĩa hàm phi tuyến
+$\sigma$ áp dụng lên các đầu vào của nó theo từng hàng,
+tức là mỗi lần một ví dụ.
+Lưu ý rằng chúng ta đã dùng cùng ký hiệu cho softmax
+khi biểu thị một phép toán theo từng hàng trong :numref:`subsec_softmax_vectorization`.
+Rất thường xuyên, các hàm kích hoạt mà chúng ta sử dụng không chỉ áp dụng theo từng hàng mà còn
+theo từng phần tử. Điều đó có nghĩa là sau khi tính phần tuyến tính của tầng,
+chúng ta có thể tính từng activation
+mà không cần xem các giá trị của những đơn vị ẩn khác.
 
-To build more general MLPs, we can continue stacking
-such hidden layers,
-e.g., $\mathbf{H}^{(1)} = \sigma_1(\mathbf{X} \mathbf{W}^{(1)} + \mathbf{b}^{(1)})$
-and $\mathbf{H}^{(2)} = \sigma_2(\mathbf{H}^{(1)} \mathbf{W}^{(2)} + \mathbf{b}^{(2)})$,
-one atop another, yielding ever more expressive models.
+Để xây dựng các MLP tổng quát hơn, chúng ta có thể tiếp tục chồng
+các tầng ẩn như vậy,
+ví dụ: $\mathbf{H}^{(1)} = \sigma_1(\mathbf{X} \mathbf{W}^{(1)} + \mathbf{b}^{(1)})$
+và $\mathbf{H}^{(2)} = \sigma_2(\mathbf{H}^{(1)} \mathbf{W}^{(2)} + \mathbf{b}^{(2)})$,
+tầng này trên tầng kia, tạo ra các mô hình ngày càng có khả năng biểu đạt cao hơn.
 
-### Universal Approximators
+### Bộ xấp xỉ phổ quát
 
-We know that the brain is capable of very sophisticated statistical analysis. As such,
-it is worth asking, just *how powerful* a deep network could be. This question
-has been answered multiple times, e.g., in :citet:`Cybenko.1989` in the context
-of MLPs, and in :citet:`micchelli1984interpolation` in the context of reproducing kernel
-Hilbert spaces in a way that could be seen as radial basis function (RBF) networks with a single hidden layer.
-These (and related results) suggest that even with a single-hidden-layer network,
-given enough nodes (possibly absurdly many),
-and the right set of weights,
-we can model any function.
-Actually learning that function is the hard part, though.
-You might think of your neural network
-as being a bit like the C programming language.
-The language, like any other modern language,
-is capable of expressing any computable program.
-But actually coming up with a program
-that meets your specifications is the hard part.
+Chúng ta biết rằng não bộ có khả năng phân tích thống kê rất tinh vi. Do đó,
+đáng để đặt câu hỏi: một mạng sâu có thể *mạnh đến mức nào*. Câu hỏi này
+đã được trả lời nhiều lần, chẳng hạn trong :citet:`Cybenko.1989` trong bối cảnh
+MLP, và trong :citet:`micchelli1984interpolation` trong bối cảnh tái tạo các không gian
+Hilbert nhân tái sinh theo cách có thể xem như các mạng hàm cơ sở xuyên tâm (RBF) với một tầng ẩn duy nhất.
+Các kết quả này (và các kết quả liên quan) cho thấy rằng ngay cả với một mạng chỉ có một tầng ẩn,
+nếu có đủ node (có thể là cực kỳ nhiều),
+và bộ trọng số phù hợp,
+chúng ta có thể mô hình hóa bất kỳ hàm nào.
+Tuy vậy, thực sự học được hàm đó mới là phần khó.
+Bạn có thể xem mạng nơ-ron của mình
+hơi giống ngôn ngữ lập trình C.
+Ngôn ngữ này, như bất kỳ ngôn ngữ hiện đại nào khác,
+có thể biểu đạt bất kỳ chương trình tính toán được nào.
+Nhưng thực sự nghĩ ra một chương trình
+đáp ứng các yêu cầu của bạn mới là phần khó.
 
-Moreover, just because a single-hidden-layer network
-*can* learn any function
-does not mean that you should try
-to solve all of your problems
-with one. In fact, in this case kernel methods
-are way more effective, since they are capable of solving the problem
-*exactly* even in infinite dimensional spaces :cite:`Kimeldorf.Wahba.1971,Scholkopf.Herbrich.Smola.2001`.
-In fact, we can approximate many functions
-much more compactly by using deeper (rather than wider) networks :cite:`Simonyan.Zisserman.2014`.
-We will touch upon more rigorous arguments in subsequent chapters.
+Hơn nữa, chỉ vì một mạng có một tầng ẩn
+*có thể* học bất kỳ hàm nào
+không có nghĩa là bạn nên cố gắng
+giải quyết mọi vấn đề của mình
+bằng một mạng như vậy. Thực tế, trong trường hợp này, các phương pháp kernel
+hiệu quả hơn rất nhiều, vì chúng có thể giải quyết bài toán
+*một cách chính xác* ngay cả trong các không gian vô hạn chiều :cite:`Kimeldorf.Wahba.1971,Scholkopf.Herbrich.Smola.2001`.
+Thực tế, chúng ta có thể xấp xỉ nhiều hàm
+gọn hơn nhiều bằng cách dùng các mạng sâu hơn (thay vì rộng hơn) :cite:`Simonyan.Zisserman.2014`.
+Chúng ta sẽ đề cập đến các lập luận chặt chẽ hơn trong các chương sau.
 
 
-## Activation Functions
+## Hàm kích hoạt
 :label:`subsec_activation-functions`
 
-Activation functions decide whether a neuron should be activated or not by
-calculating the weighted sum and further adding bias to it.
-They are differentiable operators for transforming input signals to outputs,
-while most of them add nonlinearity.
-Because activation functions are fundamental to deep learning,
-(**let's briefly survey some common ones**).
+Các hàm kích hoạt quyết định liệu một nơ-ron có nên được kích hoạt hay không bằng cách
+tính tổng có trọng số và sau đó cộng thêm bias vào đó.
+Chúng là các toán tử khả vi biến đổi tín hiệu đầu vào thành đầu ra,
+trong đó phần lớn bổ sung tính phi tuyến.
+Vì các hàm kích hoạt là nền tảng của deep learning,
+(**hãy cùng khảo sát ngắn gọn một số hàm phổ biến**).
 
-### ReLU Function
+### Hàm ReLU
 
-The most popular choice,
-due to both simplicity of implementation and
-its good performance on a variety of predictive tasks,
-is the *rectified linear unit* (*ReLU*) :cite:`Nair.Hinton.2010`.
-[**ReLU provides a very simple nonlinear transformation**].
-Given an element $x$, the function is defined
-as the maximum of that element and $0$:
+Lựa chọn phổ biến nhất,
+nhờ cả sự đơn giản trong triển khai lẫn
+hiệu năng tốt trên nhiều tác vụ dự đoán,
+là *đơn vị tuyến tính chỉnh lưu* (*ReLU*) :cite:`Nair.Hinton.2010`.
+[**ReLU cung cấp một phép biến đổi phi tuyến rất đơn giản**].
+Với một phần tử $x$, hàm này được định nghĩa
+là giá trị lớn nhất giữa phần tử đó và $0$:
 
 $$\operatorname{ReLU}(x) = \max(x, 0).$$
 
-Informally, the ReLU function retains only positive
-elements and discards all negative elements
-by setting the corresponding activations to 0.
-To gain some intuition, we can plot the function.
-As you can see, the activation function is piecewise linear.
+Một cách trực quan, hàm ReLU chỉ giữ lại các
+phần tử dương và loại bỏ toàn bộ phần tử âm
+bằng cách đặt các activation tương ứng thành 0.
+Để có thêm trực giác, chúng ta có thể vẽ đồ thị hàm này.
+Như bạn có thể thấy, hàm kích hoạt này tuyến tính từng đoạn.
 
 ```{.python .input}
 %%tab mxnet
@@ -352,22 +352,22 @@ y = jax.nn.relu(x)
 d2l.plot(x, y, 'x', 'relu(x)', figsize=(5, 2.5))
 ```
 
-When the input is negative,
-the derivative of the ReLU function is 0,
-and when the input is positive,
-the derivative of the ReLU function is 1.
-Note that the ReLU function is not differentiable
-when the input takes value precisely equal to 0.
-In these cases, we default to the left-hand-side
-derivative and say that the derivative is 0 when the input is 0.
-We can get away with this because
-the input may never actually be zero (mathematicians would
-say that it is nondifferentiable on a set of measure zero).
-There is an old adage that if subtle boundary conditions matter,
-we are probably doing (*real*) mathematics, not engineering.
-That conventional wisdom may apply here, or at least, the fact that
-we are not performing constrained optimization :cite:`Mangasarian.1965,Rockafellar.1970`.
-We plot the derivative of the ReLU function below.
+Khi đầu vào âm,
+đạo hàm của hàm ReLU bằng 0,
+và khi đầu vào dương,
+đạo hàm của hàm ReLU bằng 1.
+Lưu ý rằng hàm ReLU không khả vi
+khi đầu vào có giá trị chính xác bằng 0.
+Trong các trường hợp này, chúng ta mặc định dùng đạo hàm
+phía bên trái và nói rằng đạo hàm bằng 0 khi đầu vào bằng 0.
+Chúng ta có thể chấp nhận điều này vì
+đầu vào có thể thực tế không bao giờ bằng 0 (các nhà toán học sẽ
+nói rằng nó không khả vi trên một tập có độ đo bằng không).
+Có một câu ngạn ngữ cũ rằng nếu các điều kiện biên tinh vi là quan trọng,
+có lẽ chúng ta đang làm toán học (*thực sự*), chứ không phải kỹ thuật.
+Quan niệm thông thường đó có thể áp dụng ở đây, hoặc ít nhất là vì
+chúng ta không thực hiện tối ưu hóa có ràng buộc :cite:`Mangasarian.1965,Rockafellar.1970`.
+Chúng ta vẽ đồ thị đạo hàm của hàm ReLU bên dưới.
 
 ```{.python .input}
 %%tab mxnet
@@ -395,67 +395,67 @@ grad_relu = vmap(grad(jax.nn.relu))
 d2l.plot(x, grad_relu(x), 'x', 'grad of relu', figsize=(5, 2.5))
 ```
 
-The reason for using ReLU is that
-its derivatives are particularly well behaved:
-either they vanish or they just let the argument through.
-This makes optimization better behaved
-and it mitigated the well-documented problem
-of vanishing gradients that plagued
-previous versions of neural networks (more on this later).
+Lý do sử dụng ReLU là vì
+các đạo hàm của nó có tính chất đặc biệt tốt:
+hoặc chúng triệt tiêu, hoặc chỉ đơn giản truyền đối số đi.
+Điều này giúp quá trình tối ưu hóa ổn định hơn
+và giảm nhẹ vấn đề đã được ghi nhận rõ ràng
+về gradient biến mất, vốn từng gây khó khăn cho
+các phiên bản mạng nơ-ron trước đây (sẽ nói thêm về điều này sau).
 
-Note that there are many variants to the ReLU function,
-including the *parametrized ReLU* (*pReLU*) function :cite:`He.Zhang.Ren.ea.2015`.
-This variation adds a linear term to ReLU,
-so some information still gets through,
-even when the argument is negative:
+Lưu ý rằng có nhiều biến thể của hàm ReLU,
+bao gồm hàm *ReLU có tham số* (*pReLU*) :cite:`He.Zhang.Ren.ea.2015`.
+Biến thể này thêm một hạng tử tuyến tính vào ReLU,
+để một phần thông tin vẫn đi qua,
+ngay cả khi đối số âm:
 
 $$\operatorname{pReLU}(x) = \max(0, x) + \alpha \min(0, x).$$
 
-### Sigmoid Function
+### Hàm sigmoid
 
-[**The *sigmoid function* transforms those inputs**]
-whose values lie in the domain $\mathbb{R}$,
-(**to outputs that lie on the interval (0, 1).**)
-For that reason, the sigmoid is
-often called a *squashing function*:
-it squashes any input in the range (-inf, inf)
-to some value in the range (0, 1):
+[**Hàm *sigmoid* biến đổi các đầu vào**]
+có giá trị thuộc miền $\mathbb{R}$
+(**thành các đầu ra nằm trong khoảng (0, 1).**)
+Vì lý do đó, sigmoid
+thường được gọi là một *hàm nén*:
+nó nén mọi đầu vào trong khoảng (-inf, inf)
+thành một giá trị nào đó trong khoảng (0, 1):
 
 $$\operatorname{sigmoid}(x) = \frac{1}{1 + \exp(-x)}.$$
 
-In the earliest neural networks, scientists
-were interested in modeling biological neurons
-that either *fire* or *do not fire*.
-Thus the pioneers of this field,
-going all the way back to McCulloch and Pitts,
-the inventors of the artificial neuron,
-focused on thresholding units :cite:`McCulloch.Pitts.1943`.
-A thresholding activation takes value 0
-when its input is below some threshold
-and value 1 when the input exceeds the threshold.
+Trong những mạng nơ-ron đầu tiên, các nhà khoa học
+quan tâm đến việc mô hình hóa các nơ-ron sinh học
+hoặc *phát xung* hoặc *không phát xung*.
+Do đó, những người tiên phong trong lĩnh vực này,
+từ tận thời McCulloch và Pitts,
+những người phát minh ra nơ-ron nhân tạo,
+đã tập trung vào các đơn vị ngưỡng :cite:`McCulloch.Pitts.1943`.
+Một activation ngưỡng nhận giá trị 0
+khi đầu vào của nó thấp hơn một ngưỡng nào đó
+và giá trị 1 khi đầu vào vượt quá ngưỡng đó.
 
-When attention shifted to gradient-based learning,
-the sigmoid function was a natural choice
-because it is a smooth, differentiable
-approximation to a thresholding unit.
-Sigmoids are still widely used as
-activation functions on the output units
-when we want to interpret the outputs as probabilities
-for binary classification problems: you can think of the sigmoid as a special case of the softmax.
-However, the sigmoid has largely been replaced
-by the simpler and more easily trainable ReLU
-for most use in hidden layers. Much of this has to do
-with the fact that the sigmoid poses challenges for optimization
-:cite:`LeCun.Bottou.Orr.ea.1998` since its gradient vanishes for large positive *and* negative arguments.
-This can lead to plateaus that are difficult to escape from.
-Nonetheless sigmoids are important. In later chapters (e.g., :numref:`sec_lstm`) on recurrent neural networks,
-we will describe architectures that leverage sigmoid units
-to control the flow of information across time.
+Khi trọng tâm chuyển sang học dựa trên gradient,
+hàm sigmoid là một lựa chọn tự nhiên
+vì nó là một phép xấp xỉ trơn, khả vi
+cho một đơn vị ngưỡng.
+Sigmoid vẫn được sử dụng rộng rãi làm
+hàm kích hoạt trên các đơn vị đầu ra
+khi chúng ta muốn diễn giải đầu ra là xác suất
+cho các bài toán phân loại nhị phân: bạn có thể xem sigmoid là một trường hợp đặc biệt của softmax.
+Tuy nhiên, sigmoid phần lớn đã được thay thế
+bởi ReLU đơn giản hơn và dễ huấn luyện hơn
+trong hầu hết các ứng dụng ở tầng ẩn. Phần lớn nguyên nhân là do
+sigmoid gây ra thách thức cho tối ưu hóa
+:cite:`LeCun.Bottou.Orr.ea.1998` vì gradient của nó biến mất với các đối số dương *và* âm lớn.
+Điều này có thể dẫn đến các vùng bằng phẳng khó thoát ra.
+Tuy vậy, sigmoid vẫn quan trọng. Trong các chương sau (ví dụ, :numref:`sec_lstm`) về mạng nơ-ron hồi quy,
+chúng ta sẽ mô tả các kiến trúc tận dụng các đơn vị sigmoid
+để kiểm soát luồng thông tin theo thời gian.
 
-Below, we plot the sigmoid function.
-Note that when the input is close to 0,
-the sigmoid function approaches
-a linear transformation.
+Bên dưới, chúng ta vẽ đồ thị hàm sigmoid.
+Lưu ý rằng khi đầu vào gần 0,
+hàm sigmoid tiến gần đến
+một phép biến đổi tuyến tính.
 
 ```{.python .input}
 %%tab mxnet
@@ -482,17 +482,17 @@ y = jax.nn.sigmoid(x)
 d2l.plot(x, y, 'x', 'sigmoid(x)', figsize=(5, 2.5))
 ```
 
-The derivative of the sigmoid function is given by the following equation:
+Đạo hàm của hàm sigmoid được cho bởi phương trình sau:
 
 $$\frac{d}{dx} \operatorname{sigmoid}(x) = \frac{\exp(-x)}{(1 + \exp(-x))^2} = \operatorname{sigmoid}(x)\left(1-\operatorname{sigmoid}(x)\right).$$
 
 
-The derivative of the sigmoid function is plotted below.
-Note that when the input is 0,
-the derivative of the sigmoid function
-reaches a maximum of 0.25.
-As the input diverges from 0 in either direction,
-the derivative approaches 0.
+Đạo hàm của hàm sigmoid được vẽ bên dưới.
+Lưu ý rằng khi đầu vào bằng 0,
+đạo hàm của hàm sigmoid
+đạt giá trị cực đại là 0.25.
+Khi đầu vào lệch khỏi 0 theo bất kỳ hướng nào,
+đạo hàm tiến về 0.
 
 ```{.python .input}
 %%tab mxnet
@@ -522,16 +522,16 @@ grad_sigmoid = vmap(grad(jax.nn.sigmoid))
 d2l.plot(x, grad_sigmoid(x), 'x', 'grad of sigmoid', figsize=(5, 2.5))
 ```
 
-### Tanh Function
+### Hàm tanh
 :label:`subsec_tanh`
 
-Like the sigmoid function, [**the tanh (hyperbolic tangent)
-function also squashes its inputs**],
-transforming them into elements on the interval (**between $-1$ and $1$**):
+Tương tự hàm sigmoid, [**hàm tanh (tangent hyperbolic)
+cũng nén các đầu vào của nó**],
+biến đổi chúng thành các phần tử trong khoảng (**từ $-1$ đến $1$**):
 
 $$\operatorname{tanh}(x) = \frac{1 - \exp(-2x)}{1 + \exp(-2x)}.$$
 
-We plot the tanh function below. Note that as input nears 0, the tanh function approaches a linear transformation. Although the shape of the function is similar to that of the sigmoid function, the tanh function exhibits point symmetry about the origin of the coordinate system :cite:`Kalman.Kwasny.1992`.
+Chúng ta vẽ đồ thị hàm tanh bên dưới. Lưu ý rằng khi đầu vào tiến gần 0, hàm tanh tiến gần đến một phép biến đổi tuyến tính. Mặc dù hình dạng của hàm tương tự hàm sigmoid, hàm tanh thể hiện tính đối xứng tâm qua gốc tọa độ :cite:`Kalman.Kwasny.1992`.
 
 ```{.python .input}
 %%tab mxnet
@@ -558,16 +558,16 @@ y = jax.nn.tanh(x)
 d2l.plot(x, y, 'x', 'tanh(x)', figsize=(5, 2.5))
 ```
 
-The derivative of the tanh function is:
+Đạo hàm của hàm tanh là:
 
 $$\frac{d}{dx} \operatorname{tanh}(x) = 1 - \operatorname{tanh}^2(x).$$
 
-It is plotted below.
-As the input nears 0,
-the derivative of the tanh function approaches a maximum of 1.
-And as we saw with the sigmoid function,
-as input moves away from 0 in either direction,
-the derivative of the tanh function approaches 0.
+Được vẽ bên dưới.
+Khi đầu vào tiến gần 0,
+đạo hàm của hàm tanh tiến đến giá trị cực đại là 1.
+Và như chúng ta đã thấy với hàm sigmoid,
+khi đầu vào dịch chuyển ra xa 0 theo bất kỳ hướng nào,
+đạo hàm của hàm tanh tiến đến 0.
 
 ```{.python .input}
 %%tab mxnet
@@ -597,63 +597,62 @@ grad_tanh = vmap(grad(jax.nn.tanh))
 d2l.plot(x, grad_tanh(x), 'x', 'grad of tanh', figsize=(5, 2.5))
 ```
 
-## Summary and Discussion
+## Tóm tắt và Thảo luận
 
-We now know how to incorporate nonlinearities
-to build expressive multilayer neural network architectures.
-As a side note, your knowledge already
-puts you in command of a similar toolkit
-to a practitioner circa 1990.
-In some ways, you have an advantage
-over anyone working back then,
-because you can leverage powerful
-open-source deep learning frameworks
-to build models rapidly, using only a few lines of code.
-Previously, training these networks
-required researchers to code up layers and derivatives
-explicitly in C, Fortran, or even Lisp (in the case of LeNet).
+Giờ đây, chúng ta đã biết cách kết hợp các phi tuyến tính
+để xây dựng các kiến trúc mạng nơ-ron nhiều lớp có khả năng biểu diễn phong phú.
+Nhân tiện, kiến thức của bạn hiện tại
+đã giúp bạn làm chủ một bộ công cụ tương tự
+với một người thực hành vào khoảng năm 1990.
+Theo một số khía cạnh, bạn có lợi thế
+so với bất kỳ ai làm việc vào thời điểm đó,
+bởi vì bạn có thể tận dụng các framework deep learning mã nguồn mở mạnh mẽ
+để xây dựng mô hình nhanh chóng, chỉ bằng vài dòng mã.
+Trước đây, việc huấn luyện các mạng này
+yêu cầu các nhà nghiên cứu phải viết mã cho các layer và đạo hàm
+một cách tường minh bằng C, Fortran, hoặc thậm chí Lisp (trong trường hợp của LeNet).
 
-A secondary benefit is that ReLU is significantly more amenable to
-optimization than the sigmoid or the tanh function. One could argue
-that this was one of the key innovations that helped the resurgence
-of deep learning over the past decade. Note, though, that research in
-activation functions has not stopped.
-For instance, 
-the GELU (Gaussian error linear unit)
-activation function $x \Phi(x)$ by :citet:`Hendrycks.Gimpel.2016` ($\Phi(x)$
-is the standard Gaussian cumulative distribution function) 
-and
-the Swish activation
-function $\sigma(x) = x \operatorname{sigmoid}(\beta x)$ as proposed in :citet:`Ramachandran.Zoph.Le.2017` can yield better accuracy
-in many cases.
+Một lợi ích khác là ReLU phù hợp với
+tối ưu hóa hơn đáng kể so với hàm sigmoid hoặc tanh. Có thể lập luận
+rằng đây là một trong những đổi mới then chốt đã góp phần vào sự hồi sinh
+của deep learning trong thập kỷ qua. Tuy nhiên, lưu ý rằng nghiên cứu về
+các hàm kích hoạt vẫn chưa dừng lại.
+Ví dụ,
+hàm kích hoạt GELU (Gaussian error linear unit)
+$x \Phi(x)$ của :citet:`Hendrycks.Gimpel.2016` ($\Phi(x)$
+là hàm phân phối tích lũy Gaussian chuẩn)
+và
+hàm kích hoạt Swish
+$\sigma(x) = x \operatorname{sigmoid}(\beta x)$ như được đề xuất trong :citet:`Ramachandran.Zoph.Le.2017` có thể mang lại độ chính xác tốt hơn
+trong nhiều trường hợp.
 
-## Exercises
+## Bài tập
 
-1. Show that adding layers to a *linear* deep network, i.e., a network without
-   nonlinearity $\sigma$ can never increase the expressive power of the network.
-   Give an example where it actively reduces it.
-1. Compute the derivative of the pReLU activation function.
-1. Compute the derivative of the Swish activation function $x \operatorname{sigmoid}(\beta x)$.
-1. Show that an MLP using only ReLU (or pReLU) constructs a
-   continuous piecewise linear function.
-1. Sigmoid and tanh are very similar.
-    1. Show that $\operatorname{tanh}(x) + 1 = 2 \operatorname{sigmoid}(2x)$.
-    1. Prove that the function classes parametrized by both nonlinearities are identical. Hint: affine layers have bias terms, too.
-1. Assume that we have a nonlinearity that applies to one minibatch at a time, such as the batch normalization :cite:`Ioffe.Szegedy.2015`. What kinds of problems do you expect this to cause?
-1. Provide an example where the gradients vanish for the sigmoid activation function.
+1. Chứng minh rằng việc thêm layer vào một mạng sâu *tuyến tính*, tức là một mạng không có
+   tính phi tuyến $\sigma$, không bao giờ có thể tăng khả năng biểu diễn của mạng.
+   Hãy đưa ra một ví dụ mà việc này thực sự làm giảm khả năng đó.
+1. Tính đạo hàm của hàm kích hoạt pReLU.
+1. Tính đạo hàm của hàm kích hoạt Swish $x \operatorname{sigmoid}(\beta x)$.
+1. Chứng minh rằng một MLP chỉ sử dụng ReLU (hoặc pReLU) xây dựng một
+   hàm tuyến tính từng đoạn liên tục.
+1. Sigmoid và tanh rất tương tự nhau.
+    1. Chứng minh rằng $\operatorname{tanh}(x) + 1 = 2 \operatorname{sigmoid}(2x)$.
+    1. Chứng minh rằng các lớp hàm được tham số hóa bởi cả hai tính phi tuyến là giống hệt nhau. Gợi ý: các layer affine cũng có các hạng tử bias.
+1. Giả sử rằng chúng ta có một tính phi tuyến áp dụng cho từng minibatch một, chẳng hạn như batch normalization :cite:`Ioffe.Szegedy.2015`. Bạn dự đoán điều này sẽ gây ra những loại vấn đề nào?
+1. Đưa ra một ví dụ mà gradient triệt tiêu đối với hàm kích hoạt sigmoid.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/90)
+[Thảo luận](https://discuss.d2l.ai/t/90)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/91)
+[Thảo luận](https://discuss.d2l.ai/t/91)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/226)
+[Thảo luận](https://discuss.d2l.ai/t/226)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17984)
+[Thảo luận](https://discuss.d2l.ai/t/17984)
 :end_tab:

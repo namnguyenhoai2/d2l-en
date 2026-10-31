@@ -3,37 +3,37 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Padding and Stride
+# Padding và Stride
 :label:`sec_padding`
 
-Recall the example of a convolution in :numref:`fig_correlation`. 
-The input had both a height and width of 3
-and the convolution kernel had both a height and width of 2,
-yielding an output representation with dimension $2\times2$.
-Assuming that the input shape is $n_\textrm{h}\times n_\textrm{w}$
-and the convolution kernel shape is $k_\textrm{h}\times k_\textrm{w}$,
-the output shape will be $(n_\textrm{h}-k_\textrm{h}+1) \times (n_\textrm{w}-k_\textrm{w}+1)$: 
-we can only shift the convolution kernel so far until it runs out
-of pixels to apply the convolution to. 
+Hãy nhớ lại ví dụ về một phép tích chập trong :numref:`fig_correlation`. 
+Đầu vào có cả chiều cao lẫn chiều rộng bằng 3
+và kernel tích chập có cả chiều cao lẫn chiều rộng bằng 2,
+tạo ra biểu diễn đầu ra có kích thước $2\times2$.
+Giả sử hình dạng đầu vào là $n_\textrm{h}\times n_\textrm{w}$
+và hình dạng kernel tích chập là $k_\textrm{h}\times k_\textrm{w}$,
+thì hình dạng đầu ra sẽ là $(n_\textrm{h}-k_\textrm{h}+1) \times (n_\textrm{w}-k_\textrm{w}+1)$: 
+ta chỉ có thể dịch kernel tích chập đến một mức nhất định trước khi không còn
+pixel nào để áp dụng phép tích chập. 
 
-In the following we will explore a number of techniques, 
-including padding and strided convolutions,
-that offer more control over the size of the output. 
-As motivation, note that since kernels generally
-have width and height greater than $1$,
-after applying many successive convolutions,
-we tend to wind up with outputs that are
-considerably smaller than our input.
-If we start with a $240 \times 240$ pixel image,
-ten layers of $5 \times 5$ convolutions
-reduce the image to $200 \times 200$ pixels,
-slicing off $30 \%$ of the image and with it
-obliterating any interesting information
-on the boundaries of the original image.
-*Padding* is the most popular tool for handling this issue.
-In other cases, we may want to reduce the dimensionality drastically,
-e.g., if we find the original input resolution to be unwieldy.
-*Strided convolutions* are a popular technique that can help in these instances.
+Sau đây, chúng ta sẽ tìm hiểu một số kỹ thuật, 
+bao gồm padding và tích chập có stride,
+giúp kiểm soát tốt hơn kích thước đầu ra. 
+Để làm rõ động cơ, hãy lưu ý rằng vì kernel thường
+có chiều rộng và chiều cao lớn hơn $1$,
+sau khi áp dụng nhiều phép tích chập liên tiếp,
+đầu ra thường trở nên
+nhỏ hơn đáng kể so với đầu vào.
+Nếu bắt đầu với một ảnh $240 \times 240$ pixel,
+mười lớp tích chập $5 \times 5$
+sẽ giảm ảnh xuống còn $200 \times 200$ pixel,
+cắt bỏ $30 \%$ ảnh và cùng với đó
+xóa mất mọi thông tin thú vị
+ở các biên của ảnh gốc.
+*Padding* là công cụ phổ biến nhất để xử lý vấn đề này.
+Trong các trường hợp khác, ta có thể muốn giảm số chiều một cách mạnh mẽ,
+ví dụ, nếu thấy độ phân giải đầu vào ban đầu quá cồng kềnh.
+*Tích chập có stride* là một kỹ thuật phổ biến có thể hữu ích trong những trường hợp này.
 
 ```{.python .input}
 %%tab mxnet
@@ -63,75 +63,75 @@ from jax import numpy as jnp
 
 ## Padding
 
-As described above, one tricky issue when applying convolutional layers
-is that we tend to lose pixels on the perimeter of our image. Consider :numref:`img_conv_reuse` that depicts the pixel utilization as a function of the convolution kernel size and the position within the image. The pixels in the corners are hardly used at all. 
+Như đã mô tả ở trên, một vấn đề khó khi áp dụng các lớp tích chập
+là ta thường làm mất pixel ở chu vi của ảnh. Hãy xem :numref:`img_conv_reuse`, minh họa mức độ sử dụng pixel theo kích thước kernel tích chập và vị trí trong ảnh. Các pixel ở góc hầu như không được sử dụng. 
 
-![Pixel utilization for convolutions of size $1 \times 1$, $2 \times 2$, and $3 \times 3$ respectively.](../img/conv-reuse.svg)
+![Mức độ sử dụng pixel cho các phép tích chập có kích thước lần lượt là $1 \times 1$, $2 \times 2$ và $3 \times 3$.](../img/conv-reuse.svg)
 :label:`img_conv_reuse`
 
-Since we typically use small kernels,
-for any given convolution
-we might only lose a few pixels
-but this can add up as we apply
-many successive convolutional layers.
-One straightforward solution to this problem
-is to add extra pixels of filler around the boundary of our input image,
-thus increasing the effective size of the image.
-Typically, we set the values of the extra pixels to zero.
-In :numref:`img_conv_pad`, we pad a $3 \times 3$ input,
-increasing its size to $5 \times 5$.
-The corresponding output then increases to a $4 \times 4$ matrix.
-The shaded portions are the first output element as well as the input and kernel tensor elements used for the output computation: $0\times0+0\times1+0\times2+0\times3=0$.
+Vì ta thường sử dụng các kernel nhỏ,
+trong mỗi phép tích chập nhất định
+ta có thể chỉ mất vài pixel,
+nhưng điều này có thể tích lũy khi áp dụng
+nhiều lớp tích chập liên tiếp.
+Một giải pháp trực tiếp cho vấn đề này
+là thêm các pixel đệm xung quanh biên của ảnh đầu vào,
+qua đó tăng kích thước hiệu dụng của ảnh.
+Thông thường, ta đặt giá trị của các pixel bổ sung bằng không.
+Trong :numref:`img_conv_pad`, ta padding đầu vào $3 \times 3$,
+tăng kích thước của nó lên $5 \times 5$.
+Đầu ra tương ứng sau đó tăng thành ma trận $4 \times 4$.
+Các phần được tô bóng là phần tử đầu ra đầu tiên, cũng như các phần tử tensor đầu vào và kernel được dùng để tính đầu ra: $0\times0+0\times1+0\times2+0\times3=0$.
 
-![Two-dimensional cross-correlation with padding.](../img/conv-pad.svg)
+![Tương quan chéo hai chiều với padding.](../img/conv-pad.svg)
 :label:`img_conv_pad`
 
-In general, if we add a total of $p_\textrm{h}$ rows of padding
-(roughly half on top and half on bottom)
-and a total of $p_\textrm{w}$ columns of padding
-(roughly half on the left and half on the right),
-the output shape will be
+Nói chung, nếu ta thêm tổng cộng $p_\textrm{h}$ hàng padding
+(xấp xỉ một nửa ở trên và một nửa ở dưới)
+và tổng cộng $p_\textrm{w}$ cột padding
+(xấp xỉ một nửa ở bên trái và một nửa ở bên phải),
+thì hình dạng đầu ra sẽ là
 
 $$(n_\textrm{h}-k_\textrm{h}+p_\textrm{h}+1)\times(n_\textrm{w}-k_\textrm{w}+p_\textrm{w}+1).$$
 
-This means that the height and width of the output
-will increase by $p_\textrm{h}$ and $p_\textrm{w}$, respectively.
+Điều này có nghĩa là chiều cao và chiều rộng của đầu ra
+sẽ lần lượt tăng thêm $p_\textrm{h}$ và $p_\textrm{w}$.
 
-In many cases, we will want to set $p_\textrm{h}=k_\textrm{h}-1$ and $p_\textrm{w}=k_\textrm{w}-1$
-to give the input and output the same height and width.
-This will make it easier to predict the output shape of each layer
-when constructing the network.
-Assuming that $k_\textrm{h}$ is odd here,
-we will pad $p_\textrm{h}/2$ rows on both sides of the height.
-If $k_\textrm{h}$ is even, one possibility is to
-pad $\lceil p_\textrm{h}/2\rceil$ rows on the top of the input
-and $\lfloor p_\textrm{h}/2\rfloor$ rows on the bottom.
-We will pad both sides of the width in the same way.
+Trong nhiều trường hợp, ta sẽ muốn đặt $p_\textrm{h}=k_\textrm{h}-1$ và $p_\textrm{w}=k_\textrm{w}-1$
+để đầu vào và đầu ra có cùng chiều cao và chiều rộng.
+Điều này giúp dễ dự đoán hình dạng đầu ra của mỗi lớp hơn
+khi xây dựng mạng.
+Giả sử $k_\textrm{h}$ là số lẻ ở đây,
+ta sẽ padding $p_\textrm{h}/2$ hàng ở cả hai phía của chiều cao.
+Nếu $k_\textrm{h}$ là số chẵn, một khả năng là
+padding $\lceil p_\textrm{h}/2\rceil$ hàng ở phía trên đầu vào
+và $\lfloor p_\textrm{h}/2\rfloor$ hàng ở phía dưới.
+Ta sẽ padding cả hai phía của chiều rộng theo cùng cách.
 
-CNNs commonly use convolution kernels
-with odd height and width values, such as 1, 3, 5, or 7.
-Choosing odd kernel sizes has the benefit
-that we can preserve the dimensionality
-while padding with the same number of rows on top and bottom,
-and the same number of columns on left and right.
+CNN thường sử dụng các kernel tích chập
+có giá trị chiều cao và chiều rộng lẻ, chẳng hạn như 1, 3, 5 hoặc 7.
+Việc chọn kích thước kernel lẻ có lợi ích
+là ta có thể bảo toàn số chiều
+khi padding cùng số hàng ở trên và dưới,
+cũng như cùng số cột ở bên trái và bên phải.
 
-Moreover, this practice of using odd kernels
-and padding to precisely preserve dimensionality
-offers a clerical benefit.
-For any two-dimensional tensor `X`,
-when the kernel's size is odd
-and the number of padding rows and columns
-on all sides are the same,
-thereby producing an output with the same height and width as the input,
-we know that the output `Y[i, j]` is calculated
-by cross-correlation of the input and convolution kernel
-with the window centered on `X[i, j]`.
+Hơn nữa, cách sử dụng kernel lẻ này
+và padding để bảo toàn chính xác số chiều
+còn mang lại một lợi ích về mặt thao tác.
+Với bất kỳ tensor hai chiều `X` nào,
+khi kích thước kernel là số lẻ
+và số hàng, cột padding
+ở mọi phía là như nhau,
+từ đó tạo ra đầu ra có cùng chiều cao và chiều rộng với đầu vào,
+ta biết rằng đầu ra `Y[i, j]` được tính
+bằng tương quan chéo của đầu vào và kernel tích chập
+với cửa sổ được căn giữa tại `X[i, j]`.
 
-In the following example, we create a two-dimensional convolutional layer
-with a height and width of 3
-and (**apply 1 pixel of padding on all sides.**)
-Given an input with a height and width of 8,
-we find that the height and width of the output is also 8.
+Trong ví dụ sau, ta tạo một lớp tích chập hai chiều
+có chiều cao và chiều rộng bằng 3
+và (**áp dụng 1 pixel padding ở mọi phía.**)
+Với đầu vào có chiều cao và chiều rộng bằng 8,
+ta nhận thấy chiều cao và chiều rộng của đầu ra cũng bằng 8.
 
 ```{.python .input}
 %%tab mxnet
@@ -207,9 +207,9 @@ X = jax.random.uniform(jax.random.PRNGKey(d2l.get_seed()), shape=(8, 8))
 comp_conv2d(conv2d, X).shape
 ```
 
-When the height and width of the convolution kernel are different,
-we can make the output and input have the same height and width
-by [**setting different padding numbers for height and width.**]
+Khi chiều cao và chiều rộng của kernel tích chập khác nhau,
+ta có thể làm cho đầu ra và đầu vào có cùng chiều cao và chiều rộng
+bằng cách [**đặt số lượng padding khác nhau cho chiều cao và chiều rộng.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -245,48 +245,48 @@ comp_conv2d(conv2d, X).shape
 
 ## Stride
 
-When computing the cross-correlation,
-we start with the convolution window
-at the upper-left corner of the input tensor,
-and then slide it over all locations both down and to the right.
-In the previous examples, we defaulted to sliding one element at a time.
-However, sometimes, either for computational efficiency
-or because we wish to downsample,
-we move our window more than one element at a time,
-skipping the intermediate locations. This is particularly useful if the convolution 
-kernel is large since it captures a large area of the underlying image.
+Khi tính tương quan chéo,
+ta bắt đầu với cửa sổ tích chập
+ở góc trên bên trái của tensor đầu vào,
+sau đó trượt nó qua tất cả vị trí theo cả hướng xuống và sang phải.
+Trong các ví dụ trước, mặc định ta trượt mỗi lần một phần tử.
+Tuy nhiên, đôi khi, để đạt hiệu quả tính toán
+hoặc vì muốn downsample,
+ta di chuyển cửa sổ nhiều hơn một phần tử mỗi lần,
+bỏ qua các vị trí ở giữa. Điều này đặc biệt hữu ích nếu kernel tích chập 
+lớn vì nó bao quát một vùng rộng của ảnh bên dưới.
 
-We refer to the number of rows and columns traversed per slide as *stride*.
-So far, we have used strides of 1, both for height and width.
-Sometimes, we may want to use a larger stride.
-:numref:`img_conv_stride` shows a two-dimensional cross-correlation operation
-with a stride of 3 vertically and 2 horizontally.
-The shaded portions are the output elements as well as the input and kernel tensor elements used for the output computation: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$.
-We can see that when the second element of the first column is generated,
-the convolution window slides down three rows.
-The convolution window slides two columns to the right
-when the second element of the first row is generated.
-When the convolution window continues to slide two columns to the right on the input,
-there is no output because the input element cannot fill the window
-(unless we add another column of padding).
+Ta gọi số hàng và cột đi qua trong mỗi lần trượt là *stride*.
+Cho đến nay, ta đã sử dụng stride bằng 1 cho cả chiều cao lẫn chiều rộng.
+Đôi khi, ta có thể muốn sử dụng stride lớn hơn.
+:numref:`img_conv_stride` cho thấy một phép tương quan chéo hai chiều
+với stride bằng 3 theo chiều dọc và 2 theo chiều ngang.
+Các phần được tô bóng là các phần tử đầu ra, cũng như các phần tử tensor đầu vào và kernel được dùng để tính đầu ra: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$.
+Ta có thể thấy rằng khi phần tử thứ hai của cột đầu tiên được tạo ra,
+cửa sổ tích chập trượt xuống ba hàng.
+Cửa sổ tích chập trượt sang phải hai cột
+khi phần tử thứ hai của hàng đầu tiên được tạo ra.
+Khi cửa sổ tích chập tiếp tục trượt sang phải hai cột trên đầu vào,
+sẽ không có đầu ra vì phần tử đầu vào không thể lấp đầy cửa sổ
+(trừ khi ta thêm một cột padding khác).
 
-![Cross-correlation with strides of 3 and 2 for height and width, respectively.](../img/conv-stride.svg)
+![Tương quan chéo với stride lần lượt bằng 3 và 2 cho chiều cao và chiều rộng.](../img/conv-stride.svg)
 :label:`img_conv_stride`
 
-In general, when the stride for the height is $s_\textrm{h}$
-and the stride for the width is $s_\textrm{w}$, the output shape is
+Nói chung, khi stride cho chiều cao là $s_\textrm{h}$
+và stride cho chiều rộng là $s_\textrm{w}$, hình dạng đầu ra là
 
 $$\lfloor(n_\textrm{h}-k_\textrm{h}+p_\textrm{h}+s_\textrm{h})/s_\textrm{h}\rfloor \times \lfloor(n_\textrm{w}-k_\textrm{w}+p_\textrm{w}+s_\textrm{w})/s_\textrm{w}\rfloor.$$
 
-If we set $p_\textrm{h}=k_\textrm{h}-1$ and $p_\textrm{w}=k_\textrm{w}-1$,
-then the output shape can be simplified to
+Nếu đặt $p_\textrm{h}=k_\textrm{h}-1$ và $p_\textrm{w}=k_\textrm{w}-1$,
+thì hình dạng đầu ra có thể được đơn giản hóa thành
 $\lfloor(n_\textrm{h}+s_\textrm{h}-1)/s_\textrm{h}\rfloor \times \lfloor(n_\textrm{w}+s_\textrm{w}-1)/s_\textrm{w}\rfloor$.
-Going a step further, if the input height and width
-are divisible by the strides on the height and width,
-then the output shape will be $(n_\textrm{h}/s_\textrm{h}) \times (n_\textrm{w}/s_\textrm{w})$.
+Đi xa hơn một bước, nếu chiều cao và chiều rộng đầu vào
+chia hết cho stride của chiều cao và chiều rộng,
+thì hình dạng đầu ra sẽ là $(n_\textrm{h}/s_\textrm{h}) \times (n_\textrm{w}/s_\textrm{w})$.
 
-Below, we [**set the strides on both the height and width to 2**],
-thus halving the input height and width.
+Dưới đây, ta [**đặt stride cho cả chiều cao và chiều rộng bằng 2**],
+do đó giảm một nửa chiều cao và chiều rộng đầu vào.
 
 ```{.python .input}
 %%tab mxnet
@@ -312,7 +312,7 @@ conv2d = nn.Conv(1, kernel_size=(3, 3), padding=1, strides=2)
 comp_conv2d(conv2d, X).shape
 ```
 
-Let's look at (**a slightly more complicated example**).
+Hãy xem (**một ví dụ phức tạp hơn một chút**).
 
 ```{.python .input}
 %%tab mxnet
@@ -339,37 +339,37 @@ conv2d = nn.Conv(1, kernel_size=(3, 5), padding=(0, 1), strides=(3, 4))
 comp_conv2d(conv2d, X).shape
 ```
 
-## Summary and Discussion
+## Tóm tắt và Thảo luận
 
-Padding can increase the height and width of the output. This is often used to give the output the same height and width as the input to avoid undesirable shrinkage of the output. Moreover, it ensures that all pixels are used equally frequently. Typically we pick symmetric padding on both sides of the input height and width. In this case we refer to $(p_\textrm{h}, p_\textrm{w})$ padding. Most commonly we set $p_\textrm{h} = p_\textrm{w}$, in which case we simply state that we choose padding $p$. 
+Padding có thể làm tăng chiều cao và chiều rộng của đầu ra. Điều này thường được dùng để làm cho đầu ra có cùng chiều cao và chiều rộng với đầu vào, nhằm tránh việc đầu ra bị thu nhỏ không mong muốn. Hơn nữa, nó đảm bảo rằng tất cả các pixel được sử dụng với tần suất như nhau. Thông thường, ta chọn padding đối xứng ở cả hai phía của chiều cao và chiều rộng đầu vào. Trong trường hợp này, ta gọi là padding $(p_\textrm{h}, p_\textrm{w})$. Phổ biến nhất, ta đặt $p_\textrm{h} = p_\textrm{w}$, trong trường hợp đó ta chỉ đơn giản nói rằng ta chọn padding $p$. 
 
-A similar convention applies to strides. When horizontal stride $s_\textrm{h}$ and vertical stride $s_\textrm{w}$ match, we simply talk about stride $s$. The stride can reduce the resolution of the output, for example reducing the height and width of the output to only $1/n$ of the height and width of the input for $n > 1$. By default, the padding is 0 and the stride is 1. 
+Một quy ước tương tự cũng áp dụng cho stride. Khi stride ngang $s_\textrm{h}$ và stride dọc $s_\textrm{w}$ giống nhau, ta chỉ nói về stride $s$. Stride có thể làm giảm độ phân giải của đầu ra, chẳng hạn giảm chiều cao và chiều rộng của đầu ra xuống chỉ còn $1/n$ chiều cao và chiều rộng của đầu vào với $n > 1$. Theo mặc định, padding là 0 và stride là 1. 
 
-So far all padding that we discussed simply extended images with zeros. This has significant computational benefit since it is trivial to accomplish. Moreover, operators can be engineered to take advantage of this padding implicitly without the need to allocate additional memory. At the same time, it allows CNNs to encode implicit position information within an image, simply by learning where the "whitespace" is. There are many alternatives to zero-padding. :citet:`Alsallakh.Kokhlikyan.Miglani.ea.2020` provided an extensive overview of those (albeit without a clear case for when to use nonzero paddings unless artifacts occur). 
+Cho đến nay, mọi padding mà ta đã thảo luận đều chỉ mở rộng ảnh bằng các số 0. Điều này mang lại lợi ích tính toán đáng kể vì rất dễ thực hiện. Hơn nữa, các toán tử có thể được thiết kế để tận dụng padding này một cách ngầm định mà không cần cấp phát thêm bộ nhớ. Đồng thời, nó cho phép CNN mã hóa thông tin vị trí ngầm định trong ảnh, chỉ bằng cách học vị trí của "khoảng trắng". Có nhiều lựa chọn thay thế cho zero-padding. :citet:`Alsallakh.Kokhlikyan.Miglani.ea.2020` đã cung cấp một tổng quan rộng rãi về các lựa chọn đó (dù chưa đưa ra trường hợp rõ ràng về thời điểm nên dùng padding khác 0, trừ khi xuất hiện artifacts). 
 
 
-## Exercises
+## Bài tập
 
-1. Given the final code example in this section with kernel size $(3, 5)$, padding $(0, 1)$, and stride $(3, 4)$, 
-   calculate the output shape to check if it is consistent with the experimental result.
-1. For audio signals, what does a stride of 2 correspond to?
-1. Implement mirror padding, i.e., padding where the border values are simply mirrored to extend tensors. 
-1. What are the computational benefits of a stride larger than 1?
-1. What might be statistical benefits of a stride larger than 1?
-1. How would you implement a stride of $\frac{1}{2}$? What does it correspond to? When would this be useful?
+1. Với ví dụ code cuối cùng trong phần này có kernel size $(3, 5)$, padding $(0, 1)$ và stride $(3, 4)$, 
+   hãy tính output shape để kiểm tra xem nó có nhất quán với kết quả thực nghiệm hay không.
+1. Đối với tín hiệu âm thanh, stride bằng 2 tương ứng với điều gì?
+1. Hãy triển khai mirror padding, tức là padding trong đó các giá trị biên được phản chiếu đơn giản để mở rộng tensor. 
+1. Lợi ích tính toán của stride lớn hơn 1 là gì?
+1. Lợi ích thống kê của stride lớn hơn 1 có thể là gì?
+1. Bạn sẽ triển khai stride $\frac{1}{2}$ như thế nào? Nó tương ứng với điều gì? Khi nào điều này hữu ích?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/67)
+[Thảo luận](https://discuss.d2l.ai/t/67)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/68)
+[Thảo luận](https://discuss.d2l.ai/t/68)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/272)
+[Thảo luận](https://discuss.d2l.ai/t/272)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17997)
+[Thảo luận](https://discuss.d2l.ai/t/17997)
 :end_tab:

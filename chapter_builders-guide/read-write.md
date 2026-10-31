@@ -3,21 +3,21 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# File I/O
+# I/O tệp
 
-So far we have discussed how to process data and how
-to build, train, and test deep learning models.
-However, at some point we will hopefully be happy enough
-with the learned models that we will want
-to save the results for later use in various contexts
-(perhaps even to make predictions in deployment).
-Additionally, when running a long training process,
-the best practice is to periodically save intermediate results (checkpointing)
-to ensure that we do not lose several days' worth of computation
-if we trip over the power cord of our server.
-Thus it is time to learn how to load and store
-both individual weight vectors and entire models.
-This section addresses both issues.
+Cho đến nay, chúng ta đã thảo luận về cách xử lý dữ liệu và cách
+xây dựng, huấn luyện, cũng như kiểm thử các mô hình deep learning.
+Tuy nhiên, vào một thời điểm nào đó, hy vọng chúng ta sẽ đủ hài lòng
+với các mô hình đã học để muốn
+lưu kết quả nhằm sử dụng sau này trong nhiều ngữ cảnh khác nhau
+(có thể thậm chí để đưa ra dự đoán khi deploy).
+Ngoài ra, khi chạy một quá trình huấn luyện dài,
+thực hành tốt nhất là định kỳ lưu các kết quả trung gian (checkpointing)
+để bảo đảm rằng chúng ta không mất lượng tính toán trị giá vài ngày
+nếu vô tình vấp phải dây nguồn của máy chủ.
+Vì vậy, đã đến lúc tìm hiểu cách nạp và lưu trữ
+cả các vector trọng số riêng lẻ lẫn toàn bộ mô hình.
+Phần này đề cập đến cả hai vấn đề.
 
 ```{.python .input}
 %%tab mxnet
@@ -49,13 +49,13 @@ import jax
 from jax import numpy as jnp
 ```
 
-## (**Loading and Saving Tensors**)
+## (**Nạp và Lưu Tensor**)
 
-For individual tensors, we can directly
-invoke the `load` and `save` functions
-to read and write them respectively.
-Both functions require that we supply a name,
-and `save` requires as input the variable to be saved.
+Đối với từng tensor riêng lẻ, chúng ta có thể trực tiếp
+gọi các hàm `load` và `save`
+để lần lượt đọc và ghi chúng.
+Cả hai hàm đều yêu cầu chúng ta cung cấp một tên,
+và `save` yêu cầu biến cần lưu làm đầu vào.
 
 ```{.python .input}
 %%tab mxnet
@@ -81,7 +81,7 @@ x = jnp.arange(4)
 jnp.save('x-file.npy', x)
 ```
 
-We can now read the data from the stored file back into memory.
+Bây giờ, chúng ta có thể đọc dữ liệu từ tệp đã lưu trở lại bộ nhớ.
 
 ```{.python .input}
 %%tab mxnet
@@ -107,7 +107,7 @@ x2 = jnp.load('x-file.npy', allow_pickle=True)
 x2
 ```
 
-We can [**store a list of tensors and read them back into memory.**]
+Chúng ta có thể [**lưu một danh sách tensor và đọc chúng trở lại bộ nhớ.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -141,10 +141,10 @@ x2, y2 = jnp.load('xy-files.npy', allow_pickle=True)
 (x2, y2)
 ```
 
-We can even [**write and read a dictionary that maps
-from strings to tensors.**]
-This is convenient when we want
-to read or write all the weights in a model.
+Chúng ta thậm chí có thể [**ghi và đọc một dictionary ánh xạ
+từ chuỗi sang tensor.**]
+Điều này thuận tiện khi chúng ta muốn
+đọc hoặc ghi tất cả trọng số trong một mô hình.
 
 ```{.python .input}
 %%tab mxnet
@@ -178,25 +178,25 @@ mydict2 = jnp.load('mydict.npy', allow_pickle=True)
 mydict2
 ```
 
-## [**Loading and Saving Model Parameters**]
+## [**Nạp và Lưu Tham số Mô hình**]
 
-Saving individual weight vectors (or other tensors) is useful,
-but it gets very tedious if we want to save
-(and later load) an entire model.
-After all, we might have hundreds of
-parameter groups sprinkled throughout.
-For this reason the deep learning framework provides built-in functionalities
-to load and save entire networks.
-An important detail to note is that this
-saves model *parameters* and not the entire model.
-For example, if we have a 3-layer MLP,
-we need to specify the architecture separately.
-The reason for this is that the models themselves can contain arbitrary code,
-hence they cannot be serialized as naturally.
-Thus, in order to reinstate a model, we need
-to generate the architecture in code
-and then load the parameters from disk.
-(**Let's start with our familiar MLP.**)
+Việc lưu các vector trọng số riêng lẻ (hoặc các tensor khác) rất hữu ích,
+nhưng sẽ trở nên rất tẻ nhạt nếu chúng ta muốn lưu
+(và sau đó nạp) toàn bộ một mô hình.
+Dù sao đi nữa, chúng ta có thể có hàng trăm
+nhóm tham số nằm rải rác khắp nơi.
+Vì lý do này, framework deep learning cung cấp các chức năng tích hợp sẵn
+để nạp và lưu toàn bộ mạng.
+Một chi tiết quan trọng cần lưu ý là thao tác này
+lưu *tham số* mô hình chứ không phải toàn bộ mô hình.
+Ví dụ, nếu có một MLP 3 lớp,
+chúng ta cần chỉ định kiến trúc riêng.
+Lý do là bản thân các mô hình có thể chứa mã tùy ý,
+do đó chúng không thể được serialize một cách tự nhiên.
+Vì vậy, để khôi phục một mô hình, chúng ta cần
+tạo kiến trúc trong mã
+rồi nạp các tham số từ ổ đĩa.
+(**Hãy bắt đầu với MLP quen thuộc của chúng ta.**)
 
 ```{.python .input}
 %%tab mxnet
@@ -265,7 +265,7 @@ X = jax.random.normal(jax.random.PRNGKey(d2l.get_seed()), (2, 20))
 Y, params = net.init_with_output(jax.random.PRNGKey(d2l.get_seed()), X)
 ```
 
-Next, we [**store the parameters of the model as a file**] with the name "mlp.params".
+Tiếp theo, chúng ta [**lưu các tham số của mô hình thành một tệp**] có tên "mlp.params".
 
 ```{.python .input}
 %%tab mxnet
@@ -287,10 +287,10 @@ net.save_weights('mlp.params')
 checkpoints.save_checkpoint('ckpt_dir', params, step=1, overwrite=True)
 ```
 
-To recover the model, we instantiate a clone
-of the original MLP model.
-Instead of randomly initializing the model parameters,
-we [**read the parameters stored in the file directly**].
+Để khôi phục mô hình, chúng ta khởi tạo một bản sao
+của mô hình MLP gốc.
+Thay vì khởi tạo ngẫu nhiên các tham số mô hình,
+chúng ta [**đọc trực tiếp các tham số được lưu trong tệp**].
 
 ```{.python .input}
 %%tab mxnet
@@ -318,9 +318,9 @@ cloned_params = flax.core.freeze(checkpoints.restore_checkpoint('ckpt_dir',
                                                                 target=None))
 ```
 
-Since both instances have the same model parameters,
-the computational result of the same input `X` should be the same.
-Let's verify this.
+Vì cả hai instance đều có cùng tham số mô hình,
+kết quả tính toán cho cùng đầu vào `X` phải giống nhau.
+Hãy xác minh điều này.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -334,30 +334,30 @@ Y_clone = clone.apply(cloned_params, X)
 Y_clone == Y
 ```
 
-## Summary
+## Tóm tắt
 
-The `save` and `load` functions can be used to perform file I/O for tensor objects.
-We can save and load the entire sets of parameters for a network via a parameter dictionary.
-Saving the architecture has to be done in code rather than in parameters.
+Các hàm `save` và `load` có thể được dùng để thực hiện I/O tệp cho các đối tượng tensor.
+Chúng ta có thể lưu và nạp toàn bộ tập tham số của một mạng thông qua một parameter dictionary.
+Việc lưu kiến trúc phải được thực hiện trong mã thay vì trong các tham số.
 
-## Exercises
+## Bài tập
 
-1. Even if there is no need to deploy trained models to a different device, what are the practical benefits of storing model parameters?
-1. Assume that we want to reuse only parts of a network to be incorporated into a network having a different architecture. How would you go about using, say the first two layers from a previous network in a new network?
-1. How would you go about saving the network architecture and parameters? What restrictions would you impose on the architecture?
+1. Ngay cả khi không cần deploy các mô hình đã huấn luyện sang một thiết bị khác, những lợi ích thực tế của việc lưu trữ tham số mô hình là gì?
+1. Giả sử chúng ta chỉ muốn tái sử dụng các phần của một mạng để tích hợp vào một mạng có kiến trúc khác. Bạn sẽ sử dụng, chẳng hạn, hai lớp đầu tiên từ một mạng trước đó trong một mạng mới như thế nào?
+1. Bạn sẽ lưu kiến trúc mạng và các tham số như thế nào? Bạn sẽ áp đặt những hạn chế nào đối với kiến trúc?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/60)
+[Thảo luận](https://discuss.d2l.ai/t/60)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/61)
+[Thảo luận](https://discuss.d2l.ai/t/61)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/327)
+[Thảo luận](https://discuss.d2l.ai/t/327)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17994)
+[Thảo luận](https://discuss.d2l.ai/t/17994)
 :end_tab:

@@ -3,14 +3,14 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Convolutions for Images
+# Phép tích chập cho ảnh
 :label:`sec_conv_layer`
 
-Now that we understand how convolutional layers work in theory,
-we are ready to see how they work in practice.
-Building on our motivation of convolutional neural networks
-as efficient architectures for exploring structure in image data,
-we stick with images as our running example.
+Giờ đây, khi đã hiểu cách các lớp tích chập hoạt động về mặt lý thuyết,
+chúng ta sẵn sàng xem chúng hoạt động trong thực tế như thế nào.
+Dựa trên động lực xây dựng mạng nơ-ron tích chập
+như các kiến trúc hiệu quả để khai thác cấu trúc trong dữ liệu ảnh,
+chúng ta sẽ tiếp tục dùng ảnh làm ví dụ xuyên suốt.
 
 ```{.python .input}
 %%tab mxnet
@@ -41,45 +41,45 @@ from d2l import tensorflow as d2l
 import tensorflow as tf
 ```
 
-## The Cross-Correlation Operation
+## Phép toán tương quan chéo
 
-Recall that strictly speaking, convolutional layers
-are a  misnomer, since the operations they express
-are more accurately described as cross-correlations.
-Based on our descriptions of convolutional layers in :numref:`sec_why-conv`,
-in such a layer, an input tensor
-and a kernel tensor are combined
-to produce an output tensor through a (**cross-correlation operation.**)
+Hãy nhớ rằng, nói một cách chặt chẽ thì các lớp tích chập
+là một cách gọi không hoàn toàn chính xác, vì các phép toán mà chúng biểu diễn
+được mô tả chính xác hơn là các phép tương quan chéo.
+Dựa trên mô tả về các lớp tích chập trong :numref:`sec_why-conv`,
+trong một lớp như vậy, một tensor đầu vào
+và một tensor kernel được kết hợp
+để tạo ra một tensor đầu ra thông qua một (**phép toán tương quan chéo.**)
 
-Let's ignore channels for now and see how this works
-with two-dimensional data and hidden representations.
-In :numref:`fig_correlation`,
-the input is a two-dimensional tensor
-with a height of 3 and width of 3.
-We mark the shape of the tensor as $3 \times 3$ or ($3$, $3$).
-The height and width of the kernel are both 2.
-The shape of the *kernel window* (or *convolution window*)
-is given by the height and width of the kernel
-(here it is $2 \times 2$).
+Tạm thời hãy bỏ qua các kênh và xem cách điều này hoạt động
+với dữ liệu hai chiều và các biểu diễn ẩn.
+Trong :numref:`fig_correlation`,
+đầu vào là một tensor hai chiều
+có chiều cao 3 và chiều rộng 3.
+Chúng ta ký hiệu hình dạng của tensor là $3 \times 3$ hoặc ($3$, $3$).
+Chiều cao và chiều rộng của kernel đều là 2.
+Hình dạng của *cửa sổ kernel* (hay *cửa sổ tích chập*)
+được xác định bởi chiều cao và chiều rộng của kernel
+(trong trường hợp này là $2 \times 2$).
 
-![Two-dimensional cross-correlation operation. The shaded portions are the first output element as well as the input and kernel tensor elements used for the output computation: $0\times0+1\times1+3\times2+4\times3=19$.](../img/correlation.svg)
+![Phép toán tương quan chéo hai chiều. Các phần được tô bóng là phần tử đầu ra đầu tiên, cũng như các phần tử của tensor đầu vào và kernel được dùng để tính đầu ra: $0\times0+1\times1+3\times2+4\times3=19$.](../img/correlation.svg)
 :label:`fig_correlation`
 
-In the two-dimensional cross-correlation operation,
-we begin with the convolution window positioned
-at the upper-left corner of the input tensor
-and slide it across the input tensor,
-both from left to right and top to bottom.
-When the convolution window slides to a certain position,
-the input subtensor contained in that window
-and the kernel tensor are multiplied elementwise
-and the resulting tensor is summed up
-yielding a single scalar value.
-This result gives the value of the output tensor
-at the corresponding location.
-Here, the output tensor has a height of 2 and width of 2
-and the four elements are derived from
-the two-dimensional cross-correlation operation:
+Trong phép toán tương quan chéo hai chiều,
+chúng ta bắt đầu với cửa sổ tích chập được đặt
+ở góc trên bên trái của tensor đầu vào
+và trượt nó trên tensor đầu vào,
+theo cả hướng từ trái sang phải lẫn từ trên xuống dưới.
+Khi cửa sổ tích chập trượt đến một vị trí nhất định,
+tensor con đầu vào nằm trong cửa sổ đó
+và tensor kernel được nhân theo từng phần tử,
+sau đó tensor kết quả được cộng lại
+để tạo ra một giá trị vô hướng duy nhất.
+Kết quả này cho giá trị của tensor đầu ra
+tại vị trí tương ứng.
+Ở đây, tensor đầu ra có chiều cao 2 và chiều rộng 2
+và bốn phần tử được suy ra từ
+phép toán tương quan chéo hai chiều:
 
 $$
 0\times0+1\times1+3\times2+4\times3=19,\\
@@ -88,25 +88,25 @@ $$
 4\times0+5\times1+7\times2+8\times3=43.
 $$
 
-Note that along each axis, the output size
-is slightly smaller than the input size.
-Because the kernel has width and height greater than $1$,
-we can only properly compute the cross-correlation
-for locations where the kernel fits wholly within the image,
-the output size is given by the input size $n_\textrm{h} \times n_\textrm{w}$
-minus the size of the convolution kernel $k_\textrm{h} \times k_\textrm{w}$
-via
+Lưu ý rằng trên mỗi trục, kích thước đầu ra
+nhỏ hơn một chút so với kích thước đầu vào.
+Do kernel có chiều rộng và chiều cao lớn hơn $1$,
+chúng ta chỉ có thể tính tương quan chéo đúng cách
+tại các vị trí mà kernel nằm trọn trong ảnh,
+kích thước đầu ra được xác định bằng kích thước đầu vào $n_\textrm{h} \times n_\textrm{w}$
+trừ đi kích thước của kernel tích chập $k_\textrm{h} \times k_\textrm{w}$
+theo công thức
 
 $$(n_\textrm{h}-k_\textrm{h}+1) \times (n_\textrm{w}-k_\textrm{w}+1).$$
 
-This is the case since we need enough space
-to "shift" the convolution kernel across the image.
-Later we will see how to keep the size unchanged
-by padding the image with zeros around its boundary
-so that there is enough space to shift the kernel.
-Next, we implement this process in the `corr2d` function,
-which accepts an input tensor `X` and a kernel tensor `K`
-and returns an output tensor `Y`.
+Điều này xảy ra vì chúng ta cần đủ không gian
+để "trượt" kernel tích chập trên ảnh.
+Sau này, chúng ta sẽ thấy cách giữ nguyên kích thước
+bằng cách đệm ảnh bằng các số 0 quanh biên
+để có đủ không gian trượt kernel.
+Tiếp theo, chúng ta triển khai quy trình này trong hàm `corr2d`,
+hàm này nhận một tensor đầu vào `X` và một tensor kernel `K`
+và trả về một tensor đầu ra `Y`.
 
 ```{.python .input}
 %%tab mxnet
@@ -157,10 +157,10 @@ def corr2d(X, K):  #@save
     return Y
 ```
 
-We can construct the input tensor `X` and the kernel tensor `K`
-from :numref:`fig_correlation`
-to [**validate the output of the above implementation**]
-of the two-dimensional cross-correlation operation.
+Chúng ta có thể tạo tensor đầu vào `X` và tensor kernel `K`
+từ :numref:`fig_correlation`
+để [**xác thực đầu ra của phần triển khai ở trên**]
+cho phép toán tương quan chéo hai chiều.
 
 ```{.python .input}
 %%tab all
@@ -169,22 +169,22 @@ K = d2l.tensor([[0.0, 1.0], [2.0, 3.0]])
 corr2d(X, K)
 ```
 
-## Convolutional Layers
+## Các lớp tích chập
 
-A convolutional layer cross-correlates the input and kernel
-and adds a scalar bias to produce an output.
-The two parameters of a convolutional layer
-are the kernel and the scalar bias.
-When training models based on convolutional layers,
-we typically initialize the kernels randomly,
-just as we would with a fully connected layer.
+Một lớp tích chập thực hiện tương quan chéo giữa đầu vào và kernel
+rồi thêm một bias vô hướng để tạo ra đầu ra.
+Hai tham số của một lớp tích chập
+là kernel và bias vô hướng.
+Khi huấn luyện các mô hình dựa trên lớp tích chập,
+chúng ta thường khởi tạo kernel ngẫu nhiên,
+tương tự như đối với lớp kết nối đầy đủ.
 
-We are now ready to [**implement a two-dimensional convolutional layer**]
-based on the `corr2d` function defined above.
-In the `__init__` constructor method,
-we declare `weight` and `bias` as the two model parameters.
-The forward propagation method
-calls the `corr2d` function and adds the bias.
+Giờ đây, chúng ta sẵn sàng [**triển khai một lớp tích chập hai chiều**]
+dựa trên hàm `corr2d` đã được định nghĩa ở trên.
+Trong phương thức khởi tạo `__init__`,
+chúng ta khai báo `weight` và `bias` là hai tham số mô hình.
+Phương thức lan truyền thuận
+gọi hàm `corr2d` và cộng thêm bias.
 
 ```{.python .input}
 %%tab mxnet
@@ -240,22 +240,21 @@ class Conv2D(nn.Module):
         return corr2d(x, self.weight) + self.bias
 ```
 
-In
-$h \times w$ convolution
-or an $h \times w$ convolution kernel,
-the height and width of the convolution kernel are $h$ and $w$, respectively.
-We also refer to
-a convolutional layer with an $h \times w$
-convolution kernel simply as an $h \times w$ convolutional layer.
+Trong phép tích chập $h \times w$
+hoặc một kernel tích chập $h \times w$,
+chiều cao và chiều rộng của kernel tích chập lần lượt là $h$ và $w$.
+Chúng ta cũng gọi
+một lớp tích chập có kernel tích chập $h \times w$
+đơn giản là một lớp tích chập $h \times w$.
 
 
-## Object Edge Detection in Images
+## Phát hiện biên của đối tượng trong ảnh
 
-Let's take a moment to parse [**a simple application of a convolutional layer:
-detecting the edge of an object in an image**]
-by finding the location of the pixel change.
-First, we construct an "image" of $6\times 8$ pixels.
-The middle four columns are black ($0$) and the rest are white ($1$).
+Hãy dành chút thời gian để tìm hiểu [**một ứng dụng đơn giản của lớp tích chập:
+phát hiện biên của một đối tượng trong ảnh**]
+bằng cách tìm vị trí thay đổi pixel.
+Trước tiên, chúng ta tạo một "ảnh" gồm $6\times 8$ pixel.
+Bốn cột ở giữa có màu đen ($0$), còn các phần còn lại có màu trắng ($1$).
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -278,22 +277,22 @@ X = X.at[:, 2:6].set(0)
 X
 ```
 
-Next, we construct a kernel `K` with a height of 1 and a width of 2.
-When we perform the cross-correlation operation with the input,
-if the horizontally adjacent elements are the same,
-the output is 0. Otherwise, the output is nonzero.
-Note that this kernel is a special case of a finite difference operator. At location $(i,j)$ it computes $x_{i,j} - x_{(i+1),j}$, i.e., it computes the difference between the values of horizontally adjacent pixels. This is a discrete approximation of the first derivative in the horizontal direction. After all, for a function $f(i,j)$ its derivative $-\partial_i f(i,j) = \lim_{\epsilon \to 0} \frac{f(i,j) - f(i+\epsilon,j)}{\epsilon}$. Let's see how this works in practice.
+Tiếp theo, chúng ta tạo một kernel `K` có chiều cao 1 và chiều rộng 2.
+Khi thực hiện phép tương quan chéo với đầu vào,
+nếu các phần tử kề nhau theo chiều ngang giống nhau,
+đầu ra là 0. Nếu không, đầu ra khác 0.
+Lưu ý rằng kernel này là một trường hợp đặc biệt của toán tử sai phân hữu hạn. Tại vị trí $(i,j)$, nó tính $x_{i,j} - x_{(i+1),j}$, tức là tính chênh lệch giữa giá trị của các pixel kề nhau theo chiều ngang. Đây là một xấp xỉ rời rạc của đạo hàm bậc nhất theo hướng ngang. Xét cho cùng, với một hàm $f(i,j)$, đạo hàm của nó là $-\partial_i f(i,j) = \lim_{\epsilon \to 0} \frac{f(i,j) - f(i+\epsilon,j)}{\epsilon}$. Hãy xem điều này hoạt động trong thực tế như thế nào.
 
 ```{.python .input}
 %%tab all
 K = d2l.tensor([[1.0, -1.0]])
 ```
 
-We are ready to perform the cross-correlation operation
-with arguments `X` (our input) and `K` (our kernel).
-As you can see, [**we detect $1$ for the edge from white to black
-and $-1$ for the edge from black to white.**]
-All other outputs take value $0$.
+Chúng ta sẵn sàng thực hiện phép tương quan chéo
+với các đối số `X` (đầu vào của chúng ta) và `K` (kernel của chúng ta).
+Như bạn có thể thấy, [**chúng ta phát hiện giá trị $1$ cho biên từ trắng sang đen
+và $-1$ cho biên từ đen sang trắng.**]
+Mọi đầu ra khác đều có giá trị $0$.
 
 ```{.python .input}
 %%tab all
@@ -301,35 +300,35 @@ Y = corr2d(X, K)
 Y
 ```
 
-We can now apply the kernel to the transposed image.
-As expected, it vanishes. [**The kernel `K` only detects vertical edges.**]
+Giờ đây, chúng ta có thể áp dụng kernel cho ảnh đã chuyển vị.
+Đúng như dự kiến, nó triệt tiêu. [**Kernel `K` chỉ phát hiện các biên dọc.**]
 
 ```{.python .input}
 %%tab all
 corr2d(d2l.transpose(X), K)
 ```
 
-## Learning a Kernel
+## Học một kernel
 
-Designing an edge detector by finite differences `[1, -1]` is neat
-if we know this is precisely what we are looking for.
-However, as we look at larger kernels,
-and consider successive layers of convolutions,
-it might be impossible to specify
-precisely what each filter should be doing manually.
+Việc thiết kế bộ phát hiện biên bằng sai phân hữu hạn `[1, -1]` là rất tiện
+nếu chúng ta biết chính xác đây là điều mình cần tìm.
+Tuy nhiên, khi xét các kernel lớn hơn
+và các lớp tích chập liên tiếp,
+có thể không thể chỉ định chính xác
+mỗi filter nên thực hiện điều gì theo cách thủ công.
 
-Now let's see whether we can [**learn the kernel that generated `Y` from `X`**]
-by looking at the input--output pairs only.
-We first construct a convolutional layer
-and initialize its kernel as a random tensor.
-Next, in each iteration, we will use the squared error
-to compare `Y` with the output of the convolutional layer.
-We can then calculate the gradient to update the kernel.
-For the sake of simplicity,
-in the following
-we use the built-in class
-for two-dimensional convolutional layers
-and ignore the bias.
+Bây giờ, hãy xem liệu chúng ta có thể [**học kernel đã tạo ra `Y` từ `X`**]
+chỉ bằng cách quan sát các cặp đầu vào--đầu ra hay không.
+Trước tiên, chúng ta tạo một lớp tích chập
+và khởi tạo kernel của nó bằng một tensor ngẫu nhiên.
+Tiếp theo, trong mỗi vòng lặp, chúng ta sẽ dùng sai số bình phương
+để so sánh `Y` với đầu ra của lớp tích chập.
+Sau đó, chúng ta có thể tính gradient để cập nhật kernel.
+Để đơn giản,
+trong phần sau,
+chúng ta sử dụng lớp dựng sẵn
+cho các lớp tích chập hai chiều
+và bỏ qua bias.
 
 ```{.python .input}
 %%tab mxnet
@@ -435,7 +434,7 @@ for i in range(10):
         print(f'epoch {i + 1}, loss {l:.3f}')
 ```
 
-Note that the error has dropped to a small value after 10 iterations. Now we will [**take a look at the kernel tensor we learned.**]
+Lưu ý rằng sai số đã giảm xuống một giá trị nhỏ sau 10 vòng lặp. Bây giờ chúng ta sẽ [**xem tensor kernel đã học được.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -457,140 +456,139 @@ d2l.reshape(conv2d.get_weights()[0], (1, 2))
 params['params']['kernel'].reshape((1, 2))
 ```
 
-Indeed, the learned kernel tensor is remarkably close
-to the kernel tensor `K` we defined earlier.
+Thật vậy, tensor kernel đã học được rất gần
+với tensor kernel `K` mà chúng ta đã định nghĩa trước đó.
 
-## Cross-Correlation and Convolution
+## Tương quan chéo và tích chập
 
-Recall our observation from :numref:`sec_why-conv` of the correspondence
-between the cross-correlation and convolution operations.
-Here let's continue to consider two-dimensional convolutional layers.
-What if such layers
-perform strict convolution operations
-as defined in :eqref:`eq_2d-conv-discrete`
-instead of cross-correlations?
-In order to obtain the output of the strict *convolution* operation, we only need to flip the two-dimensional kernel tensor both horizontally and vertically, and then perform the *cross-correlation* operation with the input tensor.
+Hãy nhớ lại nhận xét của chúng ta trong :numref:`sec_why-conv` về sự tương ứng
+giữa phép tương quan chéo và phép tích chập.
+Ở đây, chúng ta tiếp tục xét các lớp tích chập hai chiều.
+Điều gì xảy ra nếu các lớp như vậy
+thực hiện các phép tích chập chặt chẽ
+như được định nghĩa trong :eqref:`eq_2d-conv-discrete`
+thay vì tương quan chéo?
+Để thu được đầu ra của phép *tích chập* chặt chẽ, chúng ta chỉ cần lật tensor kernel hai chiều theo cả chiều ngang lẫn chiều dọc, sau đó thực hiện phép *tương quan chéo* với tensor đầu vào.
 
-It is noteworthy that since kernels are learned from data in deep learning,
-the outputs of convolutional layers remain unaffected
-no matter such layers
-perform
-either the strict convolution operations
-or the cross-correlation operations.
+Đáng chú ý là vì kernel được học từ dữ liệu trong deep learning,
+đầu ra của các lớp tích chập không bị ảnh hưởng
+dù các lớp đó
+thực hiện
+phép tích chập chặt chẽ
+hay phép tương quan chéo.
 
-To illustrate this, suppose that a convolutional layer performs *cross-correlation* and learns the kernel in :numref:`fig_correlation`, which is here denoted as the matrix $\mathbf{K}$.
-Assuming that other conditions remain unchanged,
-when this layer instead performs strict *convolution*,
-the learned kernel $\mathbf{K}'$ will be the same as $\mathbf{K}$
-after $\mathbf{K}'$ is
-flipped both horizontally and vertically.
-That is to say,
-when the convolutional layer
-performs strict *convolution*
-for the input in :numref:`fig_correlation`
-and $\mathbf{K}'$,
-the same output in :numref:`fig_correlation`
-(cross-correlation of the input and $\mathbf{K}$)
-will be obtained.
+Để minh họa điều này, giả sử một lớp tích chập thực hiện *tương quan chéo* và học kernel trong :numref:`fig_correlation`, ở đây được ký hiệu là ma trận $\mathbf{K}$.
+Giả sử các điều kiện khác không đổi,
+khi lớp này thay vào đó thực hiện *tích chập* chặt chẽ,
+kernel đã học $\mathbf{K}'$ sẽ giống $\mathbf{K}$
+sau khi $\mathbf{K}'$ được
+lật theo cả chiều ngang lẫn chiều dọc.
+Nói cách khác,
+khi lớp tích chập
+thực hiện *tích chập* chặt chẽ
+với đầu vào trong :numref:`fig_correlation`
+và $\mathbf{K}'$,
+nó sẽ thu được cùng đầu ra trong :numref:`fig_correlation`
+(tương quan chéo của đầu vào và $\mathbf{K}$).
 
-In keeping with standard terminology in deep learning literature,
-we will continue to refer to the cross-correlation operation
-as a convolution even though, strictly-speaking, it is slightly different.
-Furthermore,
-we use the term *element* to refer to
-an entry (or component) of any tensor representing a layer representation or a convolution kernel.
+Theo thuật ngữ chuẩn trong tài liệu deep learning,
+chúng ta sẽ tiếp tục gọi phép toán tương quan chéo
+là phép tích chập (convolution), dù xét một cách chặt chẽ thì chúng có đôi chút khác biệt.
+Hơn nữa,
+chúng ta dùng thuật ngữ *phần tử* để chỉ
+một mục (hoặc thành phần) của bất kỳ tensor nào biểu diễn một biểu diễn tầng hoặc một kernel tích chập.
 
 
-## Feature Map and Receptive Field
+## Feature Map và Receptive Field
 
-As described in :numref:`subsec_why-conv-channels`,
-the convolutional layer output in
+Như được mô tả trong :numref:`subsec_why-conv-channels`,
+đầu ra của tầng tích chập trong
 :numref:`fig_correlation`
-is sometimes called a *feature map*,
-as it can be regarded as
-the learned representations (features)
-in the spatial dimensions (e.g., width and height)
-to the subsequent layer.
-In CNNs,
-for any element $x$ of some layer,
-its *receptive field* refers to
-all the elements (from all the previous layers)
-that may affect the calculation of $x$
-during the forward propagation.
-Note that the receptive field
-may be larger than the actual size of the input.
+đôi khi được gọi là *feature map*,
+vì nó có thể được xem là
+các biểu diễn (đặc trưng) đã học
+trong các chiều không gian (ví dụ: chiều rộng và chiều cao)
+cho tầng tiếp theo.
+Trong CNN,
+với bất kỳ phần tử $x$ nào của một tầng,
+*receptive field* của nó đề cập đến
+tất cả các phần tử (từ mọi tầng trước đó)
+có thể ảnh hưởng đến việc tính toán $x$
+trong quá trình lan truyền xuôi (forward propagation).
+Lưu ý rằng receptive field
+có thể lớn hơn kích thước thực tế của đầu vào.
 
-Let's continue to use :numref:`fig_correlation` to explain the receptive field.
-Given the $2 \times 2$ convolution kernel,
-the receptive field of the shaded output element (of value $19$)
-is
-the four elements in the shaded portion of the input.
-Now let's denote the $2 \times 2$
-output as $\mathbf{Y}$
-and consider a deeper CNN
-with an additional $2 \times 2$ convolutional layer that takes $\mathbf{Y}$
-as its input, outputting
-a single element $z$.
-In this case,
-the receptive field of $z$
-on $\mathbf{Y}$ includes all the four elements of $\mathbf{Y}$,
-while
-the receptive field
-on the input includes all the nine input elements.
-Thus,
-when any element in a feature map
-needs a larger receptive field
-to detect input features over a broader area,
-we can build a deeper network.
+Hãy tiếp tục sử dụng :numref:`fig_correlation` để giải thích receptive field.
+Với kernel tích chập $2 \times 2$,
+receptive field của phần tử đầu ra được tô bóng (có giá trị $19$)
+là
+bốn phần tử trong vùng được tô bóng của đầu vào.
+Bây giờ, hãy ký hiệu đầu ra $2 \times 2$
+là $\mathbf{Y}$
+và xét một CNN sâu hơn
+với một tầng tích chập $2 \times 2$ bổ sung nhận $\mathbf{Y}$
+làm đầu vào và cho ra
+một phần tử duy nhất $z$.
+Trong trường hợp này,
+receptive field của $z$
+trên $\mathbf{Y}$ bao gồm cả bốn phần tử của $\mathbf{Y}$,
+trong khi
+receptive field
+trên đầu vào bao gồm toàn bộ chín phần tử đầu vào.
+Do đó,
+khi bất kỳ phần tử nào trong một feature map
+cần receptive field lớn hơn
+để phát hiện các đặc trưng đầu vào trên một vùng rộng hơn,
+chúng ta có thể xây dựng một mạng sâu hơn.
 
 
-Receptive fields derive their name from neurophysiology.
-A series of experiments on a range of animals using different stimuli
-:cite:`Hubel.Wiesel.1959,Hubel.Wiesel.1962,Hubel.Wiesel.1968` explored the response of what is called the visual
-cortex on said stimuli. By and large they found that lower levels respond to edges and related
-shapes. Later on, :citet:`Field.1987` illustrated this effect on natural
-images with, what can only be called, convolutional kernels.
-We reprint a key figure in :numref:`field_visual` to illustrate the striking similarities.
+Receptive field có tên gọi bắt nguồn từ sinh lý thần kinh.
+Một loạt thí nghiệm trên nhiều loài động vật với các kích thích khác nhau
+:cite:`Hubel.Wiesel.1959,Hubel.Wiesel.1962,Hubel.Wiesel.1968` đã khảo sát phản ứng của cái gọi là vỏ não
+thị giác đối với các kích thích nói trên. Nhìn chung, họ nhận thấy rằng các tầng thấp hơn phản ứng với các cạnh và
+các hình dạng liên quan. Sau đó, :citet:`Field.1987` đã minh họa hiệu ứng này trên các ảnh tự nhiên
+bằng những gì chỉ có thể gọi là các kernel tích chập.
+Chúng tôi in lại một hình quan trọng trong :numref:`field_visual` để minh họa những điểm tương đồng nổi bật.
 
-![Figure and caption taken from :citet:`Field.1987`: An example of coding with six different channels. (Left) Examples of the six types of sensor associated with each channel. (Right) Convolution of the image in (Middle) with the six sensors shown in (Left). The response of the individual sensors is determined by sampling these filtered images at a distance proportional to the size of the sensor (shown with dots). This diagram shows the response of only the even symmetric sensors.](../img/field-visual.png)
+![Hình và chú thích lấy từ :citet:`Field.1987`: Một ví dụ về mã hóa với sáu kênh khác nhau. (Trái) Ví dụ về sáu loại cảm biến gắn với mỗi kênh. (Phải) Tích chập của ảnh ở (Giữa) với sáu cảm biến được hiển thị ở (Trái). Phản hồi của từng cảm biến được xác định bằng cách lấy mẫu các ảnh đã lọc này tại khoảng cách tỷ lệ với kích thước của cảm biến (được biểu thị bằng các chấm). Sơ đồ này chỉ hiển thị phản hồi của các cảm biến đối xứng chẵn.](../img/field-visual.png)
 :label:`field_visual`
 
-As it turns out, this relation even holds for the features computed by deeper layers of networks trained on image classification tasks, as demonstrated in, for example, :citet:`Kuzovkin.Vicente.Petton.ea.2018`. Suffice it to say, convolutions have proven to be an incredibly powerful tool for computer vision, both in biology and in code. As such, it is not surprising (in hindsight) that they heralded the recent success in deep learning.
+Hóa ra, mối quan hệ này thậm chí còn đúng với các đặc trưng được tính bởi các tầng sâu hơn của những mạng được huấn luyện cho các tác vụ phân loại ảnh, như được minh họa, chẳng hạn, trong :citet:`Kuzovkin.Vicente.Petton.ea.2018`. Chỉ cần nói rằng, phép tích chập đã chứng tỏ là một công cụ cực kỳ mạnh mẽ cho thị giác máy tính, cả trong sinh học lẫn trong mã nguồn. Vì vậy, không có gì ngạc nhiên (khi nhìn lại) rằng chúng đã mở đường cho thành công gần đây của deep learning.
 
-## Summary
+## Tóm tắt
 
-The core computation required for a convolutional layer is a cross-correlation operation. We saw that a simple nested for-loop is all that is required to compute its value. If we have multiple input and multiple output channels, we are  performing a matrix--matrix operation between channels. As can be seen, the computation is straightforward and, most importantly, highly *local*. This affords significant hardware optimization and many recent results in computer vision are only possible because of that. After all, it means that chip designers can invest in fast computation rather than memory when it comes to optimizing for convolutions. While this may not lead to optimal designs for other applications, it does open the door to ubiquitous and affordable computer vision.
+Phép tính cốt lõi cần thiết cho một tầng tích chập là phép toán tương quan chéo. Chúng ta đã thấy rằng chỉ cần một vòng lặp for lồng nhau đơn giản để tính giá trị của nó. Nếu có nhiều kênh đầu vào và nhiều kênh đầu ra, chúng ta đang thực hiện một phép toán ma trận--ma trận giữa các kênh. Như có thể thấy, phép tính này đơn giản và, quan trọng nhất, có tính *cục bộ* cao. Điều này cho phép tối ưu hóa phần cứng đáng kể, và nhiều kết quả gần đây trong thị giác máy tính chỉ khả thi nhờ điều đó. Xét cho cùng, điều này có nghĩa là các nhà thiết kế chip có thể đầu tư vào tính toán nhanh thay vì bộ nhớ khi tối ưu hóa cho phép tích chập. Mặc dù điều này có thể không dẫn đến các thiết kế tối ưu cho những ứng dụng khác, nó mở ra cánh cửa cho thị giác máy tính phổ biến và có chi phí phải chăng.
 
-In terms of convolutions themselves, they can be used for many purposes, for example detecting edges and lines, blurring images, or sharpening them. Most importantly, it is not necessary that the statistician (or engineer) invents suitable filters. Instead, we can simply *learn* them from data. This replaces feature engineering heuristics by evidence-based statistics. Lastly, and quite delightfully, these filters are not just advantageous for building deep networks but they also correspond to receptive fields and feature maps in the brain. This gives us confidence that we are on the right track.
+Về bản thân phép tích chập, chúng có thể được sử dụng cho nhiều mục đích, chẳng hạn như phát hiện cạnh và đường thẳng, làm mờ ảnh hoặc làm sắc nét ảnh. Quan trọng nhất, không cần nhà thống kê (hoặc kỹ sư) phải phát minh các bộ lọc phù hợp. Thay vào đó, chúng ta có thể đơn giản *học* chúng từ dữ liệu. Điều này thay thế các heuristic feature engineering bằng thống kê dựa trên bằng chứng. Cuối cùng, và khá thú vị, các bộ lọc này không chỉ có lợi cho việc xây dựng mạng sâu mà còn tương ứng với receptive field và feature map trong não bộ. Điều này cho chúng ta niềm tin rằng mình đang đi đúng hướng.
 
-## Exercises
+## Bài tập
 
-1. Construct an image `X` with diagonal edges.
-    1. What happens if you apply the kernel `K` in this section to it?
-    1. What happens if you transpose `X`?
-    1. What happens if you transpose `K`?
-1. Design some kernels manually.
-    1. Given a directional vector $\mathbf{v} = (v_1, v_2)$, derive an edge-detection kernel that detects
-       edges orthogonal to $\mathbf{v}$, i.e., edges in the direction $(v_2, -v_1)$.
-    1. Derive a finite difference operator for the second derivative. What is the minimum
-       size of the convolutional kernel associated with it? Which structures in images respond most strongly to it?
-    1. How would you design a blur kernel? Why might you want to use such a kernel?
-    1. What is the minimum size of a kernel to obtain a derivative of order $d$?
-1. When you try to automatically find the gradient for the `Conv2D` class we created, what kind of error message do you see?
-1. How do you represent a cross-correlation operation as a matrix multiplication by changing the input and kernel tensors?
+1. Xây dựng một ảnh `X` có các cạnh chéo.
+    1. Điều gì xảy ra nếu bạn áp dụng kernel `K` trong phần này lên ảnh đó?
+    1. Điều gì xảy ra nếu bạn chuyển vị `X`?
+    1. Điều gì xảy ra nếu bạn chuyển vị `K`?
+1. Tự thiết kế một số kernel.
+    1. Với vector có hướng $\mathbf{v} = (v_1, v_2)$, hãy suy ra một kernel phát hiện cạnh có thể phát hiện
+       các cạnh trực giao với $\mathbf{v}$, tức là các cạnh theo hướng $(v_2, -v_1)$.
+    1. Suy ra một toán tử sai phân hữu hạn cho đạo hàm bậc hai. Kích thước tối thiểu
+       của kernel tích chập liên kết với nó là bao nhiêu? Những cấu trúc nào trong ảnh phản hồi mạnh nhất với nó?
+    1. Bạn sẽ thiết kế kernel làm mờ như thế nào? Vì sao bạn có thể muốn sử dụng kernel như vậy?
+    1. Kích thước tối thiểu của một kernel để thu được đạo hàm bậc $d$ là bao nhiêu?
+1. Khi bạn cố gắng tự động tìm gradient cho lớp `Conv2D` mà chúng ta đã tạo, bạn thấy loại thông báo lỗi nào?
+1. Bạn biểu diễn phép toán tương quan chéo dưới dạng phép nhân ma trận bằng cách thay đổi các tensor đầu vào và kernel như thế nào?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/65)
+[Thảo luận](https://discuss.d2l.ai/t/65)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/66)
+[Thảo luận](https://discuss.d2l.ai/t/66)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/271)
+[Thảo luận](https://discuss.d2l.ai/t/271)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17996)
+[Thảo luận](https://discuss.d2l.ai/t/17996)
 :end_tab:

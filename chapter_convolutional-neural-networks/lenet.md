@@ -3,41 +3,41 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Convolutional Neural Networks (LeNet)
+# Mạng nơ-ron tích chập (LeNet)
 :label:`sec_lenet`
 
-We now have all the ingredients required to assemble
-a fully-functional CNN.
-In our earlier encounter with image data, we applied
-a linear model with softmax regression (:numref:`sec_softmax_scratch`)
-and an MLP (:numref:`sec_mlp-implementation`)
-to pictures of clothing in the Fashion-MNIST dataset.
-To make such data amenable we first flattened each image from a $28\times28$ matrix
-into a fixed-length $784$-dimensional vector,
-and thereafter processed them in fully connected layers.
-Now that we have a handle on convolutional layers,
-we can retain the spatial structure in our images.
-As an additional benefit of replacing fully connected layers with convolutional layers,
-we will enjoy more parsimonious models that require far fewer parameters.
+Giờ đây, chúng ta đã có đầy đủ các thành phần cần thiết để xây dựng
+một CNN hoạt động hoàn chỉnh.
+Trong lần tiếp cận dữ liệu ảnh trước đây, chúng ta đã áp dụng
+một mô hình tuyến tính với hồi quy softmax (:numref:`sec_softmax_scratch`)
+và một MLP (:numref:`sec_mlp-implementation`)
+cho các ảnh quần áo trong bộ dữ liệu Fashion-MNIST.
+Để xử lý được dữ liệu như vậy, trước hết chúng ta đã làm phẳng từng ảnh từ ma trận $28\times28$
+thành một vector có độ dài cố định gồm $784$ chiều,
+sau đó xử lý chúng trong các lớp kết nối đầy đủ.
+Giờ đây khi đã nắm được các lớp tích chập,
+chúng ta có thể giữ lại cấu trúc không gian của ảnh.
+Một lợi ích bổ sung khi thay các lớp kết nối đầy đủ bằng các lớp tích chập
+là chúng ta sẽ có các mô hình gọn hơn đáng kể, cần ít tham số hơn nhiều.
 
-In this section, we will introduce *LeNet*,
-among the first published CNNs
-to capture wide attention for its performance on computer vision tasks.
-The model was introduced by (and named for) Yann LeCun,
-then a researcher at AT&T Bell Labs,
-for the purpose of recognizing handwritten digits in images :cite:`LeCun.Bottou.Bengio.ea.1998`.
-This work represented the culmination
-of a decade of research developing the technology;
-LeCun's team published the first study to successfully
-train CNNs via backpropagation :cite:`LeCun.Boser.Denker.ea.1989`.
+Trong phần này, chúng ta sẽ giới thiệu *LeNet*,
+một trong những CNN được công bố sớm nhất
+và thu hút sự chú ý rộng rãi nhờ hiệu năng trên các tác vụ thị giác máy tính.
+Mô hình được Yann LeCun, khi đó là nhà nghiên cứu tại AT&T Bell Labs,
+giới thiệu (và được đặt theo tên ông)
+nhằm nhận dạng các chữ số viết tay trong ảnh :cite:`LeCun.Bottou.Bengio.ea.1998`.
+Công trình này là đỉnh cao
+của một thập kỷ nghiên cứu phát triển công nghệ;
+nhóm của LeCun đã công bố nghiên cứu đầu tiên huấn luyện thành công
+CNN bằng backpropagation :cite:`LeCun.Boser.Denker.ea.1989`.
 
-At the time LeNet achieved outstanding results
-matching the performance of support vector machines,
-then a dominant approach in supervised learning, achieving an error rate of less than 1% per digit.
-LeNet was eventually adapted to recognize digits
-for processing deposits in ATM machines.
-To this day, some ATMs still run the code
-that Yann LeCun and his colleague Leon Bottou wrote in the 1990s!
+Vào thời điểm đó, LeNet đạt kết quả xuất sắc,
+sánh ngang hiệu năng của support vector machines,
+khi ấy là một phương pháp thống trị trong học có giám sát, với tỷ lệ lỗi dưới 1% cho mỗi chữ số.
+LeNet sau đó được điều chỉnh để nhận dạng chữ số
+phục vụ xử lý tiền gửi tại các máy ATM.
+Cho đến ngày nay, một số máy ATM vẫn chạy mã
+mà Yann LeCun và đồng nghiệp Leon Bottou đã viết vào những năm 1990!
 
 ```{.python .input}
 %%tab mxnet
@@ -71,53 +71,53 @@ from types import FunctionType
 
 ## LeNet
 
-At a high level, (**LeNet (LeNet-5) consists of two parts:
-(i) a convolutional encoder consisting of two convolutional layers; and
-(ii) a dense block consisting of three fully connected layers**).
-The architecture is summarized in :numref:`img_lenet`.
+Ở mức tổng quan, (**LeNet (LeNet-5) gồm hai phần:
+(i) một encoder tích chập gồm hai lớp tích chập; và
+(ii) một khối dense gồm ba lớp kết nối đầy đủ**).
+Kiến trúc được tóm tắt trong :numref:`img_lenet`.
 
-![Data flow in LeNet. The input is a handwritten digit, the output is a probability over 10 possible outcomes.](../img/lenet.svg)
+![Luồng dữ liệu trong LeNet. Đầu vào là một chữ số viết tay, đầu ra là xác suất trên 10 kết quả có thể có.](../img/lenet.svg)
 :label:`img_lenet`
 
-The basic units in each convolutional block
-are a convolutional layer, a sigmoid activation function,
-and a subsequent average pooling operation.
-Note that while ReLUs and max-pooling work better,
-they had not yet been discovered.
-Each convolutional layer uses a $5\times 5$ kernel
-and a sigmoid activation function.
-These layers map spatially arranged inputs
-to a number of two-dimensional feature maps, typically
-increasing the number of channels.
-The first convolutional layer has 6 output channels,
-while the second has 16.
-Each $2\times2$ pooling operation (stride 2)
-reduces dimensionality by a factor of $4$ via spatial downsampling.
-The convolutional block emits an output with shape given by
-(batch size, number of channel, height, width).
+Các đơn vị cơ bản trong mỗi khối tích chập
+là một lớp tích chập, một hàm kích hoạt sigmoid,
+và một phép average pooling tiếp theo.
+Lưu ý rằng mặc dù ReLU và max-pooling hoạt động tốt hơn,
+chúng vẫn chưa được phát hiện vào thời điểm đó.
+Mỗi lớp tích chập sử dụng kernel $5\times 5$
+và hàm kích hoạt sigmoid.
+Các lớp này ánh xạ đầu vào được sắp xếp theo không gian
+thành một số feature map hai chiều, thường là
+tăng số lượng kênh.
+Lớp tích chập đầu tiên có 6 kênh đầu ra,
+trong khi lớp thứ hai có 16 kênh.
+Mỗi phép pooling $2\times2$ (stride 2)
+giảm số chiều đi $4$ lần thông qua downsampling theo không gian.
+Khối tích chập tạo ra đầu ra có shape
+(batch size, số lượng kênh, chiều cao, chiều rộng).
 
-In order to pass output from the convolutional block
-to the dense block,
-we must flatten each example in the minibatch.
-In other words, we take this four-dimensional input and transform it
-into the two-dimensional input expected by fully connected layers:
-as a reminder, the two-dimensional representation that we desire uses the first dimension to index examples in the minibatch
-and the second to give the flat vector representation of each example.
-LeNet's dense block has three fully connected layers,
-with 120, 84, and 10 outputs, respectively.
-Because we are still performing classification,
-the 10-dimensional output layer corresponds
-to the number of possible output classes.
+Để truyền đầu ra từ khối tích chập
+sang khối dense,
+chúng ta phải làm phẳng từng mẫu trong minibatch.
+Nói cách khác, chúng ta lấy đầu vào bốn chiều này và biến đổi nó
+thành đầu vào hai chiều mà các lớp kết nối đầy đủ mong đợi:
+nhắc lại rằng, biểu diễn hai chiều mà ta cần sử dụng chiều thứ nhất để lập chỉ mục các mẫu trong minibatch
+và chiều thứ hai để biểu diễn vector phẳng của mỗi mẫu.
+Khối dense của LeNet có ba lớp kết nối đầy đủ,
+với lần lượt 120, 84 và 10 đầu ra.
+Vì chúng ta vẫn đang thực hiện phân loại,
+lớp đầu ra 10 chiều tương ứng
+với số lượng lớp đầu ra có thể có.
 
-While getting to the point where you truly understand
-what is going on inside LeNet may have taken a bit of work,
-we hope that the following code snippet will convince you
-that implementing such models with modern deep learning frameworks
-is remarkably simple.
-We need only to instantiate a `Sequential` block
-and chain together the appropriate layers,
-using Xavier initialization as
-introduced in :numref:`subsec_xavier`.
+Mặc dù để thực sự hiểu
+điều đang diễn ra bên trong LeNet có thể cần một chút công sức,
+chúng tôi hy vọng rằng đoạn mã sau đây sẽ thuyết phục bạn
+rằng việc triển khai những mô hình như vậy bằng các deep learning framework hiện đại
+đơn giản đáng kể.
+Chúng ta chỉ cần khởi tạo một khối `Sequential`
+và nối chuỗi các lớp phù hợp,
+sử dụng khởi tạo Xavier như
+đã giới thiệu trong :numref:`subsec_xavier`.
 
 ```{.python .input}
 %%tab pytorch
@@ -197,39 +197,40 @@ class LeNet(d2l.Classifier):  #@save
         ])
 ```
 
-We have taken some liberty in the reproduction of LeNet insofar as we have replaced the Gaussian activation layer by
-a softmax layer. This greatly simplifies the implementation, not least due to the
-fact that the Gaussian decoder is rarely used nowadays. Other than that, this network matches
-the original LeNet-5 architecture.
+Chúng tôi đã điều chỉnh đôi chút khi tái tạo LeNet, cụ thể là thay lớp kích hoạt Gaussian bằng
+một lớp softmax. Điều này đơn giản hóa đáng kể việc triển khai, đặc biệt vì
+Gaussian decoder ngày nay hiếm khi được sử dụng. Ngoài điểm đó, mạng này khớp với
+kiến trúc LeNet-5 gốc.
 
 :begin_tab:`pytorch, mxnet, tensorflow`
-Let's see what happens inside the network. By passing a
-single-channel (black and white)
-$28 \times 28$ image through the network
-and printing the output shape at each layer,
-we can [**inspect the model**] to ensure
-that its operations line up with
-what we expect from :numref:`img_lenet_vert`.
+Hãy xem điều gì xảy ra bên trong mạng. Bằng cách đưa một ảnh
+một kênh (đen trắng)
+$28 \times 28$ qua mạng
+và in shape đầu ra tại mỗi lớp,
+chúng ta có thể [**kiểm tra mô hình**] để đảm bảo
+các phép toán của nó phù hợp với
+những gì ta mong đợi từ :numref:`img_lenet_vert`.
 :end_tab:
 
 :begin_tab:`jax`
-Let's see what happens inside the network. By passing a
-single-channel (black and white)
-$28 \times 28$ image through the network
-and printing the output shape at each layer,
-we can [**inspect the model**] to ensure
-that its operations line up with
-what we expect from :numref:`img_lenet_vert`.
-Flax provides `nn.tabulate`, a nifty method to summarise the layers and
-parameters in our network. Here we use the `bind` method to create a bounded model.
-The variables are now bound to the `d2l.Module` class, i.e., this bounded model
-becomes a stateful object which can then be used to access the `Sequential`
-object attribute `net` and the `layers` within. Note that the `bind` method should
-only be used for interactive experimentation, and is not a direct
-replacement for the `apply` method.
+Hãy xem điều gì xảy ra bên trong mạng. Bằng cách đưa một ảnh
+một kênh (đen trắng)
+$28 \times 28$ qua mạng
+và in shape đầu ra tại mỗi lớp,
+chúng ta có thể [**kiểm tra mô hình**] để đảm bảo
+các phép toán của nó phù hợp với
+những gì ta mong đợi từ :numref:`img_lenet_vert`.
+Flax cung cấp `nn.tabulate`, một phương thức tiện dụng để tóm tắt các lớp và
+tham số trong mạng của chúng ta. Ở đây, chúng ta sử dụng phương thức `bind` để tạo một mô hình bound.
+Các biến giờ đây được bound với lớp `d2l.Module`, tức là mô hình bound này
+trở thành một đối tượng có trạng thái, sau đó có thể được dùng để truy cập
+thuộc tính đối tượng `net` của `Sequential`
+và `layers` bên trong nó. Lưu ý rằng phương thức `bind`
+chỉ nên được dùng để thử nghiệm tương tác và không phải là
+thay thế trực tiếp cho phương thức `apply`.
 :end_tab:
 
-![Compressed notation for LeNet-5.](../img/lenet-vert.svg)
+![Ký hiệu rút gọn cho LeNet-5.](../img/lenet-vert.svg)
 :label:`img_lenet_vert`
 
 ```{.python .input}
@@ -274,47 +275,46 @@ model = LeNet()
 model.layer_summary((1, 28, 28, 1))
 ```
 
-Note that the height and width of the representation
-at each layer throughout the convolutional block
-is reduced (compared with the previous layer).
-The first convolutional layer uses two pixels of padding
-to compensate for the reduction in height and width
-that would otherwise result from using a $5 \times 5$ kernel.
-As an aside, the image size of $28 \times 28$ pixels in the original
-MNIST OCR dataset is a result of *trimming* two pixel rows (and columns) from the
-original scans that measured $32 \times 32$ pixels. This was done primarily to
-save space (a 30% reduction) at a time when megabytes mattered.
+Lưu ý rằng chiều cao và chiều rộng của biểu diễn
+tại mỗi lớp trong toàn bộ khối tích chập
+đều giảm đi (so với lớp trước đó).
+Lớp tích chập đầu tiên sử dụng padding hai pixel
+để bù cho sự giảm chiều cao và chiều rộng
+vốn sẽ xảy ra khi dùng kernel $5 \times 5$.
+Ngoài lề, kích thước ảnh $28 \times 28$ pixel trong bộ dữ liệu OCR MNIST gốc
+là kết quả của việc *cắt bớt* hai hàng (và cột) pixel từ
+các bản quét gốc có kích thước $32 \times 32$ pixel. Việc này chủ yếu được thực hiện để
+tiết kiệm dung lượng (giảm 30%) vào thời điểm mà megabyte còn rất đáng giá.
 
-In contrast, the second convolutional layer forgoes padding,
-and thus the height and width are both reduced by four pixels.
-As we go up the stack of layers,
-the number of channels increases layer-over-layer
-from 1 in the input to 6 after the first convolutional layer
-and 16 after the second convolutional layer.
-However, each pooling layer halves the height and width.
-Finally, each fully connected layer reduces dimensionality,
-finally emitting an output whose dimension
-matches the number of classes.
+Ngược lại, lớp tích chập thứ hai không dùng padding,
+do đó chiều cao và chiều rộng đều giảm bốn pixel.
+Khi đi lên qua chồng lớp,
+số lượng kênh tăng dần theo từng lớp
+từ 1 ở đầu vào lên 6 sau lớp tích chập đầu tiên
+và 16 sau lớp tích chập thứ hai.
+Tuy nhiên, mỗi lớp pooling giảm một nửa chiều cao và chiều rộng.
+Cuối cùng, mỗi lớp kết nối đầy đủ giảm số chiều,
+và cuối cùng tạo ra đầu ra có số chiều
+khớp với số lượng lớp.
 
 
-## Training
+## Huấn luyện
 
-Now that we have implemented the model,
-let's [**run an experiment to see how the LeNet-5 model fares on Fashion-MNIST**].
+Giờ đây khi đã triển khai mô hình,
+hãy [**chạy một thí nghiệm để xem mô hình LeNet-5 hoạt động thế nào trên Fashion-MNIST**].
 
-While CNNs have fewer parameters,
-they can still be more expensive to compute
-than similarly deep MLPs
-because each parameter participates in many more
-multiplications.
-If you have access to a GPU, this might be a good time
-to put it into action to speed up training.
-Note that
-the `d2l.Trainer` class takes care of all details.
-By default, it initializes the model parameters on the
-available devices.
-Just as with MLPs, our loss function is cross-entropy,
-and we minimize it via minibatch stochastic gradient descent.
+Mặc dù CNN có ít tham số hơn,
+chúng vẫn có thể tốn chi phí tính toán hơn
+so với các MLP có độ sâu tương tự
+vì mỗi tham số tham gia vào nhiều phép nhân hơn.
+Nếu bạn có quyền truy cập GPU, đây có thể là thời điểm phù hợp
+để sử dụng nó nhằm tăng tốc huấn luyện.
+Lưu ý rằng
+lớp `d2l.Trainer` đảm nhiệm toàn bộ các chi tiết.
+Theo mặc định, nó khởi tạo các tham số mô hình trên
+các thiết bị khả dụng.
+Tương tự như với MLP, hàm mất mát của chúng ta là cross-entropy,
+và chúng ta tối thiểu hóa nó bằng stochastic gradient descent theo minibatch.
 
 ```{.python .input}
 %%tab pytorch, mxnet, jax
@@ -335,39 +335,39 @@ with d2l.try_gpu():
     trainer.fit(model, data)
 ```
 
-## Summary
+## Tóm tắt
 
-We have made significant progress in this chapter. We moved from the MLPs of the 1980s to the CNNs of the 1990s and early 2000s. The architectures proposed, e.g., in the form of LeNet-5 remain meaningful, even to this day. It is worth comparing the error rates on Fashion-MNIST achievable with LeNet-5 both to the very best possible with MLPs (:numref:`sec_mlp-implementation`) and those with significantly more advanced architectures such as ResNet (:numref:`sec_resnet`). LeNet is much more similar to the latter than to the former. One of the primary differences, as we shall see, is that greater amounts of computation enabled significantly more complex architectures.
+Chúng ta đã đạt được tiến bộ đáng kể trong chương này. Chúng ta đã chuyển từ các MLP của thập niên 1980 sang các CNN của thập niên 1990 và đầu những năm 2000. Các kiến trúc được đề xuất, chẳng hạn dưới dạng LeNet-5, vẫn còn ý nghĩa ngay cả đến ngày nay. Cần so sánh tỷ lệ lỗi trên Fashion-MNIST có thể đạt được bằng LeNet-5 với cả kết quả tốt nhất có thể của MLP (:numref:`sec_mlp-implementation`) lẫn kết quả của các kiến trúc tiên tiến hơn đáng kể như ResNet (:numref:`sec_resnet`). LeNet giống với loại sau hơn nhiều so với loại trước. Một trong những khác biệt chính, như chúng ta sẽ thấy, là lượng tính toán lớn hơn đã cho phép các kiến trúc phức tạp hơn đáng kể.
 
-A second difference is the relative ease with which we were able to implement LeNet. What used to be an engineering challenge worth months of C++ and assembly code, engineering to improve SN, an early Lisp-based deep learning tool :cite:`Bottou.Le-Cun.1988`, and finally experimentation with models can now be accomplished in minutes. It is this incredible productivity boost that has democratized deep learning model development tremendously. In the next chapter, we will journey down this rabbit hole to see where it takes us.
+Khác biệt thứ hai là mức độ dễ dàng tương đối khi chúng ta triển khai LeNet. Những gì từng là một thách thức kỹ thuật đòi hỏi hàng tháng viết mã C++ và assembly, kỹ thuật hóa để cải tiến SN, một công cụ deep learning ban đầu dựa trên Lisp :cite:`Bottou.Le-Cun.1988`, rồi cuối cùng mới thử nghiệm mô hình, nay có thể hoàn thành trong vài phút. Chính sự tăng năng suất đáng kinh ngạc này đã dân chủ hóa mạnh mẽ việc phát triển mô hình deep learning. Trong chương tiếp theo, chúng ta sẽ đi sâu vào chủ đề này để xem nó sẽ dẫn ta tới đâu.
 
-## Exercises
+## Bài tập
 
-1. Let's modernize LeNet. Implement and test the following changes:
-    1. Replace average pooling with max-pooling.
-    1. Replace the softmax layer with ReLU.
-1. Try to change the size of the LeNet style network to improve its accuracy in addition to max-pooling and ReLU.
-    1. Adjust the convolution window size.
-    1. Adjust the number of output channels.
-    1. Adjust the number of convolution layers.
-    1. Adjust the number of fully connected layers.
-    1. Adjust the learning rates and other training details (e.g., initialization and number of epochs).
-1. Try out the improved network on the original MNIST dataset.
-1. Display the activations of the first and second layer of LeNet for different inputs (e.g., sweaters and coats).
-1. What happens to the activations when you feed significantly different images into the network (e.g., cats, cars, or even random noise)?
+1. Hãy hiện đại hóa LeNet. Triển khai và kiểm thử các thay đổi sau:
+    1. Thay average pooling bằng max-pooling.
+    1. Thay lớp softmax bằng ReLU.
+1. Hãy thử thay đổi kích thước của mạng kiểu LeNet để cải thiện độ chính xác, bên cạnh max-pooling và ReLU.
+    1. Điều chỉnh kích thước cửa sổ convolution.
+    1. Điều chỉnh số lượng kênh đầu ra.
+    1. Điều chỉnh số lượng lớp convolution.
+    1. Điều chỉnh số lượng lớp fully connected.
+    1. Điều chỉnh learning rate và các chi tiết huấn luyện khác (ví dụ: khởi tạo và số epoch).
+1. Thử nghiệm mạng đã cải tiến trên bộ dữ liệu MNIST gốc.
+1. Hiển thị activation của lớp thứ nhất và thứ hai của LeNet đối với các đầu vào khác nhau (ví dụ: áo len và áo khoác).
+1. Điều gì xảy ra với các activation khi bạn đưa những hình ảnh khác biệt đáng kể vào mạng (ví dụ: mèo, ô tô hoặc thậm chí nhiễu ngẫu nhiên)?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/73)
+[Thảo luận](https://discuss.d2l.ai/t/73)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/74)
+[Thảo luận](https://discuss.d2l.ai/t/74)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/275)
+[Thảo luận](https://discuss.d2l.ai/t/275)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18000)
+[Thảo luận](https://discuss.d2l.ai/t/18000)
 :end_tab:

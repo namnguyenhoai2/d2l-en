@@ -3,16 +3,16 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Batch Normalization
+# Chuẩn hóa theo batch
 :label:`sec_batch_norm`
 
-Training deep neural networks is difficult.
-Getting them to converge in a reasonable amount of time can be tricky.
-In this section, we describe *batch normalization*, a popular and effective technique
-that consistently accelerates the convergence of deep networks :cite:`Ioffe.Szegedy.2015`.
-Together with residual blocks---covered later in :numref:`sec_resnet`---batch normalization
-has made it possible for practitioners to routinely train networks with over 100 layers.
-A secondary (serendipitous) benefit of batch normalization lies in its inherent regularization.
+Việc huấn luyện các mạng nơ-ron sâu rất khó.
+Để chúng hội tụ trong một khoảng thời gian hợp lý có thể là một thách thức.
+Trong phần này, chúng ta mô tả *chuẩn hóa theo batch* (batch normalization), một kỹ thuật phổ biến và hiệu quả
+giúp tăng tốc quá trình hội tụ của các mạng sâu một cách nhất quán :cite:`Ioffe.Szegedy.2015`.
+Cùng với các residual block---được trình bày sau trong :numref:`sec_resnet`---chuẩn hóa theo batch
+đã giúp các chuyên gia có thể thường xuyên huấn luyện những mạng có hơn 100 lớp.
+Một lợi ích phụ (tình cờ) của chuẩn hóa theo batch là khả năng regularization vốn có của nó.
 
 ```{.python .input}
 %%tab mxnet
@@ -45,234 +45,234 @@ import jax
 import optax
 ```
 
-## Training Deep Networks
+## Huấn luyện mạng sâu
 
-When working with data, we often preprocess before training.
-Choices regarding data preprocessing often make an enormous difference in the final results.
-Recall our application of MLPs to predicting house prices (:numref:`sec_kaggle_house`).
-Our first step when working with real data
-was to standardize our input features to have
-zero mean $\boldsymbol{\mu} = 0$ and unit variance $\boldsymbol{\Sigma} = \boldsymbol{1}$ across multiple observations :cite:`friedman1987exploratory`, frequently rescaling the latter so  that the diagonal is unity, i.e., $\Sigma_{ii} = 1$.
-Yet another strategy is to rescale vectors to unit length, possibly zero mean *per observation*.
-This can work well, e.g., for spatial sensor data. These preprocessing techniques and many others, are
-beneficial for keeping the estimation problem well controlled. 
-For a review of feature selection and extraction see the article of :citet:`guyon2008feature`, for example.
-Standardizing vectors also has the nice side-effect of constraining the function complexity of functions that act upon it. For instance, the celebrated radius-margin bound :cite:`Vapnik95` in support vector machines and the Perceptron Convergence Theorem :cite:`Novikoff62` rely on inputs of bounded norm. 
+Khi làm việc với dữ liệu, chúng ta thường tiền xử lý trước khi huấn luyện.
+Các lựa chọn về tiền xử lý dữ liệu thường tạo ra khác biệt rất lớn trong kết quả cuối cùng.
+Hãy nhớ lại việc chúng ta áp dụng MLP để dự đoán giá nhà (:numref:`sec_kaggle_house`).
+Bước đầu tiên khi làm việc với dữ liệu thực
+là chuẩn hóa các đặc trưng đầu vào để chúng có
+trung bình bằng không $\boldsymbol{\mu} = 0$ và phương sai đơn vị $\boldsymbol{\Sigma} = \boldsymbol{1}$ trên nhiều quan sát :cite:`friedman1987exploratory`, thường điều chỉnh lại đại lượng sau để đường chéo bằng một, tức là $\Sigma_{ii} = 1$.
+Một chiến lược khác là điều chỉnh các vector về độ dài đơn vị, có thể kèm trung bình bằng không *cho mỗi quan sát*.
+Điều này có thể hoạt động tốt, chẳng hạn với dữ liệu cảm biến không gian. Các kỹ thuật tiền xử lý này cùng nhiều kỹ thuật khác
+hữu ích trong việc giữ cho bài toán ước lượng được kiểm soát tốt.
+Ví dụ, để xem tổng quan về lựa chọn và trích xuất đặc trưng, hãy xem bài viết của :citet:`guyon2008feature`.
+Chuẩn hóa vector cũng có tác dụng phụ hữu ích là hạn chế độ phức tạp của các hàm tác động lên chúng. Chẳng hạn, cận radius-margin nổi tiếng :cite:`Vapnik95` trong máy vector hỗ trợ và Định lý Hội tụ Perceptron :cite:`Novikoff62` đều dựa vào đầu vào có chuẩn bị chặn.
 
-Intuitively, this standardization plays nicely with our optimizers
-since it puts the parameters *a priori* on a similar scale.
-As such, it is only natural to ask whether a corresponding normalization step *inside* a deep network
-might not be beneficial. While this is not quite the reasoning that led to the invention of batch normalization :cite:`Ioffe.Szegedy.2015`, it is a useful way of understanding it and its cousin, layer normalization :cite:`Ba.Kiros.Hinton.2016`, within a unified framework.
+Về trực giác, việc chuẩn hóa này phù hợp với các optimizer của chúng ta
+vì nó đặt các tham số *a priori* trên một thang đo tương tự.
+Do đó, tự nhiên ta sẽ đặt câu hỏi liệu một bước chuẩn hóa tương ứng *bên trong* mạng sâu
+có thể mang lại lợi ích hay không. Mặc dù đây không hẳn là lập luận dẫn đến sự ra đời của chuẩn hóa theo batch :cite:`Ioffe.Szegedy.2015`, nhưng đây là cách hữu ích để hiểu nó và họ hàng của nó, chuẩn hóa theo lớp (layer normalization) :cite:`Ba.Kiros.Hinton.2016`, trong một khuôn khổ thống nhất.
 
-Second, for a typical MLP or CNN, as we train,
-the variables 
-in intermediate layers (e.g., affine transformation outputs in MLP)
-may take values with widely varying magnitudes:
-whether along the layers from input to output, across units in the same layer,
-and over time due to our updates to the model parameters.
-The inventors of batch normalization postulated informally
-that this drift in the distribution of such variables could hamper the convergence of the network.
-Intuitively, we might conjecture that if one
-layer has variable activations that are 100 times that of another layer,
-this might necessitate compensatory adjustments in the learning rates. Adaptive solvers
-such as AdaGrad :cite:`Duchi.Hazan.Singer.2011`, Adam :cite:`Kingma.Ba.2014`, Yogi :cite:`Zaheer.Reddi.Sachan.ea.2018`, or Distributed Shampoo :cite:`anil2020scalable` aim to address this from the viewpoint of optimization, e.g., by adding aspects of second-order methods. 
-The alternative is to prevent the problem from occurring, simply by adaptive normalization.
+Thứ hai, với một MLP hoặc CNN điển hình, trong quá trình huấn luyện,
+các biến
+ở các lớp trung gian (ví dụ, đầu ra của phép biến đổi affine trong MLP)
+có thể nhận các giá trị với độ lớn rất khác nhau:
+theo chiều các lớp từ đầu vào đến đầu ra, giữa các unit trong cùng một lớp,
+và theo thời gian do chúng ta cập nhật các tham số mô hình.
+Các nhà phát minh chuẩn hóa theo batch đã không chính thức giả định
+rằng sự trôi dạt trong phân phối của các biến như vậy có thể cản trở sự hội tụ của mạng.
+Về trực giác, chúng ta có thể phỏng đoán rằng nếu một
+lớp có activation của biến lớn gấp 100 lần lớp khác,
+điều này có thể đòi hỏi các điều chỉnh bù trừ đối với learning rate. Các solver thích nghi
+như AdaGrad :cite:`Duchi.Hazan.Singer.2011`, Adam :cite:`Kingma.Ba.2014`, Yogi :cite:`Zaheer.Reddi.Sachan.ea.2018`, hoặc Distributed Shampoo :cite:`anil2020scalable` nhằm giải quyết vấn đề này từ góc độ tối ưu hóa, chẳng hạn bằng cách bổ sung các khía cạnh của phương pháp bậc hai.
+Giải pháp thay thế là ngăn vấn đề xảy ra, đơn giản bằng cách chuẩn hóa thích nghi.
 
-Third, deeper networks are complex and tend to be more liable to overfitting.
-This means that regularization becomes more critical. A common technique for regularization is noise
-injection. This has been known for a long time, e.g., with regard to noise injection for the
-inputs :cite:`Bishop.1995`. It also forms the basis of dropout in :numref:`sec_dropout`. As it turns out, quite serendipitously, batch normalization conveys all three benefits: preprocessing, numerical stability, and regularization.
+Thứ ba, các mạng sâu hơn phức tạp và thường dễ overfitting hơn.
+Điều này khiến regularization trở nên quan trọng hơn. Một kỹ thuật regularization phổ biến là chèn nhiễu.
+Điều này đã được biết đến từ lâu, chẳng hạn đối với việc chèn nhiễu vào
+đầu vào :cite:`Bishop.1995`. Nó cũng là cơ sở của dropout trong :numref:`sec_dropout`. Hóa ra, khá tình cờ, chuẩn hóa theo batch mang lại cả ba lợi ích: tiền xử lý, ổn định số học và regularization.
 
-Batch normalization is applied to individual layers, or optionally, to all of them:
-In each training iteration,
-we first normalize the inputs (of batch normalization)
-by subtracting their mean and
-dividing by their standard deviation,
-where both are estimated based on the statistics of the current minibatch.
-Next, we apply a scale coefficient and an offset to recover the lost degrees
-of freedom. It is precisely due to this *normalization* based on *batch* statistics
-that *batch normalization* derives its name.
+Chuẩn hóa theo batch được áp dụng cho từng lớp, hoặc tùy chọn cho tất cả các lớp:
+Trong mỗi vòng lặp huấn luyện,
+trước tiên chúng ta chuẩn hóa các đầu vào (của chuẩn hóa theo batch)
+bằng cách trừ đi trung bình của chúng và
+chia cho độ lệch chuẩn của chúng,
+trong đó cả hai được ước lượng dựa trên thống kê của minibatch hiện tại.
+Tiếp theo, chúng ta áp dụng một hệ số scale và một offset để khôi phục các bậc
+tự do đã mất. Chính do việc *chuẩn hóa* này dựa trên thống kê của *batch*
+mà *chuẩn hóa theo batch* có tên gọi như vậy.
 
-Note that if we tried to apply batch normalization with minibatches of size 1,
-we would not be able to learn anything.
-That is because after subtracting the means,
-each hidden unit would take value 0.
-As you might guess, since we are devoting a whole section to batch normalization,
-with large enough minibatches the approach proves effective and stable.
-One takeaway here is that when applying batch normalization,
-the choice of batch size is
-even more significant than without batch normalization, or at least,
-suitable calibration is needed as we might adjust batch size.
+Lưu ý rằng nếu cố áp dụng chuẩn hóa theo batch với minibatch có kích thước 1,
+chúng ta sẽ không thể học được gì.
+Đó là vì sau khi trừ đi các giá trị trung bình,
+mỗi hidden unit sẽ nhận giá trị 0.
+Như bạn có thể đoán, vì chúng ta dành cả một phần cho chuẩn hóa theo batch,
+với minibatch đủ lớn, phương pháp này tỏ ra hiệu quả và ổn định.
+Một điểm cần rút ra ở đây là khi áp dụng chuẩn hóa theo batch,
+việc chọn kích thước batch
+còn quan trọng hơn so với khi không dùng chuẩn hóa theo batch, hoặc ít nhất,
+cần hiệu chỉnh phù hợp khi chúng ta có thể điều chỉnh kích thước batch.
 
-Denote by $\mathcal{B}$ a minibatch and let $\mathbf{x} \in \mathcal{B}$ be an input to 
-batch normalization ($\textrm{BN}$). In this case the batch normalization is defined as follows:
+Ký hiệu $\mathcal{B}$ là một minibatch và đặt $\mathbf{x} \in \mathcal{B}$ là một đầu vào cho
+chuẩn hóa theo batch ($\textrm{BN}$). Trong trường hợp này, chuẩn hóa theo batch được định nghĩa như sau:
 
 $$\textrm{BN}(\mathbf{x}) = \boldsymbol{\gamma} \odot \frac{\mathbf{x} - \hat{\boldsymbol{\mu}}_\mathcal{B}}{\hat{\boldsymbol{\sigma}}_\mathcal{B}} + \boldsymbol{\beta}.$$
 :eqlabel:`eq_batchnorm`
 
-In :eqref:`eq_batchnorm`,
-$\hat{\boldsymbol{\mu}}_\mathcal{B}$ is the  sample mean
-and $\hat{\boldsymbol{\sigma}}_\mathcal{B}$ is the sample standard deviation of the minibatch $\mathcal{B}$.
-After applying standardization,
-the resulting minibatch
-has zero mean and unit variance.
-The choice of unit variance
-(rather than some other magic number) is arbitrary. We recover this degree of freedom
-by including an elementwise
-*scale parameter* $\boldsymbol{\gamma}$ and *shift parameter* $\boldsymbol{\beta}$
-that have the same shape as $\mathbf{x}$. Both are parameters that
-need to be learned as part of model training.
+Trong :eqref:`eq_batchnorm`,
+$\hat{\boldsymbol{\mu}}_\mathcal{B}$ là trung bình mẫu
+và $\hat{\boldsymbol{\sigma}}_\mathcal{B}$ là độ lệch chuẩn mẫu của minibatch $\mathcal{B}$.
+Sau khi áp dụng chuẩn hóa,
+minibatch thu được
+có trung bình bằng không và phương sai đơn vị.
+Việc chọn phương sai đơn vị
+(thay vì một con số đặc biệt nào khác) là tùy ý. Chúng ta khôi phục bậc tự do này
+bằng cách thêm một
+*tham số scale* theo từng phần tử $\boldsymbol{\gamma}$ và *tham số shift* $\boldsymbol{\beta}$
+có cùng hình dạng với $\mathbf{x}$. Cả hai đều là các tham số
+cần được học trong quá trình huấn luyện mô hình.
 
-The variable magnitudes
-for intermediate layers cannot diverge during training
-since batch normalization actively centers and rescales them back
-to a given mean and size (via $\hat{\boldsymbol{\mu}}_\mathcal{B}$ and ${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$).
-Practical experience confirms that, as alluded to when discussing feature rescaling, batch normalization seems to allow for more aggressive learning rates.
-We calculate $\hat{\boldsymbol{\mu}}_\mathcal{B}$ and ${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$ in :eqref:`eq_batchnorm` as follows:
+Độ lớn của các biến
+ở các lớp trung gian không thể phân kỳ trong quá trình huấn luyện
+vì chuẩn hóa theo batch chủ động căn giữa và điều chỉnh lại tỷ lệ của chúng
+về một trung bình và kích thước nhất định (thông qua $\hat{\boldsymbol{\mu}}_\mathcal{B}$ và ${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$).
+Kinh nghiệm thực tế xác nhận rằng, như đã đề cập khi thảo luận về việc điều chỉnh tỷ lệ đặc trưng, chuẩn hóa theo batch dường như cho phép dùng learning rate mạnh hơn.
+Chúng ta tính $\hat{\boldsymbol{\mu}}_\mathcal{B}$ và ${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$ trong :eqref:`eq_batchnorm` như sau:
 
 $$\hat{\boldsymbol{\mu}}_\mathcal{B} = \frac{1}{|\mathcal{B}|} \sum_{\mathbf{x} \in \mathcal{B}} \mathbf{x}
 \textrm{ and }
 \hat{\boldsymbol{\sigma}}_\mathcal{B}^2 = \frac{1}{|\mathcal{B}|} \sum_{\mathbf{x} \in \mathcal{B}} (\mathbf{x} - \hat{\boldsymbol{\mu}}_{\mathcal{B}})^2 + \epsilon.$$
 
-Note that we add a small constant $\epsilon > 0$
-to the variance estimate
-to ensure that we never attempt division by zero,
-even in cases where the empirical variance estimate might be very small or vanish.
-The estimates $\hat{\boldsymbol{\mu}}_\mathcal{B}$ and ${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$ counteract the scaling issue
-by using noisy estimates of mean and variance.
-You might think that this noisiness should be a problem.
-On the contrary, it is actually beneficial.
+Lưu ý rằng chúng ta thêm một hằng số nhỏ $\epsilon > 0$
+vào ước lượng phương sai
+để đảm bảo rằng chúng ta không bao giờ cố chia cho không,
+ngay cả trong những trường hợp mà ước lượng phương sai thực nghiệm có thể rất nhỏ hoặc bằng không.
+Các ước lượng $\hat{\boldsymbol{\mu}}_\mathcal{B}$ và ${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$ khắc phục vấn đề scale
+bằng cách sử dụng các ước lượng nhiễu của trung bình và phương sai.
+Bạn có thể nghĩ rằng tính nhiễu này sẽ là một vấn đề.
+Ngược lại, nó thực sự có lợi.
 
-This turns out to be a recurring theme in deep learning.
-For reasons that are not yet well-characterized theoretically,
-various sources of noise in optimization
-often lead to faster training and less overfitting:
-this variation appears to act as a form of regularization.
-:citet:`Teye.Azizpour.Smith.2018` and :citet:`Luo.Wang.Shao.ea.2018`
-related the properties of batch normalization to Bayesian priors and penalties, respectively. 
-In particular, this sheds some light on the puzzle
-of why batch normalization works best for moderate minibatch sizes in the 50--100 range.
-This particular size of minibatch seems to inject just the "right amount" of noise per layer, both in terms of scale via $\hat{\boldsymbol{\sigma}}$, and in terms of offset via $\hat{\boldsymbol{\mu}}$: a
-larger minibatch regularizes less due to the more stable estimates, whereas tiny minibatches
-destroy useful signal due to high variance. Exploring this direction further, considering alternative types
-of preprocessing and filtering may yet lead to other effective types of regularization.
+Đây hóa ra là một chủ đề lặp lại trong deep learning.
+Vì những lý do chưa được mô tả đầy đủ về mặt lý thuyết,
+nhiều nguồn nhiễu khác nhau trong quá trình tối ưu hóa
+thường dẫn đến huấn luyện nhanh hơn và ít overfitting hơn:
+sự biến thiên này dường như hoạt động như một dạng regularization.
+:citet:`Teye.Azizpour.Smith.2018` và :citet:`Luo.Wang.Shao.ea.2018`
+đã liên hệ các đặc tính của chuẩn hóa theo batch với Bayesian prior và penalty tương ứng.
+Đặc biệt, điều này làm sáng tỏ phần nào câu hỏi
+vì sao chuẩn hóa theo batch hoạt động tốt nhất với các minibatch có kích thước vừa phải trong khoảng 50--100.
+Kích thước minibatch cụ thể này dường như chèn đúng "lượng" nhiễu vào mỗi lớp, cả về scale thông qua $\hat{\boldsymbol{\sigma}}$ lẫn về offset thông qua $\hat{\boldsymbol{\mu}}$: một
+minibatch lớn hơn regularize ít hơn do các ước lượng ổn định hơn, trong khi các minibatch quá nhỏ
+phá hủy tín hiệu hữu ích do phương sai cao. Khám phá sâu hơn hướng này, bằng cách xem xét các kiểu
+tiền xử lý và lọc thay thế, có thể dẫn đến những kiểu regularization hiệu quả khác.
 
-Fixing a trained model, you might think
-that we would prefer using the entire dataset
-to estimate the mean and variance.
-Once training is complete, why would we want
-the same image to be classified differently,
-depending on the batch in which it happens to reside?
-During training, such exact calculation is infeasible
-because the intermediate variables
-for all data examples
-change every time we update our model.
-However, once the model is trained,
-we can calculate the means and variances
-of each layer's variables based on the entire dataset.
-Indeed this is standard practice for
-models employing batch normalization;
-thus batch normalization layers function differently
-in *training mode* (normalizing by minibatch statistics)
-than in *prediction mode* (normalizing by dataset statistics).
-In this form they closely resemble the behavior of dropout regularization of :numref:`sec_dropout`,
-where noise is only injected during training.
+Với một mô hình đã được huấn luyện, bạn có thể nghĩ rằng
+chúng ta sẽ ưu tiên sử dụng toàn bộ tập dữ liệu
+để ước lượng trung bình và phương sai.
+Sau khi huấn luyện hoàn tất, tại sao chúng ta lại muốn
+cùng một hình ảnh được phân loại khác nhau,
+tùy thuộc vào batch mà nó tình cờ thuộc về?
+Trong quá trình huấn luyện, việc tính toán chính xác như vậy là không khả thi
+vì các biến trung gian
+cho tất cả các ví dụ dữ liệu
+thay đổi mỗi khi chúng ta cập nhật mô hình.
+Tuy nhiên, khi mô hình đã được huấn luyện,
+chúng ta có thể tính trung bình và phương sai
+của các biến ở từng layer dựa trên toàn bộ tập dữ liệu.
+Thật vậy, đây là thực hành tiêu chuẩn cho
+các mô hình sử dụng batch normalization;
+do đó, các layer batch normalization hoạt động khác nhau
+ở *chế độ huấn luyện* (chuẩn hóa theo thống kê minibatch)
+so với ở *chế độ dự đoán* (chuẩn hóa theo thống kê tập dữ liệu).
+Ở dạng này, chúng rất giống với hành vi của regularization dropout trong :numref:`sec_dropout`,
+trong đó nhiễu chỉ được đưa vào khi huấn luyện.
 
 
-## Batch Normalization Layers
+## Các Layer Batch Normalization
 
-Batch normalization implementations for fully connected layers
-and convolutional layers are slightly different.
-One key difference between batch normalization and other layers
-is that because the former operates on a full minibatch at a time,
-we cannot just ignore the batch dimension
-as we did before when introducing other layers.
+Các cách triển khai batch normalization cho fully connected layer
+và convolutional layer có đôi chút khác nhau.
+Một khác biệt quan trọng giữa batch normalization và các layer khác
+là vì batch normalization xử lý toàn bộ một minibatch cùng lúc,
+chúng ta không thể đơn giản bỏ qua chiều batch
+như đã làm trước đây khi giới thiệu các layer khác.
 
 ### Fully Connected Layers
 
-When applying batch normalization to fully connected layers,
-:citet:`Ioffe.Szegedy.2015`, in their original paper inserted batch normalization after the affine transformation
-and *before* the nonlinear activation function. Later applications experimented with
-inserting batch normalization right *after* activation functions.
-Denoting the input to the fully connected layer by $\mathbf{x}$,
-the affine transformation
-by $\mathbf{W}\mathbf{x} + \mathbf{b}$ (with the weight parameter $\mathbf{W}$ and the bias parameter $\mathbf{b}$),
-and the activation function by $\phi$,
-we can express the computation of a batch-normalization-enabled,
-fully connected layer output $\mathbf{h}$ as follows:
+Khi áp dụng batch normalization cho fully connected layer,
+:citet:`Ioffe.Szegedy.2015`, trong bài báo gốc của họ đã chèn batch normalization sau phép biến đổi affine
+và *trước* hàm kích hoạt phi tuyến. Các ứng dụng sau này đã thử nghiệm
+chèn batch normalization ngay *sau* các hàm kích hoạt.
+Ký hiệu đầu vào của fully connected layer là $\mathbf{x}$,
+phép biến đổi affine
+là $\mathbf{W}\mathbf{x} + \mathbf{b}$ (với tham số trọng số $\mathbf{W}$ và tham số bias $\mathbf{b}$),
+và hàm kích hoạt là $\phi$,
+ta có thể biểu diễn phép tính của đầu ra $\mathbf{h}$ của một fully connected layer
+có hỗ trợ batch normalization như sau:
 
 $$\mathbf{h} = \phi(\textrm{BN}(\mathbf{W}\mathbf{x} + \mathbf{b}) ).$$
 
-Recall that mean and variance are computed
-on the *same* minibatch
-on which the transformation is applied.
+Hãy nhớ rằng trung bình và phương sai được tính
+trên *cùng* minibatch
+mà phép biến đổi được áp dụng.
 
 ### Convolutional Layers
 
-Similarly, with convolutional layers,
-we can apply batch normalization after the convolution
-but before the nonlinear activation function. The key difference from batch normalization
-in fully connected layers is that we apply the operation on a per-channel basis
-*across all locations*. This is compatible with our assumption of translation
-invariance that led to convolutions: we assumed that the specific location of a pattern
-within an image was not critical for the purpose of understanding.
+Tương tự, với convolutional layer,
+chúng ta có thể áp dụng batch normalization sau phép tích chập
+nhưng trước hàm kích hoạt phi tuyến. Khác biệt chính so với batch normalization
+trong fully connected layer là chúng ta áp dụng phép toán theo từng channel
+*trên tất cả các vị trí*. Điều này tương thích với giả định về tính bất biến
+theo phép tịnh tiến đã dẫn đến convolution: chúng ta giả định rằng vị trí cụ thể của một mẫu
+trong ảnh không quan trọng đối với mục đích thấu hiểu.
 
-Assume that our minibatches contain $m$ examples
-and that for each channel,
-the output of the convolution has height $p$ and width $q$.
-For convolutional layers, we carry out each batch normalization
-over the $m \cdot p \cdot q$ elements per output channel simultaneously.
-Thus, we collect the values over all spatial locations
-when computing the mean and variance
-and consequently
-apply the same mean and variance
-within a given channel
-to normalize the value at each spatial location.
-Each channel has its own scale and shift parameters,
-both of which are scalars.
+Giả sử các minibatch của chúng ta chứa $m$ ví dụ
+và với mỗi channel,
+đầu ra của phép tích chập có chiều cao $p$ và chiều rộng $q$.
+Đối với convolutional layer, chúng ta thực hiện mỗi batch normalization
+đồng thời trên $m \cdot p \cdot q$ phần tử cho mỗi output channel.
+Do đó, chúng ta thu thập các giá trị tại mọi vị trí không gian
+khi tính trung bình và phương sai
+và vì thế
+áp dụng cùng một trung bình và phương sai
+trong một channel nhất định
+để chuẩn hóa giá trị tại từng vị trí không gian.
+Mỗi channel có các tham số scale và shift riêng,
+cả hai đều là scalar.
 
 ### Layer Normalization
 :label:`subsec_layer-normalization-in-bn`
 
-Note that in the context of convolutions the batch normalization is well defined even for
-minibatches of size 1: after all, we have all the locations across an image to average. Consequently,
-mean and variance are well defined, even if it is just within a single observation. This consideration
-led :citet:`Ba.Kiros.Hinton.2016` to introduce the notion of *layer normalization*. It works just like
-a batch norm, only that it is applied to one observation at a time. Consequently both the offset and the scaling factor are scalars. For an $n$-dimensional vector $\mathbf{x}$, layer norms are given by 
+Lưu ý rằng trong ngữ cảnh của convolution, batch normalization vẫn được xác định rõ ngay cả với
+minibatch có kích thước 1: xét cho cùng, chúng ta có tất cả các vị trí trên một ảnh để lấy trung bình. Do đó,
+trung bình và phương sai được xác định rõ, ngay cả khi chúng chỉ nằm trong một quan sát duy nhất. Điều này
+đã dẫn :citet:`Ba.Kiros.Hinton.2016` đến việc giới thiệu khái niệm *layer normalization*. Nó hoạt động giống
+batch norm, chỉ khác là được áp dụng cho từng quan sát một. Do đó, cả offset lẫn hệ số scale đều là scalar. Với vector $\mathbf{x}$ có $n$ chiều, layer norm được cho bởi 
 
 $$\mathbf{x} \rightarrow \textrm{LN}(\mathbf{x}) =  \frac{\mathbf{x} - \hat{\mu}}{\hat\sigma},$$
 
-where scaling and offset are applied coefficient-wise
-and given by 
+trong đó scale và offset được áp dụng theo từng hệ số
+và được cho bởi 
 
 $$\hat{\mu} \stackrel{\textrm{def}}{=} \frac{1}{n} \sum_{i=1}^n x_i \textrm{ and }
 \hat{\sigma}^2 \stackrel{\textrm{def}}{=} \frac{1}{n} \sum_{i=1}^n (x_i - \hat{\mu})^2 + \epsilon.$$
 
-As before we add a small offset $\epsilon > 0$ to prevent division by zero. One of the major benefits of using layer normalization is that it prevents divergence. After all, ignoring $\epsilon$, the output of the layer normalization is scale independent. That is, we have $\textrm{LN}(\mathbf{x}) \approx \textrm{LN}(\alpha \mathbf{x})$ for any choice of $\alpha \neq 0$. This becomes an equality for $|\alpha| \to \infty$ (the approximate equality is due to the offset $\epsilon$ for the variance). 
+Như trước đây, chúng ta thêm một offset nhỏ $\epsilon > 0$ để tránh chia cho không. Một trong những lợi ích lớn của việc sử dụng layer normalization là nó ngăn sự phân kỳ. Xét cho cùng, nếu bỏ qua $\epsilon$, đầu ra của layer normalization không phụ thuộc vào scale. Nghĩa là, ta có $\textrm{LN}(\mathbf{x}) \approx \textrm{LN}(\alpha \mathbf{x})$ với mọi lựa chọn $\alpha \neq 0$. Điều này trở thành đẳng thức khi $|\alpha| \to \infty$ (đẳng thức gần đúng là do offset $\epsilon$ cho phương sai). 
 
-Another advantage of the layer normalization is that it does not depend on the minibatch size. It is also independent of whether we are in training or test regime. In other words, it is simply a deterministic transformation that standardizes the activations to a given scale. This can be very beneficial in preventing divergence in optimization. We skip further details and recommend that interested readers consult the original paper.
+Một ưu điểm khác của layer normalization là nó không phụ thuộc vào kích thước minibatch. Nó cũng độc lập với việc chúng ta đang ở chế độ huấn luyện hay kiểm tra. Nói cách khác, đây đơn giản là một phép biến đổi xác định chuẩn hóa các activation về một scale nhất định. Điều này có thể rất hữu ích để ngăn sự phân kỳ trong tối ưu hóa. Chúng ta bỏ qua các chi tiết thêm và khuyến nghị độc giả quan tâm tham khảo bài báo gốc.
 
-### Batch Normalization During Prediction
+### Batch Normalization Trong Khi Dự Đoán
 
-As we mentioned earlier, batch normalization typically behaves differently
-in training mode than in prediction mode.
-First, the noise in the sample mean and the sample variance
-arising from estimating each on minibatches
-is no longer desirable once we have trained the model.
-Second, we might not have the luxury
-of computing per-batch normalization statistics.
-For example,
-we might need to apply our model to make one prediction at a time.
+Như đã đề cập trước đó, batch normalization thường hoạt động khác nhau
+ở chế độ huấn luyện so với chế độ dự đoán.
+Thứ nhất, nhiễu trong trung bình mẫu và phương sai mẫu
+phát sinh do ước lượng chúng trên các minibatch
+không còn mong muốn sau khi chúng ta đã huấn luyện mô hình.
+Thứ hai, chúng ta có thể không có điều kiện
+để tính các thống kê chuẩn hóa theo từng batch.
+Ví dụ,
+chúng ta có thể cần áp dụng mô hình để đưa ra từng dự đoán một.
 
-Typically, after training, we use the entire dataset
-to compute stable estimates of the variable statistics
-and then fix them at prediction time.
-Hence, batch normalization behaves differently during training than at test time.
-Recall that dropout also exhibits this characteristic.
+Thông thường, sau khi huấn luyện, chúng ta sử dụng toàn bộ tập dữ liệu
+để tính các ước lượng ổn định cho thống kê của biến
+và sau đó cố định chúng tại thời điểm dự đoán.
+Do đó, batch normalization hoạt động khác nhau trong quá trình huấn luyện so với lúc kiểm tra.
+Hãy nhớ rằng dropout cũng có đặc điểm này.
 
-## (**Implementation from Scratch**)
+## (**Triển Khai Từ Đầu**)
 
-To see how batch normalization works in practice, we implement one from scratch below.
+Để xem batch normalization hoạt động như thế nào trong thực tế, dưới đây chúng ta tự triển khai một phiên bản từ đầu.
 
 ```{.python .input}
 %%tab mxnet
@@ -378,28 +378,28 @@ def batch_norm(X, deterministic, gamma, beta, moving_mean, moving_var, eps,
     return Y
 ```
 
-We can now [**create a proper `BatchNorm` layer.**]
-Our layer will maintain proper parameters
-for scale `gamma` and shift `beta`,
-both of which will be updated in the course of training.
-Additionally, our layer will maintain
-moving averages of the means and variances
-for subsequent use during model prediction.
+Bây giờ chúng ta có thể [**tạo một layer `BatchNorm` đúng chuẩn.**]
+Layer của chúng ta sẽ duy trì các tham số phù hợp
+cho scale `gamma` và shift `beta`,
+cả hai sẽ được cập nhật trong quá trình huấn luyện.
+Ngoài ra, layer của chúng ta sẽ duy trì
+các trung bình động của trung bình và phương sai
+để sử dụng sau này trong quá trình dự đoán của mô hình.
 
-Putting aside the algorithmic details,
-note the design pattern underlying our implementation of the layer.
-Typically, we define the mathematics in a separate function, say `batch_norm`.
-We then integrate this functionality into a custom layer,
-whose code mostly addresses bookkeeping matters,
-such as moving data to the right device context,
-allocating and initializing any required variables,
-keeping track of moving averages (here for mean and variance), and so on.
-This pattern enables a clean separation of mathematics from boilerplate code.
-Also note that for the sake of convenience
-we did not worry about automatically inferring the input shape here;
-thus we need to specify the number of features throughout.
-By now all modern deep learning frameworks offer automatic detection of size and shape in the
-high-level batch normalization APIs (in practice we will use this instead).
+Tạm gác các chi tiết thuật toán sang một bên,
+hãy lưu ý design pattern làm nền tảng cho cách triển khai layer của chúng ta.
+Thông thường, chúng ta định nghĩa phần toán học trong một hàm riêng, chẳng hạn `batch_norm`.
+Sau đó, chúng ta tích hợp chức năng này vào một custom layer,
+mà mã của nó chủ yếu xử lý các công việc bookkeeping,
+chẳng hạn như chuyển dữ liệu đến đúng device context,
+cấp phát và khởi tạo mọi biến cần thiết,
+theo dõi các trung bình động (ở đây là cho trung bình và phương sai), v.v.
+Pattern này cho phép tách biệt rõ ràng phần toán học khỏi boilerplate code.
+Cũng lưu ý rằng để thuận tiện,
+ở đây chúng ta không lo việc tự động suy luận shape đầu vào;
+do đó, chúng ta cần chỉ định số lượng feature xuyên suốt.
+Đến nay, mọi framework deep learning hiện đại đều cung cấp khả năng tự động phát hiện kích thước và shape trong các
+API batch normalization cấp cao (trong thực tế chúng ta sẽ dùng cách này).
 
 ```{.python .input}
 %%tab mxnet
@@ -554,15 +554,15 @@ class BatchNorm(nn.Module):
         return Y
 ```
 
-We used `momentum` to govern the aggregation over past mean and variance estimates. This is somewhat of a misnomer as it has nothing whatsoever to do with the *momentum* term of optimization. Nonetheless, it is the commonly adopted name for this term and in deference to API naming convention we use the same variable name in our code.
+Chúng ta đã sử dụng `momentum` để điều khiển việc tổng hợp các ước lượng trung bình và phương sai trước đó. Đây phần nào là một cách gọi sai vì nó hoàn toàn không liên quan đến hạng *momentum* trong tối ưu hóa. Tuy vậy, đây là tên gọi thường được chấp nhận cho hạng này và để tuân theo quy ước đặt tên của API, chúng ta dùng cùng tên biến đó trong mã.
 
-## [**LeNet with Batch Normalization**]
+## [**LeNet với Batch Normalization**]
 
-To see how to apply `BatchNorm` in context,
-below we apply it to a traditional LeNet model (:numref:`sec_lenet`).
-Recall that batch normalization is applied
-after the convolutional layers or fully connected layers
-but before the corresponding activation functions.
+Để xem cách áp dụng `BatchNorm` trong ngữ cảnh,
+dưới đây chúng ta áp dụng nó cho một mô hình LeNet truyền thống (:numref:`sec_lenet`).
+Hãy nhớ rằng batch normalization được áp dụng
+sau convolutional layer hoặc fully connected layer
+nhưng trước các hàm kích hoạt tương ứng.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -637,13 +637,13 @@ class BNLeNetScratch(d2l.Classifier):
 ```
 
 :begin_tab:`jax`
-Since `BatchNorm` layers need to calculate the batch statistics
-(mean and variance), Flax keeps track of the `batch_stats` dictionary, updating
-them with every minibatch. Collections like `batch_stats` can be stored in the
-`TrainState` object (in the `d2l.Trainer` class defined in
-:numref:`oo-design-training`) as an attribute and during the model's forward pass,
-these should be passed to the `mutable` argument, so that Flax returns the mutated
-variables.
+Vì các layer `BatchNorm` cần tính các thống kê batch
+(trung bình và phương sai), Flax theo dõi dictionary `batch_stats`, cập nhật
+chúng với mỗi minibatch. Các collection như `batch_stats` có thể được lưu trong
+đối tượng `TrainState` (trong class `d2l.Trainer` được định nghĩa tại
+:numref:`oo-design-training`) như một thuộc tính và trong quá trình forward pass của mô hình,
+chúng cần được truyền đến đối số `mutable`, để Flax trả về các
+biến đã bị thay đổi.
 :end_tab:
 
 ```{.python .input}
@@ -661,8 +661,8 @@ def loss(self, params, X, Y, state, averaged=True):
     return (fn(Y_hat, Y).mean(), updates) if averaged else (fn(Y_hat, Y), updates)
 ```
 
-As before, we will [**train our network on the Fashion-MNIST dataset**].
-This code is virtually identical to that when we first trained LeNet.
+Như trước, chúng ta sẽ [**huấn luyện mạng trên tập dữ liệu Fashion-MNIST**].
+Mã này gần như giống hệt với khi chúng ta lần đầu huấn luyện LeNet.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -683,9 +683,9 @@ with d2l.try_gpu():
     trainer.fit(model, data)
 ```
 
-Let's [**have a look at the scale parameter `gamma`
-and the shift parameter `beta`**] learned
-from the first batch normalization layer.
+Hãy [**xem xét tham số scale `gamma`
+và tham số shift `beta`**] đã học được
+từ layer batch normalization đầu tiên.
 
 ```{.python .input}
 %%tab mxnet
@@ -709,13 +709,13 @@ trainer.state.params['net']['layers_1']['gamma'].reshape((-1,)), \
 trainer.state.params['net']['layers_1']['beta'].reshape((-1,))
 ```
 
-## [**Concise Implementation**]
+## [**Cách triển khai ngắn gọn**]
 
-Compared with the `BatchNorm` class,
-which we just defined ourselves,
-we can use the `BatchNorm` class defined in high-level APIs from the deep learning framework directly.
-The code looks virtually identical
-to our implementation above, except that we no longer need to provide additional arguments for it to get the dimensions right.
+So với lớp `BatchNorm`
+mà chúng ta vừa tự định nghĩa,
+chúng ta có thể sử dụng trực tiếp lớp `BatchNorm` được định nghĩa trong các API cấp cao của framework deep learning.
+Mã gần như giống hệt
+với cách triển khai ở trên của chúng ta, ngoại trừ việc chúng ta không còn cần cung cấp các đối số bổ sung để nó xác định đúng các chiều.
 
 ```{.python .input}
 %%tab pytorch, tensorflow, mxnet
@@ -792,10 +792,10 @@ class BNLeNet(d2l.Classifier):
             nn.Dense(self.num_classes)])
 ```
 
-Below, we [**use the same hyperparameters to train our model.**]
-Note that as usual, the high-level API variant runs much faster
-because its code has been compiled to C++ or CUDA
-while our custom implementation must be interpreted by Python.
+Dưới đây, chúng ta [**sử dụng cùng các siêu tham số để huấn luyện mô hình.**]
+Lưu ý rằng như thường lệ, biến thể API cấp cao chạy nhanh hơn nhiều
+vì mã của nó đã được biên dịch sang C++ hoặc CUDA,
+trong khi cách triển khai tùy chỉnh của chúng ta phải được Python thông dịch.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -816,118 +816,118 @@ with d2l.try_gpu():
     trainer.fit(model, data)
 ```
 
-## Discussion
+## Thảo luận
 
-Intuitively, batch normalization is thought
-to make the optimization landscape smoother.
-However, we must be careful to distinguish between
-speculative intuitions and true explanations
-for the phenomena that we observe when training deep models.
-Recall that we do not even know why simpler
-deep neural networks (MLPs and conventional CNNs)
-generalize well in the first place.
-Even with dropout and weight decay,
-they remain so flexible that their ability to generalize to unseen data
-likely needs significantly more refined learning-theoretic generalization guarantees.
+Theo trực giác, batch normalization được cho là
+làm cho bề mặt tối ưu hóa mượt hơn.
+Tuy nhiên, chúng ta phải cẩn thận phân biệt giữa
+những trực giác mang tính suy đoán và các lời giải thích thực sự
+cho những hiện tượng quan sát được khi huấn luyện các mô hình sâu.
+Hãy nhớ rằng ngay từ đầu chúng ta còn không biết vì sao
+các mạng nơ-ron sâu đơn giản hơn (MLP và CNN thông thường)
+lại tổng quát hóa tốt.
+Ngay cả với dropout và weight decay,
+chúng vẫn linh hoạt đến mức khả năng tổng quát hóa sang dữ liệu chưa thấy
+có lẽ cần các đảm bảo tổng quát hóa theo lý thuyết học tinh vi hơn đáng kể.
 
-The original paper proposing batch normalization :cite:`Ioffe.Szegedy.2015`, in addition to introducing a powerful and useful tool,
-offered an explanation for why it works:
-by reducing *internal covariate shift*.
-Presumably by *internal covariate shift* they
-meant something like the intuition expressed above---the
-notion that the distribution of variable values changes
-over the course of training.
-However, there were two problems with this explanation:
-i) This drift is very different from *covariate shift*,
-rendering the name a misnomer. If anything, it is closer to concept drift. 
-ii) The explanation offers an under-specified intuition
-but leaves the question of *why precisely this technique works*
-an open question wanting for a rigorous explanation.
-Throughout this book, we aim to convey the intuitions that practitioners
-use to guide their development of deep neural networks.
-However, we believe that it is important
-to separate these guiding intuitions
-from established scientific fact.
-Eventually, when you master this material
-and start writing your own research papers
-you will want to be clear to delineate
-between technical claims and hunches.
+Bài báo gốc đề xuất batch normalization :cite:`Ioffe.Szegedy.2015`, ngoài việc giới thiệu một công cụ mạnh mẽ và hữu ích,
+còn đưa ra lời giải thích cho lý do nó hoạt động:
+bằng cách giảm *internal covariate shift*.
+Có lẽ *internal covariate shift* được hiểu là
+một điều gì đó giống với trực giác được trình bày ở trên---ý niệm
+rằng phân phối của các giá trị biến thay đổi
+trong quá trình huấn luyện.
+Tuy nhiên, lời giải thích này có hai vấn đề:
+i) Sự trôi dạt này rất khác với *covariate shift*,
+khiến tên gọi trở thành không chính xác. Nếu có gì tương tự, nó gần với concept drift hơn.
+ii) Lời giải thích đưa ra một trực giác chưa được đặc tả đầy đủ
+nhưng để lại câu hỏi *chính xác vì sao kỹ thuật này hoạt động*
+vẫn còn bỏ ngỏ và cần một lời giải thích chặt chẽ.
+Xuyên suốt cuốn sách này, chúng tôi hướng tới việc truyền đạt những trực giác mà các practitioner
+dùng để định hướng quá trình phát triển mạng nơ-ron sâu.
+Tuy nhiên, chúng tôi tin rằng điều quan trọng
+là phải tách biệt các trực giác định hướng này
+khỏi các sự thật khoa học đã được xác lập.
+Cuối cùng, khi bạn nắm vững tài liệu này
+và bắt đầu viết các bài báo nghiên cứu của riêng mình,
+bạn sẽ muốn phân định rõ ràng
+giữa các tuyên bố kỹ thuật và những phỏng đoán.
 
-Following the success of batch normalization,
-its explanation in terms of *internal covariate shift*
-has repeatedly surfaced in debates in the technical literature
-and broader discourse about how to present machine learning research.
-In a memorable speech given while accepting a Test of Time Award
-at the 2017 NeurIPS conference,
-Ali Rahimi used *internal covariate shift*
-as a focal point in an argument likening
-the modern practice of deep learning to alchemy.
-Subsequently, the example was revisited in detail
-in a position paper outlining
-troubling trends in machine learning :cite:`Lipton.Steinhardt.2018`.
-Other authors
-have proposed alternative explanations for the success of batch normalization,
-some :cite:`Santurkar.Tsipras.Ilyas.ea.2018`
-claiming that batch normalization's success comes despite exhibiting behavior
-that is in some ways opposite to those claimed in the original paper.
+Sau thành công của batch normalization,
+lời giải thích của nó theo hướng *internal covariate shift*
+đã nhiều lần xuất hiện trong các cuộc tranh luận trong tài liệu kỹ thuật
+và các thảo luận rộng hơn về cách trình bày nghiên cứu machine learning.
+Trong một bài phát biểu đáng nhớ khi nhận Test of Time Award
+tại hội nghị NeurIPS năm 2017,
+Ali Rahimi đã sử dụng *internal covariate shift*
+làm trọng tâm cho lập luận ví
+thực hành deep learning hiện đại với thuật giả kim.
+Sau đó, ví dụ này được xem xét lại chi tiết
+trong một position paper nêu ra
+các xu hướng đáng lo ngại trong machine learning :cite:`Lipton.Steinhardt.2018`.
+Các tác giả khác
+đã đề xuất những lời giải thích thay thế cho thành công của batch normalization,
+trong đó một số người :cite:`Santurkar.Tsipras.Ilyas.ea.2018`
+cho rằng thành công của batch normalization có được bất chấp việc nó thể hiện hành vi
+theo một số khía cạnh trái ngược với những gì bài báo gốc tuyên bố.
 
 
-We note that the *internal covariate shift*
-is no more worthy of criticism than any of
-thousands of similarly vague claims
-made every year in the technical machine learning literature.
-Likely, its resonance as a focal point of these debates
-owes to its broad recognizability for the target audience.
-Batch normalization has proven an indispensable method,
-applied in nearly all deployed image classifiers,
-earning the paper that introduced the technique
-tens of thousands of citations. We conjecture, though, that the guiding principles
-of regularization through noise injection, acceleration through rescaling and lastly preprocessing
-may well lead to further inventions of layers and techniques in the future.
+Chúng tôi lưu ý rằng *internal covariate shift*
+không đáng bị phê phán hơn bất kỳ
+tuyên bố mơ hồ tương tự nào trong hàng nghìn tuyên bố
+được đưa ra mỗi năm trong tài liệu kỹ thuật về machine learning.
+Có lẽ việc nó trở thành tâm điểm của những cuộc tranh luận này
+là nhờ mức độ dễ nhận biết rộng rãi đối với đối tượng mục tiêu.
+Batch normalization đã chứng tỏ là một phương pháp không thể thiếu,
+được áp dụng trong gần như mọi bộ phân loại ảnh đã deploy,
+mang về cho bài báo giới thiệu kỹ thuật này
+hàng chục nghìn lượt trích dẫn. Tuy nhiên, chúng tôi phỏng đoán rằng các nguyên tắc định hướng
+của regularization thông qua việc thêm nhiễu, tăng tốc thông qua rescaling, và cuối cùng là preprocessing
+có thể sẽ dẫn đến nhiều phát minh hơn nữa về layer và kỹ thuật trong tương lai.
 
-On a more practical note, there are a number of aspects worth remembering about batch normalization:
+Ở khía cạnh thực tiễn hơn, có một số điểm cần nhớ về batch normalization:
 
-* During model training, batch normalization continuously adjusts the intermediate output of
-  the network by utilizing the mean and standard deviation of the minibatch, so that the
-  values of the intermediate output in each layer throughout the neural network are more stable.
-* Batch normalization is slightly different for fully connected layers than for convolutional layers. In fact,
-  for convolutional layers, layer normalization can sometimes be used as an alternative.
-* Like a dropout layer, batch normalization layers have different behaviors
-  in training mode than in prediction mode.
-* Batch normalization is useful for regularization and improving convergence in optimization. By contrast,
-  the original motivation of reducing internal covariate shift seems not to be a valid explanation.
-* For more robust models that are less sensitive to input perturbations, consider removing batch normalization :cite:`wang2022removing`.
+* Trong quá trình huấn luyện mô hình, batch normalization liên tục điều chỉnh đầu ra trung gian của
+  mạng bằng cách sử dụng giá trị trung bình và độ lệch chuẩn của minibatch, để
+  các giá trị đầu ra trung gian ở mỗi layer trong toàn bộ mạng nơ-ron ổn định hơn.
+* Batch normalization có đôi chút khác biệt đối với fully connected layer so với convolutional layer. Trên thực tế,
+  đối với convolutional layer, layer normalization đôi khi có thể được dùng thay thế.
+* Giống như dropout layer, các layer batch normalization có hành vi khác nhau
+  ở chế độ huấn luyện so với chế độ dự đoán.
+* Batch normalization hữu ích cho regularization và cải thiện sự hội tụ trong tối ưu hóa. Ngược lại,
+  động cơ ban đầu là giảm internal covariate shift dường như không phải là một lời giải thích hợp lệ.
+* Để có các mô hình robust hơn và ít nhạy cảm hơn với nhiễu đầu vào, hãy cân nhắc loại bỏ batch normalization :cite:`wang2022removing`.
 
-## Exercises
+## Bài tập
 
-1. Should we remove the bias parameter from the fully connected layer or the convolutional layer before the batch normalization? Why?
-1. Compare the learning rates for LeNet with and without batch normalization.
-    1. Plot the increase in validation accuracy.
-    1. How large can you make the learning rate before the optimization fails in both cases?
-1. Do we need batch normalization in every layer? Experiment with it.
-1. Implement a "lite" version of batch normalization that only removes the mean, or alternatively one that
-   only removes the variance. How does it behave?
-1. Fix the parameters `beta` and `gamma`. Observe and analyze the results.
-1. Can you replace dropout by batch normalization? How does the behavior change?
-1. Research ideas: think of other normalization transforms that you can apply:
-    1. Can you apply the probability integral transform?
-    1. Can you use a full-rank covariance estimate? Why should you probably not do that? 
-    1. Can you use other compact matrix variants (block-diagonal, low-displacement rank, Monarch, etc.)?
-    1. Does a sparsification compression act as a regularizer?
-    1. Are there other projections (e.g., convex cone, symmetry group-specific transforms) that you can use?
+1. Chúng ta có nên loại bỏ tham số bias khỏi fully connected layer hoặc convolutional layer trước batch normalization không? Vì sao?
+1. So sánh learning rate của LeNet có và không có batch normalization.
+    1. Vẽ biểu đồ mức tăng của validation accuracy.
+    1. Bạn có thể đặt learning rate lớn đến mức nào trước khi tối ưu hóa thất bại trong cả hai trường hợp?
+1. Chúng ta có cần batch normalization ở mọi layer không? Hãy thử nghiệm.
+1. Triển khai một phiên bản "lite" của batch normalization chỉ loại bỏ giá trị trung bình, hoặc một phiên bản khác
+   chỉ loại bỏ phương sai. Nó hoạt động như thế nào?
+1. Cố định các tham số `beta` và `gamma`. Quan sát và phân tích kết quả.
+1. Bạn có thể thay dropout bằng batch normalization không? Hành vi thay đổi như thế nào?
+1. Ý tưởng nghiên cứu: hãy nghĩ về các phép biến đổi normalization khác mà bạn có thể áp dụng:
+    1. Bạn có thể áp dụng probability integral transform không?
+    1. Bạn có thể dùng một ước lượng covariance full-rank không? Vì sao có lẽ bạn không nên làm vậy?
+    1. Bạn có thể dùng các biến thể ma trận compact khác (block-diagonal, low-displacement rank, Monarch, v.v.) không?
+    1. Liệu nén sparsification có hoạt động như một regularizer không?
+    1. Có các phép chiếu khác (ví dụ: convex cone, các phép biến đổi dành riêng cho symmetry group) mà bạn có thể sử dụng không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/83)
+[Thảo luận](https://discuss.d2l.ai/t/83)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/84)
+[Thảo luận](https://discuss.d2l.ai/t/84)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/330)
+[Thảo luận](https://discuss.d2l.ai/t/330)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18005)
+[Thảo luận](https://discuss.d2l.ai/t/18005)
 :end_tab:

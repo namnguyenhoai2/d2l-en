@@ -7,91 +7,91 @@ tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 :label:`sec_dropout`
 
 
-Let's think briefly about what we
-expect from a good predictive model.
-We want it to peform well on unseen data.
-Classical generalization theory
-suggests that to close the gap between
-train and test performance,
-we should aim for a simple model.
-Simplicity can come in the form
-of a small number of dimensions.
-We explored this when discussing the
-monomial basis functions of linear models
-in :numref:`sec_generalization_basics`.
-Additionally, as we saw when discussing weight decay
-($\ell_2$ regularization) in :numref:`sec_weight_decay`,
-the (inverse) norm of the parameters also
-represents a useful measure of simplicity.
-Another useful notion of simplicity is smoothness,
-i.e., that the function should not be sensitive
-to small changes to its inputs.
-For instance, when we classify images,
-we would expect that adding some random noise
-to the pixels should be mostly harmless.
+Hãy suy nghĩ ngắn gọn về những gì chúng ta
+mong đợi từ một mô hình dự đoán tốt.
+Chúng ta muốn nó hoạt động tốt trên dữ liệu chưa từng thấy.
+Lý thuyết tổng quát hóa cổ điển
+gợi ý rằng để thu hẹp khoảng cách giữa
+hiệu năng train và test,
+chúng ta nên hướng đến một mô hình đơn giản.
+Tính đơn giản có thể thể hiện dưới dạng
+một số lượng chiều nhỏ.
+Chúng ta đã tìm hiểu điều này khi thảo luận về
+các hàm cơ sở đơn thức của mô hình tuyến tính
+trong :numref:`sec_generalization_basics`.
+Ngoài ra, như đã thấy khi thảo luận về weight decay
+(chính quy hóa $\ell_2$) trong :numref:`sec_weight_decay`,
+chuẩn (nghịch đảo) của các tham số cũng
+là một thước đo hữu ích về tính đơn giản.
+Một khái niệm hữu ích khác về tính đơn giản là độ trơn,
+nghĩa là hàm không nên nhạy cảm
+với những thay đổi nhỏ ở đầu vào.
+Ví dụ, khi phân loại ảnh,
+chúng ta kỳ vọng rằng việc thêm một ít nhiễu ngẫu nhiên
+vào các pixel hầu như sẽ không gây hại.
 
-:citet:`Bishop.1995` formalized
-this idea when he proved that training with input noise
-is equivalent to Tikhonov regularization.
-This work drew a clear mathematical connection
-between the requirement that a function be smooth (and thus simple),
-and the requirement that it be resilient
-to perturbations in the input.
+:citet:`Bishop.1995` đã chính thức hóa
+ý tưởng này khi ông chứng minh rằng huấn luyện với nhiễu đầu vào
+tương đương với chính quy hóa Tikhonov.
+Công trình này thiết lập một mối liên hệ toán học rõ ràng
+giữa yêu cầu một hàm phải trơn (và do đó đơn giản),
+và yêu cầu hàm đó phải có khả năng chống chịu
+trước các nhiễu động ở đầu vào.
 
-Then, :citet:`Srivastava.Hinton.Krizhevsky.ea.2014`
-developed a clever idea for how to apply Bishop's idea
-to the internal layers of a network, too.
-Their idea, called *dropout*, involves
-injecting noise while computing
-each internal layer during forward propagation,
-and it has become a standard technique
-for training neural networks.
-The method is called *dropout* because we literally
-*drop out* some neurons during training.
-Throughout training, on each iteration,
-standard dropout consists of zeroing out
-some fraction of the nodes in each layer
-before calculating the subsequent layer.
+Sau đó, :citet:`Srivastava.Hinton.Krizhevsky.ea.2014`
+đã phát triển một ý tưởng thông minh để áp dụng ý tưởng của Bishop
+cho cả các tầng bên trong của mạng.
+Ý tưởng của họ, được gọi là *dropout*, bao gồm
+việc chèn nhiễu khi tính toán
+từng tầng bên trong trong quá trình lan truyền xuôi,
+và đã trở thành một kỹ thuật tiêu chuẩn
+để huấn luyện mạng nơ-ron.
+Phương pháp này được gọi là *dropout* vì theo đúng nghĩa đen
+chúng ta *loại bỏ* một số nơ-ron trong quá trình huấn luyện.
+Trong suốt quá trình huấn luyện, tại mỗi vòng lặp,
+dropout tiêu chuẩn sẽ đưa về không
+một tỷ lệ nào đó các nút trong mỗi tầng
+trước khi tính tầng tiếp theo.
 
-To be clear, we are imposing
-our own narrative with the link to Bishop.
-The original paper on dropout
-offers intuition through a surprising
-analogy to sexual reproduction.
-The authors argue that neural network overfitting
-is characterized by a state in which
-each layer relies on a specific
-pattern of activations in the previous layer,
-calling this condition *co-adaptation*.
-Dropout, they claim, breaks up co-adaptation
-just as sexual reproduction is argued to
-break up co-adapted genes.
-While such an justification of this theory is certainly up for debate,
-the dropout technique itself has proved enduring,
-and various forms of dropout are implemented
-in most deep learning libraries. 
+Cần làm rõ rằng chúng ta đang áp đặt
+cách diễn giải riêng của mình về mối liên hệ với Bishop.
+Bài báo gốc về dropout
+đưa ra trực giác thông qua một phép so sánh đáng ngạc nhiên
+với sinh sản hữu tính.
+Các tác giả cho rằng overfitting của mạng nơ-ron
+được đặc trưng bởi trạng thái trong đó
+mỗi tầng phụ thuộc vào một
+mẫu kích hoạt cụ thể ở tầng trước đó,
+và gọi điều kiện này là *co-adaptation*.
+Theo họ, dropout phá vỡ co-adaptation
+tương tự như sinh sản hữu tính được cho là
+phá vỡ các gen đồng thích nghi.
+Mặc dù cách biện minh này cho lý thuyết chắc chắn vẫn còn gây tranh cãi,
+bản thân kỹ thuật dropout đã chứng tỏ tính bền vững,
+và nhiều dạng dropout khác nhau được triển khai
+trong hầu hết các thư viện deep learning. 
 
 
-The key challenge is how to inject this noise.
-One idea is to inject it in an *unbiased* manner
-so that the expected value of each layer---while fixing
-the others---equals the value it would have taken absent noise.
-In Bishop's work, he added Gaussian noise
-to the inputs to a linear model.
-At each training iteration, he added noise
-sampled from a distribution with mean zero
-$\epsilon \sim \mathcal{N}(0,\sigma^2)$ to the input $\mathbf{x}$,
-yielding a perturbed point $\mathbf{x}' = \mathbf{x} + \epsilon$.
-In expectation, $E[\mathbf{x}'] = \mathbf{x}$.
+Thách thức then chốt là cách chèn nhiễu này.
+Một ý tưởng là chèn nhiễu theo cách *không chệch*
+để giá trị kỳ vọng của mỗi tầng---khi cố định
+các tầng khác---bằng giá trị mà nó sẽ nhận được nếu không có nhiễu.
+Trong công trình của Bishop, ông thêm nhiễu Gaussian
+vào đầu vào của một mô hình tuyến tính.
+Tại mỗi vòng lặp huấn luyện, ông thêm nhiễu
+được lấy mẫu từ một phân phối có trung bình bằng không
+$\epsilon \sim \mathcal{N}(0,\sigma^2)$ vào đầu vào $\mathbf{x}$,
+tạo ra một điểm bị nhiễu $\mathbf{x}' = \mathbf{x} + \epsilon$.
+Theo kỳ vọng, $E[\mathbf{x}'] = \mathbf{x}$.
 
-In standard dropout regularization,
-one zeros out some fraction of the nodes in each layer
-and then *debiases* each layer by normalizing
-by the fraction of nodes that were retained (not dropped out).
-In other words,
-with *dropout probability* $p$,
-each intermediate activation $h$ is replaced by
-a random variable $h'$ as follows:
+Trong chính quy hóa dropout tiêu chuẩn,
+chúng ta đưa về không một tỷ lệ nào đó các nút trong mỗi tầng
+rồi *khử chệch* từng tầng bằng cách chuẩn hóa
+theo tỷ lệ nút được giữ lại (không bị loại bỏ).
+Nói cách khác,
+với *xác suất dropout* $p$,
+mỗi kích hoạt trung gian $h$ được thay thế bởi
+một biến ngẫu nhiên $h'$ như sau:
 
 $$
 \begin{aligned}
@@ -103,7 +103,7 @@ h' =
 \end{aligned}
 $$
 
-By design, the expectation remains unchanged, i.e., $E[h'] = h$.
+Theo thiết kế, giá trị kỳ vọng không thay đổi, tức là $E[h'] = h$.
 
 ```{.python .input}
 %%tab mxnet
@@ -136,54 +136,53 @@ from jax import numpy as jnp
 import optax
 ```
 
-## Dropout in Practice
+## Dropout trong thực tế
 
-Recall the MLP with a hidden layer and five hidden units
-from :numref:`fig_mlp`.
-When we apply dropout to a hidden layer,
-zeroing out each hidden unit with probability $p$,
-the result can be viewed as a network
-containing only a subset of the original neurons.
-In :numref:`fig_dropout2`, $h_2$ and $h_5$ are removed.
-Consequently, the calculation of the outputs
-no longer depends on $h_2$ or $h_5$
-and their respective gradient also vanishes
-when performing backpropagation.
-In this way, the calculation of the output layer
-cannot be overly dependent on any
-one element of $h_1, \ldots, h_5$.
+Hãy nhớ lại MLP với một tầng ẩn và năm đơn vị ẩn
+trong :numref:`fig_mlp`.
+Khi áp dụng dropout cho một tầng ẩn,
+đưa từng đơn vị ẩn về không với xác suất $p$,
+kết quả có thể được xem là một mạng
+chỉ chứa một tập con các nơ-ron ban đầu.
+Trong :numref:`fig_dropout2`, $h_2$ và $h_5$ bị loại bỏ.
+Do đó, việc tính toán các đầu ra
+không còn phụ thuộc vào $h_2$ hay $h_5$
+và gradient tương ứng của chúng cũng biến mất
+khi thực hiện backpropagation.
+Theo cách này, việc tính toán tầng đầu ra
+không thể phụ thuộc quá mức vào bất kỳ
+một phần tử nào trong $h_1, \ldots, h_5$.
 
-![MLP before and after dropout.](../img/dropout2.svg)
+![MLP trước và sau dropout.](../img/dropout2.svg)
 :label:`fig_dropout2`
 
-Typically, we disable dropout at test time.
-Given a trained model and a new example,
-we do not drop out any nodes
-and thus do not need to normalize.
-However, there are some exceptions:
-some researchers use dropout at test time as a heuristic
-for estimating the *uncertainty* of neural network predictions:
-if the predictions agree across many different dropout outputs,
-then we might say that the network is more confident.
+Thông thường, chúng ta tắt dropout tại thời điểm test.
+Với một mô hình đã huấn luyện và một ví dụ mới,
+chúng ta không loại bỏ bất kỳ nút nào
+và do đó không cần chuẩn hóa.
+Tuy nhiên, có một số ngoại lệ:
+một số nhà nghiên cứu sử dụng dropout tại thời điểm test như một heuristic
+để ước lượng *độ không chắc chắn* của các dự đoán từ mạng nơ-ron:
+nếu các dự đoán nhất quán trên nhiều đầu ra dropout khác nhau,
+thì chúng ta có thể nói rằng mạng tự tin hơn.
 
-## Implementation from Scratch
+## Triển khai từ đầu
 
-To implement the dropout function for a single layer,
-we must draw as many samples
-from a Bernoulli (binary) random variable
-as our layer has dimensions,
-where the random variable takes value $1$ (keep)
-with probability $1-p$ and $0$ (drop) with probability $p$.
-One easy way to implement this is to first draw samples
-from the uniform distribution $U[0, 1]$.
-Then we can keep those nodes for which the corresponding
-sample is greater than $p$, dropping the rest.
+Để triển khai hàm dropout cho một tầng đơn lẻ,
+chúng ta phải lấy số mẫu
+từ một biến ngẫu nhiên Bernoulli (nhị phân) bằng với số chiều của tầng,
+trong đó biến ngẫu nhiên nhận giá trị $1$ (giữ lại)
+với xác suất $1-p$ và $0$ (loại bỏ) với xác suất $p$.
+Một cách dễ để triển khai là trước hết lấy mẫu
+từ phân phối đều $U[0, 1]$.
+Sau đó, chúng ta có thể giữ lại những nút mà
+mẫu tương ứng lớn hơn $p$, và loại bỏ các nút còn lại.
 
-In the following code, we (**implement a `dropout_layer` function
-that drops out the elements in the tensor input `X`
-with probability `dropout`**),
-rescaling the remainder as described above:
-dividing the survivors by `1.0-dropout`.
+Trong đoạn mã sau, chúng ta (**triển khai một hàm `dropout_layer`
+loại bỏ các phần tử trong tensor đầu vào `X`
+với xác suất `dropout`**),
+đồng thời co giãn lại các phần tử còn lại như đã mô tả ở trên:
+chia các phần tử được giữ lại cho `1.0-dropout`.
 
 ```{.python .input}
 %%tab mxnet
@@ -222,10 +221,10 @@ def dropout_layer(X, dropout, key=d2l.get_key()):
     return jnp.asarray(mask, dtype=jnp.float32) * X / (1.0 - dropout)
 ```
 
-We can [**test out the `dropout_layer` function on a few examples**].
-In the following lines of code,
-we pass our input `X` through the dropout operation,
-with probabilities 0, 0.5, and 1, respectively.
+Chúng ta có thể [**kiểm tra hàm `dropout_layer` trên một vài ví dụ**].
+Trong các dòng mã sau,
+chúng ta truyền đầu vào `X` qua phép toán dropout,
+với các xác suất lần lượt là 0, 0.5 và 1.
 
 ```{.python .input}
 %%tab all
@@ -242,14 +241,14 @@ print('dropout_p = 0.5:', dropout_layer(X, 0.5))
 print('dropout_p = 1:', dropout_layer(X, 1))
 ```
 
-### Defining the Model
+### Định nghĩa mô hình
 
-The model below applies dropout to the output
-of each hidden layer (following the activation function).
-We can set dropout probabilities for each layer separately.
-A common choice is to set
-a lower dropout probability closer to the input layer.
-We ensure that dropout is only active during training.
+Mô hình dưới đây áp dụng dropout cho đầu ra
+của từng tầng ẩn (sau hàm kích hoạt).
+Chúng ta có thể đặt xác suất dropout riêng cho từng tầng.
+Một lựa chọn phổ biến là đặt
+xác suất dropout thấp hơn ở gần tầng đầu vào.
+Chúng ta đảm bảo rằng dropout chỉ hoạt động trong quá trình huấn luyện.
 
 ```{.python .input}
 %%tab mxnet
@@ -343,9 +342,9 @@ class DropoutMLPScratch(d2l.Classifier):
         return self.lin3(H2)
 ```
 
-### [**Training**]
+### [**Huấn luyện**]
 
-The following is similar to the training of MLPs described previously.
+Phần sau tương tự như việc huấn luyện các MLP đã mô tả trước đó.
 
 ```{.python .input}
 %%tab all
@@ -357,18 +356,18 @@ trainer = d2l.Trainer(max_epochs=10)
 trainer.fit(model, data)
 ```
 
-## [**Concise Implementation**]
+## [**Triển khai ngắn gọn**]
 
-With high-level APIs, all we need to do is add a `Dropout` layer
-after each fully connected layer,
-passing in the dropout probability
-as the only argument to its constructor.
-During training, the `Dropout` layer will randomly
-drop out outputs of the previous layer
-(or equivalently, the inputs to the subsequent layer)
-according to the specified dropout probability.
-When not in training mode,
-the `Dropout` layer simply passes the data through during testing.
+Với các API cấp cao, tất cả những gì chúng ta cần làm là thêm một tầng `Dropout`
+sau mỗi tầng fully connected,
+truyền xác suất dropout
+làm đối số duy nhất cho constructor của nó.
+Trong quá trình huấn luyện, tầng `Dropout` sẽ ngẫu nhiên
+loại bỏ các đầu ra của tầng trước đó
+(hoặc tương đương, các đầu vào của tầng tiếp theo)
+theo xác suất dropout đã chỉ định.
+Khi không ở chế độ huấn luyện,
+tầng `Dropout` chỉ đơn giản truyền dữ liệu đi trong quá trình kiểm thử.
 
 ```{.python .input}
 %%tab mxnet
@@ -436,18 +435,18 @@ class DropoutMLP(d2l.Classifier):
 ```
 
 :begin_tab:`jax`
-Note that we need to redefine the loss function since a network
-with a dropout layer needs a PRNGKey when using `Module.apply()`,
-and this RNG seed should be explicitly named `dropout`. This key is
-used by the `dropout` layer in Flax to generate the random dropout
-mask internally. It is important to use a unique `dropout_rng` key
-with every epoch in the training loop, otherwise the generated dropout
-mask will not be stochastic and different between the epoch runs.
-This `dropout_rng` can be stored in the
-`TrainState` object (in the `d2l.Trainer` class defined in
-:numref:`oo-design-training`) as an attribute and with every epoch
-it is replaced with a new `dropout_rng`. We already handled this with the
-`fit_epoch` method defined in :numref:`sec_linear_scratch`.
+Lưu ý rằng chúng ta cần định nghĩa lại hàm mất mát vì một mạng
+có tầng dropout cần một PRNGKey khi sử dụng `Module.apply()`,
+và RNG seed này cần được đặt tên rõ ràng là `dropout`. Key này
+được tầng `dropout` trong Flax sử dụng để tạo mask dropout
+ngẫu nhiên ở bên trong. Điều quan trọng là phải sử dụng một key `dropout_rng` duy nhất
+với mỗi epoch trong vòng lặp huấn luyện, nếu không mask dropout được tạo ra
+sẽ không mang tính ngẫu nhiên và không khác biệt giữa các lần chạy epoch.
+`dropout_rng` này có thể được lưu trong
+đối tượng `TrainState` (trong lớp `d2l.Trainer` được định nghĩa tại
+:numref:`oo-design-training`) dưới dạng một thuộc tính, và ở mỗi epoch
+nó được thay thế bằng một `dropout_rng` mới. Chúng ta đã xử lý việc này bằng
+phương thức `fit_epoch` được định nghĩa trong :numref:`sec_linear_scratch`.
 :end_tab:
 
 ```{.python .input}
@@ -466,7 +465,7 @@ def loss(self, params, X, Y, state, averaged=True):
     return (fn(Y_hat, Y).mean(), {}) if averaged else (fn(Y_hat, Y), {})
 ```
 
-Next, we [**train the model**].
+Tiếp theo, chúng ta [**huấn luyện mô hình**].
 
 ```{.python .input}
 %%tab all
@@ -474,36 +473,36 @@ model = DropoutMLP(**hparams)
 trainer.fit(model, data)
 ```
 
-## Summary
+## Tóm tắt
 
-Beyond controlling the number of dimensions and the size of the weight vector, dropout is yet another tool for avoiding overfitting. Often tools are used jointly.
-Note that dropout is
-used only during training:
-it replaces an activation $h$ with a random variable with expected value $h$.
+Ngoài việc kiểm soát số lượng chiều và kích thước của vector trọng số, dropout là một công cụ khác để tránh overfitting. Các công cụ thường được sử dụng kết hợp.
+Lưu ý rằng dropout
+chỉ được sử dụng trong quá trình huấn luyện:
+nó thay thế một kích hoạt $h$ bằng một biến ngẫu nhiên có giá trị kỳ vọng là $h$.
 
 
-## Exercises
+## Bài tập
 
-1. What happens if you change the dropout probabilities for the first and second layers? In particular, what happens if you switch the ones for both layers? Design an experiment to answer these questions, describe your results quantitatively, and summarize the qualitative takeaways.
-1. Increase the number of epochs and compare the results obtained when using dropout with those when not using it.
-1. What is the variance of the activations in each hidden layer when dropout is and is not applied? Draw a plot to show how this quantity evolves over time for both models.
-1. Why is dropout not typically used at test time?
-1. Using the model in this section as an example, compare the effects of using dropout and weight decay. What happens when dropout and weight decay are used at the same time? Are the results additive? Are there diminished returns (or worse)? Do they cancel each other out?
-1. What happens if we apply dropout to the individual weights of the weight matrix rather than the activations?
-1. Invent another technique for injecting random noise at each layer that is different from the standard dropout technique. Can you develop a method that outperforms dropout on the Fashion-MNIST dataset (for a fixed architecture)?
+1. Điều gì xảy ra nếu bạn thay đổi xác suất dropout cho tầng thứ nhất và tầng thứ hai? Đặc biệt, điều gì xảy ra nếu bạn hoán đổi xác suất của hai tầng? Hãy thiết kế một thí nghiệm để trả lời các câu hỏi này, mô tả kết quả của bạn một cách định lượng, và tóm tắt những kết luận định tính.
+1. Tăng số epoch và so sánh kết quả thu được khi sử dụng dropout với khi không sử dụng nó.
+1. Phương sai của các kích hoạt trong mỗi tầng ẩn là bao nhiêu khi có và không có dropout? Hãy vẽ biểu đồ thể hiện sự thay đổi của đại lượng này theo thời gian cho cả hai mô hình.
+1. Vì sao dropout thường không được sử dụng tại thời điểm test?
+1. Dùng mô hình trong phần này làm ví dụ, hãy so sánh tác động của việc sử dụng dropout và weight decay. Điều gì xảy ra khi dropout và weight decay được dùng cùng lúc? Kết quả có mang tính cộng dồn không? Có lợi ích giảm dần (hoặc tệ hơn) không? Chúng có triệt tiêu lẫn nhau không?
+1. Điều gì xảy ra nếu chúng ta áp dụng dropout cho từng trọng số riêng lẻ của ma trận trọng số thay vì các kích hoạt?
+1. Hãy phát minh một kỹ thuật khác để chèn nhiễu ngẫu nhiên tại mỗi tầng, khác với kỹ thuật dropout tiêu chuẩn. Bạn có thể phát triển một phương pháp vượt trội hơn dropout trên tập dữ liệu Fashion-MNIST (với một kiến trúc cố định) không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/100)
+[Thảo luận](https://discuss.d2l.ai/t/100)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/101)
+[Thảo luận](https://discuss.d2l.ai/t/101)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/261)
+[Thảo luận](https://discuss.d2l.ai/t/261)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17987)
+[Thảo luận](https://discuss.d2l.ai/t/17987)
 :end_tab:

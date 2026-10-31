@@ -3,15 +3,15 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Parameter Initialization
+# Khởi tạo tham số
 
-Now that we know how to access the parameters,
-let's look at how to initialize them properly.
-We discussed the need for proper initialization in :numref:`sec_numerical_stability`.
-The deep learning framework provides default random initializations to its layers.
-However, we often want to initialize our weights
-according to various other protocols. The framework provides most commonly
-used protocols, and also allows to create a custom initializer.
+Giờ đây khi đã biết cách truy cập các tham số,
+hãy xem cách khởi tạo chúng đúng cách.
+Chúng ta đã thảo luận về sự cần thiết của việc khởi tạo phù hợp trong :numref:`sec_numerical_stability`.
+Framework deep learning cung cấp các phương thức khởi tạo ngẫu nhiên mặc định cho các layer của nó.
+Tuy nhiên, chúng ta thường muốn khởi tạo các trọng số
+theo nhiều quy tắc khác nhau. Framework cung cấp hầu hết các
+quy tắc thường dùng, đồng thời cũng cho phép tạo một initializer tùy chỉnh.
 
 ```{.python .input}
 %%tab mxnet
@@ -40,32 +40,32 @@ from jax import numpy as jnp
 ```
 
 :begin_tab:`mxnet`
-By default, MXNet initializes weight parameters by randomly drawing from a uniform distribution $U(-0.07, 0.07)$,
-clearing bias parameters to zero.
-MXNet's `init` module provides a variety
-of preset initialization methods.
+Theo mặc định, MXNet khởi tạo các tham số trọng số bằng cách lấy ngẫu nhiên từ phân phối đều $U(-0.07, 0.07)$,
+và đặt các tham số bias về 0.
+Module `init` của MXNet cung cấp nhiều
+phương thức khởi tạo dựng sẵn.
 :end_tab:
 
 :begin_tab:`pytorch`
-By default, PyTorch initializes weight and bias matrices
-uniformly by drawing from a range that is computed according to the input and output dimension.
-PyTorch's `nn.init` module provides a variety
-of preset initialization methods.
+Theo mặc định, PyTorch khởi tạo các ma trận trọng số và bias
+theo phân phối đều bằng cách lấy mẫu từ một khoảng được tính dựa trên chiều đầu vào và đầu ra.
+Module `nn.init` của PyTorch cung cấp nhiều
+phương thức khởi tạo dựng sẵn.
 :end_tab:
 
 :begin_tab:`tensorflow`
-By default, Keras initializes weight matrices uniformly by drawing from a range that is computed according to the input and output dimension, and the bias parameters are all set to zero.
-TensorFlow provides a variety of initialization methods both in the root module and the `keras.initializers` module.
+Theo mặc định, Keras khởi tạo các ma trận trọng số theo phân phối đều bằng cách lấy mẫu từ một khoảng được tính dựa trên chiều đầu vào và đầu ra, còn các tham số bias đều được đặt về 0.
+TensorFlow cung cấp nhiều phương thức khởi tạo cả trong module gốc lẫn module `keras.initializers`.
 :end_tab:
 
 :begin_tab:`jax`
-By default, Flax initializes weights using `jax.nn.initializers.lecun_normal`,
-i.e., by drawing samples from a truncated normal distribution centered on 0 with
-the standard deviation set as the squared root of $1 / \textrm{fan}_{\textrm{in}}$
-where `fan_in` is the number of input units in the weight tensor. The bias
-parameters are all set to zero.
-Jax's `nn.initializers` module provides a variety
-of preset initialization methods.
+Theo mặc định, Flax khởi tạo trọng số bằng `jax.nn.initializers.lecun_normal`,
+nghĩa là lấy mẫu từ một phân phối chuẩn bị cắt cụt có tâm tại 0 với
+độ lệch chuẩn được đặt bằng căn bậc hai của $1 / \textrm{fan}_{\textrm{in}}$
+trong đó `fan_in` là số lượng unit đầu vào trong tensor trọng số. Các tham số bias
+đều được đặt về 0.
+Module `nn.initializers` của Jax cung cấp nhiều
+phương thức khởi tạo dựng sẵn.
 :end_tab:
 
 ```{.python .input}
@@ -106,12 +106,12 @@ params = net.init(d2l.get_key(), X)
 net.apply(params, X).shape
 ```
 
-## [**Built-in Initialization**]
+## [**Khởi tạo dựng sẵn**]
 
-Let's begin by calling on built-in initializers.
-The code below initializes all weight parameters
-as Gaussian random variables
-with standard deviation 0.01, while bias parameters are cleared to zero.
+Hãy bắt đầu bằng cách gọi các initializer dựng sẵn.
+Đoạn mã dưới đây khởi tạo tất cả các tham số trọng số
+là các biến ngẫu nhiên Gaussian
+với độ lệch chuẩn 0.01, trong khi các tham số bias được đặt về 0.
 
 ```{.python .input}
 %%tab mxnet
@@ -160,8 +160,8 @@ layer_0 = params['params']['layers_0']
 layer_0['kernel'][:, 0], layer_0['bias'][0]
 ```
 
-We can also initialize all the parameters
-to a given constant value (say, 1).
+Chúng ta cũng có thể khởi tạo tất cả các tham số
+thành một giá trị hằng cho trước (ví dụ: 1).
 
 ```{.python .input}
 %%tab mxnet
@@ -208,11 +208,11 @@ layer_0 = params['params']['layers_0']
 layer_0['kernel'][:, 0], layer_0['bias'][0]
 ```
 
-[**We can also apply different initializers for certain blocks.**]
-For example, below we initialize the first layer
-with the Xavier initializer
-and initialize the second layer
-to a constant value of 42.
+[**Chúng ta cũng có thể áp dụng các initializer khác nhau cho từng block nhất định.**]
+Ví dụ, bên dưới chúng ta khởi tạo layer đầu tiên
+bằng Xavier initializer
+và khởi tạo layer thứ hai
+thành giá trị hằng là 42.
 
 ```{.python .input}
 %%tab mxnet
@@ -267,12 +267,12 @@ params = net.init(jax.random.PRNGKey(d2l.get_seed()), X)
 params['params']['layers_0']['kernel'][:, 0], params['params']['layers_2']['kernel']
 ```
 
-### [**Custom Initialization**]
+### [**Khởi tạo tùy chỉnh**]
 
-Sometimes, the initialization methods we need
-are not provided by the deep learning framework.
-In the example below, we define an initializer
-for any weight parameter $w$ using the following strange distribution:
+Đôi khi, các phương thức khởi tạo chúng ta cần
+không được framework deep learning cung cấp.
+Trong ví dụ dưới đây, chúng ta định nghĩa một initializer
+cho bất kỳ tham số trọng số $w$ nào bằng phân phối kỳ lạ sau:
 
 $$
 \begin{aligned}
@@ -285,25 +285,25 @@ $$
 $$
 
 :begin_tab:`mxnet`
-Here we define a subclass of the `Initializer` class.
-Usually, we only need to implement the `_init_weight` function
-which takes a tensor argument (`data`)
-and assigns to it the desired initialized values.
+Ở đây, chúng ta định nghĩa một lớp con của lớp `Initializer`.
+Thông thường, chúng ta chỉ cần triển khai hàm `_init_weight`,
+hàm này nhận một đối số tensor (`data`)
+và gán cho nó các giá trị khởi tạo mong muốn.
 :end_tab:
 
 :begin_tab:`pytorch`
-Again, we implement a `my_init` function to apply to `net`.
+Một lần nữa, chúng ta triển khai một hàm `my_init` để áp dụng cho `net`.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Here we define a subclass of `Initializer` and implement the `__call__`
-function that return a desired tensor given the shape and data type.
+Ở đây, chúng ta định nghĩa một lớp con của `Initializer` và triển khai
+hàm `__call__` trả về một tensor mong muốn dựa trên shape và kiểu dữ liệu.
 :end_tab:
 
 :begin_tab:`jax`
-Jax initialization functions take as arguments the `PRNGKey`, `shape` and
-`dtype`. Here we implement the function `my_init` that returns a desired
-tensor given the shape and data type.
+Các hàm khởi tạo Jax nhận `PRNGKey`, `shape` và
+`dtype` làm đối số. Ở đây, chúng ta triển khai hàm `my_init` trả về một
+tensor mong muốn dựa trên shape và kiểu dữ liệu.
 :end_tab:
 
 ```{.python .input}
@@ -365,15 +365,15 @@ print(params['params']['layers_0']['kernel'][:, :2])
 ```
 
 :begin_tab:`mxnet, pytorch, tensorflow`
-Note that we always have the option
-of setting parameters directly.
+Lưu ý rằng chúng ta luôn có thể
+thiết lập trực tiếp các tham số.
 :end_tab:
 
 :begin_tab:`jax`
-When initializing parameters in JAX and Flax, the the dictionary of parameters
-returned has a `flax.core.frozen_dict.FrozenDict` type. It is not advisable in
-the Jax ecosystem to directly alter the values of an array, hence the datatypes
-are generally immutable. One might use `params.unfreeze()` to make changes.
+Khi khởi tạo tham số trong JAX và Flax, dictionary tham số
+được trả về có kiểu `flax.core.frozen_dict.FrozenDict`. Trong
+hệ sinh thái Jax, không nên trực tiếp thay đổi giá trị của một array, do đó các kiểu dữ liệu
+thường là bất biến. Có thể dùng `params.unfreeze()` để thực hiện thay đổi.
 :end_tab:
 
 ```{.python .input}
@@ -397,13 +397,13 @@ net.layers[1].weights[0][0, 0].assign(42)
 net.layers[1].weights[0]
 ```
 
-## Summary
+## Tóm tắt
 
-We can initialize parameters using built-in and custom initializers.
+Chúng ta có thể khởi tạo tham số bằng các initializer dựng sẵn và tùy chỉnh.
 
-## Exercises
+## Bài tập
 
-Look up the online documentation for more built-in initializers.
+Tra cứu tài liệu trực tuyến để biết thêm các initializer dựng sẵn.
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/8089)

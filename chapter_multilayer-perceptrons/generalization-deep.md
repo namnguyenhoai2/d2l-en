@@ -1,372 +1,372 @@
-# Generalization in Deep Learning
+# Khái quát hóa trong Học sâu
 
 
-In :numref:`chap_regression` and :numref:`chap_classification`,
-we tackled regression and classification problems
-by fitting linear models to training data.
-In both cases, we provided practical algorithms
-for finding the parameters that maximized
-the likelihood of the observed training labels.
-And then, towards the end of each chapter,
-we recalled that fitting the training data
-was only an intermediate goal.
-Our real quest all along was to discover *general patterns*
-on the basis of which we can make accurate predictions
-even on new examples drawn from the same underlying population.
-Machine learning researchers are *consumers* of optimization algorithms.
-Sometimes, we must even develop new optimization algorithms.
-But at the end of the day, optimization is merely a means to an end.
-At its core, machine learning is a statistical discipline
-and we wish to optimize training loss only insofar
-as some statistical principle (known or unknown)
-leads the resulting models to generalize beyond the training set.
+Trong :numref:`chap_regression` và :numref:`chap_classification`,
+chúng ta đã giải quyết các bài toán hồi quy và phân loại
+bằng cách khớp các mô hình tuyến tính với dữ liệu huấn luyện.
+Trong cả hai trường hợp, chúng ta đã cung cấp các thuật toán thực tiễn
+để tìm các tham số tối đa hóa
+khả năng xảy ra của các nhãn huấn luyện quan sát được.
+Và sau đó, ở gần cuối mỗi chương,
+chúng ta đã nhắc lại rằng việc khớp dữ liệu huấn luyện
+chỉ là một mục tiêu trung gian.
+Mục tiêu thực sự của chúng ta từ đầu đến cuối là khám phá các *mẫu tổng quát*
+làm cơ sở để đưa ra các dự đoán chính xác
+ngay cả trên các ví dụ mới được rút ra từ cùng một quần thể nền tảng.
+Các nhà nghiên cứu machine learning là *người sử dụng* các thuật toán tối ưu hóa.
+Đôi khi, chúng ta thậm chí phải phát triển các thuật toán tối ưu hóa mới.
+Nhưng xét cho cùng, tối ưu hóa chỉ là phương tiện để đạt được mục đích.
+Về cốt lõi, machine learning là một lĩnh vực thống kê
+và chúng ta chỉ muốn tối ưu hóa loss huấn luyện trong chừng mực
+một nguyên lý thống kê nào đó (đã biết hoặc chưa biết)
+dẫn các mô hình thu được đến khả năng khái quát hóa vượt ra ngoài tập huấn luyện.
 
 
-On the bright side, it turns out that deep neural networks
-trained by stochastic gradient descent generalize remarkably well
-across myriad prediction problems, spanning computer vision;
-natural language processing; time series data; recommender systems;
-electronic health records; protein folding;
-value function approximation in video games
-and board games; and numerous other domains.
-On the downside, if you were looking
-for a straightforward account
-of either the optimization story
-(why we can fit them to training data)
-or the generalization story
-(why the resulting models generalize to unseen examples),
-then you might want to pour yourself a drink.
-While our procedures for optimizing linear models
-and the statistical properties of the solutions
-are both described well by a comprehensive body of theory,
-our understanding of deep learning
-still resembles the wild west on both fronts.
+Điểm tích cực là, các mạng nơ-ron sâu
+được huấn luyện bằng stochastic gradient descent khái quát hóa tốt một cách đáng kinh ngạc
+trên vô số bài toán dự đoán, bao gồm thị giác máy tính;
+xử lý ngôn ngữ tự nhiên; dữ liệu chuỗi thời gian; hệ thống gợi ý;
+hồ sơ sức khỏe điện tử; gấp cuộn protein;
+xấp xỉ hàm giá trị trong trò chơi điện tử
+và trò chơi bàn cờ; cùng nhiều lĩnh vực khác.
+Điểm tiêu cực là, nếu bạn đang tìm kiếm
+một lời giải thích đơn giản
+cho câu chuyện tối ưu hóa
+(tại sao chúng ta có thể khớp chúng với dữ liệu huấn luyện)
+hoặc câu chuyện khái quát hóa
+(tại sao các mô hình thu được lại khái quát hóa đến các ví dụ chưa từng thấy),
+thì có lẽ bạn nên rót cho mình một ly.
+Trong khi các quy trình tối ưu hóa mô hình tuyến tính của chúng ta
+và các tính chất thống kê của nghiệm
+đều được mô tả tốt bởi một hệ thống lý thuyết toàn diện,
+hiểu biết của chúng ta về học sâu
+vẫn giống miền viễn Tây ở cả hai phương diện.
 
-Both the theory and practice of deep learning
-are rapidly evolving,
-with theorists adopting new strategies
-to explain what's going on,
-even as practitioners continue
-to innovate at a blistering pace,
-building arsenals of heuristics for training deep networks
-and a body of intuitions and folk knowledge
-that provide guidance for deciding
-which techniques to apply in which situations.
+Cả lý thuyết lẫn thực hành của học sâu
+đều đang phát triển nhanh chóng,
+với các nhà lý thuyết áp dụng những chiến lược mới
+để giải thích điều đang diễn ra,
+trong khi các học viên vẫn tiếp tục
+đổi mới với tốc độ chóng mặt,
+xây dựng kho vũ khí các heuristic để huấn luyện mạng sâu
+cùng một hệ thống trực giác và tri thức kinh nghiệm
+giúp định hướng cho việc quyết định
+kỹ thuật nào nên được áp dụng trong tình huống nào.
 
-The summary of the present moment is that the theory of deep learning
-has produced promising lines of attack and scattered fascinating results,
-but still appears far from a comprehensive account
-of both (i) why we are able to optimize neural networks
-and (ii) how models learned by gradient descent
-manage to generalize so well, even on high-dimensional tasks.
-However, in practice, (i) is seldom a problem
-(we can always find parameters that will fit all of our training data)
-and thus understanding generalization is far the bigger problem.
-On the other hand, even absent the comfort of a coherent scientific theory,
-practitioners have developed a large collection of techniques
-that may help you to produce models that generalize well in practice.
-While no pithy summary can possibly do justice
-to the vast topic of generalization in deep learning,
-and while the overall state of research is far from resolved,
-we hope, in this section, to present a broad overview
-of the state of research and practice.
+Tóm tắt tình hình hiện tại là lý thuyết học sâu
+đã đưa ra các hướng tiếp cận đầy hứa hẹn và những kết quả thú vị rải rác,
+nhưng dường như vẫn còn rất xa mới có được lời giải thích toàn diện
+cho cả (i) lý do chúng ta có thể tối ưu hóa mạng nơ-ron
+và (ii) cách các mô hình được học bằng gradient descent
+có thể khái quát hóa tốt đến vậy, ngay cả trên các tác vụ nhiều chiều.
+Tuy nhiên, trong thực tế, (i) hiếm khi là vấn đề
+(chúng ta luôn có thể tìm được các tham số khớp với toàn bộ dữ liệu huấn luyện)
+và do đó việc hiểu khả năng khái quát hóa mới là vấn đề lớn hơn nhiều.
+Mặt khác, ngay cả khi không có sự an tâm từ một lý thuyết khoa học mạch lạc,
+các học viên đã phát triển một bộ sưu tập lớn các kỹ thuật
+có thể giúp bạn tạo ra những mô hình khái quát hóa tốt trong thực tế.
+Mặc dù không một bản tóm tắt ngắn gọn nào có thể làm trọn vẹn công bằng
+cho chủ đề rộng lớn về khái quát hóa trong học sâu,
+và mặc dù trạng thái nghiên cứu tổng thể còn lâu mới được giải quyết,
+chúng tôi hy vọng trong phần này sẽ trình bày một cái nhìn tổng quan
+về trạng thái của nghiên cứu và thực hành.
 
 
-## Revisiting Overfitting and Regularization
+## Xem lại Overfitting và Regularization
 
-According to the "no free lunch" theorem of :citet:`wolpert1995no`,
-any learning algorithm generalizes better on data with certain distributions, and worse with other distributions.
-Thus, given a finite training set,
-a model relies on certain assumptions: 
-to achieve human-level performance
-it may be useful to identify *inductive biases* 
-that reflect how humans think about the world.
-Such inductive biases show preferences 
-for solutions with certain properties.
-For example,
-a deep MLP has an inductive bias
-towards building up a complicated function by the composition of simpler functions.
+Theo định lý "no free lunch" của :citet:`wolpert1995no`,
+bất kỳ thuật toán học nào cũng khái quát hóa tốt hơn trên dữ liệu có một số phân phối nhất định, và kém hơn với các phân phối khác.
+Do đó, với một tập huấn luyện hữu hạn,
+một mô hình dựa vào các giả định nhất định:
+để đạt được hiệu năng ở mức con người
+có thể hữu ích khi xác định các *inductive bias*
+phản ánh cách con người suy nghĩ về thế giới.
+Các inductive bias như vậy thể hiện sự ưu tiên
+đối với các nghiệm có những đặc tính nhất định.
+Ví dụ,
+một MLP sâu có inductive bias
+hướng đến việc xây dựng một hàm phức tạp bằng cách hợp thành các hàm đơn giản hơn.
 
-With machine learning models encoding inductive biases,
-our approach to training them
-typically consists of two phases: (i) fit the training data;
-and (ii) estimate the *generalization error*
-(the true error on the underlying population)
-by evaluating the model on holdout data.
-The difference between our fit on the training data
-and our fit on the test data is called the *generalization gap* and when this is large,
-we say that our models *overfit* to the training data.
-In extreme cases of overfitting,
-we might exactly fit the training data,
-even when the test error remains significant.
-And in the classical view,
-the interpretation is that our models are too complex,
-requiring that we either shrink the number of features,
-the number of nonzero parameters learned,
-or the size of the parameters as quantified.
-Recall the plot of model complexity compared with loss
+Với các mô hình machine learning mã hóa inductive bias,
+cách tiếp cận huấn luyện chúng ta
+thường gồm hai giai đoạn: (i) khớp dữ liệu huấn luyện;
+và (ii) ước lượng *lỗi khái quát hóa*
+(lỗi thực trên quần thể nền tảng)
+bằng cách đánh giá mô hình trên dữ liệu holdout.
+Sự khác biệt giữa mức độ khớp trên dữ liệu huấn luyện
+và mức độ khớp trên dữ liệu kiểm tra được gọi là *khoảng cách khái quát hóa*, và khi khoảng cách này lớn,
+chúng ta nói rằng các mô hình *overfit* với dữ liệu huấn luyện.
+Trong các trường hợp overfitting cực đoan,
+chúng ta có thể khớp chính xác dữ liệu huấn luyện,
+ngay cả khi lỗi kiểm tra vẫn đáng kể.
+Và theo quan điểm cổ điển,
+cách diễn giải là các mô hình của chúng ta quá phức tạp,
+đòi hỏi chúng ta phải giảm số lượng đặc trưng,
+số lượng tham số khác 0 được học,
+hoặc độ lớn của các tham số theo một thước đo định lượng.
+Hãy nhớ lại biểu đồ về độ phức tạp mô hình so với loss
 (:numref:`fig_capacity_vs_error`)
-from :numref:`sec_generalization_basics`.
+trong :numref:`sec_generalization_basics`.
 
 
-However deep learning complicates this picture in counterintuitive ways.
-First, for classification problems,
-our models are typically expressive enough
-to perfectly fit every training example,
-even in datasets consisting of millions
+Tuy nhiên, học sâu làm phức tạp bức tranh này theo những cách phản trực giác.
+Trước hết, đối với các bài toán phân loại,
+các mô hình của chúng ta thường đủ khả năng biểu đạt
+để khớp hoàn hảo mọi ví dụ huấn luyện,
+ngay cả trong các bộ dữ liệu gồm hàng triệu mẫu
 :cite:`zhang2021understanding`.
-In the classical picture, we might think
-that this setting lies on the far right extreme
-of the model complexity axis,
-and that any improvements in generalization error
-must come by way of regularization,
-either by reducing the complexity of the model class,
-or by applying a penalty, severely constraining
-the set of values that our parameters might take.
-But that is where things start to get weird.
+Theo bức tranh cổ điển, chúng ta có thể cho rằng
+bối cảnh này nằm ở cực phải
+của trục độ phức tạp mô hình,
+và mọi cải thiện về lỗi khái quát hóa
+đều phải đến từ regularization,
+hoặc bằng cách giảm độ phức tạp của lớp mô hình,
+hoặc bằng cách áp dụng một hình phạt, hạn chế nghiêm ngặt
+tập giá trị mà các tham số có thể nhận.
+Nhưng đó là lúc mọi thứ bắt đầu trở nên kỳ lạ.
 
-Strangely, for many deep learning tasks
-(e.g., image recognition and text classification)
-we are typically choosing among model architectures,
-all of which can achieve arbitrarily low training loss
-(and zero training error).
-Because all models under consideration achieve zero training error,
-*the only avenue for further gains is to reduce overfitting*.
-Even stranger, it is often the case that
-despite fitting the training data perfectly,
-we can actually *reduce the generalization error*
-further by making the model *even more expressive*,
-e.g., adding layers, nodes, or training
-for a larger number of epochs.
-Stranger yet, the pattern relating the generalization gap
-to the *complexity* of the model (as captured, for example, in the depth or width of the networks)
-can be non-monotonic,
-with greater complexity hurting at first
-but subsequently helping in a so-called "double-descent" pattern
+Điều lạ lùng là, đối với nhiều tác vụ học sâu
+(ví dụ: nhận dạng ảnh và phân loại văn bản)
+chúng ta thường lựa chọn giữa các kiến trúc mô hình,
+mà tất cả đều có thể đạt loss huấn luyện thấp tùy ý
+(và lỗi huấn luyện bằng 0).
+Bởi vì mọi mô hình đang được xem xét đều đạt lỗi huấn luyện bằng 0,
+*lựa chọn duy nhất để tiếp tục cải thiện là giảm overfitting*.
+Kỳ lạ hơn nữa, thường xảy ra trường hợp
+mặc dù khớp hoàn hảo dữ liệu huấn luyện,
+chúng ta thực sự có thể *giảm lỗi khái quát hóa*
+thêm nữa bằng cách làm mô hình *có khả năng biểu đạt cao hơn nữa*,
+ví dụ, thêm layer, node hoặc huấn luyện
+trong số epoch lớn hơn.
+Kỳ lạ hơn nữa, mô hình liên hệ khoảng cách khái quát hóa
+với *độ phức tạp* của mô hình (chẳng hạn được thể hiện qua độ sâu hoặc chiều rộng của mạng)
+có thể không đơn điệu,
+trong đó độ phức tạp lớn hơn ban đầu gây hại
+nhưng sau đó lại có ích theo mô hình được gọi là "double-descent"
 :cite:`nakkiran2021deep`.
-Thus the deep learning practitioner possesses a bag of tricks,
-some of which seemingly restrict the model in some fashion
-and others that seemingly make it even more expressive,
-and all of which, in some sense, are applied to mitigate overfitting.
+Vì vậy, người thực hành học sâu sở hữu một túi mẹo,
+trong đó một số dường như hạn chế mô hình theo cách nào đó
+và số khác dường như khiến mô hình có khả năng biểu đạt cao hơn nữa,
+và tất cả, theo một nghĩa nào đó, đều được áp dụng để giảm thiểu overfitting.
 
-Complicating things even further,
-while the guarantees provided by classical learning theory
-can be conservative even for classical models,
-they appear powerless to explain why it is
-that deep neural networks generalize in the first place.
-Because deep neural networks are capable of fitting
-arbitrary labels even for large datasets,
-and despite the use of familiar methods such as $\ell_2$ regularization,
-traditional complexity-based generalization bounds,
-e.g., those based on the VC dimension
-or Rademacher complexity of a hypothesis class
-cannot explain why neural networks generalize.
+Làm mọi thứ phức tạp hơn nữa,
+mặc dù các đảm bảo do lý thuyết học cổ điển đưa ra
+có thể bảo thủ ngay cả đối với các mô hình cổ điển,
+chúng dường như bất lực trong việc giải thích tại sao
+mạng nơ-ron sâu lại khái quát hóa ngay từ đầu.
+Bởi vì mạng nơ-ron sâu có khả năng khớp
+các nhãn tùy ý ngay cả với các bộ dữ liệu lớn,
+và mặc dù sử dụng các phương pháp quen thuộc như regularization $\ell_2$,
+các cận khái quát hóa dựa trên độ phức tạp truyền thống,
+ví dụ các cận dựa trên VC dimension
+hoặc độ phức tạp Rademacher của một lớp giả thuyết
+không thể giải thích tại sao mạng nơ-ron khái quát hóa.
 
-## Inspiration from Nonparametrics
+## Cảm hứng từ Nonparametrics
 
-Approaching deep learning for the first time,
-it is tempting to think of them as parametric models.
-After all, the models *do* have millions of parameters.
-When we update the models, we update their parameters.
-When we save the models, we write their parameters to disk.
-However, mathematics and computer science are riddled
-with counterintuitive changes of perspective,
-and surprising isomorphisms between seemingly different problems.
-While neural networks clearly *have* parameters,
-in some ways it can be more fruitful
-to think of them as behaving like nonparametric models.
-So what precisely makes a model nonparametric?
-While the name covers a diverse set of approaches,
-one common theme is that nonparametric methods
-tend to have a level of complexity that grows
-as the amount of available data grows.
+Khi tiếp cận học sâu lần đầu,
+ta dễ bị cám dỗ xem chúng là các mô hình tham số.
+Rốt cuộc, các mô hình *thực sự* có hàng triệu tham số.
+Khi cập nhật các mô hình, chúng ta cập nhật các tham số của chúng.
+Khi lưu các mô hình, chúng ta ghi các tham số của chúng vào đĩa.
+Tuy nhiên, toán học và khoa học máy tính đầy rẫy
+những thay đổi góc nhìn phản trực giác,
+và các đẳng cấu đáng ngạc nhiên giữa những bài toán tưởng chừng khác biệt.
+Mặc dù mạng nơ-ron rõ ràng *có* tham số,
+theo một số cách, sẽ hiệu quả hơn
+nếu xem chúng hoạt động giống các mô hình phi tham số.
+Vậy chính xác điều gì khiến một mô hình là phi tham số?
+Mặc dù tên gọi này bao gồm một tập hợp phương pháp đa dạng,
+một chủ đề chung là các phương pháp phi tham số
+có xu hướng có mức độ phức tạp tăng lên
+khi lượng dữ liệu sẵn có tăng lên.
 
-Perhaps the simplest example of a nonparametric model
-is the $k$-nearest neighbor algorithm (we will cover more nonparametric models later, for example in :numref:`sec_attention-pooling`).
-Here, at training time,
-the learner simply memorizes the dataset.
-Then, at prediction time,
-when confronted with a new point $\mathbf{x}$,
-the learner looks up the $k$ nearest neighbors
-(the $k$ points $\mathbf{x}_i'$ that minimize
-some distance $d(\mathbf{x}, \mathbf{x}_i')$).
-When $k=1$, this algorithm is called $1$-nearest neighbors,
-and the algorithm will always achieve a training error of zero.
-That however, does not mean that the algorithm will not generalize.
-In fact, it turns out that under some mild conditions,
-the 1-nearest neighbor algorithm is consistent
-(eventually converging to the optimal predictor).
-
-
-Note that $1$-nearest neighbor requires that we specify
-some distance function $d$, or equivalently,
-that we specify some vector-valued basis function $\phi(\mathbf{x})$
-for featurizing our data.
-For any choice of the distance metric,
-we will achieve zero training error
-and eventually reach an optimal predictor,
-but different distance metrics $d$
-encode different inductive biases
-and with a finite amount of available data
-will yield different predictors.
-Different choices of the distance metric $d$
-represent different assumptions about the underlying patterns
-and the performance of the different predictors
-will depend on how compatible the assumptions
-are with the observed data.
-
-In a sense, because neural networks are over-parametrized,
-possessing many more parameters than are needed to fit the training data,
-they tend to *interpolate* the training data (fitting it perfectly)
-and thus behave, in some ways, more like nonparametric models.
-More recent theoretical research has established
-deep connection between large neural networks
-and nonparametric methods, notably kernel methods.
-In particular, :citet:`Jacot.Grabriel.Hongler.2018`
-demonstrated that in the limit, as multilayer perceptrons
-with randomly initialized weights grow infinitely wide,
-they become equivalent to (nonparametric) kernel methods
-for a specific choice of the kernel function
-(essentially, a distance function),
-which they call the neural tangent kernel.
-While current neural tangent kernel models may not fully explain
-the behavior of modern deep networks,
-their success as an analytical tool
-underscores the usefulness of nonparametric modeling
-for understanding the behavior of over-parametrized deep networks.
+Có lẽ ví dụ đơn giản nhất về một mô hình phi tham số
+là thuật toán $k$-láng giềng gần nhất (chúng ta sẽ trình bày thêm các mô hình phi tham số sau này, ví dụ trong :numref:`sec_attention-pooling`).
+Ở đây, tại thời điểm huấn luyện,
+người học chỉ đơn giản ghi nhớ bộ dữ liệu.
+Sau đó, tại thời điểm dự đoán,
+khi đối mặt với một điểm mới $\mathbf{x}$,
+người học tìm $k$ láng giềng gần nhất
+($k$ điểm $\mathbf{x}_i'$ tối thiểu hóa
+một khoảng cách nào đó $d(\mathbf{x}, \mathbf{x}_i')$).
+Khi $k=1$, thuật toán này được gọi là $1$-láng giềng gần nhất,
+và thuật toán sẽ luôn đạt lỗi huấn luyện bằng 0.
+Tuy nhiên, điều đó không có nghĩa là thuật toán sẽ không khái quát hóa.
+Trên thực tế, hóa ra trong một số điều kiện nhẹ,
+thuật toán 1-láng giềng gần nhất là nhất quán
+(cuối cùng hội tụ về bộ dự đoán tối ưu).
 
 
-## Early Stopping
+Lưu ý rằng $1$-láng giềng gần nhất yêu cầu chúng ta chỉ định
+một hàm khoảng cách $d$, hay tương đương,
+chỉ định một hàm cơ sở có giá trị vector $\phi(\mathbf{x})$
+để trích xuất đặc trưng cho dữ liệu.
+Với bất kỳ lựa chọn nào của metric khoảng cách,
+chúng ta sẽ đạt lỗi huấn luyện bằng 0
+và cuối cùng đạt được một bộ dự đoán tối ưu,
+nhưng các metric khoảng cách $d$ khác nhau
+mã hóa các inductive bias khác nhau
+và với lượng dữ liệu sẵn có hữu hạn
+sẽ tạo ra các bộ dự đoán khác nhau.
+Các lựa chọn khác nhau cho metric khoảng cách $d$
+đại diện cho các giả định khác nhau về các mẫu nền tảng
+và hiệu năng của các bộ dự đoán khác nhau
+sẽ phụ thuộc vào mức độ tương thích của các giả định
+với dữ liệu quan sát được.
 
-While deep neural networks are capable of fitting arbitrary labels,
-even when labels are assigned incorrectly or randomly
+Theo một nghĩa nào đó, vì các neural network được over-parametrized,
+sở hữu số lượng parameter nhiều hơn rất nhiều so với mức cần thiết để khớp dữ liệu huấn luyện,
+chúng có xu hướng *nội suy (interpolate)* dữ liệu huấn luyện (khớp hoàn hảo)
+và do đó, ở một số khía cạnh, hoạt động giống các mô hình phi tham số hơn.
+Các nghiên cứu lý thuyết gần đây đã thiết lập
+mối liên hệ sâu sắc giữa các neural network lớn
+và các phương pháp phi tham số, đáng chú ý là kernel methods.
+Cụ thể, :citet:`Jacot.Grabriel.Hongler.2018`
+đã chứng minh rằng trong giới hạn, khi các multilayer perceptron
+với weight được khởi tạo ngẫu nhiên trở nên có độ rộng vô hạn,
+chúng tương đương với các kernel methods (phi tham số)
+đối với một lựa chọn cụ thể của kernel function
+(về cơ bản là một distance function),
+mà họ gọi là neural tangent kernel.
+Mặc dù các mô hình neural tangent kernel hiện nay có thể chưa giải thích đầy đủ
+hành vi của các deep network hiện đại,
+thành công của chúng với vai trò là một công cụ phân tích
+nhấn mạnh tính hữu ích của mô hình hóa phi tham số
+trong việc hiểu hành vi của các deep network over-parametrized.
+
+
+## Dừng sớm
+
+Mặc dù các deep neural network có khả năng khớp các nhãn tùy ý,
+ngay cả khi nhãn được gán sai hoặc ngẫu nhiên
 :cite:`zhang2021understanding`,
-this capability only emerges over many iterations of training.
-A new line of work :cite:`Rolnick.Veit.Belongie.Shavit.2017`
-has revealed that in the setting of label noise,
-neural networks tend to fit cleanly labeled data first
-and only subsequently to interpolate the mislabeled data.
-Moreover, it has been established that this phenomenon
-translates directly into a guarantee on generalization:
-whenever a model has fitted the cleanly labeled data
-but not randomly labeled examples included in the training set,
-it has in fact generalized :cite:`Garg.Balakrishnan.Kolter.Lipton.2021`.
+khả năng này chỉ xuất hiện sau nhiều vòng lặp huấn luyện.
+Một hướng nghiên cứu mới :cite:`Rolnick.Veit.Belongie.Shavit.2017`
+đã cho thấy rằng trong bối cảnh có nhiễu nhãn,
+neural network có xu hướng khớp dữ liệu được gán nhãn đúng trước
+và chỉ sau đó mới nội suy dữ liệu bị gán nhãn sai.
+Hơn nữa, đã xác lập được rằng hiện tượng này
+chuyển trực tiếp thành một đảm bảo về khả năng tổng quát hóa:
+bất cứ khi nào một mô hình đã khớp dữ liệu được gán nhãn đúng
+nhưng chưa khớp các ví dụ được gán nhãn ngẫu nhiên có trong tập huấn luyện,
+thì trên thực tế nó đã tổng quát hóa :cite:`Garg.Balakrishnan.Kolter.Lipton.2021`.
 
-Together these findings help to motivate *early stopping*,
-a classic technique for regularizing deep neural networks.
-Here, rather than directly constraining the values of the weights,
-one constrains the number of epochs of training.
-The most common way to determine the stopping criterion
-is to monitor validation error throughout training
-(typically by checking once after each epoch)
-and to cut off training when the validation error
-has not decreased by more than some small amount $\epsilon$
-for some number of epochs.
-This is sometimes called a *patience criterion*.
-As well as the potential to lead to better generalization
-in the setting of noisy labels,
-another benefit of early stopping is the time saved.
-Once the patience criterion is met, one can terminate training.
-For large models that might require days of training
-simultaneously across eight or more GPUs,
-well-tuned early stopping can save researchers days of time
-and can save their employers many thousands of dollars.
+Những phát hiện này cùng nhau giúp tạo động lực cho *dừng sớm*,
+một kỹ thuật kinh điển để regularize các deep neural network.
+Ở đây, thay vì trực tiếp ràng buộc giá trị của weight,
+ta ràng buộc số epoch huấn luyện.
+Cách phổ biến nhất để xác định tiêu chí dừng
+là theo dõi validation error trong suốt quá trình huấn luyện
+(thường kiểm tra một lần sau mỗi epoch)
+và dừng huấn luyện khi validation error
+không giảm quá một lượng nhỏ nào đó $\epsilon$
+trong một số epoch nhất định.
+Điều này đôi khi được gọi là *tiêu chí patience*.
+Bên cạnh tiềm năng dẫn đến khả năng tổng quát hóa tốt hơn
+trong bối cảnh nhãn nhiễu,
+một lợi ích khác của dừng sớm là tiết kiệm thời gian.
+Khi tiêu chí patience được đáp ứng, ta có thể kết thúc huấn luyện.
+Đối với các mô hình lớn có thể cần nhiều ngày huấn luyện
+đồng thời trên tám hoặc nhiều GPU hơn,
+dừng sớm được tinh chỉnh tốt có thể giúp các nhà nghiên cứu tiết kiệm nhiều ngày
+và giúp đơn vị sử dụng lao động của họ tiết kiệm nhiều nghìn đô la.
 
-Notably, when there is no label noise and datasets are *realizable*
-(the classes are truly separable, e.g., distinguishing cats from dogs),
-early stopping tends not to lead to significant improvements in generalization.
-On the other hand, when there is label noise,
-or intrinsic variability in the label
-(e.g., predicting mortality among patients),
-early stopping is crucial.
-Training models until they interpolate noisy data is typically a bad idea.
-
-
-## Classical Regularization Methods for Deep Networks
-
-In :numref:`chap_regression`, we described
-several  classical regularization techniques
-for constraining the complexity of our models.
-In particular, :numref:`sec_weight_decay`
-introduced a method called weight decay,
-which consists of adding a regularization term to the loss function
-in order to penalize large values of the weights.
-Depending on which weight norm is penalized
-this technique is known either as ridge regularization (for $\ell_2$ penalty)
-or lasso regularization (for an $\ell_1$ penalty).
-In the classical analysis of these regularizers,
-they are considered as sufficiently restrictive on the values
-that the weights can take to prevent the model from fitting arbitrary labels.
-
-In deep learning implementations,
-weight decay remains a popular tool.
-However, researchers have noted
-that typical strengths of $\ell_2$ regularization
-are insufficient to prevent the networks
-from interpolating the data :cite:`zhang2021understanding` and thus the benefits if interpreted
-as regularization might only make sense
-in combination with the early stopping criterion.
-Absent early stopping, it is possible
-that just like the number of layers
-or number of nodes (in deep learning)
-or the distance metric (in 1-nearest neighbor),
-these methods may lead to better generalization
-not because they meaningfully constrain
-the power of the neural network
-but rather because they somehow encode inductive biases
-that are better compatible with the patterns
-found in datasets of interests.
-Thus, classical regularizers remain popular
-in deep learning implementations,
-even if the theoretical rationale
-for their efficacy may be radically different.
-
-Notably, deep learning researchers have also built
-on techniques first popularized
-in classical regularization contexts,
-such as adding noise to model inputs.
-In the next section we will introduce
-the famous dropout technique
-(invented by :citet:`Srivastava.Hinton.Krizhevsky.ea.2014`),
-which has become a mainstay of deep learning,
-even as the theoretical basis for its efficacy
-remains similarly mysterious.
+Đáng chú ý, khi không có nhiễu nhãn và các dataset là *realizable*
+(các lớp thực sự có thể phân tách được, ví dụ: phân biệt mèo với chó),
+dừng sớm thường không dẫn đến những cải thiện đáng kể về khả năng tổng quát hóa.
+Mặt khác, khi có nhiễu nhãn,
+hoặc sự biến thiên nội tại trong nhãn
+(ví dụ: dự đoán tỷ lệ tử vong ở bệnh nhân),
+dừng sớm là rất quan trọng.
+Huấn luyện mô hình cho đến khi chúng nội suy dữ liệu nhiễu thường là một ý tưởng tồi.
 
 
-## Summary
+## Các Phương pháp Regularization Cổ điển cho Deep Network
 
-Unlike classical linear models,
-which tend to have fewer parameters than examples,
-deep networks tend to be over-parametrized,
-and for most tasks are capable
-of perfectly fitting the training set.
-This *interpolation regime* challenges
-many hard fast-held intuitions.
-Functionally, neural networks look like parametric models.
-But thinking of them as nonparametric models
-can sometimes be a more reliable source of intuition.
-Because it is often the case that all deep networks under consideration
-are capable of fitting all of the training labels,
-nearly all gains must come by mitigating overfitting
-(closing the *generalization gap*).
-Paradoxically, the interventions
-that reduce the generalization gap
-sometimes appear to increase model complexity
-and at other times appear to decrease complexity.
-However, these methods seldom decrease complexity
-sufficiently for classical theory
-to explain the generalization of deep networks,
-and *why certain choices lead to improved generalization*
-remains for the most part a massive open question
-despite the concerted efforts of many brilliant researchers.
+Trong :numref:`chap_regression`, chúng ta đã mô tả
+một số kỹ thuật regularization cổ điển
+để ràng buộc độ phức tạp của mô hình.
+Cụ thể, :numref:`sec_weight_decay`
+đã giới thiệu một phương pháp gọi là weight decay,
+bao gồm việc thêm một regularization term vào loss function
+để phạt các giá trị lớn của weight.
+Tùy thuộc vào weight norm nào bị phạt,
+kỹ thuật này được gọi là ridge regularization (với penalty $\ell_2$)
+hoặc lasso regularization (với penalty $\ell_1$).
+Trong phân tích cổ điển về các regularizer này,
+chúng được xem là đủ hạn chế đối với các giá trị
+mà weight có thể nhận để ngăn mô hình khớp các nhãn tùy ý.
+
+Trong các implementation deep learning,
+weight decay vẫn là một công cụ phổ biến.
+Tuy nhiên, các nhà nghiên cứu đã lưu ý
+rằng cường độ thông thường của regularization $\ell_2$
+không đủ để ngăn các network
+nội suy dữ liệu :cite:`zhang2021understanding` và do đó các lợi ích, nếu được diễn giải
+là regularization, có thể chỉ có ý nghĩa
+khi kết hợp với tiêu chí dừng sớm.
+Nếu không có dừng sớm, có thể
+giống như số lượng layer
+hoặc số lượng node (trong deep learning)
+hoặc distance metric (trong 1-nearest neighbor),
+các phương pháp này có thể dẫn đến khả năng tổng quát hóa tốt hơn
+không phải vì chúng ràng buộc một cách có ý nghĩa
+sức mạnh của neural network
+mà bởi vì bằng cách nào đó chúng mã hóa các inductive bias
+tương thích tốt hơn với các pattern
+được tìm thấy trong các dataset quan tâm.
+Vì vậy, các regularizer cổ điển vẫn phổ biến
+trong các implementation deep learning,
+ngay cả khi cơ sở lý thuyết
+cho hiệu quả của chúng có thể hoàn toàn khác biệt.
+
+Đáng chú ý, các nhà nghiên cứu deep learning cũng đã phát triển
+dựa trên các kỹ thuật lần đầu trở nên phổ biến
+trong các bối cảnh regularization cổ điển,
+chẳng hạn như thêm nhiễu vào input của mô hình.
+Trong phần tiếp theo, chúng ta sẽ giới thiệu
+kỹ thuật dropout nổi tiếng
+(do :citet:`Srivastava.Hinton.Krizhevsky.ea.2014` phát minh),
+đã trở thành một trụ cột của deep learning,
+mặc dù cơ sở lý thuyết cho hiệu quả của nó
+vẫn bí ẩn tương tự.
 
 
-## Exercises
+## Tóm tắt
 
-1. In what sense do traditional complexity-based measures fail to account for generalization of deep neural networks?
-1. Why might *early stopping* be considered a regularization technique?
-1. How do researchers typically determine the stopping criterion?
-1. What important factor seems to differentiate cases when early stopping leads to big improvements in generalization?
-1. Beyond generalization, describe another benefit of early stopping.
+Không giống các mô hình tuyến tính cổ điển,
+vốn có xu hướng có ít parameter hơn số ví dụ,
+deep network có xu hướng được over-parametrized,
+và đối với hầu hết các tác vụ đều có khả năng
+khớp hoàn hảo tập huấn luyện.
+*Chế độ nội suy (interpolation regime)* này thách thức
+nhiều trực giác vốn được tin chắc.
+Về mặt chức năng, neural network trông giống các mô hình tham số.
+Nhưng xem chúng như các mô hình phi tham số
+đôi khi có thể là một nguồn trực giác đáng tin cậy hơn.
+Bởi vì thường mọi deep network đang được xem xét
+đều có khả năng khớp tất cả các nhãn huấn luyện,
+gần như mọi cải thiện đều phải đến từ việc giảm overfitting
+(thu hẹp *generalization gap*).
+Nghịch lý thay, các can thiệp
+làm giảm generalization gap
+đôi khi dường như làm tăng độ phức tạp mô hình
+và những lúc khác lại dường như làm giảm độ phức tạp.
+Tuy nhiên, các phương pháp này hiếm khi làm giảm độ phức tạp
+đủ để lý thuyết cổ điển
+giải thích khả năng tổng quát hóa của deep network,
+và *vì sao một số lựa chọn nhất định dẫn đến khả năng tổng quát hóa được cải thiện*
+phần lớn vẫn là một câu hỏi mở lớn
+bất chấp những nỗ lực phối hợp của nhiều nhà nghiên cứu xuất sắc.
 
-[Discussions](https://discuss.d2l.ai/t/7473)
+
+## Bài tập
+
+1. Theo nghĩa nào các thước đo độ phức tạp truyền thống không giải thích được khả năng tổng quát hóa của deep neural network?
+1. Vì sao *dừng sớm* có thể được xem là một kỹ thuật regularization?
+1. Các nhà nghiên cứu thường xác định tiêu chí dừng như thế nào?
+1. Yếu tố quan trọng nào dường như phân biệt các trường hợp mà dừng sớm mang lại cải thiện lớn về khả năng tổng quát hóa?
+1. Ngoài khả năng tổng quát hóa, hãy mô tả một lợi ích khác của dừng sớm.
+
+[Thảo luận](https://discuss.d2l.ai/t/7473)

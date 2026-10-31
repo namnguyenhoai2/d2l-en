@@ -3,20 +3,18 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# The Image Classification Dataset
+# Bộ dữ liệu Phân loại Hình ảnh
 :label:`sec_fashion_mnist`
 
-(~~The MNIST dataset is one of the widely used dataset for image classification, while it is too simple as a benchmark dataset. We will use the similar, but more complex Fashion-MNIST dataset ~~)
+(~~Bộ dữ liệu MNIST là một trong những bộ dữ liệu được sử dụng rộng rãi cho phân loại hình ảnh, nhưng nó quá đơn giản để làm bộ dữ liệu benchmark. Chúng ta sẽ sử dụng bộ dữ liệu Fashion-MNIST tương tự nhưng phức tạp hơn ~~)
 
-One widely used dataset for image classification is the  [MNIST dataset](https://en.wikipedia.org/wiki/MNIST_database) :cite:`LeCun.Bottou.Bengio.ea.1998` of handwritten digits. At the time of its release in the 1990s it posed a formidable challenge to most machine learning algorithms, consisting of 60,000 images of $28 \times 28$ pixels resolution (plus a test dataset of 10,000 images). To put things into perspective, back in 1995, a Sun SPARCStation 5 with a whopping 64MB of RAM and a blistering 5 MFLOPs was considered state of the art equipment for machine learning at AT&T Bell Laboratories. Achieving high accuracy on digit recognition was a key component in automating letter sorting for the USPS in the 1990s. Deep networks such as LeNet-5 :cite:`LeCun.Jackel.Bottou.ea.1995`, support vector machines with invariances :cite:`Scholkopf.Burges.Vapnik.1996`, and tangent distance classifiers :cite:`Simard.LeCun.Denker.ea.1998` all could reach error rates below 1%. 
+Một bộ dữ liệu được sử dụng rộng rãi cho phân loại hình ảnh là bộ dữ liệu [MNIST](https://en.wikipedia.org/wiki/MNIST_database) :cite:`LeCun.Bottou.Bengio.ea.1998` gồm các chữ số viết tay. Vào thời điểm được phát hành trong những năm 1990, nó là một thách thức đáng gờm đối với hầu hết các thuật toán machine learning, bao gồm 60.000 hình ảnh có độ phân giải $28 \times 28$ pixel (cùng một bộ dữ liệu kiểm tra gồm 10.000 hình ảnh). Để dễ hình dung, vào năm 1995, một chiếc Sun SPARCStation 5 với 64MB RAM khổng lồ và tốc độ 5 MFLOPs cực nhanh được xem là thiết bị hiện đại nhất cho machine learning tại AT&T Bell Laboratories. Đạt độ chính xác cao trong nhận dạng chữ số là một thành phần then chốt để tự động hóa việc phân loại thư tín cho USPS vào những năm 1990. Các mạng sâu như LeNet-5 :cite:`LeCun.Jackel.Bottou.ea.1995`, máy vector hỗ trợ với tính bất biến :cite:`Scholkopf.Burges.Vapnik.1996`, và bộ phân loại khoảng cách tiếp tuyến :cite:`Simard.LeCun.Denker.ea.1998` đều có thể đạt tỷ lệ lỗi dưới 1%.
 
-For over a decade, MNIST served as *the* point of reference for comparing machine learning algorithms. 
-While it had a good run as a benchmark dataset,
-even simple models by today's standards achieve classification accuracy over 95%,
-making it unsuitable for distinguishing between strong models and weaker ones. Even more, the dataset allows for *very* high levels of accuracy, not typically seen in many classification problems. This skewed algorithmic development towards specific families of algorithms that can take advantage of clean datasets, such as active set methods and boundary-seeking active set algorithms.
-Today, MNIST serves as more of a sanity check than as a benchmark. ImageNet :cite:`Deng.Dong.Socher.ea.2009` poses a much 
-more relevant challenge. Unfortunately, ImageNet is too large for many of the examples and illustrations in this book, as it would take too long to train to make the examples interactive. As a substitute we will focus our discussion in the coming sections on the qualitatively similar, but much smaller Fashion-MNIST
-dataset :cite:`Xiao.Rasul.Vollgraf.2017` which was released in 2017. It contains images of 10 categories of clothing at $28 \times 28$ pixels resolution.
+Trong hơn một thập kỷ, MNIST là *điểm* tham chiếu để so sánh các thuật toán machine learning.
+Dù từng là một bộ dữ liệu benchmark tốt,
+ngay cả các mô hình đơn giản theo tiêu chuẩn ngày nay cũng đạt độ chính xác phân loại trên 95%,
+khiến nó không phù hợp để phân biệt giữa các mô hình mạnh và yếu. Hơn nữa, bộ dữ liệu này cho phép đạt mức độ chính xác *rất* cao, điều thường không thấy trong nhiều bài toán phân loại. Điều này làm lệch sự phát triển thuật toán về phía các họ thuật toán cụ thể có thể tận dụng bộ dữ liệu sạch, chẳng hạn như các phương pháp active set và thuật toán active set tìm kiếm biên.
+Ngày nay, MNIST đóng vai trò kiểm tra tính hợp lý nhiều hơn là một benchmark. ImageNet :cite:`Deng.Dong.Socher.ea.2009` đặt ra một thách thức phù hợp hơn nhiều. Đáng tiếc là ImageNet quá lớn cho nhiều ví dụ và minh họa trong cuốn sách này, vì việc huấn luyện sẽ mất quá nhiều thời gian để các ví dụ có tính tương tác. Thay vào đó, trong các phần tiếp theo, chúng ta sẽ tập trung thảo luận về bộ dữ liệu Fashion-MNIST :cite:`Xiao.Rasul.Vollgraf.2017` tương tự về mặt định tính nhưng nhỏ hơn nhiều, được phát hành vào năm 2017. Bộ dữ liệu này chứa hình ảnh của 10 loại trang phục ở độ phân giải $28 \times 28$ pixel.
 
 ```{.python .input}
 %%tab mxnet
@@ -66,9 +64,9 @@ import tensorflow_datasets as tfds
 d2l.use_svg_display()
 ```
 
-## Loading the Dataset
+## Tải Bộ dữ liệu
 
-Since the Fashion-MNIST dataset is so useful, all major frameworks provide preprocessed versions of it. We can  [**download and read it into memory using built-in framework utilities.**]
+Vì bộ dữ liệu Fashion-MNIST rất hữu ích, tất cả các framework lớn đều cung cấp các phiên bản đã được tiền xử lý của nó. Chúng ta có thể [**tải xuống và đọc nó vào bộ nhớ bằng các tiện ích tích hợp sẵn của framework.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -110,11 +108,11 @@ class FashionMNIST(d2l.DataModule):  #@save
         self.train, self.val = tf.keras.datasets.fashion_mnist.load_data()
 ```
 
-Fashion-MNIST consists of images from 10 categories, each represented
-by 6000 images in the training dataset and by 1000 in the test dataset.
-A *test dataset* is used for evaluating model performance (it must not be used for training).
-Consequently the training set and the test set
-contain 60,000 and 10,000 images, respectively.
+Fashion-MNIST gồm hình ảnh từ 10 loại, mỗi loại được biểu diễn
+bởi 6000 hình ảnh trong bộ dữ liệu huấn luyện và 1000 hình ảnh trong bộ dữ liệu kiểm tra.
+Một *bộ dữ liệu kiểm tra* được dùng để đánh giá hiệu năng mô hình (không được dùng để huấn luyện).
+Do đó, tập huấn luyện và tập kiểm tra
+lần lượt chứa 60.000 và 10.000 hình ảnh.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -128,18 +126,18 @@ data = FashionMNIST(resize=(32, 32))
 len(data.train[0]), len(data.val[0])
 ```
 
-The images are grayscale and upscaled to $32 \times 32$ pixels in resolution above. This is similar to the original MNIST dataset which consisted of (binary) black and white images. Note, though, that most modern image data has three channels (red, green, blue) and that hyperspectral images can have in excess of 100 channels (the HyMap sensor has 126 channels).
-By convention we store an image as a $c \times h \times w$ tensor, where $c$ is the number of color channels, $h$ is the height and $w$ is the width.
+Các hình ảnh là thang độ xám và được nâng cấp lên độ phân giải $32 \times 32$ pixel ở trên. Điều này tương tự bộ dữ liệu MNIST gốc, vốn gồm các hình ảnh đen trắng (nhị phân). Tuy nhiên, lưu ý rằng hầu hết dữ liệu hình ảnh hiện đại có ba kênh (đỏ, lục, lam), và hình ảnh siêu phổ có thể có hơn 100 kênh (cảm biến HyMap có 126 kênh).
+Theo quy ước, chúng ta lưu một hình ảnh dưới dạng tensor $c \times h \times w$, trong đó $c$ là số kênh màu, $h$ là chiều cao và $w$ là chiều rộng.
 
 ```{.python .input}
 %%tab all
 data.train[0][0].shape
 ```
 
-[~~Two utility functions to visualize the dataset~~]
+[~~Hai hàm tiện ích để trực quan hóa bộ dữ liệu~~]
 
-The categories of Fashion-MNIST have human-understandable names. 
-The following convenience method converts between numeric labels and their names.
+Các loại trong Fashion-MNIST có tên mà con người có thể hiểu được.
+Phương thức tiện lợi sau đây chuyển đổi giữa nhãn số và tên của chúng.
 
 ```{.python .input}
 %%tab all
@@ -151,13 +149,13 @@ def text_labels(self, indices):
     return [labels[int(i)] for i in indices]
 ```
 
-## Reading a Minibatch
+## Đọc một Minibatch
 
-To make our life easier when reading from the training and test sets,
-we use the built-in data iterator rather than creating one from scratch.
-Recall that at each iteration, a data iterator
-[**reads a minibatch of data with size `batch_size`.**]
-We also randomly shuffle the examples for the training data iterator.
+Để việc đọc từ tập huấn luyện và tập kiểm tra dễ dàng hơn,
+chúng ta sử dụng data iterator tích hợp sẵn thay vì tạo mới từ đầu.
+Hãy nhớ rằng ở mỗi lần lặp, một data iterator
+[**đọc một minibatch dữ liệu có kích thước `batch_size`.**]
+Chúng ta cũng xáo trộn ngẫu nhiên các ví dụ cho data iterator của dữ liệu huấn luyện.
 
 ```{.python .input}
 %%tab mxnet
@@ -195,7 +193,7 @@ def get_dataloader(self, train):
                 self.batch_size).map(resize_fn).shuffle(shuffle_buf))
 ```
 
-To see how this works, let's load a minibatch of images by invoking the `train_dataloader` method. It contains 64 images.
+Để xem cách hoạt động, hãy tải một minibatch hình ảnh bằng cách gọi phương thức `train_dataloader`. Nó chứa 64 hình ảnh.
 
 ```{.python .input}
 %%tab all
@@ -203,7 +201,7 @@ X, y = next(iter(data.train_dataloader()))
 print(X.shape, X.dtype, y.shape, y.dtype)
 ```
 
-Let's look at the time it takes to read the images. Even though it is a built-in loader, it is not blazingly fast. Nonetheless, this is sufficient since processing images with a deep network takes quite a bit longer. Hence it is good enough that training a network will not be I/O constrained.
+Hãy xem thời gian cần để đọc các hình ảnh. Dù là một loader tích hợp sẵn, nó không nhanh vượt trội. Tuy vậy, điều này là đủ vì xử lý hình ảnh bằng một mạng sâu mất nhiều thời gian hơn đáng kể. Do đó, nó đủ tốt để việc huấn luyện mạng không bị giới hạn bởi I/O.
 
 ```{.python .input}
 %%tab all
@@ -213,11 +211,10 @@ for X, y in data.train_dataloader():
 f'{time.time() - tic:.2f} sec'
 ```
 
-## Visualization
+## Trực quan hóa
 
-We will often be using the Fashion-MNIST dataset. A convenience function `show_images` can be used to visualize the images and the associated labels. 
-Skipping implementation details, we just show the interface below: we only need to know how to invoke `d2l.show_images` rather than how it works
-for such utility functions.
+Chúng ta sẽ thường xuyên sử dụng bộ dữ liệu Fashion-MNIST. Có thể dùng hàm tiện lợi `show_images` để trực quan hóa các hình ảnh và nhãn liên quan.
+Bỏ qua chi tiết triển khai, chúng ta chỉ hiển thị interface bên dưới: với các hàm tiện ích như vậy, chúng ta chỉ cần biết cách gọi `d2l.show_images` thay vì biết cách nó hoạt động.
 
 ```{.python .input}
 %%tab all
@@ -226,9 +223,9 @@ def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):  #@save
     raise NotImplementedError
 ```
 
-Let's put it to good use. In general, it is a good idea to visualize and inspect data that you are training on. 
-Humans are very good at spotting oddities and because of that, visualization serves as an additional safeguard against mistakes and errors in the design of experiments. Here are [**the images and their corresponding labels**] (in text)
-for the first few examples in the training dataset.
+Hãy tận dụng nó. Nhìn chung, trực quan hóa và kiểm tra dữ liệu mà bạn đang huấn luyện là một ý tưởng tốt.
+Con người rất giỏi phát hiện những điểm bất thường, và vì vậy, trực quan hóa đóng vai trò như một biện pháp bảo vệ bổ sung trước các sai sót và lỗi trong thiết kế thí nghiệm. Dưới đây là [**các hình ảnh và nhãn tương ứng của chúng**] (dạng văn bản)
+cho một vài ví dụ đầu tiên trong bộ dữ liệu huấn luyện.
 
 ```{.python .input}
 %%tab all
@@ -248,33 +245,33 @@ batch = next(iter(data.val_dataloader()))
 data.visualize(batch)
 ```
 
-We are now ready to work with the Fashion-MNIST dataset in the sections that follow.
+Giờ đây, chúng ta đã sẵn sàng làm việc với bộ dữ liệu Fashion-MNIST trong các phần tiếp theo.
 
-## Summary
+## Tóm tắt
 
-We now have a slightly more realistic dataset to use for classification. Fashion-MNIST is an apparel classification dataset consisting of images representing 10 categories. We will use this dataset in subsequent sections and chapters to evaluate various network designs, from a simple linear model to advanced residual networks. As we commonly do with images, we read them as a tensor of shape (batch size, number of channels, height, width). For now, we only have one channel as the images are grayscale (the visualization above uses a false color palette for improved visibility). 
+Bây giờ, chúng ta có một bộ dữ liệu thực tế hơn một chút để sử dụng cho phân loại. Fashion-MNIST là bộ dữ liệu phân loại trang phục gồm các hình ảnh biểu diễn 10 loại. Chúng ta sẽ sử dụng bộ dữ liệu này trong các phần và chương tiếp theo để đánh giá nhiều thiết kế mạng khác nhau, từ mô hình tuyến tính đơn giản đến các residual network tiên tiến. Như thường làm với hình ảnh, chúng ta đọc chúng dưới dạng tensor có shape (batch size, number of channels, height, width). Hiện tại, chúng ta chỉ có một kênh vì các hình ảnh là thang độ xám (phần trực quan hóa ở trên sử dụng bảng màu giả để tăng khả năng hiển thị).
 
-Lastly, data iterators are a key component for efficient performance. For instance, we might use GPUs for efficient image decompression, video transcoding, or other preprocessing. Whenever possible, you should rely on well-implemented data iterators that exploit high-performance computing to avoid slowing down your training loop.
+Cuối cùng, data iterator là một thành phần then chốt để đạt hiệu năng hiệu quả. Chẳng hạn, chúng ta có thể dùng GPU để giải nén hình ảnh hiệu quả, chuyển mã video, hoặc tiền xử lý khác. Bất cứ khi nào có thể, bạn nên dựa vào các data iterator được triển khai tốt, tận dụng tính toán hiệu năng cao để tránh làm chậm training loop của mình.
 
 
-## Exercises
+## Bài tập
 
-1. Does reducing the `batch_size` (for instance, to 1) affect the reading performance?
-1. The data iterator performance is important. Do you think the current implementation is fast enough? Explore various options to improve it. Use a system profiler to find out where the bottlenecks are.
-1. Check out the framework's online API documentation. Which other datasets are available?
+1. Việc giảm `batch_size` (chẳng hạn xuống 1) có ảnh hưởng đến hiệu năng đọc không?
+1. Hiệu năng của data iterator rất quan trọng. Bạn có nghĩ rằng cách triển khai hiện tại đủ nhanh không? Hãy khám phá các lựa chọn khác nhau để cải thiện nó. Sử dụng system profiler để tìm vị trí các nút thắt cổ chai.
+1. Hãy xem tài liệu API trực tuyến của framework. Có những bộ dữ liệu nào khác?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/48)
+[Thảo luận](https://discuss.d2l.ai/t/48)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/49)
+[Thảo luận](https://discuss.d2l.ai/t/49)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/224)
+[Thảo luận](https://discuss.d2l.ai/t/224)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17980)
+[Thảo luận](https://discuss.d2l.ai/t/17980)
 :end_tab:

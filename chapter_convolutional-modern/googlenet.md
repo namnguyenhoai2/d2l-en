@@ -3,18 +3,18 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Multi-Branch Networks  (GoogLeNet)
+# Mạng Đa Nhánh  (GoogLeNet)
 :label:`sec_googlenet`
 
-In 2014, *GoogLeNet*
-won the ImageNet Challenge :cite:`Szegedy.Liu.Jia.ea.2015`, using a structure
-that combined the strengths of NiN :cite:`Lin.Chen.Yan.2013`, repeated blocks :cite:`Simonyan.Zisserman.2014`,
-and a cocktail of convolution kernels. It was arguably also the first network that exhibited a clear distinction among the stem (data ingest), body (data processing), and head (prediction) in a CNN. This design pattern has persisted ever since in the design of deep networks: the *stem* is given by the first two or three convolutions that operate on the image. They extract low-level features from the underlying images. This is followed by a *body* of convolutional blocks. Finally, the *head* maps the features obtained so far to the required classification, segmentation, detection, or tracking problem at hand.
+Năm 2014, *GoogLeNet*
+đã chiến thắng ImageNet Challenge :cite:`Szegedy.Liu.Jia.ea.2015`, sử dụng một kiến trúc
+kết hợp các ưu điểm của NiN :cite:`Lin.Chen.Yan.2013`, các block lặp lại :cite:`Simonyan.Zisserman.2014`,
+và sự kết hợp của các kernel tích chập. Đây cũng được cho là mạng đầu tiên thể hiện sự phân tách rõ ràng giữa stem (nạp dữ liệu), body (xử lý dữ liệu) và head (dự đoán) trong một CNN. Mẫu thiết kế này vẫn được duy trì kể từ đó trong việc thiết kế các mạng sâu: *stem* được tạo bởi hai hoặc ba phép tích chập đầu tiên hoạt động trên ảnh. Chúng trích xuất các đặc trưng cấp thấp từ những ảnh đầu vào. Tiếp theo là *body* gồm các block tích chập. Cuối cùng, *head* ánh xạ các đặc trưng thu được đến bài toán phân loại, phân đoạn, phát hiện hoặc theo dõi cần giải quyết.
 
-The key contribution in GoogLeNet was the design of the network body. It solved the problem of selecting
-convolution kernels in an ingenious way. While other works tried to identify which convolution, ranging from $1 \times 1$ to $11 \times 11$ would be best, it simply *concatenated* multi-branch convolutions.
-In what follows we introduce a slightly simplified version of GoogLeNet: the original design included a number of tricks for stabilizing training through intermediate loss functions, applied to multiple layers of the network. 
-They are no longer necessary due to the availability of improved training algorithms.
+Đóng góp then chốt của GoogLeNet là thiết kế phần body của mạng. Nó giải quyết bài toán lựa chọn
+kernel tích chập một cách khéo léo. Trong khi các công trình khác cố gắng xác định phép tích chập nào, từ $1 \times 1$ đến $11 \times 11$, sẽ là tốt nhất, GoogLeNet chỉ đơn giản *nối* các phép tích chập đa nhánh.
+Trong phần sau, chúng ta sẽ giới thiệu một phiên bản GoogLeNet được đơn giản hóa đôi chút: thiết kế ban đầu bao gồm một số thủ thuật để ổn định quá trình huấn luyện thông qua các hàm mất mát trung gian, được áp dụng tại nhiều tầng của mạng.
+Chúng không còn cần thiết nhờ sự xuất hiện của các thuật toán huấn luyện được cải tiến.
 
 ```{.python .input}
 %%tab mxnet
@@ -46,29 +46,29 @@ from jax import numpy as jnp
 import jax
 ```
 
-## (**Inception Blocks**)
+## (**Các Block Inception**)
 
-The basic convolutional block in GoogLeNet is called an *Inception block*,
-stemming from the meme "we need to go deeper" from the movie *Inception*.
+Block tích chập cơ bản trong GoogLeNet được gọi là *block Inception*,
+bắt nguồn từ meme "we need to go deeper" trong bộ phim *Inception*.
 
-![Structure of the Inception block.](../img/inception.svg)
+![Cấu trúc của block Inception.](../img/inception.svg)
 :label:`fig_inception`
 
-As depicted in :numref:`fig_inception`,
-the inception block consists of four parallel branches.
-The first three branches use convolutional layers
-with window sizes of $1\times 1$, $3\times 3$, and $5\times 5$
-to extract information from different spatial sizes.
-The middle two branches also add a $1\times 1$ convolution of the input
-to reduce the number of channels, reducing the model's complexity.
-The fourth branch uses a $3\times 3$ max-pooling layer,
-followed by a $1\times 1$ convolutional layer
-to change the number of channels.
-The four branches all use appropriate padding to give the input and output the same height and width.
-Finally, the outputs along each branch are concatenated
-along the channel dimension and comprise the block's output.
-The commonly-tuned hyperparameters of the Inception block
-are the number of output channels per layer, i.e., how to allocate capacity among convolutions of different size.
+Như được minh họa trong :numref:`fig_inception`,
+block inception gồm bốn nhánh song song.
+Ba nhánh đầu tiên sử dụng các tầng tích chập
+với kích thước cửa sổ $1\times 1$, $3\times 3$ và $5\times 5$
+để trích xuất thông tin ở các kích thước không gian khác nhau.
+Hai nhánh ở giữa cũng thêm một phép tích chập $1\times 1$ trên đầu vào
+để giảm số lượng kênh, qua đó giảm độ phức tạp của mô hình.
+Nhánh thứ tư sử dụng một tầng max-pooling $3\times 3$,
+tiếp theo là một tầng tích chập $1\times 1$
+để thay đổi số lượng kênh.
+Cả bốn nhánh đều sử dụng padding phù hợp để đầu vào và đầu ra có cùng chiều cao và chiều rộng.
+Cuối cùng, các đầu ra của mỗi nhánh được nối lại
+theo chiều kênh và tạo thành đầu ra của block.
+Các hyperparameter thường được tinh chỉnh của block Inception
+là số kênh đầu ra trên mỗi tầng, tức là cách phân bổ năng lực giữa các phép tích chập có kích thước khác nhau.
 
 ```{.python .input}
 %%tab mxnet
@@ -179,27 +179,27 @@ class Inception(nn.Module):
         return jnp.concatenate((b1, b2, b3, b4), axis=-1)
 ```
 
-To gain some intuition for why this network works so well,
-consider the combination of the filters.
-They explore the image in a variety of filter sizes.
-This means that details at different extents
-can be recognized efficiently by filters of different sizes.
-At the same time, we can allocate different amounts of parameters
-for different filters.
+Để hiểu trực quan hơn vì sao mạng này hoạt động tốt đến vậy,
+hãy xem xét sự kết hợp của các filter.
+Chúng khảo sát ảnh với nhiều kích thước filter khác nhau.
+Điều này có nghĩa là các chi tiết ở những phạm vi khác nhau
+có thể được nhận diện hiệu quả bởi các filter có kích thước khác nhau.
+Đồng thời, chúng ta có thể phân bổ số lượng tham số khác nhau
+cho các filter khác nhau.
 
 
-## [**GoogLeNet Model**]
+## [**Mô hình GoogLeNet**]
 
-As shown in :numref:`fig_inception_full`, GoogLeNet uses a stack of a total of 9 inception blocks, arranged into three groups with max-pooling in between,
-and global average pooling in its head to generate its estimates.
-Max-pooling between inception blocks reduces the dimensionality.
-At its stem, the first module is similar to AlexNet and LeNet.
+Như minh họa trong :numref:`fig_inception_full`, GoogLeNet sử dụng một chồng gồm tổng cộng 9 block inception, được sắp xếp thành ba nhóm với max-pooling ở giữa,
+và global average pooling trong head để tạo ra các dự đoán.
+Max-pooling giữa các block inception làm giảm số chiều.
+Ở stem, module đầu tiên tương tự AlexNet và LeNet.
 
-![The GoogLeNet architecture.](../img/inception-full-90.svg)
+![Kiến trúc GoogLeNet.](../img/inception-full-90.svg)
 :label:`fig_inception_full`
 
-We can now implement GoogLeNet piece by piece. Let's begin with the stem.
-The first module uses a 64-channel $7\times 7$ convolutional layer.
+Bây giờ, chúng ta có thể triển khai GoogLeNet từng phần. Hãy bắt đầu với stem.
+Module đầu tiên sử dụng một tầng tích chập $7\times 7$ với 64 kênh.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -241,9 +241,9 @@ class GoogleNet(d2l.Classifier):
                                       padding='same')])
 ```
 
-The second module uses two convolutional layers:
-first, a 64-channel $1\times 1$ convolutional layer,
-followed by a $3\times 3$ convolutional layer that triples the number of channels. This corresponds to the second branch in the Inception block and concludes the design of the body. At this point we have 192 channels.
+Module thứ hai sử dụng hai tầng tích chập:
+đầu tiên là một tầng tích chập $1\times 1$ với 64 kênh,
+tiếp theo là một tầng tích chập $3\times 3$ làm số lượng kênh tăng gấp ba. Điều này tương ứng với nhánh thứ hai trong block Inception và hoàn tất thiết kế của body. Tại thời điểm này, chúng ta có 192 kênh.
 
 ```{.python .input}
 %%tab all
@@ -275,19 +275,19 @@ def b2(self):
                                                     padding='same')])
 ```
 
-The third module connects two complete Inception blocks in series.
-The number of output channels of the first Inception block is
-$64+128+32+32=256$. This amounts to 
-a ratio of the number of output channels
-among the four branches of $2:4:1:1$. To achieve this, we first reduce the input
-dimensions by $\frac{1}{2}$ and by $\frac{1}{12}$ in the second and third branch respectively
-to arrive at $96 = 192/2$ and $16 = 192/12$ channels respectively.
+Module thứ ba nối tiếp hai block Inception hoàn chỉnh.
+Số kênh đầu ra của block Inception thứ nhất là
+$64+128+32+32=256$. Điều này tương ứng với
+tỷ lệ số kênh đầu ra
+giữa bốn nhánh là $2:4:1:1$. Để đạt được điều này, trước hết chúng ta giảm số chiều đầu vào
+đi $\frac{1}{2}$ và $\frac{1}{12}$ lần lượt ở nhánh thứ hai và thứ ba
+để đạt được lần lượt $96 = 192/2$ và $16 = 192/12$ kênh.
 
-The number of output channels of the second Inception block
-is increased to $128+192+96+64=480$, yielding a ratio of $128:192:96:64 = 4:6:3:2$. As before,
-we need to reduce the number of intermediate dimensions in the second and third channel. A
-scale of $\frac{1}{2}$ and $\frac{1}{8}$ respectively suffices, yielding $128$ and $32$ channels
-respectively. This is captured by the arguments of the following `Inception` block constructors.
+Số kênh đầu ra của block Inception thứ hai
+được tăng lên thành $128+192+96+64=480$, tạo ra tỷ lệ $128:192:96:64 = 4:6:3:2$. Như trước,
+chúng ta cần giảm số chiều trung gian trong kênh thứ hai và thứ ba. Một
+tỷ lệ $\frac{1}{2}$ và $\frac{1}{8}$ lần lượt là đủ, cho ra $128$ và $32$ kênh
+tương ứng. Điều này được thể hiện qua các đối số của các constructor block `Inception` sau đây.
 
 ```{.python .input}
 %%tab all
@@ -316,21 +316,21 @@ def b3(self):
                                                     padding='same')])
 ```
 
-The fourth module is more complicated.
-It connects five Inception blocks in series,
-and they have $192+208+48+64=512$, $160+224+64+64=512$,
+Module thứ tư phức tạp hơn.
+Nó nối tiếp năm block Inception,
+và chúng lần lượt có $192+208+48+64=512$, $160+224+64+64=512$,
 $128+256+64+64=512$, $112+288+64+64=528$,
-and $256+320+128+128=832$ output channels, respectively.
-The number of channels assigned to these branches is similar
-to that in the third module:
-the second branch with the $3\times 3$ convolutional layer
-outputs the largest number of channels,
-followed by the first branch with only the $1\times 1$ convolutional layer,
-the third branch with the $5\times 5$ convolutional layer,
-and the fourth branch with the $3\times 3$ max-pooling layer.
-The second and third branches will first reduce
-the number of channels according to the ratio.
-These ratios are slightly different in different Inception blocks.
+và $256+320+128+128=832$ kênh đầu ra.
+Số lượng kênh được phân bổ cho các nhánh này tương tự
+như trong module thứ ba:
+nhánh thứ hai có tầng tích chập $3\times 3$
+cho ra số kênh lớn nhất,
+tiếp theo là nhánh thứ nhất chỉ có tầng tích chập $1\times 1$,
+nhánh thứ ba có tầng tích chập $5\times 5$,
+và nhánh thứ tư có tầng max-pooling $3\times 3$.
+Nhánh thứ hai và thứ ba trước tiên sẽ giảm
+số lượng kênh theo tỷ lệ.
+Các tỷ lệ này hơi khác nhau giữa các block Inception khác nhau.
 
 ```{.python .input}
 %%tab all
@@ -371,17 +371,17 @@ def b4(self):
                                                     padding='same')])
 ```
 
-The fifth module has two Inception blocks with $256+320+128+128=832$
-and $384+384+128+128=1024$ output channels.
-The number of channels assigned to each branch
-is the same as that in the third and fourth modules,
-but differs in specific values.
-It should be noted that the fifth block is followed by the output layer.
-This block uses the global average pooling layer
-to change the height and width of each channel to 1, just as in NiN.
-Finally, we turn the output into a two-dimensional array
-followed by a fully connected layer
-whose number of outputs is the number of label classes.
+Module thứ năm có hai block Inception với $256+320+128+128=832$
+và $384+384+128+128=1024$ kênh đầu ra.
+Số lượng kênh được phân bổ cho mỗi nhánh
+giống như trong module thứ ba và thứ tư,
+nhưng khác về các giá trị cụ thể.
+Cần lưu ý rằng block thứ năm được theo sau bởi tầng đầu ra.
+Block này sử dụng tầng global average pooling
+để đưa chiều cao và chiều rộng của mỗi kênh về 1, giống như trong NiN.
+Cuối cùng, chúng ta chuyển đầu ra thành một mảng hai chiều
+rồi đưa qua một tầng kết nối đầy đủ
+có số lượng đầu ra bằng số lớp nhãn.
 
 ```{.python .input}
 %%tab all
@@ -414,7 +414,7 @@ def b5(self):
                               lambda x: x.reshape((x.shape[0], -1))])
 ```
 
-Now that we defined all blocks `b1` through `b5`, it is just a matter of assembling them all into a full network.
+Sau khi đã định nghĩa tất cả các block từ `b1` đến `b5`, việc còn lại chỉ là lắp ghép chúng thành một mạng hoàn chỉnh.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -437,16 +437,15 @@ def __init__(self, lr=0.1, num_classes=10):
             tf.keras.layers.Dense(num_classes)])
 ```
 
-The GoogLeNet model is computationally complex. Note the large number of
-relatively arbitrary hyperparameters in terms of the number of channels chosen, the number of blocks prior to dimensionality reduction, the relative partitioning of capacity across channels, etc. Much of it is due to the 
-fact that at the time when GoogLeNet was introduced, automatic tools for network definition or design exploration 
-were not yet available. For instance, by now we take it for granted that a competent deep learning framework is capable of inferring dimensionalities of input tensors automatically. At the time, many such configurations had to be specified explicitly by the experimenter, thus often slowing down active experimentation. Moreover, the tools needed for automatic exploration were still in flux and initial experiments largely amounted to costly brute-force exploration, genetic algorithms, and similar strategies. 
+Mô hình GoogLeNet có độ phức tạp tính toán cao. Hãy lưu ý số lượng lớn các hyperparameter tương đối tùy ý, chẳng hạn số kênh được chọn, số block trước khi giảm số chiều, cách phân chia tương đối năng lực giữa các kênh, v.v. Phần lớn điều này là do
+vào thời điểm GoogLeNet được giới thiệu, các công cụ tự động để định nghĩa mạng hoặc khám phá thiết kế
+vẫn chưa có sẵn. Chẳng hạn, hiện nay chúng ta xem là hiển nhiên rằng một framework deep learning đủ năng lực có thể tự động suy luận số chiều của các tensor đầu vào. Khi đó, nhiều cấu hình như vậy phải được người thực nghiệm chỉ định rõ ràng, do đó thường làm chậm quá trình thử nghiệm tích cực. Hơn nữa, các công cụ cần thiết cho việc khám phá tự động vẫn đang trong giai đoạn biến động và các thử nghiệm ban đầu chủ yếu là những quá trình khám phá brute-force tốn kém, thuật toán di truyền và các chiến lược tương tự.
 
-For now the only modification we will carry out is to
-[**reduce the input height and width from 224 to 96
-to have a reasonable training time on Fashion-MNIST.**]
-This simplifies the computation. Let's have a look at the
-changes in the shape of the output between the various modules.
+Hiện tại, thay đổi duy nhất chúng ta sẽ thực hiện là
+[**giảm chiều cao và chiều rộng đầu vào từ 224 xuống 96
+để có thời gian huấn luyện hợp lý trên Fashion-MNIST.**]
+Điều này đơn giản hóa việc tính toán. Hãy xem xét
+các thay đổi về shape của đầu ra giữa các module khác nhau.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -458,11 +457,11 @@ model = GoogleNet().layer_summary((1, 1, 96, 96))
 model = GoogleNet().layer_summary((1, 96, 96, 1))
 ```
 
-## [**Training**]
+## [**Huấn luyện**]
 
-As before, we train our model using the Fashion-MNIST dataset.
- We transform it to $96 \times 96$ pixel resolution
- before invoking the training procedure.
+Như trước, chúng ta huấn luyện mô hình bằng tập dữ liệu Fashion-MNIST.
+Chúng ta chuyển đổi độ phân giải của nó thành $96 \times 96$ pixel
+trước khi gọi quy trình huấn luyện.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -483,39 +482,38 @@ with d2l.try_gpu():
     trainer.fit(model, data)
 ```
 
-## Discussion
+## Thảo luận
 
-A key feature of GoogLeNet is that it is actually *cheaper* to compute than its predecessors
-while simultaneously providing improved accuracy. This marks the beginning of a much more deliberate
-network design that trades off the cost of evaluating a network with a reduction in errors. It also marks the beginning of experimentation at a block level with network design hyperparameters, even though it was entirely manual at the time. We will revisit this topic in :numref:`sec_cnn-design` when discussing strategies for network structure exploration. 
+Một đặc điểm then chốt của GoogLeNet là nó thực sự *ít tốn kém* hơn về mặt tính toán so với các mô hình tiền nhiệm
+trong khi đồng thời cho độ chính xác được cải thiện. Điều này đánh dấu sự khởi đầu của một cách thiết kế
+mạng có chủ đích hơn nhiều, cân bằng chi phí đánh giá mạng với việc giảm lỗi. Nó cũng đánh dấu sự khởi đầu của thử nghiệm ở cấp độ block với các hyperparameter thiết kế mạng, dù vào thời điểm đó mọi thứ đều hoàn toàn thủ công. Chúng ta sẽ xem lại chủ đề này trong :numref:`sec_cnn-design` khi thảo luận các chiến lược khám phá cấu trúc mạng.
 
-Over the following sections we will encounter a number of design choices (e.g., batch normalization, residual connections, and channel grouping) that allow us to improve networks significantly. For now, you can be proud to have implemented what is arguably the first truly modern CNN.
+Trong các phần tiếp theo, chúng ta sẽ gặp một số lựa chọn thiết kế (ví dụ: batch normalization, residual connections và channel grouping) cho phép cải thiện mạng đáng kể. Hiện tại, bạn có thể tự hào vì đã triển khai được thứ được cho là CNN hiện đại thực sự đầu tiên.
 
-## Exercises
+## Bài tập
 
-1. GoogLeNet was so successful that it went through a number of iterations, progressively improving speed and accuracy. Try to implement and run some of them. They include the following:
-    1. Add a batch normalization layer :cite:`Ioffe.Szegedy.2015`, as described later in :numref:`sec_batch_norm`.
-    1. Make adjustments to the Inception block (width, choice and order of convolutions), as described in :citet:`Szegedy.Vanhoucke.Ioffe.ea.2016`.
-    1. Use label smoothing for model regularization, as described in :citet:`Szegedy.Vanhoucke.Ioffe.ea.2016`.
-    1. Make further adjustments to the Inception block by adding residual connection :cite:`Szegedy.Ioffe.Vanhoucke.ea.2017`, as described later in :numref:`sec_resnet`.
-1. What is the minimum image size needed for GoogLeNet to work?
-1. Can you design a variant of GoogLeNet that works on Fashion-MNIST's native resolution of $28 \times 28$ pixels? How would you need to change the stem, the body, and the head of the network, if anything at all?
-1. Compare the model parameter sizes of AlexNet, VGG, NiN, and GoogLeNet. How do the latter two network
-   architectures significantly reduce the model parameter size?
-1. Compare the amount of computation needed in GoogLeNet and AlexNet. How does this affect the design of an accelerator chip, e.g., in terms of memory size, memory bandwidth, cache size, the amount of computation, and the benefit of specialized operations?
+1. GoogLeNet thành công đến mức đã trải qua nhiều lần lặp lại, từng bước cải thiện tốc độ và độ chính xác. Hãy thử triển khai và chạy một số phiên bản trong đó. Chúng bao gồm:
+    1. Thêm một tầng batch normalization :cite:`Ioffe.Szegedy.2015`, như được mô tả sau trong :numref:`sec_batch_norm`.
+    1. Điều chỉnh Inception block (độ rộng, lựa chọn và thứ tự các phép tích chập), như được mô tả trong :citet:`Szegedy.Vanhoucke.Ioffe.ea.2016`.
+    1. Sử dụng label smoothing để regularization mô hình, như được mô tả trong :citet:`Szegedy.Vanhoucke.Ioffe.ea.2016`.
+    1. Tiếp tục điều chỉnh Inception block bằng cách thêm residual connection :cite:`Szegedy.Ioffe.Vanhoucke.ea.2017`, như được mô tả sau trong :numref:`sec_resnet`.
+1. Kích thước ảnh tối thiểu cần thiết để GoogLeNet hoạt động là bao nhiêu?
+1. Bạn có thể thiết kế một biến thể của GoogLeNet hoạt động với độ phân giải gốc $28 \times 28$ pixel của Fashion-MNIST không? Bạn sẽ cần thay đổi stem, body và head của mạng như thế nào, nếu có cần thay đổi?
+1. So sánh kích thước tham số mô hình của AlexNet, VGG, NiN và GoogLeNet. Hai kiến trúc mạng sau giảm đáng kể kích thước tham số mô hình bằng cách nào?
+1. So sánh lượng tính toán cần thiết trong GoogLeNet và AlexNet. Điều này ảnh hưởng như thế nào đến việc thiết kế một chip accelerator, chẳng hạn về kích thước bộ nhớ, băng thông bộ nhớ, kích thước cache, lượng tính toán và lợi ích của các phép toán chuyên biệt?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/81)
+[Thảo luận](https://discuss.d2l.ai/t/81)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/82)
+[Thảo luận](https://discuss.d2l.ai/t/82)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/316)
+[Thảo luận](https://discuss.d2l.ai/t/316)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18004)
+[Thảo luận](https://discuss.d2l.ai/t/18004)
 :end_tab:

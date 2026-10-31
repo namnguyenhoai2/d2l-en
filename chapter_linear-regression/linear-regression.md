@@ -3,32 +3,32 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Linear Regression
+# Hồi quy tuyến tính
 :label:`sec_linear_regression`
 
-*Regression* problems pop up whenever we want to predict a numerical value.
-Common examples include predicting prices (of homes, stocks, etc.),
-predicting the length of stay (for patients in the hospital),
-forecasting demand (for retail sales), among numerous others.
-Not every prediction problem is one of classical regression.
-Later on, we will introduce classification problems,
-where the goal is to predict membership among a set of categories.
+Các bài toán *hồi quy* xuất hiện bất cứ khi nào chúng ta muốn dự đoán một giá trị số.
+Các ví dụ phổ biến bao gồm dự đoán giá (nhà, cổ phiếu, v.v.),
+dự đoán thời gian nằm viện (của bệnh nhân),
+dự báo nhu cầu (đối với doanh số bán lẻ), cùng nhiều ví dụ khác.
+Không phải mọi bài toán dự đoán đều là bài toán hồi quy cổ điển.
+Ở phần sau, chúng ta sẽ giới thiệu các bài toán phân loại,
+trong đó mục tiêu là dự đoán tư cách thành viên trong một tập hợp các danh mục.
 
-As a running example, suppose that we wish
-to estimate the prices of houses (in dollars)
-based on their area (in square feet) and age (in years).
-To develop a model for predicting house prices,
-we need to get our hands on data,
-including the sales price, area, and age for each home.
-In the terminology of machine learning,
-the dataset is called a *training dataset* or *training set*,
-and each row (containing the data corresponding to one sale)
-is called an *example* (or *data point*, *instance*, *sample*).
-The thing we are trying to predict (price)
-is called a *label* (or *target*).
-The variables (age and area)
-upon which the predictions are based
-are called *features* (or *covariates*).
+Làm ví dụ xuyên suốt, giả sử rằng chúng ta muốn
+ước tính giá nhà (tính bằng đô la)
+dựa trên diện tích (tính bằng feet vuông) và tuổi nhà (tính bằng năm).
+Để phát triển một mô hình dự đoán giá nhà,
+chúng ta cần có dữ liệu,
+bao gồm giá bán, diện tích và tuổi của mỗi căn nhà.
+Theo thuật ngữ machine learning,
+tập dữ liệu này được gọi là *training dataset* hoặc *training set*,
+và mỗi hàng (chứa dữ liệu tương ứng với một lần bán)
+được gọi là một *example* (hoặc *data point*, *instance*, *sample*).
+Đại lượng mà chúng ta cố gắng dự đoán (giá)
+được gọi là *label* (hoặc *target*).
+Các biến (tuổi và diện tích)
+làm cơ sở cho các dự đoán
+được gọi là *features* (hoặc *covariates*).
 
 ```{.python .input}
 %%tab mxnet
@@ -68,190 +68,191 @@ import math
 import time
 ```
 
-## Basics
+## Kiến thức cơ bản
 
-*Linear regression* is both the simplest
-and most popular among the standard tools
-for tackling regression problems.
-Dating back to the dawn of the 19th century :cite:`Legendre.1805,Gauss.1809`,
-linear regression flows from a few simple assumptions.
-First, we assume that the relationship
-between features $\mathbf{x}$ and target $y$
-is approximately linear,
-i.e., that the conditional mean $E[Y \mid X=\mathbf{x}]$
-can be expressed as a weighted sum
-of the features $\mathbf{x}$.
-This setup allows that the target value
-may still deviate from its expected value
-on account of observation noise.
-Next, we can impose the assumption that any such noise
-is well behaved, following a Gaussian distribution.
-Typically, we will use $n$ to denote
-the number of examples in our dataset.
-We use superscripts to enumerate samples and targets,
-and subscripts to index coordinates.
-More concretely,
-$\mathbf{x}^{(i)}$ denotes the $i^{\textrm{th}}$ sample
-and $x_j^{(i)}$ denotes its $j^{\textrm{th}}$ coordinate.
+*Hồi quy tuyến tính* vừa là công cụ đơn giản nhất
+vừa là công cụ phổ biến nhất trong các công cụ tiêu chuẩn
+để giải quyết các bài toán hồi quy.
+Có nguồn gốc từ đầu thế kỷ 19 :cite:`Legendre.1805,Gauss.1809`,
+hồi quy tuyến tính bắt nguồn từ một vài giả định đơn giản.
+Trước hết, chúng ta giả định rằng mối quan hệ
+giữa features $\mathbf{x}$ và target $y$
+xấp xỉ tuyến tính,
+nghĩa là kỳ vọng có điều kiện $E[Y \mid X=\mathbf{x}]$
+có thể được biểu diễn dưới dạng tổng có trọng số
+của các features $\mathbf{x}$.
+Thiết lập này cho phép giá trị target
+vẫn có thể lệch khỏi giá trị kỳ vọng của nó
+do nhiễu quan sát.
+Tiếp theo, chúng ta có thể áp đặt giả định rằng mọi nhiễu như vậy
+đều có tính chất tốt, tuân theo phân phối Gaussian.
+Thông thường, chúng ta sẽ dùng $n$ để biểu thị
+số lượng example trong tập dữ liệu.
+Chúng ta dùng chỉ số trên để đánh số các sample và target,
+còn chỉ số dưới để lập chỉ mục các tọa độ.
+Cụ thể hơn,
+$\mathbf{x}^{(i)}$ biểu thị sample thứ $i^{\textrm{th}}$
+và $x_j^{(i)}$ biểu thị tọa độ thứ $j^{\textrm{th}}$ của nó.
 
-### Model
+### Mô hình
 :label:`subsec_linear_model`
 
-At the heart of every solution is a model
-that describes how features can be transformed
-into an estimate of the target.
-The assumption of linearity means that
-the expected value of the target (price) can be expressed
-as a weighted sum of the features (area and age):
+Cốt lõi của mọi lời giải là một mô hình
+mô tả cách features có thể được biến đổi
+thành một ước lượng của target.
+Giả định về tính tuyến tính có nghĩa là
+giá trị kỳ vọng của target (giá) có thể được biểu diễn
+dưới dạng tổng có trọng số của các features (diện tích và tuổi):
 
 $$\textrm{price} = w_{\textrm{area}} \cdot \textrm{area} + w_{\textrm{age}} \cdot \textrm{age} + b.$$
 :eqlabel:`eq_price-area`
 
-Here $w_{\textrm{area}}$ and $w_{\textrm{age}}$
-are called *weights*, and $b$ is called a *bias*
-(or *offset* or *intercept*).
-The weights determine the influence of each feature on our prediction.
-The bias determines the value of the estimate when all features are zero.
-Even though we will never see any newly-built homes with precisely zero area,
-we still need the bias because it allows us
-to express all linear functions of our features
-(rather than restricting us to lines that pass through the origin).
-Strictly speaking, :eqref:`eq_price-area` is an *affine transformation* of input features, which is characterized by a *linear transformation* of features via a weighted sum, combined with a *translation* via the added bias.
-Given a dataset, our goal is to choose
-the weights $\mathbf{w}$ and the bias $b$
-that, on average, make our model's predictions
-fit the true prices observed in the data as closely as possible.
+Ở đây, $w_{\textrm{area}}$ và $w_{\textrm{age}}$
+được gọi là *weights*, còn $b$ được gọi là *bias*
+(hoặc *offset* hay *intercept*).
+Các weights xác định mức độ ảnh hưởng của từng feature đến dự đoán của chúng ta.
+Bias xác định giá trị của ước lượng khi mọi feature đều bằng không.
+Mặc dù chúng ta sẽ không bao giờ thấy một ngôi nhà mới xây có diện tích chính xác bằng không,
+chúng ta vẫn cần bias vì nó cho phép
+biểu diễn mọi hàm tuyến tính của features
+(thay vì giới hạn chúng ta ở các đường thẳng đi qua gốc tọa độ).
+Nói một cách chặt chẽ, :eqref:`eq_price-area` là một *biến đổi affine* của input features, được đặc trưng bởi một *biến đổi tuyến tính* của features thông qua tổng có trọng số, kết hợp với một *phép tịnh tiến* thông qua bias được thêm vào.
+Cho trước một tập dữ liệu, mục tiêu của chúng ta là chọn
+các weights $\mathbf{w}$ và bias $b$
+sao cho, trung bình,
+các dự đoán của mô hình khớp với giá thực tế quan sát được trong dữ liệu
+gần nhất có thể.
 
 
-In disciplines where it is common to focus
-on datasets with just a few features,
-explicitly expressing models long-form,
-as in :eqref:`eq_price-area`, is common.
-In machine learning, we usually work
-with high-dimensional datasets,
-where it is more convenient to employ
-compact linear algebra notation.
-When our inputs consist of $d$ features,
-we can assign each an index (between $1$ and $d$)
-and express our prediction $\hat{y}$
-(in general the "hat" symbol denotes an estimate) as
+Trong các lĩnh vực thường tập trung
+vào những tập dữ liệu chỉ có vài features,
+việc biểu diễn tường minh mô hình ở dạng đầy đủ,
+như trong :eqref:`eq_price-area`, là phổ biến.
+Trong machine learning, chúng ta thường làm việc
+với các tập dữ liệu nhiều chiều,
+nơi việc sử dụng
+ký hiệu đại số tuyến tính cô đọng sẽ thuận tiện hơn.
+Khi input của chúng ta gồm $d$ features,
+chúng ta có thể gán cho mỗi feature một chỉ mục (từ $1$ đến $d$)
+và biểu diễn dự đoán $\hat{y}$
+(nói chung, ký hiệu "mũ" biểu thị một ước lượng) là
 
 $$\hat{y} = w_1  x_1 + \cdots + w_d  x_d + b.$$
 
-Collecting all features into a vector $\mathbf{x} \in \mathbb{R}^d$
-and all weights into a vector $\mathbf{w} \in \mathbb{R}^d$,
-we can express our model compactly via the dot product
-between $\mathbf{w}$ and $\mathbf{x}$:
+Gom tất cả features vào một vector $\mathbf{x} \in \mathbb{R}^d$
+và tất cả weights vào một vector $\mathbf{w} \in \mathbb{R}^d$,
+chúng ta có thể biểu diễn mô hình một cách cô đọng thông qua tích vô hướng
+giữa $\mathbf{w}$ và $\mathbf{x}$:
 
 $$\hat{y} = \mathbf{w}^\top \mathbf{x} + b.$$
 :eqlabel:`eq_linreg-y`
 
-In :eqref:`eq_linreg-y`, the vector $\mathbf{x}$
-corresponds to the features of a single example.
-We will often find it convenient
-to refer to features of our entire dataset of $n$ examples
-via the *design matrix* $\mathbf{X} \in \mathbb{R}^{n \times d}$.
-Here, $\mathbf{X}$ contains one row for every example
-and one column for every feature.
-For a collection of features $\mathbf{X}$,
-the predictions $\hat{\mathbf{y}} \in \mathbb{R}^n$
-can be expressed via the matrix--vector product:
+Trong :eqref:`eq_linreg-y`, vector $\mathbf{x}$
+tương ứng với features của một example đơn lẻ.
+Chúng ta thường thấy thuận tiện
+khi tham chiếu đến features của toàn bộ tập dữ liệu gồm $n$ examples
+thông qua *design matrix* $\mathbf{X} \in \mathbb{R}^{n \times d}$.
+Ở đây, $\mathbf{X}$ chứa một hàng cho mỗi example
+và một cột cho mỗi feature.
+Với một tập hợp features $\mathbf{X}$,
+các dự đoán $\hat{\mathbf{y}} \in \mathbb{R}^n$
+có thể được biểu diễn thông qua phép nhân ma trận--vector:
 
 $${\hat{\mathbf{y}}} = \mathbf{X} \mathbf{w} + b,$$
 :eqlabel:`eq_linreg-y-vec`
 
-where broadcasting (:numref:`subsec_broadcasting`) is applied during the summation.
-Given features of a training dataset $\mathbf{X}$
-and corresponding (known) labels $\mathbf{y}$,
-the goal of linear regression is to find
-the weight vector $\mathbf{w}$ and the bias term $b$
-such that, given features of a new data example
-sampled from the same distribution as $\mathbf{X}$,
-the new example's label will (in expectation)
-be predicted with the smallest error.
+trong đó broadcasting (:numref:`subsec_broadcasting`) được áp dụng trong quá trình cộng.
+Cho features của một training dataset $\mathbf{X}$
+và các labels tương ứng (đã biết) $\mathbf{y}$,
+mục tiêu của hồi quy tuyến tính là tìm
+vector weight $\mathbf{w}$ và hạng tử bias $b$
+sao cho, với features của một example dữ liệu mới
+được lấy mẫu từ cùng phân phối với $\mathbf{X}$,
+label của example mới sẽ được dự đoán (theo kỳ vọng)
+với sai số nhỏ nhất.
 
-Even if we believe that the best model for
-predicting $y$ given $\mathbf{x}$ is linear,
-we would not expect to find a real-world dataset of $n$ examples where
-$y^{(i)}$ exactly equals $\mathbf{w}^\top \mathbf{x}^{(i)}+b$
-for all $1 \leq i \leq n$.
-For example, whatever instruments we use to observe
-the features $\mathbf{X}$ and labels $\mathbf{y}$, there might be a small amount of measurement error.
-Thus, even when we are confident
-that the underlying relationship is linear,
-we will incorporate a noise term to account for such errors.
+Ngay cả khi chúng ta tin rằng mô hình tốt nhất để
+dự đoán $y$ từ $\mathbf{x}$ là tuyến tính,
+chúng ta cũng không kỳ vọng tìm được một tập dữ liệu thực tế gồm $n$ examples mà
+$y^{(i)}$ bằng chính xác $\mathbf{w}^\top \mathbf{x}^{(i)}+b$
+với mọi $1 \leq i \leq n$.
+Ví dụ, bất kể chúng ta dùng công cụ nào để quan sát
+features $\mathbf{X}$ và labels $\mathbf{y}$, vẫn có thể tồn tại một lượng nhỏ sai số đo lường.
+Do đó, ngay cả khi chúng ta tin chắc
+rằng mối quan hệ nền tảng là tuyến tính,
+chúng ta vẫn sẽ đưa vào một hạng tử nhiễu để giải thích các sai số đó.
 
-Before we can go about searching for the best *parameters*
-(or *model parameters*) $\mathbf{w}$ and $b$,
-we will need two more things:
-(i) a measure of the quality of some given model;
-and (ii) a procedure for updating the model to improve its quality.
+Trước khi có thể bắt đầu tìm kiếm *parameters*
+(hoặc *model parameters*) $\mathbf{w}$ và $b$ tốt nhất,
+chúng ta sẽ cần thêm hai điều:
+(i) một thước đo chất lượng của một mô hình cho trước;
+và (ii) một quy trình cập nhật mô hình để cải thiện chất lượng của nó.
 
-### Loss Function
+### Hàm mất mát
 :label:`subsec_linear-regression-loss-function`
 
-Naturally, fitting our model to the data requires
-that we agree on some measure of *fitness*
-(or, equivalently, of *unfitness*).
-*Loss functions* quantify the distance
-between the *real* and *predicted* values of the target.
-The loss will usually be a nonnegative number
-where smaller values are better
-and perfect predictions incur a loss of 0.
-For regression problems, the most common loss function is the squared error.
-When our prediction for an example $i$ is $\hat{y}^{(i)}$
-and the corresponding true label is $y^{(i)}$,
-the *squared error* is given by:
+Một cách tự nhiên, việc khớp mô hình với dữ liệu đòi hỏi
+chúng ta phải thống nhất một thước đo về *độ phù hợp*
+(hoặc tương đương là *độ không phù hợp*).
+*Hàm mất mát* định lượng khoảng cách
+giữa các giá trị target *thực tế* và *dự đoán*.
+Mất mát thường là một số không âm,
+trong đó giá trị càng nhỏ càng tốt
+và dự đoán hoàn hảo có mất mát bằng 0.
+Đối với các bài toán hồi quy, hàm mất mát phổ biến nhất là sai số bình phương.
+Khi dự đoán của chúng ta cho example $i$ là $\hat{y}^{(i)}$
+và label thực tương ứng là $y^{(i)}$,
+*sai số bình phương* được cho bởi:
 
 $$l^{(i)}(\mathbf{w}, b) = \frac{1}{2} \left(\hat{y}^{(i)} - y^{(i)}\right)^2.$$
 :eqlabel:`eq_mse`
 
-The constant $\frac{1}{2}$ makes no real difference
-but proves to be notationally convenient,
-since it cancels out when we take the derivative of the loss.
-Because the training dataset is given to us,
-and thus is out of our control,
-the empirical error is only a function of the model parameters.
-In :numref:`fig_fit_linreg`, we visualize the fit of a linear regression model
-in a problem with one-dimensional inputs.
+Hằng số $\frac{1}{2}$ không tạo ra khác biệt thực sự
+nhưng thuận tiện về mặt ký hiệu,
+vì nó triệt tiêu khi chúng ta lấy đạo hàm của mất mát.
+Vì training dataset được cung cấp cho chúng ta,
+do đó nằm ngoài khả năng kiểm soát của chúng ta,
+sai số thực nghiệm chỉ là một hàm của các model parameters.
+Trong :numref:`fig_fit_linreg`, chúng ta trực quan hóa độ khớp của một mô hình hồi quy tuyến tính
+trong một bài toán có input một chiều.
 
-![Fitting a linear regression model to one-dimensional data.](../img/fit-linreg.svg)
+![Khớp một mô hình hồi quy tuyến tính với dữ liệu một chiều.](../img/fit-linreg.svg)
 :label:`fig_fit_linreg`
 
-Note that large differences between
-estimates $\hat{y}^{(i)}$ and targets $y^{(i)}$
-lead to even larger contributions to the loss,
-due to its quadratic form
-(this quadraticity can be a double-edge sword; while it encourages the model to avoid large errors
-it can also lead to excessive sensitivity to anomalous data).
-To measure the quality of a model on the entire dataset of $n$ examples,
-we simply average (or equivalently, sum)
-the losses on the training set:
+Lưu ý rằng các khác biệt lớn giữa
+ước lượng $\hat{y}^{(i)}$ và target $y^{(i)}$
+dẫn đến đóng góp vào mất mát còn lớn hơn,
+do dạng bậc hai của nó
+(tính bậc hai này có thể là con dao hai lưỡi; tuy khuyến khích mô hình tránh các sai số lớn,
+nó cũng có thể dẫn đến độ nhạy quá mức với dữ liệu bất thường).
+Để đo chất lượng của một mô hình trên toàn bộ tập dữ liệu gồm $n$ examples,
+chúng ta chỉ cần lấy trung bình (hoặc tương đương, tính tổng)
+các mất mát trên training set:
 
 $$L(\mathbf{w}, b) =\frac{1}{n}\sum_{i=1}^n l^{(i)}(\mathbf{w}, b) =\frac{1}{n} \sum_{i=1}^n \frac{1}{2}\left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)^2.$$
 
-When training the model, we seek parameters ($\mathbf{w}^*, b^*$)
-that minimize the total loss across all training examples:
+Khi huấn luyện mô hình, chúng ta tìm các parameters ($\mathbf{w}^*, b^*$)
+làm nhỏ nhất tổng mất mát trên tất cả các training examples:
 
 $$\mathbf{w}^*, b^* = \operatorname*{argmin}_{\mathbf{w}, b}\  L(\mathbf{w}, b).$$
 
-### Analytic Solution
+### Nghiệm giải tích
 
-Unlike most of the models that we will cover,
-linear regression presents us with
-a surprisingly easy optimization problem.
-In particular, we can find the optimal parameters
-(as assessed on the training data)
-analytically by applying a simple formula as follows.
-First, we can subsume the bias $b$ into the parameter $\mathbf{w}$
-by appending a column to the design matrix consisting of all 1s.
-Then our prediction problem is to minimize $\|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2$.
-As long as the design matrix $\mathbf{X}$ has full rank
-(no feature is linearly dependent on the others),
-then there will be just one critical point on the loss surface
-and it corresponds to the minimum of the loss over the entire domain.
-Taking the derivative of the loss with respect to $\mathbf{w}$
-and setting it equal to zero yields:
+Không giống hầu hết các mô hình mà chúng ta sẽ đề cập,
+hồi quy tuyến tính đặt ra cho chúng ta
+một bài toán tối ưu hóa dễ đến đáng ngạc nhiên.
+Cụ thể, chúng ta có thể tìm các tham số tối ưu
+(được đánh giá trên dữ liệu huấn luyện)
+bằng phương pháp giải tích, áp dụng công thức đơn giản sau.
+Trước hết, chúng ta có thể gộp bias $b$ vào tham số $\mathbf{w}$
+bằng cách thêm một cột gồm toàn số 1 vào ma trận thiết kế.
+Khi đó, bài toán dự đoán của chúng ta là tối thiểu hóa $\|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2$.
+Miễn là ma trận thiết kế $\mathbf{X}$ có đầy đủ hạng
+(không feature nào phụ thuộc tuyến tính vào các feature khác),
+sẽ chỉ có một điểm tới hạn trên bề mặt loss
+và nó tương ứng với giá trị nhỏ nhất của loss trên toàn bộ miền.
+Lấy đạo hàm của loss theo $\mathbf{w}$
+và đặt nó bằng không, ta thu được:
 
 $$\begin{aligned}
     \partial_{\mathbf{w}} \|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2 =
@@ -260,174 +261,173 @@ $$\begin{aligned}
     \mathbf{X}^\top \mathbf{y} = \mathbf{X}^\top \mathbf{X} \mathbf{w}.
 \end{aligned}$$
 
-Solving for $\mathbf{w}$ provides us with the optimal solution
-for the optimization problem.
-Note that this solution 
+Giải theo $\mathbf{w}$ cho chúng ta nghiệm tối ưu
+của bài toán tối ưu hóa.
+Lưu ý rằng nghiệm này
 
 $$\mathbf{w}^* = (\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top \mathbf{y}$$
 
-will only be unique
-when the matrix $\mathbf X^\top \mathbf X$ is invertible,
-i.e., when the columns of the design matrix
-are linearly independent :cite:`Golub.Van-Loan.1996`.
+sẽ chỉ là duy nhất
+khi ma trận $\mathbf X^\top \mathbf X$ khả nghịch,
+tức là khi các cột của ma trận thiết kế
+độc lập tuyến tính :cite:`Golub.Van-Loan.1996`.
 
 
 
-While simple problems like linear regression
-may admit analytic solutions,
-you should not get used to such good fortune.
-Although analytic solutions allow for nice mathematical analysis,
-the requirement of an analytic solution is so restrictive
-that it would exclude almost all exciting aspects of deep learning.
+Mặc dù các bài toán đơn giản như hồi quy tuyến tính
+có thể có nghiệm giải tích,
+bạn không nên quen với may mắn như vậy.
+Dù các nghiệm giải tích cho phép thực hiện phân tích toán học rõ ràng,
+yêu cầu phải có nghiệm giải tích quá hạn chế
+đến mức sẽ loại trừ gần như mọi khía cạnh thú vị của deep learning.
 
-### Minibatch Stochastic Gradient Descent
+### Gradient Descent Ngẫu Nhiên Theo Minibatch
 
-Fortunately, even in cases where we cannot solve the models analytically,
-we can still often train models effectively in practice.
-Moreover, for many tasks, those hard-to-optimize models
-turn out to be so much better that figuring out how to train them
-ends up being well worth the trouble.
+May mắn thay, ngay cả trong các trường hợp chúng ta không thể giải mô hình bằng phương pháp giải tích,
+chúng ta vẫn thường có thể huấn luyện mô hình hiệu quả trong thực tế.
+Hơn nữa, đối với nhiều tác vụ, những mô hình khó tối ưu hóa đó
+lại tốt hơn rất nhiều, nên việc tìm cách huấn luyện chúng
+hoàn toàn xứng đáng với công sức bỏ ra.
 
-The key technique for optimizing nearly every deep learning model,
-and which we will call upon throughout this book,
-consists of iteratively reducing the error
-by updating the parameters in the direction
-that incrementally lowers the loss function.
-This algorithm is called *gradient descent*.
+Kỹ thuật then chốt để tối ưu hóa gần như mọi mô hình deep learning,
+và là kỹ thuật chúng ta sẽ sử dụng xuyên suốt cuốn sách này,
+là giảm lỗi lặp đi lặp lại
+bằng cách cập nhật các tham số theo hướng
+làm giảm dần hàm loss.
+Thuật toán này được gọi là *gradient descent*.
 
-The most naive application of gradient descent
-consists of taking the derivative of the loss function,
-which is an average of the losses computed
-on every single example in the dataset.
-In practice, this can be extremely slow:
-we must pass over the entire dataset before making a single update,
-even if the update steps might be very powerful :cite:`Liu.Nocedal.1989`.
-Even worse, if there is a lot of redundancy in the training data,
-the benefit of a full update is limited.
+Cách áp dụng gradient descent đơn giản nhất
+là lấy đạo hàm của hàm loss,
+vốn là trung bình các loss được tính
+trên từng ví dụ trong toàn bộ dataset.
+Trên thực tế, điều này có thể cực kỳ chậm:
+chúng ta phải duyệt qua toàn bộ dataset trước khi thực hiện chỉ một lần cập nhật,
+ngay cả khi các bước cập nhật có thể rất mạnh :cite:`Liu.Nocedal.1989`.
+Tệ hơn nữa, nếu dữ liệu huấn luyện có nhiều phần dư thừa,
+lợi ích của một lần cập nhật trên toàn bộ dữ liệu là hạn chế.
 
-The other extreme is to consider only a single example at a time and to take
-update steps based on one observation at a time.
-The resulting algorithm, *stochastic gradient descent* (SGD)
-can be an effective strategy :cite:`Bottou.2010`, even for large datasets.
-Unfortunately, SGD has drawbacks, both computational and statistical.
-One problem arises from the fact that processors are a lot faster
-multiplying and adding numbers than they are
-at moving data from main memory to processor cache.
-It is up to an order of magnitude more efficient to
-perform a matrix--vector multiplication
-than a corresponding number of vector--vector operations.
-This means that it can take a lot longer to process
-one sample at a time compared to a full batch.
-A second problem is that some of the layers,
-such as batch normalization (to be described in :numref:`sec_batch_norm`),
-only work well when we have access
-to more than one observation at a time.
+Ở thái cực còn lại, ta chỉ xét một ví dụ tại một thời điểm và thực hiện
+các bước cập nhật dựa trên từng quan sát.
+Thuật toán thu được, *stochastic gradient descent* (SGD),
+có thể là một chiến lược hiệu quả :cite:`Bottou.2010`, ngay cả với các dataset lớn.
+Đáng tiếc, SGD có các nhược điểm, cả về tính toán lẫn thống kê.
+Một vấn đề xuất phát từ thực tế là bộ xử lý nhanh hơn rất nhiều
+trong việc nhân và cộng các số so với
+việc chuyển dữ liệu từ bộ nhớ chính sang cache của bộ xử lý.
+Thực hiện một phép nhân ma trận--vector hiệu quả hơn
+tới một bậc độ lớn so với thực hiện số lượng tương ứng các phép toán vector--vector.
+Điều này có nghĩa là việc xử lý
+từng sample một có thể mất nhiều thời gian hơn so với một batch đầy đủ.
+Vấn đề thứ hai là một số layer,
+chẳng hạn như batch normalization (sẽ được mô tả trong :numref:`sec_batch_norm`),
+chỉ hoạt động tốt khi chúng ta có thể truy cập
+nhiều hơn một quan sát tại một thời điểm.
 
-The solution to both problems is to pick an intermediate strategy:
-rather than taking a full batch or only a single sample at a time,
-we take a *minibatch* of observations :cite:`Li.Zhang.Chen.ea.2014`.
-The specific choice of the size of the said minibatch depends on many factors,
-such as the amount of memory, the number of accelerators,
-the choice of layers, and the total dataset size.
-Despite all that, a number between 32 and 256,
-preferably a multiple of a large power of $2$, is a good start.
-This leads us to *minibatch stochastic gradient descent*.
+Giải pháp cho cả hai vấn đề là chọn một chiến lược trung gian:
+thay vì lấy một batch đầy đủ hoặc chỉ một sample tại một thời điểm,
+chúng ta lấy một *minibatch* các quan sát :cite:`Li.Zhang.Chen.ea.2014`.
+Việc chọn kích thước cụ thể của minibatch này phụ thuộc vào nhiều yếu tố,
+chẳng hạn như lượng bộ nhớ, số lượng accelerator,
+lựa chọn layer, và tổng kích thước dataset.
+Dù vậy, một số từ 32 đến 256,
+tốt nhất là bội số của một lũy thừa lớn của $2$, là một khởi đầu tốt.
+Điều này dẫn chúng ta đến *minibatch stochastic gradient descent*.
 
-In its most basic form, in each iteration $t$,
-we first randomly sample a minibatch $\mathcal{B}_t$
-consisting of a fixed number $|\mathcal{B}|$ of training examples.
-We then compute the derivative (gradient) of the average loss
-on the minibatch with respect to the model parameters.
-Finally, we multiply the gradient
-by a predetermined small positive value $\eta$,
-called the *learning rate*,
-and subtract the resulting term from the current parameter values.
-We can express the update as follows:
+Ở dạng cơ bản nhất, trong mỗi lần lặp $t$,
+trước tiên chúng ta lấy mẫu ngẫu nhiên một minibatch $\mathcal{B}_t$
+gồm một số lượng cố định $|\mathcal{B}|$ ví dụ huấn luyện.
+Sau đó, chúng ta tính đạo hàm (gradient) của loss trung bình
+trên minibatch theo các tham số mô hình.
+Cuối cùng, chúng ta nhân gradient
+với một giá trị dương nhỏ $\eta$ được xác định trước,
+gọi là *learning rate*,
+và trừ hạng tử thu được khỏi các giá trị tham số hiện tại.
+Ta có thể biểu diễn phép cập nhật như sau:
 
 $$(\mathbf{w},b) \leftarrow (\mathbf{w},b) - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_{(\mathbf{w},b)} l^{(i)}(\mathbf{w},b).$$
 
-In summary, minibatch SGD proceeds as follows:
-(i) initialize the values of the model parameters, typically at random;
-(ii) iteratively sample random minibatches from the data,
-updating the parameters in the direction of the negative gradient.
-For quadratic losses and affine transformations,
-this has a closed-form expansion:
+Tóm lại, minibatch SGD tiến hành như sau:
+(i) khởi tạo các giá trị của tham số mô hình, thường là ngẫu nhiên;
+(ii) lặp lại việc lấy mẫu các minibatch ngẫu nhiên từ dữ liệu,
+cập nhật các tham số theo hướng gradient âm.
+Với loss bậc hai và phép biến đổi affine,
+điều này có khai triển dạng đóng:
 
 $$\begin{aligned} \mathbf{w} & \leftarrow \mathbf{w} - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_{\mathbf{w}} l^{(i)}(\mathbf{w}, b) && = \mathbf{w} - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \mathbf{x}^{(i)} \left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)\\ b &\leftarrow b -  \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_b l^{(i)}(\mathbf{w}, b) &&  = b - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right). \end{aligned}$$
 :eqlabel:`eq_linreg_batch_update`
 
-Since we pick a minibatch $\mathcal{B}$
-we need to normalize by its size $|\mathcal{B}|$.
-Frequently minibatch size and learning rate are user-defined.
-Such tunable parameters that are not updated
-in the training loop are called *hyperparameters*.
-They can be tuned automatically by a number of techniques, such as Bayesian optimization
-:cite:`Frazier.2018`. In the end, the quality of the solution is
-typically assessed on a separate *validation dataset* (or *validation set*).
+Vì chúng ta chọn một minibatch $\mathcal{B}$
+nên cần chuẩn hóa theo kích thước của nó $|\mathcal{B}|$.
+Kích thước minibatch và learning rate thường do người dùng xác định.
+Những tham số có thể điều chỉnh mà không được cập nhật
+trong vòng lặp huấn luyện được gọi là *hyperparameters*.
+Chúng có thể được tinh chỉnh tự động bằng nhiều kỹ thuật, chẳng hạn như Bayesian optimization
+:cite:`Frazier.2018`. Cuối cùng, chất lượng của nghiệm
+thường được đánh giá trên một *validation dataset* (hoặc *validation set*) riêng biệt.
 
-After training for some predetermined number of iterations
-(or until some other stopping criterion is met),
-we record the estimated model parameters,
-denoted $\hat{\mathbf{w}}, \hat{b}$.
-Note that even if our function is truly linear and noiseless,
-these parameters will not be the exact minimizers of the loss, nor even deterministic.
-Although the algorithm converges slowly towards the minimizers
-it typically will not find them exactly in a finite number of steps.
-Moreover, the minibatches $\mathcal{B}$
-used for updating the parameters are chosen at random.
-This breaks determinism.
+Sau khi huấn luyện trong một số lần lặp được xác định trước
+(hoặc đến khi thỏa một tiêu chí dừng khác),
+chúng ta lưu các tham số mô hình ước lượng,
+được ký hiệu là $\hat{\mathbf{w}}, \hat{b}$.
+Lưu ý rằng ngay cả khi hàm của chúng ta thực sự tuyến tính và không có nhiễu,
+các tham số này sẽ không phải là các giá trị tối thiểu chính xác của loss, thậm chí cũng không có tính xác định.
+Mặc dù thuật toán hội tụ chậm về phía các giá trị tối thiểu,
+nó thường sẽ không tìm được chúng chính xác trong một số bước hữu hạn.
+Hơn nữa, các minibatch $\mathcal{B}$
+được dùng để cập nhật tham số được chọn ngẫu nhiên.
+Điều này phá vỡ tính xác định.
 
-Linear regression happens to be a learning problem
-with a global minimum
-(whenever $\mathbf{X}$ is full rank, or equivalently,
-whenever $\mathbf{X}^\top \mathbf{X}$ is invertible).
-However, the loss surfaces for deep networks contain many saddle points and minima.
-Fortunately, we typically do not care about finding
-an exact set of parameters but merely any set of parameters
-that leads to accurate predictions (and thus low loss).
-In practice, deep learning practitioners
-seldom struggle to find parameters
-that minimize the loss *on training sets*
+Hồi quy tuyến tính là một bài toán học
+có cực tiểu toàn cục
+(bất cứ khi nào $\mathbf{X}$ có đầy đủ hạng, hay tương đương,
+bất cứ khi nào $\mathbf{X}^\top \mathbf{X}$ khả nghịch).
+Tuy nhiên, các bề mặt loss của mạng sâu chứa nhiều điểm yên ngựa và cực tiểu.
+May mắn thay, chúng ta thường không quan tâm đến việc tìm
+một tập tham số chính xác mà chỉ cần bất kỳ tập tham số nào
+dẫn đến các dự đoán chính xác (và do đó có loss thấp).
+Trên thực tế, các practitioner deep learning
+hiếm khi gặp khó khăn trong việc tìm các tham số
+tối thiểu hóa loss *trên các tập huấn luyện*
 :cite:`Izmailov.Podoprikhin.Garipov.ea.2018,Frankle.Carbin.2018`.
-The more formidable task is to find parameters
-that lead to accurate predictions on previously unseen data,
-a challenge called *generalization*.
-We return to these topics throughout the book.
+Nhiệm vụ khó khăn hơn là tìm các tham số
+dẫn đến dự đoán chính xác trên dữ liệu chưa từng thấy trước đó,
+một thách thức được gọi là *generalization*.
+Chúng ta sẽ quay lại các chủ đề này xuyên suốt cuốn sách.
 
-### Predictions
+### Dự đoán
 
-Given the model $\hat{\mathbf{w}}^\top \mathbf{x} + \hat{b}$,
-we can now make *predictions* for a new example,
-e.g., predicting the sales price of a previously unseen house
-given its area $x_1$ and age $x_2$.
-Deep learning practitioners have taken to calling the prediction phase *inference*
-but this is a bit of a misnomer---*inference* refers broadly
-to any conclusion reached on the basis of evidence,
-including both the values of the parameters
-and the likely label for an unseen instance.
-If anything, in the statistics literature
-*inference* more often denotes parameter inference
-and this overloading of terminology creates unnecessary confusion
-when deep learning practitioners talk to statisticians.
-In the following we will stick to *prediction* whenever possible.
+Với mô hình $\hat{\mathbf{w}}^\top \mathbf{x} + \hat{b}$,
+giờ đây chúng ta có thể đưa ra *dự đoán* cho một ví dụ mới,
+chẳng hạn dự đoán giá bán của một ngôi nhà chưa từng thấy trước đó
+dựa trên diện tích $x_1$ và tuổi nhà $x_2$.
+Những người thực hành deep learning thường gọi giai đoạn dự đoán là *suy luận*
+(inference), nhưng đây có phần là một cách gọi không chính xác---*suy luận* nói chung
+đề cập đến bất kỳ kết luận nào được rút ra dựa trên bằng chứng,
+bao gồm cả giá trị của các tham số
+và nhãn có khả năng xảy ra cho một mẫu chưa thấy.
+Nếu có gì khác biệt, trong tài liệu thống kê,
+*inference* thường chỉ suy luận tham số hơn,
+và việc dùng quá tải thuật ngữ này gây ra sự nhầm lẫn không cần thiết
+khi những người thực hành deep learning trao đổi với các nhà thống kê.
+Trong phần sau, chúng ta sẽ dùng *dự đoán* bất cứ khi nào có thể.
 
 
 
-## Vectorization for Speed
+## Vector hóa để Tăng tốc
 
-When training our models, we typically want to process
-whole minibatches of examples simultaneously.
-Doing this efficiently requires that (**we**) (~~should~~)
-(**vectorize the calculations and leverage
-fast linear algebra libraries
-rather than writing costly for-loops in Python.**)
+Khi huấn luyện mô hình, chúng ta thường muốn xử lý
+toàn bộ minibatch các ví dụ cùng lúc.
+Để thực hiện hiệu quả, (**chúng ta**) (~~nên~~)
+(**vector hóa các phép tính và tận dụng
+các thư viện đại số tuyến tính tốc độ cao
+thay vì viết các vòng lặp for tốn kém trong Python.**)
 
-To see why this matters so much,
-let's (**consider two methods for adding vectors.**)
-To start, we instantiate two 10,000-dimensional vectors
-containing all 1s.
-In the first method, we loop over the vectors with a Python for-loop.
-In the second, we rely on a single call to `+`.
+Để thấy vì sao điều này lại quan trọng đến vậy,
+hãy (**xét hai phương pháp cộng vector.**)
+Trước tiên, chúng ta khởi tạo hai vector 10.000 chiều
+có tất cả phần tử bằng 1.
+Trong phương pháp đầu tiên, chúng ta lặp qua các vector bằng vòng lặp for của Python.
+Trong phương pháp thứ hai, chúng ta dựa vào một lệnh gọi duy nhất tới `+`.
 
 ```{.python .input}
 %%tab all
@@ -436,9 +436,9 @@ a = d2l.ones(n)
 b = d2l.ones(n)
 ```
 
-Now we can benchmark the workloads.
-First, [**we add them, one coordinate at a time,
-using a for-loop.**]
+Bây giờ chúng ta có thể benchmark các tác vụ.
+Trước hết, [**chúng ta cộng chúng, từng tọa độ một,
+bằng vòng lặp for.**]
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -470,7 +470,7 @@ for i in range(n):
 f'{time.time() - t:.5f} sec'
 ```
 
-(**Alternatively, we rely on the reloaded `+` operator to compute the elementwise sum.**)
+(**Ngoài ra, chúng ta dựa vào toán tử `+` đã được nạp chồng để tính tổng theo từng phần tử.**)
 
 ```{.python .input}
 %%tab all
@@ -479,42 +479,42 @@ d = a + b
 f'{time.time() - t:.5f} sec'
 ```
 
-The second method is dramatically faster than the first.
-Vectorizing code often yields order-of-magnitude speedups.
-Moreover, we push more of the mathematics to the library
-so we do not have to write as many calculations ourselves,
-reducing the potential for errors and increasing portability of the code.
+Phương pháp thứ hai nhanh hơn đáng kể so với phương pháp thứ nhất.
+Vector hóa mã thường mang lại mức tăng tốc theo bậc độ lớn.
+Hơn nữa, chúng ta chuyển nhiều phần toán học hơn cho thư viện
+nên không phải tự viết quá nhiều phép tính,
+giảm khả năng xảy ra lỗi và tăng tính di động của mã.
 
 
-## The Normal Distribution and Squared Loss
+## Phân phối Chuẩn và Squared Loss
 :label:`subsec_normal_distribution_and_squared_loss`
 
-So far we have given a fairly functional motivation
-of the squared loss objective:
-the optimal parameters return the conditional expectation $E[Y\mid X]$
-whenever the underlying pattern is truly linear,
-and the loss assigns large penalties for outliers.
-We can also provide a more formal motivation
-for the squared loss objective
-by making probabilistic assumptions
-about the distribution of noise.
+Cho đến nay, chúng ta đã đưa ra một động cơ khá thực dụng
+cho mục tiêu squared loss:
+các tham số tối ưu trả về kỳ vọng có điều kiện $E[Y\mid X]$
+bất cứ khi nào quy luật cơ bản thực sự là tuyến tính,
+và hàm mất mát áp dụng hình phạt lớn cho các ngoại lệ.
+Chúng ta cũng có thể đưa ra một động cơ chính quy hơn
+cho mục tiêu squared loss
+bằng cách đưa ra các giả định xác suất
+về phân phối của nhiễu.
 
-Linear regression was invented at the turn of the 19th century.
-While it has long been debated whether Gauss or Legendre
-first thought up the idea,
-it was Gauss who also discovered the normal distribution
-(also called the *Gaussian*).
-It turns out that the normal distribution
-and linear regression with squared loss
-share a deeper connection than common parentage.
+Hồi quy tuyến tính được phát minh vào đầu thế kỷ 19.
+Dù từ lâu vẫn còn tranh luận liệu Gauss hay Legendre
+là người đầu tiên nảy ra ý tưởng này,
+Gauss cũng là người đã phát hiện ra phân phối chuẩn
+(còn được gọi là *Gaussian*).
+Hóa ra phân phối chuẩn
+và hồi quy tuyến tính với squared loss
+có một mối liên hệ sâu sắc hơn là cùng nguồn gốc.
 
-To begin, recall that a normal distribution
-with mean $\mu$ and variance $\sigma^2$ (standard deviation $\sigma$)
-is given as
+Để bắt đầu, hãy nhớ rằng một phân phối chuẩn
+có trung bình $\mu$ và phương sai $\sigma^2$ (độ lệch chuẩn $\sigma$)
+được cho bởi
 
 $$p(x) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\left(-\frac{1}{2 \sigma^2} (x - \mu)^2\right).$$
 
-Below [**we define a function to compute the normal distribution**].
+Bên dưới, [**chúng ta định nghĩa một hàm để tính phân phối chuẩn**].
 
 ```{.python .input}
 %%tab all
@@ -526,7 +526,7 @@ def normal(x, mu, sigma):
         return p * np.exp(-0.5 * (x - mu)**2 / sigma**2)
 ```
 
-We can now (**visualize the normal distributions**).
+Giờ đây chúng ta có thể (**trực quan hóa các phân phối chuẩn**).
 
 ```{.python .input}
 %%tab mxnet
@@ -557,204 +557,204 @@ d2l.plot(x, [normal(x, mu, sigma) for mu, sigma in params], xlabel='x',
          legend=[f'mean {mu}, std {sigma}' for mu, sigma in params])
 ```
 
-Note that changing the mean corresponds
-to a shift along the $x$-axis,
-and increasing the variance
-spreads the distribution out,
-lowering its peak.
+Lưu ý rằng việc thay đổi giá trị trung bình tương ứng
+với sự dịch chuyển theo trục $x$,
+còn việc tăng phương sai
+làm phân phối trải rộng hơn,
+hạ thấp đỉnh của nó.
 
-One way to motivate linear regression with squared loss
-is to assume that observations arise from noisy measurements,
-where the noise $\epsilon$ follows the normal distribution 
+Một cách để lý giải hồi quy tuyến tính với squared loss
+là giả định rằng các quan sát phát sinh từ các phép đo có nhiễu,
+trong đó nhiễu $\epsilon$ tuân theo phân phối chuẩn
 $\mathcal{N}(0, \sigma^2)$:
 
 $$y = \mathbf{w}^\top \mathbf{x} + b + \epsilon \textrm{ where } \epsilon \sim \mathcal{N}(0, \sigma^2).$$
 
-Thus, we can now write out the *likelihood*
-of seeing a particular $y$ for a given $\mathbf{x}$ via
+Do đó, giờ đây chúng ta có thể viết *likelihood*
+quan sát một $y$ cụ thể với $\mathbf{x}$ đã cho như sau
 
 $$P(y \mid \mathbf{x}) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\left(-\frac{1}{2 \sigma^2} (y - \mathbf{w}^\top \mathbf{x} - b)^2\right).$$
 
-As such, the likelihood factorizes.
-According to *the principle of maximum likelihood*,
-the best values of parameters $\mathbf{w}$ and $b$ are those
-that maximize the *likelihood* of the entire dataset:
+Như vậy, likelihood có thể được phân tích thành nhân tử.
+Theo *nguyên lý hợp lý cực đại*,
+các giá trị tốt nhất của tham số $\mathbf{w}$ và $b$ là những giá trị
+tối đa hóa *likelihood* của toàn bộ tập dữ liệu:
 
 $$P(\mathbf y \mid \mathbf X) = \prod_{i=1}^{n} p(y^{(i)} \mid \mathbf{x}^{(i)}).$$
 
-The equality follows since all pairs $(\mathbf{x}^{(i)}, y^{(i)})$
-were drawn independently of each other.
-Estimators chosen according to the principle of maximum likelihood
-are called *maximum likelihood estimators*.
-While, maximizing the product of many exponential functions,
-might look difficult,
-we can simplify things significantly, without changing the objective,
-by maximizing the logarithm of the likelihood instead.
-For historical reasons, optimizations are more often expressed
-as minimization rather than maximization.
-So, without changing anything,
-we can *minimize* the *negative log-likelihood*,
-which we can express as follows:
+Đẳng thức này đúng vì mọi cặp $(\mathbf{x}^{(i)}, y^{(i)})$
+được lấy mẫu độc lập với nhau.
+Các estimator được chọn theo nguyên lý hợp lý cực đại
+được gọi là *maximum likelihood estimators*.
+Mặc dù việc tối đa hóa tích của nhiều hàm mũ
+có thể trông khó khăn,
+chúng ta có thể đơn giản hóa đáng kể mà không thay đổi mục tiêu
+bằng cách tối đa hóa logarit của likelihood thay thế.
+Vì các lý do lịch sử, bài toán tối ưu thường được biểu diễn
+dưới dạng tối thiểu hóa thay vì tối đa hóa.
+Vì vậy, không thay đổi điều gì,
+chúng ta có thể *tối thiểu hóa* *negative log-likelihood*,
+được biểu diễn như sau:
 
 $$-\log P(\mathbf y \mid \mathbf X) = \sum_{i=1}^n \frac{1}{2} \log(2 \pi \sigma^2) + \frac{1}{2 \sigma^2} \left(y^{(i)} - \mathbf{w}^\top \mathbf{x}^{(i)} - b\right)^2.$$
 
-If we assume that $\sigma$ is fixed,
-we can ignore the first term,
-because it does not depend on $\mathbf{w}$ or $b$.
-The second term is identical
-to the squared error loss introduced earlier,
-except for the multiplicative constant $\frac{1}{\sigma^2}$.
-Fortunately, the solution does not depend on $\sigma$ either.
-It follows that minimizing the mean squared error
-is equivalent to the maximum likelihood estimation
-of a linear model under the assumption of additive Gaussian noise.
+Nếu giả định $\sigma$ là cố định,
+chúng ta có thể bỏ qua hạng tử đầu tiên,
+vì nó không phụ thuộc vào $\mathbf{w}$ hoặc $b$.
+Hạng tử thứ hai giống hệt
+hàm squared error loss đã được giới thiệu trước đó,
+ngoại trừ hằng số nhân $\frac{1}{\sigma^2}$.
+May mắn thay, nghiệm cũng không phụ thuộc vào $\sigma$.
+Suy ra rằng việc tối thiểu hóa mean squared error
+tương đương với ước lượng hợp lý cực đại
+của một mô hình tuyến tính dưới giả định nhiễu Gaussian cộng tính.
 
 
-## Linear Regression as a Neural Network
+## Hồi quy Tuyến tính như một Neural Network
 
-While linear models are not sufficiently rich
-to express the many complicated networks
-that we will introduce in this book,
-(artificial) neural networks are rich enough
-to subsume linear models as networks
-in which every feature is represented by an input neuron,
-all of which are connected directly to the output.
+Mặc dù các mô hình tuyến tính không đủ phong phú
+để biểu diễn nhiều mạng phức tạp
+mà chúng ta sẽ giới thiệu trong cuốn sách này,
+các neural network (nhân tạo) đủ phong phú
+để bao hàm các mô hình tuyến tính như những mạng
+trong đó mọi đặc trưng được biểu diễn bởi một neuron đầu vào,
+và tất cả chúng đều được kết nối trực tiếp với đầu ra.
 
-:numref:`fig_single_neuron` depicts
-linear regression as a neural network.
-The diagram highlights the connectivity pattern,
-such as how each input is connected to the output,
-but not the specific values taken by the weights or biases.
+:numref:`fig_single_neuron` minh họa
+hồi quy tuyến tính như một neural network.
+Sơ đồ làm nổi bật mẫu kết nối,
+chẳng hạn cách mỗi đầu vào được kết nối với đầu ra,
+nhưng không thể hiện các giá trị cụ thể của trọng số hoặc bias.
 
-![Linear regression is a single-layer neural network.](../img/singleneuron.svg)
+![Hồi quy tuyến tính là một neural network một tầng.](../img/singleneuron.svg)
 :label:`fig_single_neuron`
 
-The inputs are $x_1, \ldots, x_d$.
-We refer to $d$ as the *number of inputs*
-or the *feature dimensionality* in the input layer.
-The output of the network is $o_1$.
-Because we are just trying to predict
-a single numerical value,
-we have only one output neuron.
-Note that the input values are all *given*.
-There is just a single *computed* neuron.
-In summary, we can think of linear regression
-as a single-layer fully connected neural network.
-We will encounter networks
-with far more layers
-in later chapters.
+Các đầu vào là $x_1, \ldots, x_d$.
+Chúng ta gọi $d$ là *số lượng đầu vào*
+hoặc *số chiều đặc trưng* trong tầng đầu vào.
+Đầu ra của mạng là $o_1$.
+Vì chúng ta chỉ đang cố gắng dự đoán
+một giá trị số duy nhất,
+nên chỉ có một neuron đầu ra.
+Lưu ý rằng các giá trị đầu vào đều được *cho trước*.
+Chỉ có một neuron được *tính toán*.
+Tóm lại, chúng ta có thể xem hồi quy tuyến tính
+là một neural network fully connected một tầng.
+Chúng ta sẽ gặp các mạng
+có nhiều tầng hơn rất nhiều
+trong các chương sau.
 
-### Biology
+### Sinh học
 
-Because linear regression predates computational neuroscience,
-it might seem anachronistic to describe
-linear regression in terms of neural networks.
-Nonetheless, they were a natural place to start
-when the cyberneticists and neurophysiologists
-Warren McCulloch and Walter Pitts began to develop
-models of artificial neurons.
-Consider the cartoonish picture
-of a biological neuron in :numref:`fig_Neuron`,
-consisting of *dendrites* (input terminals),
-the *nucleus* (CPU), the *axon* (output wire),
-and the *axon terminals* (output terminals),
-enabling connections to other neurons via *synapses*.
+Vì hồi quy tuyến tính có trước khoa học thần kinh tính toán,
+việc mô tả hồi quy tuyến tính
+bằng các thuật ngữ neural network có thể có vẻ không đúng thời đại.
+Tuy nhiên, chúng là điểm khởi đầu tự nhiên
+khi các nhà điều khiển học và sinh lý thần kinh
+Warren McCulloch và Walter Pitts bắt đầu phát triển
+các mô hình neuron nhân tạo.
+Hãy xét hình minh họa đơn giản
+về một neuron sinh học trong :numref:`fig_Neuron`,
+bao gồm *dendrite* (đầu cuối đầu vào),
+*nucleus* (CPU), *axon* (dây đầu ra),
+và *axon terminals* (đầu cuối đầu ra),
+cho phép kết nối với các neuron khác qua *synapse*.
 
-![The real neuron (source: "Anatomy and Physiology" by the US National Cancer Institute's Surveillance, Epidemiology and End Results (SEER) Program).](../img/neuron.svg)
+![Neuron thực (nguồn: "Anatomy and Physiology" của Chương trình Surveillance, Epidemiology and End Results (SEER) thuộc Viện Ung thư Quốc gia Hoa Kỳ).](../img/neuron.svg)
 :label:`fig_Neuron`
 
-Information $x_i$ arriving from other neurons
-(or environmental sensors) is received in the dendrites.
-In particular, that information is weighted
-by *synaptic weights* $w_i$,
-determining the effect of the inputs,
-e.g., activation or inhibition via the product $x_i w_i$.
-The weighted inputs arriving from multiple sources
-are aggregated in the nucleus
-as a weighted sum $y = \sum_i x_i w_i + b$,
-possibly subject to some nonlinear postprocessing via a function $\sigma(y)$.
-This information is then sent via the axon to the axon terminals,
-where it reaches its destination
-(e.g., an actuator such as a muscle)
-or it is fed into another neuron via its dendrites.
+Thông tin $x_i$ đến từ các neuron khác
+(hoặc cảm biến môi trường) được tiếp nhận tại dendrite.
+Cụ thể, thông tin đó được gán trọng số
+bởi *synaptic weights* $w_i$,
+quyết định tác động của các đầu vào,
+ví dụ kích hoạt hoặc ức chế thông qua tích $x_i w_i$.
+Các đầu vào có trọng số đến từ nhiều nguồn
+được tổng hợp trong nucleus
+thành tổng có trọng số $y = \sum_i x_i w_i + b$,
+có thể trải qua một bước hậu xử lý phi tuyến bằng hàm $\sigma(y)$.
+Thông tin này sau đó được gửi qua axon đến axon terminals,
+nơi nó đến đích
+(ví dụ, một cơ cấu chấp hành như cơ)
+hoặc được đưa vào neuron khác thông qua dendrite của neuron đó.
 
-Certainly, the high-level idea that many such units
-could be combined, provided they have the correct connectivity and learning algorithm,
-to produce far more interesting and complex behavior
-than any one neuron alone could express
-arises from our study of real biological neural systems.
-At the same time, most research in deep learning today
-draws inspiration from a much wider source.
-We invoke :citet:`Russell.Norvig.2016`
-who pointed out that although airplanes might have been *inspired* by birds,
-ornithology has not been the primary driver
-of aeronautics innovation for some centuries.
-Likewise, inspiration in deep learning these days
-comes in equal or greater measure
-from mathematics, linguistics, psychology,
-statistics, computer science, and many other fields.
+Chắc chắn, ý tưởng ở cấp độ cao rằng nhiều đơn vị như vậy
+có thể được kết hợp, miễn là chúng có kết nối và thuật toán học phù hợp,
+để tạo ra hành vi thú vị và phức tạp hơn nhiều
+so với những gì một neuron đơn lẻ có thể biểu đạt
+bắt nguồn từ nghiên cứu của chúng ta về các hệ thần kinh sinh học thực.
+Đồng thời, phần lớn nghiên cứu deep learning ngày nay
+lấy cảm hứng từ nhiều nguồn rộng hơn.
+Chúng ta dẫn lại :citet:`Russell.Norvig.2016`
+người đã chỉ ra rằng mặc dù máy bay có thể được *lấy cảm hứng* từ chim,
+ngành điểu học đã không còn là động lực chính
+cho đổi mới trong hàng không học trong nhiều thế kỷ.
+Tương tự, cảm hứng trong deep learning ngày nay
+đến ở mức độ tương đương hoặc lớn hơn
+từ toán học, ngôn ngữ học, tâm lý học,
+thống kê, khoa học máy tính và nhiều lĩnh vực khác.
 
-## Summary
+## Tóm tắt
 
-In this section, we introduced
-traditional linear regression,
-where the parameters of a linear function
-are chosen to minimize squared loss on the training set.
-We also motivated this choice of objective
-both via some practical considerations
-and through an interpretation
-of linear regression as maximimum likelihood estimation
-under an assumption of linearity and Gaussian noise.
-After discussing both computational considerations
-and connections to statistics,
-we showed how such linear models could be expressed
-as simple neural networks where the inputs
-are directly wired to the output(s).
-While we will soon move past linear models altogether,
-they are sufficient to introduce most of the components
-that all of our models require:
-parametric forms, differentiable objectives,
-optimization via minibatch stochastic gradient descent,
-and ultimately, evaluation on previously unseen data.
+Trong phần này, chúng ta đã giới thiệu
+hồi quy tuyến tính truyền thống,
+trong đó các tham số của một hàm tuyến tính
+được chọn để tối thiểu hóa squared loss trên tập huấn luyện.
+Chúng ta cũng đã lý giải lựa chọn hàm mục tiêu này
+dựa trên một số cân nhắc thực tế
+và thông qua cách diễn giải
+hồi quy tuyến tính là ước lượng hợp lý cực đại
+dưới giả định về tính tuyến tính và nhiễu Gaussian.
+Sau khi thảo luận cả các cân nhắc về tính toán
+lẫn các mối liên hệ với thống kê,
+chúng ta đã chỉ ra cách các mô hình tuyến tính như vậy có thể được biểu diễn
+dưới dạng các neural network đơn giản, trong đó đầu vào
+được kết nối trực tiếp với đầu ra.
+Mặc dù chúng ta sẽ sớm chuyển hoàn toàn sang các mô hình phi tuyến,
+chúng đủ để giới thiệu hầu hết các thành phần
+mà mọi mô hình của chúng ta đều cần:
+các dạng tham số, mục tiêu khả vi,
+tối ưu hóa bằng minibatch stochastic gradient descent,
+và cuối cùng là đánh giá trên dữ liệu chưa từng thấy trước đó.
 
 
 
-## Exercises
+## Bài tập
 
-1. Assume that we have some data $x_1, \ldots, x_n \in \mathbb{R}$. Our goal is to find a constant $b$ such that $\sum_i (x_i - b)^2$ is minimized.
-    1. Find an analytic solution for the optimal value of $b$.
-    1. How does this problem and its solution relate to the normal distribution?
-    1. What if we change the loss from $\sum_i (x_i - b)^2$ to $\sum_i |x_i-b|$? Can you find the optimal solution for $b$?
-1. Prove that the affine functions that can be expressed by $\mathbf{x}^\top \mathbf{w} + b$ are equivalent to linear functions on $(\mathbf{x}, 1)$.
-1. Assume that you want to find quadratic functions of $\mathbf{x}$, i.e., $f(\mathbf{x}) = b + \sum_i w_i x_i + \sum_{j \leq i} w_{ij} x_{i} x_{j}$. How would you formulate this in a deep network?
-1. Recall that one of the conditions for the linear regression problem to be solvable was that the design matrix $\mathbf{X}^\top \mathbf{X}$ has full rank.
-    1. What happens if this is not the case?
-    1. How could you fix it? What happens if you add a small amount of coordinate-wise independent Gaussian noise to all entries of $\mathbf{X}$?
-    1. What is the expected value of the design matrix $\mathbf{X}^\top \mathbf{X}$ in this case?
-    1. What happens with stochastic gradient descent when $\mathbf{X}^\top \mathbf{X}$ does not have full rank?
-1. Assume that the noise model governing the additive noise $\epsilon$ is the exponential distribution. That is, $p(\epsilon) = \frac{1}{2} \exp(-|\epsilon|)$.
-    1. Write out the negative log-likelihood of the data under the model $-\log P(\mathbf y \mid \mathbf X)$.
-    1. Can you find a closed form solution?
-    1. Suggest a minibatch stochastic gradient descent algorithm to solve this problem. What could possibly go wrong (hint: what happens near the stationary point as we keep on updating the parameters)? Can you fix this?
-1. Assume that we want to design a neural network with two layers by composing two linear layers. That is, the output of the first layer becomes the input of the second layer. Why would such a naive composition not work?
-1. What happens if you want to use regression for realistic price estimation of houses or stock prices?
-    1. Show that the additive Gaussian noise assumption is not appropriate. Hint: can we have negative prices? What about fluctuations?
-    1. Why would regression to the logarithm of the price be much better, i.e., $y = \log \textrm{price}$?
-    1. What do you need to worry about when dealing with pennystock, i.e., stock with very low prices? Hint: can you trade at all possible prices? Why is this a bigger problem for cheap stock? For more information review the celebrated Black--Scholes model for option pricing :cite:`Black.Scholes.1973`.
-1. Suppose we want to use regression to estimate the *number* of apples sold in a grocery store.
-    1. What are the problems with a Gaussian additive noise model? Hint: you are selling apples, not oil.
-    1. The [Poisson distribution](https://en.wikipedia.org/wiki/Poisson_distribution) captures distributions over counts. It is given by $p(k \mid \lambda) = \lambda^k e^{-\lambda}/k!$. Here $\lambda$ is the rate function and $k$ is the number of events you see. Prove that $\lambda$ is the expected value of counts $k$.
-    1. Design a loss function associated with the Poisson distribution.
-    1. Design a loss function for estimating $\log \lambda$ instead.
+1. Giả sử rằng chúng ta có dữ liệu $x_1, \ldots, x_n \in \mathbb{R}$. Mục tiêu của chúng ta là tìm một hằng số $b$ sao cho $\sum_i (x_i - b)^2$ được tối thiểu hóa.
+    1. Tìm nghiệm giải tích cho giá trị tối ưu của $b$.
+    1. Bài toán này và nghiệm của nó liên hệ như thế nào với phân phối chuẩn?
+    1. Điều gì xảy ra nếu chúng ta thay đổi loss từ $\sum_i (x_i - b)^2$ thành $\sum_i |x_i-b|$? Bạn có thể tìm nghiệm tối ưu cho $b$ không?
+1. Chứng minh rằng các hàm affine có thể biểu diễn bởi $\mathbf{x}^\top \mathbf{w} + b$ tương đương với các hàm tuyến tính trên $(\mathbf{x}, 1)$.
+1. Giả sử rằng bạn muốn tìm các hàm bậc hai của $\mathbf{x}$, tức là $f(\mathbf{x}) = b + \sum_i w_i x_i + \sum_{j \leq i} w_{ij} x_{i} x_{j}$. Bạn sẽ biểu diễn điều này trong một deep network như thế nào?
+1. Hãy nhớ rằng một trong các điều kiện để bài toán hồi quy tuyến tính có thể giải được là ma trận thiết kế $\mathbf{X}^\top \mathbf{X}$ có full rank.
+    1. Điều gì xảy ra nếu không phải như vậy?
+    1. Bạn có thể khắc phục điều đó như thế nào? Điều gì xảy ra nếu bạn thêm một lượng nhỏ nhiễu Gaussian độc lập theo từng tọa độ vào tất cả các phần tử của $\mathbf{X}$?
+    1. Giá trị kỳ vọng của ma trận thiết kế $\mathbf{X}^\top \mathbf{X}$ trong trường hợp này là gì?
+    1. Điều gì xảy ra với stochastic gradient descent khi $\mathbf{X}^\top \mathbf{X}$ không có full rank?
+1. Giả sử rằng mô hình nhiễu chi phối nhiễu cộng $\epsilon$ là phân phối mũ. Tức là, $p(\epsilon) = \frac{1}{2} \exp(-|\epsilon|)$.
+    1. Viết negative log-likelihood của dữ liệu dưới mô hình $-\log P(\mathbf y \mid \mathbf X)$.
+    1. Bạn có thể tìm một nghiệm dạng đóng không?
+    1. Đề xuất một thuật toán minibatch stochastic gradient descent để giải bài toán này. Điều gì có thể xảy ra sai (gợi ý: điều gì xảy ra gần stationary point khi chúng ta tiếp tục cập nhật các tham số)? Bạn có thể khắc phục điều này không?
+1. Giả sử rằng chúng ta muốn thiết kế một neural network có hai lớp bằng cách ghép hai lớp tuyến tính. Tức là, đầu ra của lớp thứ nhất trở thành đầu vào của lớp thứ hai. Tại sao phép ghép ngây thơ như vậy lại không hiệu quả?
+1. Điều gì xảy ra nếu bạn muốn dùng hồi quy để ước lượng giá thực tế của nhà ở hoặc giá cổ phiếu?
+    1. Chỉ ra rằng giả định nhiễu Gaussian cộng là không phù hợp. Gợi ý: liệu giá có thể âm không? Còn các biến động thì sao?
+    1. Tại sao hồi quy theo logarithm của giá sẽ tốt hơn nhiều, tức là $y = \log \textrm{price}$?
+    1. Bạn cần lo lắng về điều gì khi xử lý pennystock, tức là cổ phiếu có giá rất thấp? Gợi ý: bạn có thể giao dịch ở mọi mức giá có thể không? Tại sao đây là vấn đề lớn hơn đối với cổ phiếu rẻ? Để biết thêm thông tin, hãy xem lại mô hình Black--Scholes nổi tiếng về định giá quyền chọn :cite:`Black.Scholes.1973`.
+1. Giả sử chúng ta muốn dùng hồi quy để ước lượng *số lượng* táo bán được trong một cửa hàng tạp hóa.
+    1. Các vấn đề với mô hình nhiễu Gaussian cộng là gì? Gợi ý: bạn đang bán táo, không phải dầu mỏ.
+    1. [Phân phối Poisson](https://en.wikipedia.org/wiki/Poisson_distribution) mô tả các phân phối trên số đếm. Nó được cho bởi $p(k \mid \lambda) = \lambda^k e^{-\lambda}/k!$. Ở đây $\lambda$ là hàm tốc độ và $k$ là số sự kiện quan sát được. Chứng minh rằng $\lambda$ là giá trị kỳ vọng của số đếm $k$.
+    1. Thiết kế một hàm loss liên quan đến phân phối Poisson.
+    1. Thay vào đó, thiết kế một hàm loss để ước lượng $\log \lambda$.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/40)
+[Thảo luận](https://discuss.d2l.ai/t/40)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/258)
+[Thảo luận](https://discuss.d2l.ai/t/258)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/259)
+[Thảo luận](https://discuss.d2l.ai/t/259)
 :end_tab:

@@ -3,33 +3,33 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Network in Network (NiN)
+# Mạng trong Mạng (NiN)
 :label:`sec_nin`
 
-LeNet, AlexNet, and VGG all share a common design pattern:
-extract features exploiting *spatial* structure
-via a sequence of convolutions and pooling layers
-and post-process the representations via fully connected layers.
-The improvements upon LeNet by AlexNet and VGG mainly lie
-in how these later networks widen and deepen these two modules.
+LeNet, AlexNet và VGG đều có chung một mẫu thiết kế:
+trích xuất đặc trưng bằng cách khai thác cấu trúc *không gian*
+thông qua một chuỗi các lớp convolution và pooling,
+sau đó hậu xử lý các biểu diễn bằng các lớp fully connected.
+Các cải tiến của AlexNet và VGG so với LeNet chủ yếu nằm ở
+cách những mạng sau này mở rộng chiều rộng và chiều sâu của hai mô-đun này.
 
-This design poses two major challenges.
-First, the fully connected layers at the end
-of the architecture consume tremendous numbers of parameters. For instance, even a simple
-model such as VGG-11 requires a monstrous matrix, occupying almost
-400MB of RAM in single precision (FP32). This is a significant impediment to computation, in particular on
-mobile and embedded devices. After all, even high-end mobile phones sport no more than 8GB of RAM. At the time VGG was invented, this was an order of magnitude less (the iPhone 4S had 512MB). As such, it would have been difficult to justify spending the majority of memory on an image classifier. 
+Thiết kế này đặt ra hai thách thức lớn.
+Thứ nhất, các lớp fully connected ở cuối
+kiến trúc tiêu thụ số lượng tham số khổng lồ. Chẳng hạn, ngay cả một
+mô hình đơn giản như VGG-11 cũng cần một ma trận khổng lồ, chiếm gần
+400MB RAM ở độ chính xác đơn (FP32). Đây là một trở ngại đáng kể đối với việc tính toán, đặc biệt trên
+các thiết bị di động và nhúng. Xét cho cùng, ngay cả điện thoại di động cao cấp cũng chỉ có tối đa 8GB RAM. Vào thời điểm VGG được phát minh, con số này ít hơn một bậc độ lớn (iPhone 4S có 512MB). Vì vậy, sẽ rất khó để biện minh cho việc dành phần lớn bộ nhớ cho một bộ phân loại ảnh.
 
-Second, it is equally impossible to add fully connected layers
-earlier in the network to increase the degree of nonlinearity: doing so would destroy the
-spatial structure and require potentially even more memory.
+Thứ hai, cũng không thể thêm các lớp fully connected
+sớm hơn trong mạng để tăng mức độ phi tuyến: làm vậy sẽ phá hủy
+cấu trúc không gian và có thể yêu cầu thậm chí nhiều bộ nhớ hơn.
 
-The *network in network* (*NiN*) blocks :cite:`Lin.Chen.Yan.2013` offer an alternative,
-capable of solving both problems in one simple strategy.
-They were proposed based on a very simple insight: (i) use $1 \times 1$ convolutions to add
-local nonlinearities across the channel activations and (ii) use global average pooling to integrate
-across all locations in the last representation layer. Note that global average pooling would not
-be effective, were it not for the added nonlinearities. Let's dive into this in detail.
+Các khối *network in network* (*NiN*) :cite:`Lin.Chen.Yan.2013` đưa ra một phương án thay thế,
+có thể giải quyết cả hai vấn đề bằng một chiến lược đơn giản.
+Chúng được đề xuất dựa trên một nhận định rất đơn giản: (i) sử dụng convolution $1 \times 1$ để bổ sung
+các tính phi tuyến cục bộ trên các kích hoạt kênh và (ii) sử dụng global average pooling để tổng hợp
+trên mọi vị trí trong lớp biểu diễn cuối cùng. Lưu ý rằng global average pooling sẽ không
+hiệu quả nếu không có các tính phi tuyến được bổ sung. Hãy tìm hiểu chi tiết về điều này.
 
 ```{.python .input}
 %%tab mxnet
@@ -60,23 +60,23 @@ import jax
 from jax import numpy as jnp
 ```
 
-## (**NiN Blocks**)
+## (**Khối NiN**)
 
-Recall :numref:`subsec_1x1`. In it we said that the inputs and outputs of convolutional layers
-consist of four-dimensional tensors with axes
-corresponding to the example, channel, height, and width.
-Also recall that the inputs and outputs of fully connected layers
-are typically two-dimensional tensors corresponding to the example and feature.
-The idea behind NiN is to apply a fully connected layer
-at each pixel location (for each height and width).
-The resulting $1 \times 1$ convolution can be thought of as
-a fully connected layer acting independently on each pixel location.
+Nhắc lại :numref:`subsec_1x1`. Trong đó, chúng ta đã nói rằng đầu vào và đầu ra của các lớp convolution
+gồm các tensor bốn chiều với các trục
+tương ứng với mẫu, kênh, chiều cao và chiều rộng.
+Cũng hãy nhớ rằng đầu vào và đầu ra của các lớp fully connected
+thường là các tensor hai chiều tương ứng với mẫu và đặc trưng.
+Ý tưởng đằng sau NiN là áp dụng một lớp fully connected
+tại mỗi vị trí pixel (cho mỗi chiều cao và chiều rộng).
+Convolution $1 \times 1$ thu được có thể được xem như
+một lớp fully connected hoạt động độc lập tại mỗi vị trí pixel.
 
-:numref:`fig_nin` illustrates the main structural
-differences between VGG and NiN, and their blocks.
-Note both the difference in the NiN blocks (the initial convolution is followed by $1 \times 1$ convolutions, whereas VGG retains $3 \times 3$ convolutions) and at the end where we no longer require a giant fully connected layer.
+:numref:`fig_nin` minh họa các khác biệt chính về cấu trúc
+giữa VGG và NiN, cũng như các khối của chúng.
+Lưu ý cả sự khác biệt trong các khối NiN (convolution ban đầu được theo sau bởi các convolution $1 \times 1$, trong khi VGG duy trì các convolution $3 \times 3$) lẫn ở phần cuối, nơi chúng ta không còn cần một lớp fully connected khổng lồ.
 
-![Comparing the architectures of VGG and NiN, and of their blocks.](../img/nin.svg)
+![So sánh kiến trúc của VGG và NiN, cũng như các khối của chúng.](../img/nin.svg)
 :width:`600px`
 :label:`fig_nin`
 
@@ -123,18 +123,18 @@ def nin_block(out_channels, kernel_size, strides, padding):
         nn.Conv(out_channels, kernel_size=(1, 1)), nn.relu])
 ```
 
-## [**NiN Model**]
+## [**Mô hình NiN**]
 
-NiN uses the same initial convolution sizes as AlexNet (it was proposed shortly thereafter).
-The kernel sizes are $11\times 11$, $5\times 5$, and $3\times 3$, respectively,
-and the numbers of output channels match those of AlexNet. Each NiN block is followed by a max-pooling layer
-with a stride of 2 and a window shape of $3\times 3$.
+NiN sử dụng các kích thước convolution ban đầu giống AlexNet (nó được đề xuất không lâu sau đó).
+Các kích thước kernel lần lượt là $11\times 11$, $5\times 5$ và $3\times 3$,
+và số lượng kênh đầu ra tương ứng với AlexNet. Mỗi khối NiN được theo sau bởi một lớp max-pooling
+với stride bằng 2 và kích thước cửa sổ là $3\times 3$.
 
-The second significant difference between NiN and both AlexNet and VGG
-is that NiN avoids fully connected layers altogether.
-Instead, NiN uses a NiN block with a number of output channels equal to the number of label classes, followed by a *global* average pooling layer,
-yielding a vector of logits.
-This design significantly reduces the number of required model parameters, albeit at the expense of a potential increase in training time.
+Khác biệt đáng kể thứ hai giữa NiN với cả AlexNet lẫn VGG
+là NiN hoàn toàn tránh các lớp fully connected.
+Thay vào đó, NiN sử dụng một khối NiN có số lượng kênh đầu ra bằng số lớp nhãn, sau đó là một lớp average pooling *toàn cục*,
+tạo ra một vector logits.
+Thiết kế này giảm đáng kể số lượng tham số mô hình cần thiết, mặc dù có thể làm tăng thời gian huấn luyện.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -205,7 +205,7 @@ class NiN(d2l.Classifier):
         ])
 ```
 
-We create a data example to see [**the output shape of each block**].
+Chúng ta tạo một mẫu dữ liệu để xem [**hình dạng đầu ra của từng khối**].
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -222,10 +222,10 @@ NiN().layer_summary((1, 224, 224, 1))
 NiN(training=False).layer_summary((1, 224, 224, 1))
 ```
 
-## [**Training**]
+## [**Huấn luyện**]
 
-As before we use Fashion-MNIST to train the model using the same 
-optimizer that we used for AlexNet and VGG.
+Như trước, chúng ta sử dụng Fashion-MNIST để huấn luyện mô hình với cùng
+optimizer đã dùng cho AlexNet và VGG.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -246,33 +246,33 @@ with d2l.try_gpu():
     trainer.fit(model, data)
 ```
 
-## Summary
+## Tóm tắt
 
-NiN has dramatically fewer parameters than AlexNet and VGG. This stems primarily from the fact that it needs no giant fully connected layers. Instead, it uses global average pooling to aggregate across all image locations after the last stage of the network body. This obviates the need for expensive (learned) reduction operations and replaces them by a simple average. What surprised researchers at the time was the fact that this averaging operation did not harm accuracy. Note that averaging across a low-resolution representation (with many channels) also adds to the amount of translation invariance that the network can handle. 
+NiN có số lượng tham số ít hơn đáng kể so với AlexNet và VGG. Điều này chủ yếu xuất phát từ việc nó không cần các lớp fully connected khổng lồ. Thay vào đó, nó sử dụng global average pooling để tổng hợp trên tất cả các vị trí ảnh sau giai đoạn cuối của phần thân mạng. Điều này loại bỏ nhu cầu về các phép giảm chiều tốn kém (được học) và thay chúng bằng một phép lấy trung bình đơn giản. Điều khiến các nhà nghiên cứu ngạc nhiên vào thời điểm đó là phép lấy trung bình này không làm giảm độ chính xác. Lưu ý rằng lấy trung bình trên một biểu diễn độ phân giải thấp (với nhiều kênh) cũng làm tăng mức độ bất biến với phép dịch chuyển mà mạng có thể xử lý.
 
-Choosing fewer convolutions with wide kernels and replacing them by $1 \times 1$ convolutions aids the quest for fewer parameters further. It can cater for a significant amount of nonlinearity across channels within any given location. Both $1 \times 1$ convolutions and global average pooling significantly influenced subsequent CNN designs. 
+Việc chọn ít convolution hơn với kernel rộng và thay chúng bằng các convolution $1 \times 1$ càng hỗ trợ mục tiêu giảm số lượng tham số. Nó có thể đáp ứng một lượng đáng kể tính phi tuyến giữa các kênh tại bất kỳ vị trí nào. Cả convolution $1 \times 1$ và global average pooling đều ảnh hưởng đáng kể đến các thiết kế CNN về sau.
 
-## Exercises
+## Bài tập
 
-1. Why are there two $1\times 1$ convolutional layers per NiN block? Increase their number to three. Reduce their number to one. What changes?
-1. What changes if you replace the $1 \times 1$ convolutions by $3 \times 3$ convolutions? 
-1. What happens if you replace the global average pooling by a fully connected layer (speed, accuracy, number of parameters)?
-1. Calculate the resource usage for NiN.
-    1. What is the number of parameters?
-    1. What is the amount of computation?
-    1. What is the amount of memory needed during training?
-    1. What is the amount of memory needed during prediction?
-1. What are possible problems with reducing the $384 \times 5 \times 5$ representation to a $10 \times 5 \times 5$ representation in one step?
-1. Use the structural design decisions in VGG that led to VGG-11, VGG-16, and VGG-19 to design a family of NiN-like networks.
+1. Vì sao mỗi khối NiN có hai lớp convolution $1\times 1$? Tăng số lượng của chúng lên ba. Giảm số lượng của chúng xuống một. Có những thay đổi gì?
+1. Điều gì thay đổi nếu bạn thay các convolution $1 \times 1$ bằng các convolution $3 \times 3$?
+1. Điều gì xảy ra nếu bạn thay global average pooling bằng một lớp fully connected (tốc độ, độ chính xác, số lượng tham số)?
+1. Hãy tính mức sử dụng tài nguyên của NiN.
+    1. Số lượng tham số là bao nhiêu?
+    1. Lượng tính toán là bao nhiêu?
+    1. Lượng bộ nhớ cần thiết trong quá trình huấn luyện là bao nhiêu?
+    1. Lượng bộ nhớ cần thiết trong quá trình dự đoán là bao nhiêu?
+1. Những vấn đề có thể gặp phải khi giảm biểu diễn $384 \times 5 \times 5$ xuống biểu diễn $10 \times 5 \times 5$ trong một bước là gì?
+1. Sử dụng các quyết định thiết kế cấu trúc trong VGG đã dẫn đến VGG-11, VGG-16 và VGG-19 để thiết kế một họ mạng tương tự NiN.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/79)
+[Thảo luận](https://discuss.d2l.ai/t/79)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/80)
+[Thảo luận](https://discuss.d2l.ai/t/80)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18003)
+[Thảo luận](https://discuss.d2l.ai/t/18003)
 :end_tab:

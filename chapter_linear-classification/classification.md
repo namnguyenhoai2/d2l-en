@@ -3,10 +3,10 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# The Base Classification Model
+# Mô hình Phân loại Cơ sở
 :label:`sec_classification`
 
-You may have noticed that the implementations from scratch and the concise implementation using framework functionality were quite similar in the case of regression. The same is true for classification. Since many models in this book deal with classification, it is worth adding functionalities to support this setting specifically. This section provides a base class for classification models to simplify future code.
+Bạn có thể đã nhận thấy rằng các phần triển khai từ đầu và phần triển khai ngắn gọn sử dụng chức năng của framework khá giống nhau trong trường hợp hồi quy. Điều này cũng đúng với phân loại. Vì nhiều mô hình trong cuốn sách này xử lý bài toán phân loại, nên việc bổ sung các chức năng để hỗ trợ riêng cho thiết lập này là đáng giá. Phần này cung cấp một lớp cơ sở cho các mô hình phân loại nhằm đơn giản hóa mã nguồn sau này.
 
 ```{.python .input}
 %%tab mxnet
@@ -36,22 +36,17 @@ import jax
 import optax
 ```
 
-## The `Classifier` Class
+## Lớp `Classifier`
 
 :begin_tab:`pytorch, mxnet, tensorflow`
-We define the `Classifier` class below. In the `validation_step` we report both the loss value and the classification accuracy on a validation batch. We draw an update for every `num_val_batches` batches. This has the benefit of generating the averaged loss and accuracy on the whole validation data. These average numbers are not exactly correct if the final batch contains fewer examples, but we ignore this minor difference to keep the code simple.
+Chúng ta định nghĩa lớp `Classifier` bên dưới. Trong `validation_step`, chúng ta báo cáo cả giá trị loss và độ chính xác phân loại trên một batch xác thực. Chúng ta vẽ một bản cập nhật cho mỗi `num_val_batches` batch. Điều này có lợi ích là tạo ra loss và độ chính xác trung bình trên toàn bộ dữ liệu xác thực. Các con số trung bình này không hoàn toàn chính xác nếu batch cuối chứa ít ví dụ hơn, nhưng chúng ta bỏ qua khác biệt nhỏ này để giữ cho mã đơn giản.
 :end_tab:
 
 
 :begin_tab:`jax`
-We define the `Classifier` class below. In the `validation_step` we report both the loss value and the classification accuracy on a validation batch. We draw an update for every `num_val_batches` batches. This has the benefit of generating the averaged loss and accuracy on the whole validation data. These average numbers are not exactly correct if the last batch contains fewer examples, but we ignore this minor difference to keep the code simple.
+Chúng ta định nghĩa lớp `Classifier` bên dưới. Trong `validation_step`, chúng ta báo cáo cả giá trị loss và độ chính xác phân loại trên một batch xác thực. Chúng ta vẽ một bản cập nhật cho mỗi `num_val_batches` batch. Điều này có lợi ích là tạo ra loss và độ chính xác trung bình trên toàn bộ dữ liệu xác thực. Các con số trung bình này không hoàn toàn chính xác nếu batch cuối chứa ít ví dụ hơn, nhưng chúng ta bỏ qua khác biệt nhỏ này để giữ cho mã đơn giản.
 
-We also redefine the `training_step` method for JAX since all models that will
-subclass `Classifier` later will have a loss that returns auxiliary data.
-This auxiliary data can be used for models with batch normalization
-(to be explained in :numref:`sec_batch_norm`), while in all other cases
-we will make the loss also return a placeholder (empty dictionary) to
-represent the auxiliary data.
+Chúng ta cũng định nghĩa lại phương thức `training_step` cho JAX vì tất cả các mô hình sau này kế thừa từ `Classifier` sẽ có một loss trả về dữ liệu phụ trợ. Dữ liệu phụ trợ này có thể được dùng cho các mô hình có batch normalization (sẽ được giải thích trong :numref:`sec_batch_norm`), trong khi ở mọi trường hợp khác, chúng ta cũng sẽ để loss trả về một placeholder (dictionary rỗng) để biểu diễn dữ liệu phụ trợ.
 :end_tab:
 
 ```{.python .input}
@@ -86,7 +81,7 @@ class Classifier(d2l.Module):  #@save
                   train=False)
 ```
 
-By default we use a stochastic gradient descent optimizer, operating on minibatches, just as we did in the context of linear regression.
+Theo mặc định, chúng ta sử dụng optimizer stochastic gradient descent, hoạt động trên các minibatch, giống như đã làm trong ngữ cảnh hồi quy tuyến tính.
 
 ```{.python .input}
 %%tab mxnet
@@ -119,31 +114,29 @@ def configure_optimizers(self):
     return optax.sgd(self.lr)
 ```
 
-## Accuracy
+## Độ chính xác
 
-Given the predicted probability distribution `y_hat`,
-we typically choose the class with the highest predicted probability
-whenever we must output a hard prediction.
-Indeed, many applications require that we make a choice.
-For instance, Gmail must categorize an email into "Primary", "Social", "Updates", "Forums", or "Spam".
-It might estimate probabilities internally,
-but at the end of the day it has to choose one among the classes.
+Với phân phối xác suất dự đoán `y_hat`, chúng ta thường chọn lớp có xác suất dự đoán cao nhất bất cứ khi nào cần đưa ra một dự đoán cứng.
+Thật vậy, nhiều ứng dụng yêu cầu chúng ta phải đưa ra một lựa chọn.
+Ví dụ, Gmail phải phân loại một email vào "Primary", "Social", "Updates", "Forums", hoặc "Spam".
+Nó có thể ước lượng xác suất nội bộ,
+nhưng cuối cùng vẫn phải chọn một trong các lớp.
 
-When predictions are consistent with the label class `y`, they are correct.
-The classification accuracy is the fraction of all predictions that are correct.
-Although it can be difficult to optimize accuracy directly (it is not differentiable),
-it is often the performance measure that we care about the most. It is often *the*
-relevant quantity in benchmarks. As such, we will nearly always report it when training classifiers.
+Khi dự đoán khớp với lớp nhãn `y`, chúng là đúng.
+Độ chính xác phân loại là tỷ lệ của tất cả dự đoán đúng.
+Mặc dù việc tối ưu trực tiếp độ chính xác có thể khó khăn (nó không khả vi),
+đây thường là thước đo hiệu năng mà chúng ta quan tâm nhất. Nó thường là đại lượng *then chốt*
+trong các benchmark. Do đó, chúng ta gần như luôn báo cáo nó khi huấn luyện các classifier.
 
-Accuracy is computed as follows.
-First, if `y_hat` is a matrix,
-we assume that the second dimension stores prediction scores for each class.
-We use `argmax` to obtain the predicted class by the index for the largest entry in each row.
-Then we [**compare the predicted class with the ground truth `y` elementwise.**]
-Since the equality operator `==` is sensitive to data types,
-we convert `y_hat`'s data type to match that of `y`.
-The result is a tensor containing entries of 0 (false) and 1 (true).
-Taking the sum yields the number of correct predictions.
+Độ chính xác được tính như sau.
+Trước hết, nếu `y_hat` là một ma trận,
+chúng ta giả định rằng chiều thứ hai lưu điểm dự đoán cho từng lớp.
+Chúng ta dùng `argmax` để lấy lớp dự đoán bằng chỉ số của phần tử lớn nhất trong mỗi hàng.
+Sau đó, chúng ta [**so sánh từng phần tử giữa lớp dự đoán và ground truth `y`.**]
+Vì toán tử so sánh bằng `==` nhạy cảm với kiểu dữ liệu,
+chúng ta chuyển kiểu dữ liệu của `y_hat` để khớp với kiểu dữ liệu của `y`.
+Kết quả là một tensor chứa các phần tử 0 (false) và 1 (true).
+Lấy tổng sẽ cho số lượng dự đoán đúng.
 
 ```{.python .input  n=9}
 %%tab pytorch, mxnet, tensorflow
@@ -192,29 +185,29 @@ def parameters(self):
         params.keys()) else self.get_scratch_params()
 ```
 
-## Summary
+## Tóm tắt
 
-Classification is a sufficiently common problem that it warrants its own convenience functions. Of central importance in classification is the *accuracy* of the classifier. Note that while we often care primarily about accuracy, we train classifiers to optimize a variety of other objectives for statistical and computational reasons. However, regardless of which loss function was minimized during training, it is useful to have a convenience method for assessing the accuracy of our classifier empirically. 
+Phân loại là một bài toán đủ phổ biến để cần có các hàm tiện ích riêng. Điều có tầm quan trọng trung tâm trong phân loại là *độ chính xác* của classifier. Lưu ý rằng mặc dù chúng ta thường chủ yếu quan tâm đến độ chính xác, chúng ta huấn luyện classifier để tối ưu nhiều mục tiêu khác nhau vì các lý do thống kê và tính toán. Tuy nhiên, bất kể hàm loss nào được tối thiểu hóa trong quá trình huấn luyện, việc có một phương thức tiện ích để đánh giá thực nghiệm độ chính xác của classifier vẫn hữu ích.
 
 
-## Exercises
+## Bài tập
 
-1. Denote by $L_\textrm{v}$ the validation loss, and let $L_\textrm{v}^\textrm{q}$ be its quick and dirty estimate computed by the loss function averaging in this section. Lastly, denote by $l_\textrm{v}^\textrm{b}$ the loss on the last minibatch. Express $L_\textrm{v}$ in terms of $L_\textrm{v}^\textrm{q}$, $l_\textrm{v}^\textrm{b}$, and the sample and minibatch sizes.
-1. Show that the quick and dirty estimate $L_\textrm{v}^\textrm{q}$ is unbiased. That is, show that $E[L_\textrm{v}] = E[L_\textrm{v}^\textrm{q}]$. Why would you still want to use $L_\textrm{v}$ instead?
-1. Given a multiclass classification loss, denoting by $l(y,y')$ the penalty of estimating $y'$ when we see $y$ and given a probabilty $p(y \mid x)$, formulate the rule for an optimal selection of $y'$. Hint: express the expected loss, using $l$ and $p(y \mid x)$.
+1. Ký hiệu $L_\textrm{v}$ là loss xác thực, và gọi $L_\textrm{v}^\textrm{q}$ là ước lượng nhanh và đơn giản của nó được tính bằng cách lấy trung bình hàm loss trong phần này. Cuối cùng, ký hiệu $l_\textrm{v}^\textrm{b}$ là loss trên minibatch cuối. Hãy biểu diễn $L_\textrm{v}$ theo $L_\textrm{v}^\textrm{q}$, $l_\textrm{v}^\textrm{b}$, cùng kích thước mẫu và minibatch.
+1. Chứng minh rằng ước lượng nhanh và đơn giản $L_\textrm{v}^\textrm{q}$ là không chệch. Nghĩa là, chứng minh rằng $E[L_\textrm{v}] = E[L_\textrm{v}^\textrm{q}]$. Vì sao bạn vẫn muốn sử dụng $L_\textrm{v}$ thay vào đó?
+1. Với một loss phân loại đa lớp, ký hiệu $l(y,y')$ là mức phạt khi ước lượng $y'$ trong khi quan sát $y$, và cho xác suất $p(y \mid x)$, hãy xây dựng quy tắc để chọn $y'$ tối ưu. Gợi ý: biểu diễn loss kỳ vọng bằng $l$ và $p(y \mid x)$.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/6808)
+[Thảo luận](https://discuss.d2l.ai/t/6808)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/6809)
+[Thảo luận](https://discuss.d2l.ai/t/6809)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/6810)
+[Thảo luận](https://discuss.d2l.ai/t/6810)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17981)
+[Thảo luận](https://discuss.d2l.ai/t/17981)
 :end_tab:

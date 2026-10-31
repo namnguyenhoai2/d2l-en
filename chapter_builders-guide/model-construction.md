@@ -3,96 +3,96 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Layers and Modules
+# Các tầng và mô-đun
 :label:`sec_model_construction`
 
-When we first introduced neural networks,
-we focused on linear models with a single output.
-Here, the entire model consists of just a single neuron.
-Note that a single neuron
-(i) takes some set of inputs;
-(ii) generates a corresponding scalar output;
-and (iii) has a set of associated parameters that can be updated
-to optimize some objective function of interest.
-Then, once we started thinking about networks with multiple outputs,
-we leveraged vectorized arithmetic
-to characterize an entire layer of neurons.
-Just like individual neurons,
-layers (i) take a set of inputs,
-(ii) generate corresponding outputs,
-and (iii) are described by a set of tunable parameters.
-When we worked through softmax regression,
-a single layer was itself the model.
-However, even when we subsequently
-introduced MLPs,
-we could still think of the model as
-retaining this same basic structure.
+Khi lần đầu giới thiệu mạng nơ-ron,
+chúng ta tập trung vào các mô hình tuyến tính với một đầu ra duy nhất.
+Ở đây, toàn bộ mô hình chỉ gồm một nơ-ron duy nhất.
+Lưu ý rằng một nơ-ron đơn lẻ
+(i) nhận một tập đầu vào;
+(ii) tạo ra một đầu ra vô hướng tương ứng;
+và (iii) có một tập tham số liên quan có thể được cập nhật
+để tối ưu hóa một hàm mục tiêu cần quan tâm.
+Sau đó, khi bắt đầu suy nghĩ về các mạng có nhiều đầu ra,
+chúng ta đã tận dụng phép toán vector hóa
+để mô tả đặc trưng cho cả một tầng nơ-ron.
+Tương tự như từng nơ-ron riêng lẻ,
+các tầng (i) nhận một tập đầu vào,
+(ii) tạo ra các đầu ra tương ứng,
+và (iii) được mô tả bởi một tập tham số có thể điều chỉnh.
+Khi tìm hiểu hồi quy softmax,
+một tầng duy nhất chính là mô hình.
+Tuy nhiên, ngay cả khi sau đó
+giới thiệu các MLP,
+chúng ta vẫn có thể xem mô hình
+là giữ nguyên cấu trúc cơ bản này.
 
-Interestingly, for MLPs,
-both the entire model and its constituent layers
-share this structure.
-The entire model takes in raw inputs (the features),
-generates outputs (the predictions),
-and possesses parameters
-(the combined parameters from all constituent layers).
-Likewise, each individual layer ingests inputs
-(supplied by the previous layer)
-generates outputs (the inputs to the subsequent layer),
-and possesses a set of tunable parameters that are updated
-according to the signal that flows backwards
-from the subsequent layer.
+Điều thú vị là đối với MLP,
+cả toàn bộ mô hình lẫn các tầng cấu thành của nó
+đều chia sẻ cấu trúc này.
+Toàn bộ mô hình nhận đầu vào thô (các đặc trưng),
+tạo ra đầu ra (các dự đoán),
+và sở hữu các tham số
+(các tham số kết hợp từ mọi tầng cấu thành).
+Tương tự, mỗi tầng riêng lẻ nhận đầu vào
+(do tầng trước đó cung cấp),
+tạo ra đầu ra (đầu vào cho tầng tiếp theo),
+và sở hữu một tập tham số có thể điều chỉnh được cập nhật
+theo tín hiệu lan truyền ngược
+từ tầng tiếp theo.
 
 
-While you might think that neurons, layers, and models
-give us enough abstractions to go about our business,
-it turns out that we often find it convenient
-to speak about components that are
-larger than an individual layer
-but smaller than the entire model.
-For example, the ResNet-152 architecture,
-which is wildly popular in computer vision,
-possesses hundreds of layers.
-These layers consist of repeating patterns of *groups of layers*. Implementing such a network one layer at a time can grow tedious.
-This concern is not just hypothetical---such
-design patterns are common in practice.
-The ResNet architecture mentioned above
-won the 2015 ImageNet and COCO computer vision competitions
-for both recognition and detection :cite:`He.Zhang.Ren.ea.2016`
-and remains a go-to architecture for many vision tasks.
-Similar architectures in which layers are arranged
-in various repeating patterns
-are now ubiquitous in other domains,
-including natural language processing and speech.
+Mặc dù bạn có thể nghĩ rằng nơ-ron, tầng và mô hình
+đã cung cấp đủ các trừu tượng để làm việc,
+trên thực tế, chúng ta thường thấy thuận tiện
+khi nói về các thành phần
+lớn hơn một tầng riêng lẻ
+nhưng nhỏ hơn toàn bộ mô hình.
+Ví dụ, kiến trúc ResNet-152,
+vốn cực kỳ phổ biến trong thị giác máy tính,
+có hàng trăm tầng.
+Các tầng này bao gồm những mẫu lặp lại của *các nhóm tầng*. Việc triển khai một mạng như vậy từng tầng một có thể trở nên tẻ nhạt.
+Mối bận tâm này không chỉ là giả thuyết---các
+mẫu thiết kế như vậy phổ biến trong thực tế.
+Kiến trúc ResNet được đề cập ở trên
+đã chiến thắng các cuộc thi thị giác máy tính ImageNet và COCO năm 2015
+ở cả nhận dạng lẫn phát hiện :cite:`He.Zhang.Ren.ea.2016`
+và vẫn là một kiến trúc được ưu tiên cho nhiều tác vụ thị giác.
+Các kiến trúc tương tự, trong đó các tầng được sắp xếp
+theo nhiều mẫu lặp lại khác nhau,
+hiện nay cũng phổ biến rộng rãi ở các lĩnh vực khác,
+bao gồm xử lý ngôn ngữ tự nhiên và tiếng nói.
 
-To implement these complex networks,
-we introduce the concept of a neural network *module*.
-A module could describe a single layer,
-a component consisting of multiple layers,
-or the entire model itself!
-One benefit of working with the module abstraction
-is that they can be combined into larger artifacts,
-often recursively. This is illustrated in :numref:`fig_blocks`. By defining code to generate modules
-of arbitrary complexity on demand,
-we can write surprisingly compact code
-and still implement complex neural networks.
+Để triển khai các mạng phức tạp này,
+chúng ta giới thiệu khái niệm *mô-đun* mạng nơ-ron.
+Một mô-đun có thể mô tả một tầng đơn lẻ,
+một thành phần gồm nhiều tầng,
+hoặc chính toàn bộ mô hình!
+Một lợi ích của việc làm việc với trừu tượng mô-đun
+là chúng có thể được kết hợp thành các cấu trúc lớn hơn,
+thường theo cách đệ quy. Điều này được minh họa trong :numref:`fig_blocks`. Bằng cách định nghĩa mã để tạo các mô-đun
+có độ phức tạp tùy ý theo yêu cầu,
+chúng ta có thể viết mã nhỏ gọn đáng ngạc nhiên
+mà vẫn triển khai được các mạng nơ-ron phức tạp.
 
-![Multiple layers are combined into modules, forming repeating patterns of larger models.](../img/blocks.svg)
+![Nhiều tầng được kết hợp thành các mô-đun, tạo nên các mẫu lặp lại của những mô hình lớn hơn.](../img/blocks.svg)
 :label:`fig_blocks`
 
 
-From a programming standpoint, a module is represented by a *class*.
-Any subclass of it must define a forward propagation method
-that transforms its input into output
-and must store any necessary parameters.
-Note that some modules do not require any parameters at all.
-Finally a module must possess a backpropagation method,
-for purposes of calculating gradients.
-Fortunately, due to some behind-the-scenes magic
-supplied by the auto differentiation
-(introduced in :numref:`sec_autograd`)
-when defining our own module,
-we only need to worry about parameters
-and the forward propagation method.
+Từ góc độ lập trình, một mô-đun được biểu diễn bằng một *lớp*.
+Mọi lớp con của nó phải định nghĩa một phương thức lan truyền xuôi
+biến đổi đầu vào thành đầu ra
+và phải lưu trữ mọi tham số cần thiết.
+Lưu ý rằng một số mô-đun hoàn toàn không cần bất kỳ tham số nào.
+Cuối cùng, một mô-đun phải có phương thức lan truyền ngược,
+nhằm mục đích tính gradient.
+May mắn thay, nhờ một số phép thuật hậu trường
+do tự động vi phân
+(được giới thiệu trong :numref:`sec_autograd`)
+cung cấp, khi định nghĩa mô-đun riêng,
+chúng ta chỉ cần quan tâm đến các tham số
+và phương thức lan truyền xuôi.
 
 ```{.python .input}
 %%tab mxnet
@@ -122,14 +122,14 @@ import jax
 from jax import numpy as jnp
 ```
 
-[**To begin, we revisit the code
-that we used to implement MLPs**]
+[**Để bắt đầu, chúng ta xem lại đoạn mã
+đã dùng để triển khai MLP**]
 (:numref:`sec_mlp`).
-The following code generates a network
-with one fully connected hidden layer
-with 256 units and ReLU activation,
-followed by a fully connected output layer
-with ten units (no activation function).
+Đoạn mã sau tạo một mạng
+có một tầng ẩn kết nối đầy đủ
+với 256 đơn vị và kích hoạt ReLU,
+tiếp theo là một tầng đầu ra kết nối đầy đủ
+với mười đơn vị (không có hàm kích hoạt).
 
 ```{.python .input}
 %%tab mxnet
@@ -172,91 +172,91 @@ net.apply(params, X).shape
 ```
 
 :begin_tab:`mxnet`
-In this example, we constructed
-our model by instantiating an `nn.Sequential`,
-assigning the returned object to the `net` variable.
-Next, we repeatedly call its `add` method,
-appending layers in the order
-that they should be executed.
-In short, `nn.Sequential` defines a special kind of `Block`,
-the class that presents a *module* in Gluon.
-It maintains an ordered list of constituent `Block`s.
-The `add` method simply facilitates
-the addition of each successive `Block` to the list.
-Note that each layer is an instance of the `Dense` class
-which is itself a subclass of `Block`.
-The forward propagation (`forward`) method is also remarkably simple:
-it chains each `Block` in the list together,
-passing the output of each as input to the next.
-Note that until now, we have been invoking our models
-via the construction `net(X)` to obtain their outputs.
-This is actually just shorthand for `net.forward(X)`,
-a slick Python trick achieved via
-the `Block` class's `__call__` method.
+Trong ví dụ này, chúng ta xây dựng
+mô hình bằng cách khởi tạo một `nn.Sequential`,
+gán đối tượng trả về cho biến `net`.
+Tiếp theo, chúng ta gọi lặp lại phương thức `add` của nó,
+nối thêm các tầng theo thứ tự
+mà chúng cần được thực thi.
+Tóm lại, `nn.Sequential` định nghĩa một dạng đặc biệt của `Block`,
+lớp biểu diễn một *mô-đun* trong Gluon.
+Nó duy trì một danh sách có thứ tự gồm các `Block` cấu thành.
+Phương thức `add` chỉ đơn giản tạo điều kiện
+để thêm từng `Block` kế tiếp vào danh sách.
+Lưu ý rằng mỗi tầng là một thực thể của lớp `Dense`
+mà bản thân nó là lớp con của `Block`.
+Phương thức lan truyền xuôi (`forward`) cũng rất đơn giản:
+nó liên kết từng `Block` trong danh sách lại với nhau,
+truyền đầu ra của mỗi phần làm đầu vào cho phần tiếp theo.
+Lưu ý rằng cho đến nay, chúng ta vẫn gọi các mô hình
+thông qua cấu trúc `net(X)` để nhận đầu ra.
+Đây thực chất chỉ là cách viết tắt cho `net.forward(X)`,
+một thủ thuật Python tinh tế được thực hiện thông qua
+phương thức `__call__` của lớp `Block`.
 :end_tab:
 
 :begin_tab:`pytorch`
-In this example, we constructed
-our model by instantiating an `nn.Sequential`, with layers in the order
-that they should be executed passed as arguments.
-In short, (**`nn.Sequential` defines a special kind of `Module`**),
-the class that presents a module in PyTorch.
-It maintains an ordered list of constituent `Module`s.
-Note that each of the two fully connected layers is an instance of the `Linear` class
-which is itself a subclass of `Module`.
-The forward propagation (`forward`) method is also remarkably simple:
-it chains each module in the list together,
-passing the output of each as input to the next.
-Note that until now, we have been invoking our models
-via the construction `net(X)` to obtain their outputs.
-This is actually just shorthand for `net.__call__(X)`.
+Trong ví dụ này, chúng ta xây dựng
+mô hình bằng cách khởi tạo một `nn.Sequential`, với các tầng theo thứ tự
+mà chúng cần được thực thi được truyền vào làm đối số.
+Tóm lại, (**`nn.Sequential` định nghĩa một dạng đặc biệt của `Module`**),
+lớp biểu diễn một mô-đun trong PyTorch.
+Nó duy trì một danh sách có thứ tự gồm các `Module` cấu thành.
+Lưu ý rằng mỗi trong hai tầng kết nối đầy đủ là một thực thể của lớp `Linear`
+mà bản thân nó là lớp con của `Module`.
+Phương thức lan truyền xuôi (`forward`) cũng rất đơn giản:
+nó liên kết từng mô-đun trong danh sách lại với nhau,
+truyền đầu ra của mỗi mô-đun làm đầu vào cho mô-đun tiếp theo.
+Lưu ý rằng cho đến nay, chúng ta vẫn gọi các mô hình
+thông qua cấu trúc `net(X)` để nhận đầu ra.
+Đây thực chất chỉ là cách viết tắt cho `net.__call__(X)`.
 :end_tab:
 
 :begin_tab:`tensorflow`
-In this example, we constructed
-our model by instantiating an `keras.models.Sequential`, with layers in the order
-that they should be executed passed as arguments.
-In short, `Sequential` defines a special kind of `keras.Model`,
-the class that presents a module in Keras.
-It maintains an ordered list of constituent `Model`s.
-Note that each of the two fully connected layers is an instance of the `Dense` class
-which is itself a subclass of `Model`.
-The forward propagation (`call`) method is also remarkably simple:
-it chains each module in the list together,
-passing the output of each as input to the next.
-Note that until now, we have been invoking our models
-via the construction `net(X)` to obtain their outputs.
-This is actually just shorthand for `net.call(X)`,
-a slick Python trick achieved via
-the module class's `__call__` method.
+Trong ví dụ này, chúng ta xây dựng
+mô hình bằng cách khởi tạo một `keras.models.Sequential`, với các tầng theo thứ tự
+mà chúng cần được thực thi được truyền vào làm đối số.
+Tóm lại, `Sequential` định nghĩa một dạng đặc biệt của `keras.Model`,
+lớp biểu diễn một mô-đun trong Keras.
+Nó duy trì một danh sách có thứ tự gồm các `Model` cấu thành.
+Lưu ý rằng mỗi trong hai tầng kết nối đầy đủ là một thực thể của lớp `Dense`
+mà bản thân nó là lớp con của `Model`.
+Phương thức lan truyền xuôi (`call`) cũng rất đơn giản:
+nó liên kết từng mô-đun trong danh sách lại với nhau,
+truyền đầu ra của mỗi mô-đun làm đầu vào cho mô-đun tiếp theo.
+Lưu ý rằng cho đến nay, chúng ta vẫn gọi các mô hình
+thông qua cấu trúc `net(X)` để nhận đầu ra.
+Đây thực chất chỉ là cách viết tắt cho `net.call(X)`,
+một thủ thuật Python tinh tế được thực hiện thông qua
+phương thức `__call__` của lớp mô-đun.
 :end_tab:
 
-## [**A Custom Module**]
+## [**Một mô-đun tùy chỉnh**]
 
-Perhaps the easiest way to develop intuition
-about how a module works
-is to implement one ourselves.
-Before we do that,
-we briefly summarize the basic functionality
-that each module must provide:
-
-
-1. Ingest input data as arguments to its forward propagation method.
-1. Generate an output by having the forward propagation method return a value. Note that the output may have a different shape from the input. For example, the first fully connected layer in our model above ingests an input of arbitrary dimension but returns an output of dimension 256.
-1. Calculate the gradient of its output with respect to its input, which can be accessed via its backpropagation method. Typically this happens automatically.
-1. Store and provide access to those parameters necessary
-   for executing the forward propagation computation.
-1. Initialize model parameters as needed.
+Có lẽ cách dễ nhất để phát triển trực giác
+về cách một mô-đun hoạt động
+là tự triển khai một mô-đun.
+Trước khi làm điều đó,
+chúng ta tóm tắt ngắn gọn chức năng cơ bản
+mà mỗi mô-đun phải cung cấp:
 
 
-In the following snippet,
-we code up a module from scratch
-corresponding to an MLP
-with one hidden layer with 256 hidden units,
-and a 10-dimensional output layer.
-Note that the `MLP` class below inherits the class that represents a module.
-We will heavily rely on the parent class's methods,
-supplying only our own constructor (the `__init__` method in Python) and the forward propagation method.
+1. Nhận dữ liệu đầu vào làm đối số cho phương thức lan truyền xuôi.
+1. Tạo đầu ra bằng cách để phương thức lan truyền xuôi trả về một giá trị. Lưu ý rằng đầu ra có thể có hình dạng khác với đầu vào. Ví dụ, tầng kết nối đầy đủ đầu tiên trong mô hình ở trên nhận đầu vào có số chiều tùy ý nhưng trả về đầu ra có số chiều 256.
+1. Tính gradient của đầu ra theo đầu vào, có thể được truy cập qua phương thức lan truyền ngược. Thông thường, việc này diễn ra tự động.
+1. Lưu trữ và cung cấp quyền truy cập vào các tham số cần thiết
+   để thực hiện phép tính lan truyền xuôi.
+1. Khởi tạo các tham số mô hình khi cần.
+
+
+Trong đoạn mã sau,
+chúng ta lập trình một mô-đun từ đầu
+tương ứng với một MLP
+có một tầng ẩn với 256 đơn vị ẩn,
+và một tầng đầu ra 10 chiều.
+Lưu ý rằng lớp `MLP` bên dưới kế thừa lớp biểu diễn một mô-đun.
+Chúng ta sẽ phụ thuộc nhiều vào các phương thức của lớp cha,
+chỉ cung cấp constructor riêng (phương thức `__init__` trong Python) và phương thức lan truyền xuôi.
 
 ```{.python .input}
 %%tab mxnet
@@ -320,36 +320,36 @@ class MLP(nn.Module):
         return self.out(nn.relu(self.hidden(X)))
 ```
 
-Let's first focus on the forward propagation method.
-Note that it takes `X` as input,
-calculates the hidden representation
-with the activation function applied,
-and outputs its logits.
-In this `MLP` implementation,
-both layers are instance variables.
-To see why this is reasonable, imagine
-instantiating two MLPs, `net1` and `net2`,
-and training them on different data.
-Naturally, we would expect them
-to represent two different learned models.
+Trước tiên, hãy tập trung vào phương thức lan truyền xuôi.
+Lưu ý rằng nó nhận `X` làm đầu vào,
+tính biểu diễn ẩn
+có áp dụng hàm kích hoạt,
+và xuất ra các logits của nó.
+Trong phần triển khai `MLP` này,
+cả hai tầng đều là biến thực thể.
+Để thấy vì sao điều này hợp lý, hãy tưởng tượng
+khởi tạo hai MLP, `net1` và `net2`,
+và huấn luyện chúng trên các dữ liệu khác nhau.
+Một cách tự nhiên, chúng ta sẽ mong đợi chúng
+biểu diễn hai mô hình đã học khác nhau.
 
-We [**instantiate the MLP's layers**]
-in the constructor
-(**and subsequently invoke these layers**)
-on each call to the forward propagation method.
-Note a few key details.
-First, our customized `__init__` method
-invokes the parent class's `__init__` method
-via `super().__init__()`
-sparing us the pain of restating
-boilerplate code applicable to most modules.
-We then instantiate our two fully connected layers,
-assigning them to `self.hidden` and `self.out`.
-Note that unless we implement a new layer,
-we need not worry about the backpropagation method
-or parameter initialization.
-The system will generate these methods automatically.
-Let's try this out.
+Chúng ta [**khởi tạo các layer của MLP**]
+trong constructor
+(**và sau đó gọi các layer này**)
+trong mỗi lần gọi phương thức forward propagation.
+Hãy lưu ý một vài chi tiết quan trọng.
+Trước hết, phương thức `__init__` tùy chỉnh của chúng ta
+gọi phương thức `__init__` của lớp cha
+thông qua `super().__init__()`,
+giúp chúng ta không phải vất vả viết lại
+mã boilerplate áp dụng cho hầu hết các module.
+Sau đó, chúng ta khởi tạo hai layer fully connected,
+gán chúng cho `self.hidden` và `self.out`.
+Lưu ý rằng trừ khi chúng ta triển khai một layer mới,
+chúng ta không cần lo về phương thức backpropagation
+hay việc khởi tạo parameter.
+Hệ thống sẽ tự động tạo các phương thức này.
+Hãy thử điều này.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -366,32 +366,32 @@ params = net.init(d2l.get_key(), X)
 net.apply(params, X).shape
 ```
 
-A key virtue of the module abstraction is its versatility.
-We can subclass a module to create layers
-(such as the fully connected layer class),
-entire models (such as the `MLP` class above),
-or various components of intermediate complexity.
-We exploit this versatility
-throughout the coming chapters,
-such as when addressing
+Một ưu điểm quan trọng của abstraction module là tính linh hoạt.
+Chúng ta có thể kế thừa một module để tạo các layer
+(chẳng hạn như lớp layer fully connected),
+toàn bộ model (chẳng hạn như lớp `MLP` ở trên),
+hoặc các thành phần có độ phức tạp trung gian khác nhau.
+Chúng ta sẽ khai thác tính linh hoạt này
+xuyên suốt các chương tiếp theo,
+chẳng hạn khi đề cập đến
 convolutional neural networks.
 
 
-## [**The Sequential Module**]
+## [**Module Sequential**]
 :label:`subsec_model-construction-sequential`
 
-We can now take a closer look
-at how the `Sequential` class works.
-Recall that `Sequential` was designed
-to daisy-chain other modules together.
-To build our own simplified `MySequential`,
-we just need to define two key methods:
+Bây giờ, chúng ta có thể xem xét kỹ hơn
+cách lớp `Sequential` hoạt động.
+Hãy nhớ rằng `Sequential` được thiết kế
+để nối chuỗi các module khác lại với nhau.
+Để xây dựng `MySequential` đơn giản hóa của riêng mình,
+chúng ta chỉ cần định nghĩa hai phương thức chính:
 
-1. A method for appending modules one by one to a list.
-1. A forward propagation method for passing an input through the chain of modules, in the same order as they were appended.
+1. Một phương thức để lần lượt thêm từng module vào một danh sách.
+1. Một phương thức forward propagation để truyền input qua chuỗi module, theo đúng thứ tự chúng được thêm vào.
 
-The following `MySequential` class delivers the same
-functionality of the default `Sequential` class.
+Lớp `MySequential` sau đây cung cấp cùng
+chức năng như lớp `Sequential` mặc định.
 
 ```{.python .input}
 %%tab mxnet
@@ -451,31 +451,31 @@ class MySequential(nn.Module):
 ```
 
 :begin_tab:`mxnet`
-The `add` method adds a single block
-to the ordered dictionary `_children`.
-You might wonder why every Gluon `Block`
-possesses a `_children` attribute
-and why we used it rather than just
-define a Python list ourselves.
-In short the chief advantage of `_children`
-is that during our block's parameter initialization,
-Gluon knows to look inside the `_children`
-dictionary to find sub-blocks whose
-parameters also need to be initialized.
+Phương thức `add` thêm một block
+vào ordered dictionary `_children`.
+Bạn có thể tự hỏi tại sao mọi `Block` của Gluon
+đều có thuộc tính `_children`
+và tại sao chúng ta dùng nó thay vì chỉ
+tự định nghĩa một Python list.
+Tóm lại, ưu điểm chủ yếu của `_children`
+là trong quá trình khởi tạo parameter của block,
+Gluon biết cần tìm bên trong dictionary `_children`
+để tìm các sub-block có
+parameter cũng cần được khởi tạo.
 :end_tab:
 
 :begin_tab:`pytorch`
-In the `__init__` method, we add every module
-by calling the `add_modules` method. These modules can be accessed by the `children` method at a later date.
-In this way the system knows the added modules,
-and it will properly initialize each module's parameters.
+Trong phương thức `__init__`, chúng ta thêm từng module
+bằng cách gọi phương thức `add_modules`. Các module này sau đó có thể được truy cập bằng phương thức `children`.
+Theo cách này, hệ thống biết các module đã được thêm vào,
+và sẽ khởi tạo đúng parameter của từng module.
 :end_tab:
 
-When our `MySequential`'s forward propagation method is invoked,
-each added module is executed
-in the order in which they were added.
-We can now reimplement an MLP
-using our `MySequential` class.
+Khi phương thức forward propagation của `MySequential` được gọi,
+mỗi module đã thêm sẽ được thực thi
+theo thứ tự chúng được thêm vào.
+Bây giờ, chúng ta có thể triển khai lại một MLP
+bằng lớp `MySequential` của mình.
 
 ```{.python .input}
 %%tab mxnet
@@ -507,42 +507,42 @@ params = net.init(d2l.get_key(), X)
 net.apply(params, X).shape
 ```
 
-Note that this use of `MySequential`
-is identical to the code we previously wrote
-for the `Sequential` class
-(as described in :numref:`sec_mlp`).
+Lưu ý rằng cách sử dụng `MySequential` này
+giống hệt với mã mà trước đây chúng ta đã viết
+cho lớp `Sequential`
+(như được mô tả trong :numref:`sec_mlp`).
 
 
-## [**Executing Code in the Forward Propagation Method**]
+## [**Thực thi Code trong Phương thức Forward Propagation**]
 
-The `Sequential` class makes model construction easy,
-allowing us to assemble new architectures
-without having to define our own class.
-However, not all architectures are simple daisy chains.
-When greater flexibility is required,
-we will want to define our own blocks.
-For example, we might want to execute
-Python's control flow within the forward propagation method.
-Moreover, we might want to perform
-arbitrary mathematical operations,
-not simply relying on predefined neural network layers.
+Lớp `Sequential` giúp việc xây dựng model trở nên dễ dàng,
+cho phép chúng ta lắp ghép các kiến trúc mới
+mà không cần định nghĩa lớp riêng.
+Tuy nhiên, không phải mọi kiến trúc đều là chuỗi nối đơn giản.
+Khi cần linh hoạt hơn,
+chúng ta sẽ muốn định nghĩa các block riêng.
+Ví dụ, chúng ta có thể muốn thực thi
+control flow của Python trong phương thức forward propagation.
+Hơn nữa, chúng ta có thể muốn thực hiện
+các phép toán học tùy ý,
+thay vì chỉ dựa vào các neural network layer được định nghĩa sẵn.
 
-You may have noticed that until now,
-all of the operations in our networks
-have acted upon our network's activations
-and its parameters.
-Sometimes, however, we might want to
-incorporate terms
-that are neither the result of previous layers
-nor updatable parameters.
-We call these *constant parameters*.
-Say for example that we want a layer
-that calculates the function
+Bạn có thể đã nhận thấy rằng cho đến giờ,
+mọi phép toán trong network của chúng ta
+đều tác động lên activation
+và parameter của network.
+Tuy nhiên, đôi khi chúng ta có thể muốn
+đưa vào các hạng tử
+không phải là kết quả của các layer trước đó
+cũng không phải là parameter có thể cập nhật.
+Chúng ta gọi chúng là *constant parameters*.
+Ví dụ, giả sử chúng ta muốn một layer
+tính hàm
 $f(\mathbf{x},\mathbf{w}) = c \cdot \mathbf{w}^\top \mathbf{x}$,
-where $\mathbf{x}$ is the input, $\mathbf{w}$ is our parameter,
-and $c$ is some specified constant
-that is not updated during optimization.
-So we implement a `FixedHiddenMLP` class as follows.
+trong đó $\mathbf{x}$ là input, $\mathbf{w}$ là parameter của chúng ta,
+và $c$ là một hằng số xác định
+không được cập nhật trong quá trình optimization.
+Vì vậy, chúng ta triển khai một lớp `FixedHiddenMLP` như sau.
 
 ```{.python .input}
 %%tab mxnet
@@ -638,29 +638,29 @@ class FixedHiddenMLP(nn.Module):
         return X.sum()
 ```
 
-In this model,
-we implement a hidden layer whose weights
-(`self.rand_weight`) are initialized randomly
-at instantiation and are thereafter constant.
-This weight is not a model parameter
-and thus it is never updated by backpropagation.
-The network then passes the output of this "fixed" layer
-through a fully connected layer.
+Trong model này,
+chúng ta triển khai một hidden layer có trọng số
+(`self.rand_weight`) được khởi tạo ngẫu nhiên
+khi khởi tạo và sau đó giữ nguyên không đổi.
+Trọng số này không phải là model parameter
+và do đó không bao giờ được cập nhật bởi backpropagation.
+Sau đó, network truyền output của layer "cố định" này
+qua một layer fully connected.
 
-Note that before returning the output,
-our model did something unusual.
-We ran a while-loop, testing
-on the condition its $\ell_1$ norm is larger than $1$,
-and dividing our output vector by $2$
-until it satisfied the condition.
-Finally, we returned the sum of the entries in `X`.
-To our knowledge, no standard neural network
-performs this operation.
-Note that this particular operation may not be useful
-in any real-world task.
-Our point is only to show you how to integrate
-arbitrary code into the flow of your
-neural network computations.
+Lưu ý rằng trước khi trả về output,
+model của chúng ta đã thực hiện một điều bất thường.
+Chúng ta chạy một while-loop, kiểm tra
+điều kiện rằng chuẩn $\ell_1$ của nó lớn hơn $1$,
+và chia output vector cho $2$
+cho đến khi nó thỏa mãn điều kiện.
+Cuối cùng, chúng ta trả về tổng các phần tử trong `X`.
+Theo hiểu biết của chúng tôi, không có neural network tiêu chuẩn nào
+thực hiện phép toán này.
+Lưu ý rằng phép toán cụ thể này có thể không hữu ích
+trong bất kỳ tác vụ thực tế nào.
+Mục đích của chúng tôi chỉ là cho bạn thấy cách tích hợp
+code tùy ý vào luồng
+tính toán của neural network.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -677,10 +677,10 @@ params = net.init(d2l.get_key(), X)
 net.apply(params, X)
 ```
 
-We can [**mix and match various
-ways of assembling modules together.**]
-In the following example, we nest modules
-in some creative ways.
+Chúng ta có thể [**kết hợp linh hoạt nhiều
+cách lắp ghép module với nhau.**]
+Trong ví dụ sau, chúng ta lồng các module
+theo một số cách sáng tạo.
 
 ```{.python .input}
 %%tab mxnet
@@ -754,35 +754,35 @@ params = chimera.init(d2l.get_key(), X)
 chimera.apply(params, X)
 ```
 
-## Summary
+## Tóm tắt
 
-Individual layers can be modules.
-Many layers can comprise a module.
-Many modules can comprise a module.
+Các layer riêng lẻ có thể là module.
+Nhiều layer có thể tạo thành một module.
+Nhiều module có thể tạo thành một module.
 
-A module can contain code.
-Modules take care of lots of housekeeping, including parameter initialization and backpropagation.
-Sequential concatenations of layers and modules are handled by the `Sequential` module.
+Một module có thể chứa code.
+Module xử lý nhiều công việc quản lý, bao gồm khởi tạo parameter và backpropagation.
+Các chuỗi kết hợp tuần tự của layer và module được xử lý bởi module `Sequential`.
 
 
-## Exercises
+## Bài tập
 
-1. What kinds of problems will occur if you change `MySequential` to store modules in a Python list?
-1. Implement a module that takes two modules as an argument, say `net1` and `net2` and returns the concatenated output of both networks in the forward propagation. This is also called a *parallel module*.
-1. Assume that you want to concatenate multiple instances of the same network. Implement a factory function that generates multiple instances of the same module and build a larger network from it.
+1. Những loại vấn đề nào sẽ xảy ra nếu bạn thay đổi `MySequential` để lưu trữ module trong một Python list?
+1. Hãy triển khai một module nhận hai module làm đối số, chẳng hạn `net1` và `net2`, rồi trả về output được nối của cả hai network trong forward propagation. Đây cũng được gọi là một *parallel module*.
+1. Giả sử bạn muốn nối nhiều instance của cùng một network. Hãy triển khai một factory function tạo ra nhiều instance của cùng một module và xây dựng một network lớn hơn từ chúng.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/54)
+[Thảo luận](https://discuss.d2l.ai/t/54)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/55)
+[Thảo luận](https://discuss.d2l.ai/t/55)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/264)
+[Thảo luận](https://discuss.d2l.ai/t/264)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17989)
+[Thảo luận](https://discuss.d2l.ai/t/17989)
 :end_tab:

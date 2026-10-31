@@ -3,22 +3,22 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Custom Layers
+# Các Layer Tùy chỉnh
 
-One factor behind deep learning's success
-is the availability of a wide range of layers
-that can be composed in creative ways
-to design architectures suitable
-for a wide variety of tasks.
-For instance, researchers have invented layers
-specifically for handling images, text,
-looping over sequential data,
-and
-performing dynamic programming.
-Sooner or later, you will need
-a layer that does not exist yet in the deep learning framework.
-In these cases, you must build a custom layer.
-In this section, we show you how.
+Một yếu tố đằng sau thành công của deep learning
+là sự sẵn có của nhiều loại layer
+có thể được kết hợp theo những cách sáng tạo
+để thiết kế các kiến trúc phù hợp
+cho rất nhiều tác vụ khác nhau.
+Ví dụ, các nhà nghiên cứu đã phát minh ra các layer
+chuyên biệt để xử lý hình ảnh, văn bản,
+lặp qua dữ liệu tuần tự,
+và
+thực hiện dynamic programming.
+Sớm hay muộn, bạn sẽ cần
+một layer chưa tồn tại trong framework deep learning.
+Trong những trường hợp này, bạn phải xây dựng một layer tùy chỉnh.
+Trong phần này, chúng tôi sẽ hướng dẫn bạn cách thực hiện.
 
 ```{.python .input}
 %%tab mxnet
@@ -50,16 +50,16 @@ import jax
 from jax import numpy as jnp
 ```
 
-## (**Layers without Parameters**)
+## (**Các Layer Không có Tham số**)
 
-To start, we construct a custom layer
-that does not have any parameters of its own.
-This should look familiar if you recall our
-introduction to modules in :numref:`sec_model_construction`.
-The following `CenteredLayer` class simply
-subtracts the mean from its input.
-To build it, we simply need to inherit
-from the base layer class and implement the forward propagation function.
+Trước tiên, chúng ta xây dựng một layer tùy chỉnh
+không có bất kỳ tham số nào riêng.
+Điều này hẳn sẽ quen thuộc nếu bạn nhớ lại phần
+giới thiệu về module trong :numref:`sec_model_construction`.
+Lớp `CenteredLayer` dưới đây chỉ đơn giản
+trừ giá trị trung bình khỏi đầu vào của nó.
+Để xây dựng nó, chúng ta chỉ cần kế thừa
+từ lớp layer cơ sở và triển khai hàm lan truyền xuôi.
 
 ```{.python .input}
 %%tab mxnet
@@ -98,7 +98,7 @@ class CenteredLayer(nn.Module):
         return X - X.mean()
 ```
 
-Let's verify that our layer works as intended by feeding some data through it.
+Hãy xác minh layer của chúng ta hoạt động như mong muốn bằng cách truyền một số dữ liệu qua nó.
 
 ```{.python .input}
 %%tab all
@@ -106,8 +106,8 @@ layer = CenteredLayer()
 layer(d2l.tensor([1.0, 2, 3, 4, 5]))
 ```
 
-We can now [**incorporate our layer as a component
-in constructing more complex models.**]
+Giờ đây, chúng ta có thể [**tích hợp layer của mình như một thành phần
+để xây dựng các mô hình phức tạp hơn.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -131,16 +131,16 @@ net = tf.keras.Sequential([tf.keras.layers.Dense(128), CenteredLayer()])
 net = nn.Sequential([nn.Dense(128), CenteredLayer()])
 ```
 
-As an extra sanity check, we can send random data
-through the network and check that the mean is in fact 0.
-Because we are dealing with floating point numbers,
-we may still see a very small nonzero number
-due to quantization.
+Để kiểm tra thêm tính hợp lý, chúng ta có thể truyền dữ liệu ngẫu nhiên
+qua mạng và kiểm tra xem giá trị trung bình có thực sự bằng 0 hay không.
+Vì đang làm việc với các số dấu phẩy động,
+chúng ta vẫn có thể thấy một số khác 0 rất nhỏ
+do lượng tử hóa.
 
 :begin_tab:`jax`
-Here we utilize the `init_with_output` method which returns both the output of
-the network as well as the parameters. In this case we only focus on the
-output.
+Ở đây, chúng ta sử dụng phương thức `init_with_output`, phương thức này trả về cả đầu ra của
+mạng lẫn các tham số. Trong trường hợp này, chúng ta chỉ tập trung vào
+đầu ra.
 :end_tab:
 
 ```{.python .input}
@@ -162,24 +162,24 @@ Y, _ = net.init_with_output(d2l.get_key(), jax.random.uniform(d2l.get_key(),
 Y.mean()
 ```
 
-## [**Layers with Parameters**]
+## [**Các Layer có Tham số**]
 
-Now that we know how to define simple layers,
-let's move on to defining layers with parameters
-that can be adjusted through training.
-We can use built-in functions to create parameters, which
-provide some basic housekeeping functionality.
-In particular, they govern access, initialization,
-sharing, saving, and loading model parameters.
-This way, among other benefits, we will not need to write
-custom serialization routines for every custom layer.
+Bây giờ khi đã biết cách định nghĩa các layer đơn giản,
+hãy chuyển sang định nghĩa các layer có tham số
+có thể được điều chỉnh thông qua huấn luyện.
+Chúng ta có thể dùng các hàm có sẵn để tạo tham số, chúng
+cung cấp một số chức năng quản lý cơ bản.
+Cụ thể, chúng quản lý việc truy cập, khởi tạo,
+chia sẻ, lưu và tải các tham số mô hình.
+Nhờ đó, cùng với các lợi ích khác, chúng ta sẽ không cần viết
+các quy trình tuần tự hóa tùy chỉnh cho từng layer tùy chỉnh.
 
-Now let's implement our own version of the  fully connected layer.
-Recall that this layer requires two parameters,
-one to represent the weight and the other for the bias.
-In this implementation, we bake in the ReLU activation as a default.
-This layer requires two input arguments: `in_units` and `units`, which
-denote the number of inputs and outputs, respectively.
+Bây giờ, hãy triển khai phiên bản riêng của chúng ta cho layer fully connected.
+Hãy nhớ rằng layer này cần hai tham số,
+một tham số biểu diễn weight và tham số còn lại biểu diễn bias.
+Trong triển khai này, chúng ta đặt sẵn activation ReLU làm mặc định.
+Layer này cần hai đối số đầu vào: `in_units` và `units`, lần lượt
+biểu thị số lượng đầu vào và đầu ra.
 
 ```{.python .input}
 %%tab mxnet
@@ -245,13 +245,13 @@ class MyDense(nn.Module):
 ```
 
 :begin_tab:`mxnet, tensorflow, jax`
-Next, we instantiate the `MyDense` class
-and access its model parameters.
+Tiếp theo, chúng ta khởi tạo lớp `MyDense`
+và truy cập các tham số mô hình của nó.
 :end_tab:
 
 :begin_tab:`pytorch`
-Next, we instantiate the `MyLinear` class
-and access its model parameters.
+Tiếp theo, chúng ta khởi tạo lớp `MyLinear`
+và truy cập các tham số mô hình của nó.
 :end_tab:
 
 ```{.python .input}
@@ -280,7 +280,7 @@ params = dense.init(d2l.get_key(), jnp.zeros((3, 5)))
 params
 ```
 
-We can [**directly carry out forward propagation calculations using custom layers.**]
+Chúng ta có thể [**trực tiếp thực hiện các phép tính lan truyền xuôi bằng các layer tùy chỉnh.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -304,8 +304,8 @@ dense.apply(params, jax.random.uniform(d2l.get_key(),
                                        (2, 5)))
 ```
 
-We can also (**construct models using custom layers.**)
-Once we have that we can use it just like the built-in fully connected layer.
+Chúng ta cũng có thể (**xây dựng mô hình bằng các layer tùy chỉnh.**)
+Khi đã có nó, chúng ta có thể sử dụng nó giống như layer fully connected có sẵn.
 
 ```{.python .input}
 %%tab mxnet
@@ -336,31 +336,31 @@ Y, _ = net.init_with_output(d2l.get_key(), jax.random.uniform(d2l.get_key(),
 Y
 ```
 
-## Summary
+## Tóm tắt
 
-We can design custom layers via the basic layer class. This allows us to define flexible new layers that behave differently from any existing layers in the library.
-Once defined, custom layers can be invoked in arbitrary contexts and architectures.
-Layers can have local parameters, which can be created through built-in functions.
+Chúng ta có thể thiết kế các layer tùy chỉnh thông qua lớp layer cơ sở. Điều này cho phép chúng ta định nghĩa các layer mới linh hoạt, hoạt động khác với bất kỳ layer hiện có nào trong thư viện.
+Sau khi được định nghĩa, các layer tùy chỉnh có thể được gọi trong các ngữ cảnh và kiến trúc tùy ý.
+Các layer có thể có các tham số cục bộ, được tạo thông qua các hàm có sẵn.
 
 
-## Exercises
+## Bài tập
 
-1. Design a layer that takes an input and computes a tensor reduction,
-   i.e., it returns $y_k = \sum_{i, j} W_{ijk} x_i x_j$.
-1. Design a layer that returns the leading half of the Fourier coefficients of the data.
+1. Thiết kế một layer nhận đầu vào và tính phép rút gọn tensor,
+   tức là, nó trả về $y_k = \sum_{i, j} W_{ijk} x_i x_j$.
+1. Thiết kế một layer trả về nửa đầu các hệ số Fourier của dữ liệu.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/58)
+[Thảo luận](https://discuss.d2l.ai/t/58)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/59)
+[Thảo luận](https://discuss.d2l.ai/t/59)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/279)
+[Thảo luận](https://discuss.d2l.ai/t/279)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17993)
+[Thảo luận](https://discuss.d2l.ai/t/17993)
 :end_tab:

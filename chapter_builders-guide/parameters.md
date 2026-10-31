@@ -3,36 +3,36 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Parameter Management
+# Quản lý tham số
 
-Once we have chosen an architecture
-and set our hyperparameters,
-we proceed to the training loop,
-where our goal is to find parameter values
-that minimize our loss function.
-After training, we will need these parameters
-in order to make future predictions.
-Additionally, we will sometimes wish
-to extract the parameters
-perhaps to reuse them in some other context,
-to save our model to disk so that
-it may be executed in other software,
-or for examination in the hope of
-gaining scientific understanding.
+Sau khi đã chọn một kiến trúc
+và thiết lập các hyperparameter,
+chúng ta tiếp tục đến vòng lặp huấn luyện,
+nơi mục tiêu là tìm các giá trị tham số
+giảm thiểu hàm mất mát của chúng ta.
+Sau khi huấn luyện, chúng ta sẽ cần các tham số này
+để đưa ra các dự đoán trong tương lai.
+Ngoài ra, đôi khi chúng ta cũng muốn
+trích xuất các tham số,
+có thể để tái sử dụng chúng trong một ngữ cảnh khác,
+lưu mô hình vào đĩa để
+có thể thực thi trong phần mềm khác,
+hoặc kiểm tra chúng với hy vọng
+thu được hiểu biết khoa học.
 
-Most of the time, we will be able
-to ignore the nitty-gritty details
-of how parameters are declared
-and manipulated, relying on deep learning frameworks
-to do the heavy lifting.
-However, when we move away from
-stacked architectures with standard layers,
-we will sometimes need to get into the weeds
-of declaring and manipulating parameters.
-In this section, we cover the following:
+Phần lớn thời gian, chúng ta có thể
+bỏ qua các chi tiết vụn vặt
+về cách khai báo và thao tác tham số,
+dựa vào các framework deep learning
+để thực hiện phần việc nặng nhọc.
+Tuy nhiên, khi rời xa
+các kiến trúc xếp chồng với các layer tiêu chuẩn,
+đôi khi chúng ta sẽ cần đi sâu vào
+việc khai báo và thao tác tham số.
+Trong phần này, chúng ta sẽ trình bày:
 
-* Accessing parameters for debugging, diagnostics, and visualizations.
-* Sharing parameters across different model components.
+* Truy cập tham số để debug, chẩn đoán và trực quan hóa.
+* Chia sẻ tham số giữa các thành phần mô hình khác nhau.
 
 ```{.python .input}
 %%tab mxnet
@@ -60,7 +60,7 @@ import jax
 from jax import numpy as jnp
 ```
 
-(**We start by focusing on an MLP with one hidden layer.**)
+(**Chúng ta bắt đầu bằng cách tập trung vào một MLP có một hidden layer.**)
 
 ```{.python .input}
 %%tab mxnet
@@ -104,30 +104,30 @@ params = net.init(d2l.get_key(), X)
 net.apply(params, X).shape
 ```
 
-## [**Parameter Access**]
+## [**Truy cập tham số**]
 :label:`subsec_param-access`
 
-Let's start with how to access parameters
-from the models that you already know.
+Hãy bắt đầu với cách truy cập các tham số
+từ những mô hình mà bạn đã biết.
 
 :begin_tab:`mxnet, pytorch, tensorflow`
-When a model is defined via the `Sequential` class,
-we can first access any layer by indexing
-into the model as though it were a list.
-Each layer's parameters are conveniently
-located in its attribute.
+Khi một mô hình được định nghĩa thông qua lớp `Sequential`,
+trước tiên chúng ta có thể truy cập bất kỳ layer nào bằng cách lập chỉ mục
+vào mô hình như thể nó là một danh sách.
+Các tham số của mỗi layer được đặt thuận tiện
+trong thuộc tính của nó.
 :end_tab:
 
 :begin_tab:`jax`
-Flax and JAX decouple the model and the parameters as you
-might have observed in the models defined previously.
-When a model is defined via the `Sequential` class,
-we first need to initialize the network to generate
-the parameters dictionary. We can access
-any layer's parameters through the keys of this dictionary.
+Flax và JAX tách rời mô hình và các tham số, như bạn
+có thể đã quan sát trong các mô hình được định nghĩa trước đó.
+Khi một mô hình được định nghĩa thông qua lớp `Sequential`,
+trước tiên chúng ta cần khởi tạo mạng để tạo ra
+từ điển tham số. Chúng ta có thể truy cập
+các tham số của bất kỳ layer nào thông qua các khóa của từ điển này.
 :end_tab:
 
-We can inspect the parameters of the second fully connected layer as follows.
+Chúng ta có thể kiểm tra các tham số của fully connected layer thứ hai như sau.
 
 ```{.python .input}
 %%tab mxnet
@@ -149,23 +149,23 @@ net.layers[2].weights
 params['params']['layers_2']
 ```
 
-We can see that this fully connected layer
-contains two parameters,
-corresponding to that layer's
-weights and biases, respectively.
+Chúng ta có thể thấy rằng fully connected layer này
+chứa hai tham số,
+lần lượt tương ứng với
+trọng số và bias của layer đó.
 
 
-### [**Targeted Parameters**]
+### [**Tham số mục tiêu**]
 
-Note that each parameter is represented
-as an instance of the parameter class.
-To do anything useful with the parameters,
-we first need to access the underlying numerical values.
-There are several ways to do this.
-Some are simpler while others are more general.
-The following code extracts the bias
-from the second neural network layer, which returns a parameter class instance, and
-further accesses that parameter's value.
+Lưu ý rằng mỗi tham số được biểu diễn
+dưới dạng một instance của lớp tham số.
+Để làm bất kỳ việc hữu ích nào với các tham số,
+trước tiên chúng ta cần truy cập các giá trị số bên dưới.
+Có nhiều cách để thực hiện việc này.
+Một số đơn giản hơn, trong khi những cách khác tổng quát hơn.
+Đoạn mã sau trích xuất bias
+từ layer mạng nơ-ron thứ hai, trả về một instance của lớp tham số, và
+sau đó truy cập giá trị của tham số đó.
 
 ```{.python .input}
 %%tab mxnet
@@ -189,19 +189,19 @@ type(bias), bias
 ```
 
 :begin_tab:`mxnet,pytorch`
-Parameters are complex objects,
-containing values, gradients,
-and additional information.
-That is why we need to request the value explicitly.
+Tham số là các đối tượng phức tạp,
+chứa giá trị, gradient,
+và thông tin bổ sung.
+Đó là lý do chúng ta cần yêu cầu giá trị một cách tường minh.
 
-In addition to the value, each parameter also allows us to access the gradient. Because we have not invoked backpropagation for this network yet, it is in its initial state.
+Ngoài giá trị, mỗi tham số cũng cho phép chúng ta truy cập gradient. Vì chúng ta chưa gọi backpropagation cho mạng này, nó đang ở trạng thái ban đầu.
 :end_tab:
 
 :begin_tab:`jax`
-Unlike the other frameworks, JAX does not keep a track of the gradients over the
-neural network parameters, instead the parameters and the network are decoupled.
-It allows the user to express their computation as a
-Python function, and use the `grad` transformation for the same purpose.
+Không giống các framework khác, JAX không theo dõi gradient trên
+các tham số mạng nơ-ron; thay vào đó, các tham số và mạng được tách rời.
+Nó cho phép người dùng biểu đạt phép tính của họ dưới dạng một
+hàm Python, và sử dụng phép biến đổi `grad` cho cùng mục đích.
 :end_tab:
 
 ```{.python .input}
@@ -214,15 +214,15 @@ net[1].weight.grad()
 net[2].weight.grad == None
 ```
 
-### [**All Parameters at Once**]
+### [**Tất cả tham số cùng lúc**]
 
-When we need to perform operations on all parameters,
-accessing them one-by-one can grow tedious.
-The situation can grow especially unwieldy
-when we work with more complex, e.g., nested, modules,
-since we would need to recurse
-through the entire tree to extract
-each sub-module's parameters. Below we demonstrate accessing the parameters of all layers.
+Khi cần thực hiện thao tác trên tất cả các tham số,
+việc truy cập từng tham số một có thể trở nên tẻ nhạt.
+Tình huống này có thể đặc biệt khó xử lý
+khi làm việc với các module phức tạp hơn, chẳng hạn các module lồng nhau,
+vì chúng ta sẽ cần đệ quy
+qua toàn bộ cây để trích xuất
+tham số của từng sub-module. Dưới đây, chúng ta minh họa cách truy cập tham số của tất cả các layer.
 
 ```{.python .input}
 %%tab mxnet
@@ -244,15 +244,15 @@ net.get_weights()
 jax.tree_util.tree_map(lambda x: x.shape, params)
 ```
 
-## [**Tied Parameters**]
+## [**Tham số ràng buộc**]
 
-Often, we want to share parameters across multiple layers.
-Let's see how to do this elegantly.
-In the following we allocate a fully connected layer
-and then use its parameters specifically
-to set those of another layer.
-Here we need to run the forward propagation
-`net(X)` before accessing the parameters.
+Thông thường, chúng ta muốn chia sẻ tham số giữa nhiều layer.
+Hãy xem cách thực hiện điều này một cách gọn gàng.
+Trong phần sau, chúng ta cấp phát một fully connected layer
+rồi sử dụng riêng các tham số của nó
+để thiết lập tham số cho một layer khác.
+Ở đây, chúng ta cần chạy forward propagation
+`net(X)` trước khi truy cập các tham số.
 
 ```{.python .input}
 %%tab mxnet
@@ -329,47 +329,47 @@ params = net.init(jax.random.PRNGKey(d2l.get_seed()), X)
 print(len(params['params']) == 3)
 ```
 
-This example shows that the parameters
-of the second and third layer are tied.
-They are not just equal, they are
-represented by the same exact tensor.
-Thus, if we change one of the parameters,
-the other one changes, too.
+Ví dụ này cho thấy các tham số
+của layer thứ hai và thứ ba được ràng buộc.
+Chúng không chỉ bằng nhau, mà còn
+được biểu diễn bởi chính xác cùng một tensor.
+Do đó, nếu chúng ta thay đổi một trong các tham số,
+tham số còn lại cũng thay đổi.
 
 :begin_tab:`mxnet, pytorch, tensorflow`
-You might wonder,
-when parameters are tied
-what happens to the gradients?
-Since the model parameters contain gradients,
-the gradients of the second hidden layer
-and the third hidden layer are added together
-during backpropagation.
+Bạn có thể tự hỏi,
+khi các tham số được ràng buộc,
+điều gì xảy ra với gradient?
+Vì các tham số mô hình chứa gradient,
+gradient của hidden layer thứ hai
+và hidden layer thứ ba được cộng lại
+trong quá trình backpropagation.
 :end_tab:
 
 
-## Summary
+## Tóm tắt
 
-We have several ways of accessing and tying model parameters.
+Chúng ta có một số cách để truy cập và ràng buộc các tham số mô hình.
 
 
-## Exercises
+## Bài tập
 
-1. Use the `NestMLP` model defined in :numref:`sec_model_construction` and access the parameters of the various layers.
-1. Construct an MLP containing a shared parameter layer and train it. During the training process, observe the model parameters and gradients of each layer.
-1. Why is sharing parameters a good idea?
+1. Sử dụng mô hình `NestMLP` được định nghĩa trong :numref:`sec_model_construction` và truy cập các tham số của những layer khác nhau.
+1. Xây dựng một MLP chứa một layer tham số dùng chung và huấn luyện nó. Trong quá trình huấn luyện, quan sát các tham số mô hình và gradient của từng layer.
+1. Vì sao chia sẻ tham số là một ý tưởng tốt?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/56)
+[Thảo luận](https://discuss.d2l.ai/t/56)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/57)
+[Thảo luận](https://discuss.d2l.ai/t/57)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/269)
+[Thảo luận](https://discuss.d2l.ai/t/269)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17990)
+[Thảo luận](https://discuss.d2l.ai/t/17990)
 :end_tab:

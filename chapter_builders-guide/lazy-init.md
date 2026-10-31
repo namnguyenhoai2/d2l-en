@@ -3,43 +3,43 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Lazy Initialization
+# Khởi tạo trì hoãn
 :label:`sec_lazy_init`
 
-So far, it might seem that we got away
-with being sloppy in setting up our networks.
-Specifically, we did the following unintuitive things,
-which might not seem like they should work:
+Cho đến nay, có thể có vẻ như chúng ta đã may mắn
+khi thiết lập mạng một cách khá tùy tiện.
+Cụ thể, chúng ta đã thực hiện những điều không trực quan sau đây,
+mà có thể trông như không thể hoạt động:
 
-* We defined the network architectures
-  without specifying the input dimensionality.
-* We added layers without specifying
-  the output dimension of the previous layer.
-* We even "initialized" these parameters
-  before providing enough information to determine
-  how many parameters our models should contain.
+* Chúng ta đã định nghĩa kiến trúc mạng
+  mà không chỉ định số chiều đầu vào.
+* Chúng ta đã thêm các layer mà không chỉ định
+  số chiều đầu ra của layer trước đó.
+* Chúng ta thậm chí đã "khởi tạo" các tham số này
+  trước khi cung cấp đủ thông tin để xác định
+  mô hình của chúng ta cần chứa bao nhiêu tham số.
 
-You might be surprised that our code runs at all.
-After all, there is no way the deep learning framework
-could tell what the input dimensionality of a network would be.
-The trick here is that the framework *defers initialization*,
-waiting until the first time we pass data through the model,
-to infer the sizes of each layer on the fly.
+Bạn có thể ngạc nhiên rằng mã của chúng ta vẫn chạy được.
+Xét cho cùng, framework deep learning không thể nào biết
+số chiều đầu vào của một mạng là bao nhiêu.
+Mấu chốt ở đây là framework *trì hoãn việc khởi tạo*,
+chờ đến lần đầu tiên chúng ta truyền dữ liệu qua mô hình
+để suy ra kích thước của từng layer một cách tự động.
 
 
-Later on, when working with convolutional neural networks,
-this technique will become even more convenient
-since the input dimensionality
-(e.g., the resolution of an image)
-will affect the dimensionality
-of each subsequent layer.
-Hence the ability to set parameters
-without the need to know,
-at the time of writing the code,
-the value of the dimension
-can greatly simplify the task of specifying
-and subsequently modifying our models.
-Next, we go deeper into the mechanics of initialization.
+Sau này, khi làm việc với mạng nơ-ron tích chập,
+kỹ thuật này sẽ trở nên thuận tiện hơn nữa
+vì số chiều đầu vào
+(ví dụ: độ phân giải của một hình ảnh)
+sẽ ảnh hưởng đến số chiều
+của từng layer tiếp theo.
+Do đó, khả năng thiết lập các tham số
+mà không cần biết,
+ngay tại thời điểm viết mã,
+giá trị của số chiều
+có thể đơn giản hóa đáng kể việc chỉ định
+và sau đó chỉnh sửa các mô hình của chúng ta.
+Tiếp theo, chúng ta sẽ tìm hiểu sâu hơn về cơ chế khởi tạo.
 
 ```{.python .input}
 %%tab mxnet
@@ -68,7 +68,7 @@ import jax
 from jax import numpy as jnp
 ```
 
-To begin, let's instantiate an MLP.
+Để bắt đầu, hãy khởi tạo một MLP.
 
 ```{.python .input}
 %%tab mxnet
@@ -95,19 +95,19 @@ net = tf.keras.models.Sequential([
 net = nn.Sequential([nn.Dense(256), nn.relu, nn.Dense(10)])
 ```
 
-At this point, the network cannot possibly know
-the dimensions of the input layer's weights
-because the input dimension remains unknown.
+Tại thời điểm này, mạng không thể biết
+số chiều của trọng số ở layer đầu vào
+vì số chiều đầu vào vẫn chưa xác định.
 
 :begin_tab:`mxnet, pytorch, tensorflow`
-Consequently the framework has not yet initialized any parameters.
-We confirm by attempting to access the parameters below.
+Do đó, framework vẫn chưa khởi tạo bất kỳ tham số nào.
+Chúng ta xác nhận điều này bằng cách thử truy cập các tham số bên dưới.
 :end_tab:
 
 :begin_tab:`jax`
-As mentioned in :numref:`subsec_param-access`, parameters and the network definition are decoupled
-in Jax and Flax, and the user handles both manually. Flax models are stateless
-hence there is no `parameters` attribute.
+Như đã đề cập trong :numref:`subsec_param-access`, tham số và định nghĩa mạng được tách rời
+trong Jax và Flax, và người dùng tự xử lý cả hai. Các mô hình Flax không trạng thái
+nên không có thuộc tính `parameters`.
 :end_tab:
 
 ```{.python .input}
@@ -127,21 +127,21 @@ net[0].weight
 ```
 
 :begin_tab:`mxnet`
-Note that while the parameter objects exist,
-the input dimension to each layer is listed as -1.
-MXNet uses the special value -1 to indicate
-that the parameter dimension remains unknown.
-At this point, attempts to access `net[0].weight.data()`
-would trigger a runtime error stating that the network
-must be initialized before the parameters can be accessed.
-Now let's see what happens when we attempt to initialize
-parameters via the `initialize` method.
+Lưu ý rằng mặc dù các đối tượng tham số tồn tại,
+số chiều đầu vào của mỗi layer được liệt kê là -1.
+MXNet sử dụng giá trị đặc biệt -1 để biểu thị
+rằng số chiều tham số vẫn chưa xác định.
+Tại thời điểm này, việc cố gắng truy cập `net[0].weight.data()`
+sẽ kích hoạt lỗi runtime, cho biết rằng mạng
+phải được khởi tạo trước khi có thể truy cập các tham số.
+Bây giờ hãy xem điều gì xảy ra khi chúng ta cố gắng khởi tạo
+tham số thông qua phương thức `initialize`.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Note that each layer objects exist but the weights are empty.
-Using `net.get_weights()` would throw an error since the weights
-have not been initialized yet.
+Lưu ý rằng các đối tượng layer đều tồn tại nhưng trọng số trống.
+Việc dùng `net.get_weights()` sẽ gây ra lỗi vì các trọng số
+vẫn chưa được khởi tạo.
 :end_tab:
 
 ```{.python .input}
@@ -151,16 +151,16 @@ net.collect_params()
 ```
 
 :begin_tab:`mxnet`
-As we can see, nothing has changed.
-When input dimensions are unknown,
-calls to initialize do not truly initialize the parameters.
-Instead, this call registers to MXNet that we wish
-(and optionally, according to which distribution)
-to initialize the parameters.
+Như chúng ta có thể thấy, không có gì thay đổi.
+Khi chưa biết số chiều đầu vào,
+các lệnh gọi initialize không thực sự khởi tạo các tham số.
+Thay vào đó, lệnh gọi này đăng ký với MXNet rằng chúng ta muốn
+(và tùy chọn, theo phân phối nào)
+khởi tạo các tham số.
 :end_tab:
 
-Next let's pass data through the network
-to make the framework finally initialize parameters.
+Tiếp theo, hãy truyền dữ liệu qua mạng
+để framework cuối cùng khởi tạo các tham số.
 
 ```{.python .input}
 %%tab mxnet
@@ -191,37 +191,37 @@ params = net.init(d2l.get_key(), jnp.zeros((2, 20)))
 jax.tree_util.tree_map(lambda x: x.shape, params).tree_flatten_with_keys()
 ```
 
-As soon as we know the input dimensionality,
+Ngay khi biết số chiều đầu vào,
 20,
-the framework can identify the shape of the first layer's weight matrix by plugging in the value of 20.
-Having recognized the first layer's shape, the framework proceeds
-to the second layer,
-and so on through the computational graph
-until all shapes are known.
-Note that in this case,
-only the first layer requires lazy initialization,
-but the framework initializes sequentially.
-Once all parameter shapes are known,
-the framework can finally initialize the parameters.
+framework có thể xác định hình dạng ma trận trọng số của layer đầu tiên bằng cách thay giá trị 20 vào.
+Sau khi nhận ra hình dạng của layer đầu tiên, framework tiếp tục
+đến layer thứ hai,
+và cứ thế qua computational graph
+cho đến khi biết được tất cả các hình dạng.
+Lưu ý rằng trong trường hợp này,
+chỉ layer đầu tiên cần khởi tạo trì hoãn,
+nhưng framework khởi tạo tuần tự.
+Khi tất cả hình dạng tham số đã được biết,
+framework cuối cùng có thể khởi tạo các tham số.
 
 :begin_tab:`pytorch`
-The following method
-passes in dummy inputs
-through the network
-for a dry run
-to infer all parameter shapes
-and subsequently initializes the parameters.
-It will be used later when default random initializations are not desired.
+Phương thức sau đây
+truyền đầu vào giả
+qua mạng
+để chạy thử
+nhằm suy ra mọi hình dạng tham số
+và sau đó khởi tạo các tham số.
+Phương thức này sẽ được sử dụng sau khi không mong muốn các khởi tạo ngẫu nhiên mặc định.
 :end_tab:
 
 :begin_tab:`jax`
-Parameter initialization in Flax is always done manually and handled by the
-user. The following method takes a dummy input and a key dictionary as argument.
-This key dictionary has the rngs for initializing the model parameters
-and dropout rng for generating the dropout mask for the models with
-dropout layers. More about dropout will be covered later in :numref:`sec_dropout`.
-Ultimately the method initializes the model returning the parameters.
-We have been using it under the hood in the previous sections as well.
+Việc khởi tạo tham số trong Flax luôn được thực hiện thủ công và do
+người dùng xử lý. Phương thức sau nhận đầu vào giả và một từ điển khóa làm đối số.
+Từ điển khóa này chứa các rngs để khởi tạo tham số mô hình
+và dropout rng để tạo dropout mask cho các mô hình có
+dropout layer. Chúng ta sẽ tìm hiểu thêm về dropout trong :numref:`sec_dropout`.
+Cuối cùng, phương thức khởi tạo mô hình và trả về các tham số.
+Chúng ta cũng đã sử dụng nó ngầm trong các phần trước.
 :end_tab:
 
 ```{.python .input}
@@ -241,30 +241,30 @@ def apply_init(self, dummy_input, key):
     return params
 ```
 
-## Summary
+## Tóm tắt
 
-Lazy initialization can be convenient, allowing the framework to infer parameter shapes automatically, making it easy to modify architectures and eliminating one common source of errors.
-We can pass data through the model to make the framework finally initialize parameters.
+Khởi tạo trì hoãn có thể thuận tiện, cho phép framework tự động suy ra hình dạng tham số, giúp dễ dàng chỉnh sửa kiến trúc và loại bỏ một nguồn lỗi phổ biến.
+Chúng ta có thể truyền dữ liệu qua mô hình để framework cuối cùng khởi tạo các tham số.
 
 
-## Exercises
+## Bài tập
 
-1. What happens if you specify the input dimensions to the first layer but not to subsequent layers? Do you get immediate initialization?
-1. What happens if you specify mismatching dimensions?
-1. What would you need to do if you have input of varying dimensionality? Hint: look at the parameter tying.
+1. Điều gì xảy ra nếu bạn chỉ định số chiều đầu vào cho layer đầu tiên nhưng không chỉ định cho các layer tiếp theo? Bạn có nhận được khởi tạo ngay lập tức không?
+1. Điều gì xảy ra nếu bạn chỉ định các số chiều không khớp?
+1. Bạn cần làm gì nếu đầu vào có số chiều thay đổi? Gợi ý: hãy xem parameter tying.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/280)
+[Thảo luận](https://discuss.d2l.ai/t/280)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/8092)
+[Thảo luận](https://discuss.d2l.ai/t/8092)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/281)
+[Thảo luận](https://discuss.d2l.ai/t/281)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17992)
+[Thảo luận](https://discuss.d2l.ai/t/17992)
 :end_tab:

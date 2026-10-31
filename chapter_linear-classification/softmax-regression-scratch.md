@@ -3,17 +3,17 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Softmax Regression Implementation from Scratch
+# Triển khai Softmax Regression từ đầu
 :label:`sec_softmax_scratch`
 
-Because softmax regression is so fundamental,
-we believe that you ought to know
-how to implement it yourself.
-Here, we limit ourselves to defining the
-softmax-specific aspects of the model
-and reuse the other components
-from our linear regression section,
-including the training loop.
+Vì softmax regression là nền tảng đến vậy,
+chúng tôi cho rằng bạn nên biết
+cách tự triển khai nó.
+Ở đây, chúng ta chỉ giới hạn ở việc định nghĩa
+các khía cạnh riêng của softmax trong mô hình
+và tái sử dụng các thành phần khác
+từ phần linear regression,
+bao gồm cả vòng lặp huấn luyện.
 
 ```{.python .input}
 %%tab mxnet
@@ -43,17 +43,17 @@ from jax import numpy as jnp
 from functools import partial
 ```
 
-## The Softmax
+## Softmax
 
-Let's begin with the most important part:
-the mapping from scalars to probabilities.
-For a refresher, recall the operation of the sum operator
-along specific dimensions in a tensor,
-as discussed in :numref:`subsec_lin-alg-reduction`
-and :numref:`subsec_lin-alg-non-reduction`.
-[**Given a matrix `X` we can sum over all elements (by default) or only
-over elements in the same axis.**]
-The `axis` variable lets us compute row and column sums:
+Hãy bắt đầu với phần quan trọng nhất:
+ánh xạ từ các giá trị vô hướng sang xác suất.
+Để ôn lại, hãy nhớ thao tác của toán tử tổng
+dọc theo các chiều cụ thể trong một tensor,
+như đã thảo luận trong :numref:`subsec_lin-alg-reduction`
+và :numref:`subsec_lin-alg-non-reduction`.
+[**Với một ma trận `X`, chúng ta có thể tính tổng trên mọi phần tử (mặc định) hoặc chỉ
+trên các phần tử cùng trục.**]
+Biến `axis` cho phép chúng ta tính tổng theo hàng và cột:
 
 ```{.python .input}
 %%tab all
@@ -61,21 +61,21 @@ X = d2l.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
 d2l.reduce_sum(X, 0, keepdims=True), d2l.reduce_sum(X, 1, keepdims=True)
 ```
 
-Computing the softmax requires three steps:
-(i) exponentiation of each term;
-(ii) a sum over each row to compute the normalization constant for each example;
-(iii) division of each row by its normalization constant,
-ensuring that the result sums to 1:
+Việc tính softmax yêu cầu ba bước:
+(i) lấy hàm mũ của từng hạng tử;
+(ii) tính tổng trên mỗi hàng để tính hằng số chuẩn hóa cho mỗi mẫu;
+(iii) chia mỗi hàng cho hằng số chuẩn hóa của nó,
+đảm bảo rằng tổng kết quả bằng 1:
 
 (**
 $$\mathrm{softmax}(\mathbf{X})_{ij} = \frac{\exp(\mathbf{X}_{ij})}{\sum_k \exp(\mathbf{X}_{ik})}.$$
 **)
 
-The (logarithm of the) denominator
-is called the (log) *partition function*.
-It was introduced in [statistical physics](https://en.wikipedia.org/wiki/Partition_function_(statistical_mechanics))
-to sum over all possible states in a thermodynamic ensemble.
-The implementation is straightforward:
+Mẫu số (hoặc logarithm của nó)
+được gọi là *hàm phân hoạch* (partition function).
+Nó được giới thiệu trong [vật lý thống kê](https://en.wikipedia.org/wiki/Partition_function_(statistical_mechanics))
+để tổng hợp trên mọi trạng thái có thể có trong một tập hợp nhiệt động lực học.
+Việc triển khai rất đơn giản:
 
 ```{.python .input}
 %%tab all
@@ -85,10 +85,10 @@ def softmax(X):
     return X_exp / partition  # The broadcasting mechanism is applied here
 ```
 
-For any input `X`, [**we turn each element
-into a nonnegative number.
-Each row sums up to 1,**]
-as is required for a probability. Caution: the code above is *not* robust against very large or very small arguments. While it is sufficient to illustrate what is happening, you should *not* use this code verbatim for any serious purpose. Deep learning frameworks have such protections built in and we will be using the built-in softmax going forward.
+Với mọi đầu vào `X`, [**chúng ta biến từng phần tử
+thành một số không âm.
+Tổng mỗi hàng bằng 1,**]
+đúng như yêu cầu đối với một xác suất. Lưu ý: đoạn mã trên *không* đủ vững chắc trước các đối số rất lớn hoặc rất nhỏ. Mặc dù nó đủ để minh họa điều đang diễn ra, bạn *không nên* dùng nguyên văn đoạn mã này cho bất kỳ mục đích nghiêm túc nào. Các framework deep learning đã tích hợp sẵn những cơ chế bảo vệ như vậy và từ đây chúng ta sẽ sử dụng softmax tích hợp sẵn.
 
 ```{.python .input}
 %%tab mxnet
@@ -111,34 +111,34 @@ X_prob = softmax(X)
 X_prob, d2l.reduce_sum(X_prob, 1)
 ```
 
-## The Model
+## Mô hình
 
-We now have everything that we need
-to implement [**the softmax regression model.**]
-As in our linear regression example,
-each instance will be represented
-by a fixed-length vector.
-Since the raw data here consists
-of $28 \times 28$ pixel images,
-[**we flatten each image,
-treating them as vectors of length 784.**]
-In later chapters, we will introduce
+Giờ đây chúng ta đã có mọi thứ cần thiết
+để triển khai [**mô hình softmax regression.**]
+Như trong ví dụ linear regression,
+mỗi mẫu sẽ được biểu diễn
+bằng một vector có độ dài cố định.
+Vì dữ liệu thô ở đây bao gồm
+các ảnh pixel $28 \times 28$,
+[**chúng ta làm phẳng mỗi ảnh,
+coi chúng là các vector có độ dài 784.**]
+Trong các chương sau, chúng ta sẽ giới thiệu
 convolutional neural networks,
-which exploit the spatial structure
-in a more satisfying way.
+vốn khai thác cấu trúc không gian
+theo cách thỏa đáng hơn.
 
 
-In softmax regression,
-the number of outputs from our network
-should be equal to the number of classes.
-(**Since our dataset has 10 classes,
-our network has an output dimension of 10.**)
-Consequently, our weights constitute a $784 \times 10$ matrix
-plus a $1 \times 10$ row vector for the biases.
-As with linear regression,
-we initialize the weights `W`
-with Gaussian noise.
-The biases are initialized as zeros.
+Trong softmax regression,
+số lượng đầu ra của mạng
+phải bằng số lượng lớp.
+(**Vì dataset của chúng ta có 10 lớp,
+mạng có chiều đầu ra là 10.**)
+Do đó, trọng số của chúng ta tạo thành một ma trận $784 \times 10$
+cộng với một vector hàng $1 \times 10$ cho các bias.
+Tương tự linear regression,
+chúng ta khởi tạo trọng số `W`
+bằng nhiễu Gaussian.
+Các bias được khởi tạo bằng không.
 
 ```{.python .input}
 %%tab mxnet
@@ -195,11 +195,11 @@ class SoftmaxRegressionScratch(d2l.Classifier):
         self.b = self.param('b', nn.initializers.zeros, self.num_outputs)
 ```
 
-The code below defines how the network
-maps each input to an output.
-Note that we flatten each $28 \times 28$ pixel image in the batch
-into a vector using `reshape`
-before passing the data through our model.
+Đoạn mã dưới đây định nghĩa cách mạng
+ánh xạ mỗi đầu vào thành một đầu ra.
+Lưu ý rằng chúng ta làm phẳng mỗi ảnh pixel $28 \times 28$ trong batch
+thành một vector bằng `reshape`
+trước khi truyền dữ liệu qua mô hình.
 
 ```{.python .input}
 %%tab all
@@ -209,27 +209,28 @@ def forward(self, X):
     return softmax(d2l.matmul(X, self.W) + self.b)
 ```
 
-## The Cross-Entropy Loss
+## Hàm mất mát Cross-Entropy
 
-Next we need to implement the cross-entropy loss function
-(introduced in :numref:`subsec_softmax-regression-loss-func`).
-This may be the most common loss function
-in all of deep learning.
-At the moment, applications of deep learning
-easily cast as classification problems
-far outnumber those better treated as regression problems.
+Tiếp theo, chúng ta cần triển khai hàm mất mát cross-entropy
+(được giới thiệu trong :numref:`subsec_softmax-regression-loss-func`).
+Đây có thể là hàm mất mát phổ biến nhất
+trong toàn bộ deep learning.
+Hiện nay, các ứng dụng của deep learning
+có thể dễ dàng được biểu diễn dưới dạng bài toán phân loại
+nhiều hơn rất nhiều so với các ứng dụng phù hợp hơn
+với bài toán hồi quy.
 
-Recall that cross-entropy takes the negative log-likelihood
-of the predicted probability assigned to the true label.
-For efficiency we avoid Python for-loops and use indexing instead.
-In particular, the one-hot encoding in $\mathbf{y}$
-allows us to select the matching terms in $\hat{\mathbf{y}}$.
+Hãy nhớ rằng cross-entropy lấy negative log-likelihood
+của xác suất dự đoán được gán cho nhãn đúng.
+Để đạt hiệu quả, chúng ta tránh dùng vòng lặp Python for và dùng indexing thay thế.
+Cụ thể, mã hóa one-hot trong $\mathbf{y}$
+cho phép chúng ta chọn các hạng tử tương ứng trong $\hat{\mathbf{y}}$.
 
-To see this in action we [**create sample data `y_hat`
-with 2 examples of predicted probabilities over 3 classes and their corresponding labels `y`.**]
-The correct labels are $0$ and $2$ respectively (i.e., the first and third class).
-[**Using `y` as the indices of the probabilities in `y_hat`,**]
-we can pick out terms efficiently.
+Để thấy cách này hoạt động, chúng ta [**tạo dữ liệu mẫu `y_hat`
+với 2 ví dụ về xác suất dự đoán trên 3 lớp và các nhãn tương ứng `y`.**]
+Các nhãn đúng lần lượt là $0$ và $2$ (tức là lớp thứ nhất và thứ ba).
+[**Dùng `y` làm chỉ số của các xác suất trong `y_hat`,**]
+chúng ta có thể chọn các hạng tử một cách hiệu quả.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -246,17 +247,17 @@ tf.boolean_mask(y_hat, tf.one_hot(y, depth=y_hat.shape[-1]))
 ```
 
 :begin_tab:`pytorch, mxnet, tensorflow`
-Now we can (**implement the cross-entropy loss function**) by averaging over the logarithms of the selected probabilities.
+Bây giờ chúng ta có thể (**triển khai hàm mất mát cross-entropy**) bằng cách lấy trung bình logarithm của các xác suất đã chọn.
 :end_tab:
 
 :begin_tab:`jax`
-Now we can (**implement the cross-entropy loss function**) by averaging over the logarithms of the selected probabilities.
+Bây giờ chúng ta có thể (**triển khai hàm mất mát cross-entropy**) bằng cách lấy trung bình logarithm của các xác suất đã chọn.
 
-Note that to make use of `jax.jit` to speed up JAX implementations, and
-to make sure `loss` is a pure function, the `cross_entropy` function is re-defined
-inside the `loss` to avoid usage of any global variables or functions
-which may render the `loss` function impure.
-We refer interested readers to the [JAX documentation](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions) on `jax.jit` and pure functions.
+Lưu ý rằng để sử dụng `jax.jit` nhằm tăng tốc các phần triển khai JAX, và
+để đảm bảo `loss` là một hàm thuần, hàm `cross_entropy` được định nghĩa lại
+bên trong `loss` để tránh sử dụng bất kỳ biến hoặc hàm toàn cục nào
+có thể khiến hàm `loss` không còn thuần.
+Chúng tôi giới thiệu tới độc giả quan tâm [tài liệu JAX](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions) về `jax.jit` và các hàm thuần.
 :end_tab:
 
 ```{.python .input}
@@ -296,27 +297,27 @@ def loss(self, params, X, y, state):
     return cross_entropy(y_hat, y), {}
 ```
 
-## Training
+## Huấn luyện
 
-We reuse the `fit` method defined in :numref:`sec_linear_scratch` to [**train the model with 10 epochs.**]
-Note that the number of epochs (`max_epochs`),
-the minibatch size (`batch_size`),
-and learning rate (`lr`)
-are adjustable hyperparameters.
-That means that while these values are not
-learned during our primary training loop,
-they still influence the performance
-of our model, both vis-à-vis training
-and generalization performance.
-In practice you will want to choose these values
-based on the *validation* split of the data
-and then, ultimately, to evaluate your final model
-on the *test* split.
-As discussed in :numref:`subsec_generalization-model-selection`,
-we will regard the test data of Fashion-MNIST
-as the validation set, thus
-reporting validation loss and validation accuracy
-on this split.
+Chúng ta tái sử dụng phương thức `fit` được định nghĩa trong :numref:`sec_linear_scratch` để [**huấn luyện mô hình trong 10 epoch.**]
+Lưu ý rằng số epoch (`max_epochs`),
+kích thước minibatch (`batch_size`),
+và learning rate (`lr`)
+là các hyperparameter có thể điều chỉnh.
+Điều đó có nghĩa là mặc dù các giá trị này không được
+học trong vòng lặp huấn luyện chính,
+chúng vẫn ảnh hưởng đến hiệu năng
+của mô hình, cả về hiệu năng huấn luyện
+lẫn khả năng tổng quát hóa.
+Trong thực tế, bạn nên chọn các giá trị này
+dựa trên phần dữ liệu *validation*
+và sau đó, cuối cùng, đánh giá mô hình cuối cùng
+trên phần dữ liệu *test*.
+Như đã thảo luận trong :numref:`subsec_generalization-model-selection`,
+chúng ta sẽ xem dữ liệu test của Fashion-MNIST
+là tập validation, do đó
+báo cáo validation loss và validation accuracy
+trên phần dữ liệu này.
 
 ```{.python .input}
 %%tab all
@@ -326,10 +327,10 @@ trainer = d2l.Trainer(max_epochs=10)
 trainer.fit(model, data)
 ```
 
-## Prediction
+## Dự đoán
 
-Now that training is complete,
-our model is ready to [**classify some images.**]
+Bây giờ quá trình huấn luyện đã hoàn tất,
+mô hình của chúng ta sẵn sàng [**phân loại một số ảnh.**]
 
 ```{.python .input}
 %%tab all
@@ -341,11 +342,11 @@ if tab.selected('jax'):
 preds.shape
 ```
 
-We are more interested in the images we label *incorrectly*. We visualize them by
-comparing their actual labels
-(first line of text output)
-with the predictions from the model
-(second line of text output).
+Chúng ta quan tâm nhiều hơn đến những ảnh được gán nhãn *không chính xác*. Chúng ta trực quan hóa chúng bằng cách
+so sánh nhãn thực tế của chúng
+(dòng văn bản đầu ra thứ nhất)
+với dự đoán từ mô hình
+(dòng văn bản đầu ra thứ hai).
 
 ```{.python .input}
 %%tab all
@@ -356,47 +357,47 @@ labels = [a+'\n'+b for a, b in zip(
 data.visualize([X, y], labels=labels)
 ```
 
-## Summary
+## Tóm tắt
 
-By now we are starting to get some experience
-with solving linear regression
-and classification problems.
-With it, we have reached what would arguably be
-the state of the art of 1960--1970s of statistical modeling.
-In the next section, we will show you how to leverage
-deep learning frameworks to implement this model
-much more efficiently.
+Đến đây, chúng ta đang bắt đầu có một số kinh nghiệm
+trong việc giải quyết các bài toán linear regression
+và phân loại.
+Nhờ đó, chúng ta đã đạt đến thứ có thể xem là
+trạng thái tiên tiến nhất của mô hình hóa thống kê trong thập niên 1960--1970.
+Trong phần tiếp theo, chúng tôi sẽ chỉ cho bạn cách tận dụng
+các framework deep learning để triển khai mô hình này
+hiệu quả hơn nhiều.
 
-## Exercises
+## Bài tập
 
-1. In this section, we directly implemented the softmax function based on the mathematical definition of the softmax operation. As discussed in :numref:`sec_softmax` this can cause numerical instabilities.
-    1. Test whether `softmax` still works correctly if an input has a value of $100$.
-    1. Test whether `softmax` still works correctly if the largest of all inputs is smaller than $-100$.
-    1. Implement a fix by looking at the value relative to the largest entry in the argument.
-1. Implement a `cross_entropy` function that follows the definition of the cross-entropy loss function $\sum_i y_i \log \hat{y}_i$.
-    1. Try it out in the code example of this section.
-    1. Why do you think it runs more slowly?
-    1. Should you use it? When would it make sense to?
-    1. What do you need to be careful of? Hint: consider the domain of the logarithm.
-1. Is it always a good idea to return the most likely label? For example, would you do this for medical diagnosis? How would you try to address this?
-1. Assume that we want to use softmax regression to predict the next word based on some features. What are some problems that might arise from a large vocabulary?
-1. Experiment with the hyperparameters of the code in this section. In particular:
-    1. Plot how the validation loss changes as you change the learning rate.
-    1. Do the validation and training loss change as you change the minibatch size? How large or small do you need to go before you see an effect?
+1. Trong phần này, chúng ta đã trực tiếp triển khai hàm softmax dựa trên định nghĩa toán học của phép toán softmax. Như đã thảo luận trong :numref:`sec_softmax`, điều này có thể gây ra bất ổn số học.
+    1. Kiểm tra xem `softmax` có vẫn hoạt động chính xác nếu một đầu vào có giá trị $100$ hay không.
+    1. Kiểm tra xem `softmax` có vẫn hoạt động chính xác nếu giá trị lớn nhất trong tất cả đầu vào nhỏ hơn $-100$ hay không.
+    1. Triển khai một cách khắc phục bằng cách xem xét giá trị tương đối so với phần tử lớn nhất trong đối số.
+1. Triển khai một hàm `cross_entropy` tuân theo định nghĩa của hàm mất mát cross-entropy $\sum_i y_i \log \hat{y}_i$.
+    1. Thử dùng nó trong ví dụ mã của phần này.
+    1. Theo bạn, vì sao nó chạy chậm hơn?
+    1. Bạn có nên sử dụng nó không? Khi nào thì việc sử dụng nó hợp lý?
+    1. Bạn cần cẩn thận điều gì? Gợi ý: hãy xét miền xác định của logarithm.
+1. Có phải lúc nào trả về nhãn có xác suất cao nhất cũng là ý hay không? Ví dụ, bạn có làm điều này cho chẩn đoán y tế không? Bạn sẽ cố gắng giải quyết vấn đề này như thế nào?
+1. Giả sử chúng ta muốn dùng softmax regression để dự đoán từ tiếp theo dựa trên một số đặc trưng. Những vấn đề nào có thể phát sinh từ một vocabulary lớn?
+1. Thử nghiệm với các hyperparameter của mã trong phần này. Cụ thể:
+    1. Vẽ biểu đồ thể hiện validation loss thay đổi thế nào khi bạn thay đổi learning rate.
+    1. Validation loss và training loss có thay đổi khi bạn thay đổi kích thước minibatch không? Bạn cần tăng hoặc giảm đến mức nào trước khi thấy tác động?
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/50)
+[Thảo luận](https://discuss.d2l.ai/t/50)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/51)
+[Thảo luận](https://discuss.d2l.ai/t/51)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/225)
+[Thảo luận](https://discuss.d2l.ai/t/225)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17982)
+[Thảo luận](https://discuss.d2l.ai/t/17982)
 :end_tab:

@@ -3,12 +3,12 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Residual Networks (ResNet) and ResNeXt
+# Mạng phần dư (ResNet) và ResNeXt
 :label:`sec_resnet`
 
-As we design ever deeper networks it becomes imperative to understand how adding layers can increase the complexity and expressiveness of the network.
-Even more important is the ability to design networks where adding layers makes networks strictly more expressive rather than just different.
-To make some progress we need a bit of mathematics.
+Khi thiết kế các mạng ngày càng sâu hơn, việc hiểu cách thêm các lớp có thể làm tăng độ phức tạp và khả năng biểu đạt của mạng trở nên cấp thiết.
+Quan trọng hơn nữa là khả năng thiết kế các mạng mà việc thêm lớp khiến mạng có khả năng biểu đạt cao hơn một cách rõ rệt, thay vì chỉ khác đi.
+Để đạt được một số tiến bộ, chúng ta cần một chút toán học.
 
 ```{.python .input}
 %%tab mxnet
@@ -40,93 +40,92 @@ from jax import numpy as jnp
 import jax
 ```
 
-## Function Classes
+## Các lớp hàm
 
-Consider $\mathcal{F}$, the class of functions that a specific network architecture (together with learning rates and other hyperparameter settings) can reach.
-That is, for all $f \in \mathcal{F}$ there exists some set of parameters (e.g., weights and biases) that can be obtained through training on a suitable dataset.
-Let's assume that $f^*$ is the "truth" function that we really would like to find.
-If it is in $\mathcal{F}$, we are in good shape but typically we will not be quite so lucky.
-Instead, we will try to find some $f^*_\mathcal{F}$ which is our best bet within $\mathcal{F}$.
-For instance,
-given a dataset with features $\mathbf{X}$
-and labels $\mathbf{y}$,
-we might try finding it by solving the following optimization problem:
+Xét $\mathcal{F}$, lớp các hàm mà một kiến trúc mạng cụ thể (cùng với learning rate và các thiết lập hyperparameter khác) có thể đạt tới.
+Tức là, với mọi $f \in \mathcal{F}$, tồn tại một tập tham số nào đó (ví dụ: trọng số và bias) có thể thu được thông qua quá trình huấn luyện trên một dataset phù hợp.
+Hãy giả sử rằng $f^*$ là hàm "sự thật" mà chúng ta thực sự muốn tìm.
+Nếu nó nằm trong $\mathcal{F}$, chúng ta đang ở trong tình thế thuận lợi, nhưng thông thường sẽ không may mắn đến vậy.
+Thay vào đó, chúng ta sẽ cố gắng tìm một $f^*_\mathcal{F}$ là lựa chọn tốt nhất của mình trong $\mathcal{F}$.
+Ví dụ,
+với một dataset có đặc trưng $\mathbf{X}$
+và nhãn $\mathbf{y}$,
+chúng ta có thể cố gắng tìm nó bằng cách giải bài toán tối ưu hóa sau:
 
 $$f^*_\mathcal{F} \stackrel{\textrm{def}}{=} \mathop{\mathrm{argmin}}_f L(\mathbf{X}, \mathbf{y}, f) \textrm{ subject to } f \in \mathcal{F}.$$
 
-We know that regularization :cite:`tikhonov1977solutions,morozov2012methods` may control complexity of $\mathcal{F}$
-and achieve consistency, so a larger size of training data
-generally leads to better $f^*_\mathcal{F}$.
-It is only reasonable to assume that if we design a different and more powerful architecture $\mathcal{F}'$ we should arrive at a better outcome. In other words, we would expect that $f^*_{\mathcal{F}'}$ is "better" than $f^*_{\mathcal{F}}$. However, if $\mathcal{F} \not\subseteq \mathcal{F}'$ there is no guarantee that this should even happen. In fact, $f^*_{\mathcal{F}'}$ might well be worse.
-As illustrated by :numref:`fig_functionclasses`,
-for non-nested function classes, a larger function class does not always move closer to the "truth" function $f^*$. For instance,
-on the left of :numref:`fig_functionclasses`,
-though $\mathcal{F}_3$ is closer to $f^*$ than $\mathcal{F}_1$, $\mathcal{F}_6$ moves away and there is no guarantee that further increasing the complexity can reduce the distance from $f^*$.
-With nested function classes
-where $\mathcal{F}_1 \subseteq \cdots \subseteq \mathcal{F}_6$
-on the right of :numref:`fig_functionclasses`,
-we can avoid the aforementioned issue from the non-nested function classes.
+Chúng ta biết rằng regularization :cite:`tikhonov1977solutions,morozov2012methods` có thể kiểm soát độ phức tạp của $\mathcal{F}$
+và đạt được tính nhất quán, do đó tập dữ liệu huấn luyện lớn hơn
+thường dẫn đến $f^*_\mathcal{F}$ tốt hơn.
+Sẽ hợp lý khi giả sử rằng nếu chúng ta thiết kế một kiến trúc khác và mạnh hơn $\mathcal{F}'$ thì sẽ đạt được kết quả tốt hơn. Nói cách khác, chúng ta kỳ vọng rằng $f^*_{\mathcal{F}'}$ sẽ "tốt hơn" $f^*_{\mathcal{F}}$. Tuy nhiên, nếu $\mathcal{F} \not\subseteq \mathcal{F}'$ thì không có gì đảm bảo điều này sẽ xảy ra. Thực tế, $f^*_{\mathcal{F}'}$ hoàn toàn có thể tệ hơn.
+Như minh họa trong :numref:`fig_functionclasses`,
+đối với các lớp hàm không lồng nhau, một lớp hàm lớn hơn không phải lúc nào cũng tiến gần hơn đến hàm "sự thật" $f^*$. Ví dụ,
+ở bên trái của :numref:`fig_functionclasses`,
+mặc dù $\mathcal{F}_3$ gần $f^*$ hơn $\mathcal{F}_1$, $\mathcal{F}_6$ lại đi xa hơn và không có gì đảm bảo rằng việc tiếp tục tăng độ phức tạp có thể giảm khoảng cách tới $f^*$.
+Với các lớp hàm lồng nhau,
+trong đó $\mathcal{F}_1 \subseteq \cdots \subseteq \mathcal{F}_6$
+ở bên phải của :numref:`fig_functionclasses`,
+chúng ta có thể tránh được vấn đề nói trên của các lớp hàm không lồng nhau.
 
 
-![For non-nested function classes, a larger (indicated by area) function class does not guarantee we will get closer to the "truth" function ($\mathit{f}^*$). This does not happen in nested function classes.](../img/functionclasses.svg)
+![Đối với các lớp hàm không lồng nhau, một lớp hàm lớn hơn (được biểu thị bằng diện tích) không đảm bảo rằng chúng ta sẽ tiến gần hơn đến hàm "sự thật" ($\mathit{f}^*$). Điều này không xảy ra với các lớp hàm lồng nhau.](../img/functionclasses.svg)
 :label:`fig_functionclasses`
 
-Thus,
-only if larger function classes contain the smaller ones are we guaranteed that increasing them strictly increases the expressive power of the network.
-For deep neural networks,
-if we can
-train the newly-added layer into an identity function $f(\mathbf{x}) = \mathbf{x}$, the new model will be as effective as the original model. As the new model may get a better solution to fit the training dataset, the added layer might make it easier to reduce training errors.
+Do đó,
+chỉ khi các lớp hàm lớn hơn chứa các lớp nhỏ hơn thì chúng ta mới được đảm bảo rằng việc tăng chúng sẽ làm tăng nghiêm ngặt khả năng biểu đạt của mạng.
+Đối với mạng nơ-ron sâu,
+nếu chúng ta có thể
+huấn luyện lớp mới được thêm vào thành một hàm đồng nhất $f(\mathbf{x}) = \mathbf{x}$, mô hình mới sẽ hiệu quả không kém mô hình ban đầu. Vì mô hình mới có thể tìm được một nghiệm tốt hơn để khớp với dataset huấn luyện, lớp được thêm vào có thể giúp giảm lỗi huấn luyện dễ dàng hơn.
 
-This is the question that :citet:`He.Zhang.Ren.ea.2016` considered when working on very deep computer vision models.
-At the heart of their proposed *residual network* (*ResNet*) is the idea that every additional layer should
-more easily
-contain the identity function as one of its elements.
-These considerations are rather profound but they led to a surprisingly simple
-solution, a *residual block*.
-With it, ResNet won the ImageNet Large Scale Visual Recognition Challenge in 2015. The design had a profound influence on how to
-build deep neural networks. For instance, residual blocks have been added to recurrent networks :cite:`prakash2016neural,kim2017residual`. Likewise, Transformers :cite:`Vaswani.Shazeer.Parmar.ea.2017` use them to stack many layers of networks efficiently. It is also used in graph neural networks :cite:`Kipf.Welling.2016` and, as a basic concept, it has been used extensively in computer vision :cite:`Redmon.Farhadi.2018,Ren.He.Girshick.ea.2015`. 
-Note that residual networks are predated by highway networks :cite:`srivastava2015highway` that share some of the motivation, albeit without the elegant parametrization around the identity function.
+Đây là câu hỏi mà :citet:`He.Zhang.Ren.ea.2016` đã xem xét khi nghiên cứu các mô hình computer vision rất sâu.
+Cốt lõi của *mạng phần dư* (*ResNet*) mà họ đề xuất là ý tưởng rằng mỗi lớp bổ sung cần
+dễ dàng hơn
+bao gồm hàm đồng nhất như một trong các phần tử của nó.
+Các cân nhắc này khá sâu sắc nhưng đã dẫn đến một
+giải pháp đơn giản đáng ngạc nhiên, đó là *khối phần dư*.
+Nhờ đó, ResNet đã chiến thắng ImageNet Large Scale Visual Recognition Challenge vào năm 2015. Thiết kế này có ảnh hưởng sâu rộng đến cách
+xây dựng các mạng nơ-ron sâu. Ví dụ, các khối phần dư đã được thêm vào recurrent network :cite:`prakash2016neural,kim2017residual`. Tương tự, Transformer :cite:`Vaswani.Shazeer.Parmar.ea.2017` sử dụng chúng để xếp chồng hiệu quả nhiều lớp mạng. Chúng cũng được dùng trong graph neural network :cite:`Kipf.Welling.2016` và, như một khái niệm cơ bản, đã được sử dụng rộng rãi trong computer vision :cite:`Redmon.Farhadi.2018,Ren.He.Girshick.ea.2015`. 
+Lưu ý rằng mạng phần dư xuất hiện sau highway network :cite:`srivastava2015highway`, vốn có chung một phần động cơ nhưng không có tham số hóa thanh lịch xoay quanh hàm đồng nhất.
 
-
-## (**Residual Blocks**)
+## (**Khối phần dư**)
 :label:`subsec_residual-blks`
 
-Let's focus on a local part of a neural network, as depicted in :numref:`fig_residual_block`. Denote the input by $\mathbf{x}$.
-We assume that $f(\mathbf{x})$, the desired underlying mapping we want to obtain by learning, is to be used as input to the activation function on the top.
-On the left,
-the portion within the dotted-line box
-must directly learn $f(\mathbf{x})$.
-On the right,
-the portion within the dotted-line box
-needs to
-learn the *residual mapping* $g(\mathbf{x}) = f(\mathbf{x}) - \mathbf{x}$,
-which is how the residual block derives its name.
-If the identity mapping $f(\mathbf{x}) = \mathbf{x}$ is the desired underlying mapping,
-the residual mapping amounts to $g(\mathbf{x}) = 0$ and it is thus easier to learn:
-we only need to push the weights and biases
-of the
-upper weight layer (e.g., fully connected layer and convolutional layer)
-within the dotted-line box
-to zero.
-The right figure illustrates the *residual block* of ResNet,
-where the solid line carrying the layer input
-$\mathbf{x}$ to the addition operator
-is called a *residual connection* (or *shortcut connection*).
-With residual blocks, inputs can
-forward propagate faster through the residual connections across layers.
-In fact,
-the residual block
-can be thought of as
-a special case of the multi-branch Inception block:
-it has two branches
-one of which is the identity mapping.
+Hãy tập trung vào một phần cục bộ của mạng nơ-ron, như minh họa trong :numref:`fig_residual_block`. Ký hiệu đầu vào là $\mathbf{x}$.
+Chúng ta giả sử rằng $f(\mathbf{x})$, ánh xạ nền tảng mong muốn mà ta muốn thu được bằng học, sẽ được dùng làm đầu vào cho hàm kích hoạt ở phía trên.
+Ở bên trái,
+phần nằm trong hộp nét đứt
+phải trực tiếp học $f(\mathbf{x})$.
+Ở bên phải,
+phần nằm trong hộp nét đứt
+cần
+học *ánh xạ phần dư* $g(\mathbf{x}) = f(\mathbf{x}) - \mathbf{x}$,
+đây chính là nguồn gốc tên gọi của khối phần dư.
+Nếu ánh xạ đồng nhất $f(\mathbf{x}) = \mathbf{x}$ là ánh xạ nền tảng mong muốn,
+thì ánh xạ phần dư trở thành $g(\mathbf{x}) = 0$ và do đó dễ học hơn:
+chúng ta chỉ cần đưa trọng số và bias
+của
+lớp trọng số phía trên (ví dụ: fully connected layer và convolutional layer)
+trong hộp nét đứt
+về 0.
+Hình bên phải minh họa *khối phần dư* của ResNet,
+trong đó đường liền mang đầu vào lớp
+$\mathbf{x}$ đến toán tử cộng
+được gọi là *kết nối phần dư* (hoặc *kết nối tắt*).
+Với các khối phần dư, đầu vào có thể
+lan truyền thuận nhanh hơn qua các kết nối phần dư giữa các lớp.
+Thực tế,
+khối phần dư
+có thể được xem là
+một trường hợp đặc biệt của khối Inception đa nhánh:
+nó có hai nhánh,
+một trong số đó là ánh xạ đồng nhất.
 
-![In a regular block (left), the portion within the dotted-line box must directly learn the mapping $\mathit{f}(\mathbf{x})$. In a residual block (right), the portion within the dotted-line box needs to learn the residual mapping $\mathit{g}(\mathbf{x}) = \mathit{f}(\mathbf{x}) - \mathbf{x}$, making the identity mapping $\mathit{f}(\mathbf{x}) = \mathbf{x}$ easier to learn.](../img/residual-block.svg)
+![Trong một khối thông thường (bên trái), phần nằm trong hộp nét đứt phải trực tiếp học ánh xạ $\mathit{f}(\mathbf{x})$. Trong một khối phần dư (bên phải), phần nằm trong hộp nét đứt cần học ánh xạ phần dư $\mathit{g}(\mathbf{x}) = \mathit{f}(\mathbf{x}) - \mathbf{x}$, giúp ánh xạ đồng nhất $\mathit{f}(\mathbf{x}) = \mathbf{x}$ dễ học hơn.](../img/residual-block.svg)
 :label:`fig_residual_block`
 
 
-ResNet has VGG's full $3\times 3$ convolutional layer design. The residual block has two $3\times 3$ convolutional layers with the same number of output channels. Each convolutional layer is followed by a batch normalization layer and a ReLU activation function. Then, we skip these two convolution operations and add the input directly before the final ReLU activation function.
-This kind of design requires that the output of the two convolutional layers has to be of the same shape as the input, so that they can be added together. If we want to change the number of channels, we need to introduce an additional $1\times 1$ convolutional layer to transform the input into the desired shape for the addition operation. Let's have a look at the code below.
+ResNet sử dụng thiết kế các convolutional layer $3\times 3$ đầy đủ của VGG. Khối phần dư có hai convolutional layer $3\times 3$ với cùng số lượng output channel. Mỗi convolutional layer được theo sau bởi một batch normalization layer và một hàm kích hoạt ReLU. Sau đó, chúng ta bỏ qua hai phép toán convolution này và cộng trực tiếp đầu vào trước hàm kích hoạt ReLU cuối cùng.
+Kiểu thiết kế này yêu cầu đầu ra của hai convolutional layer phải có cùng shape với đầu vào để chúng có thể được cộng lại. Nếu muốn thay đổi số lượng channel, chúng ta cần thêm một convolutional layer $1\times 1$ để biến đổi đầu vào thành shape mong muốn cho phép toán cộng. Hãy xem đoạn code bên dưới.
 
 ```{.python .input}
 %%tab mxnet
@@ -236,12 +235,12 @@ class Residual(nn.Module):  #@save
         return nn.relu(Y)
 ```
 
-This code generates two types of networks: one where we add the input to the output before applying the ReLU nonlinearity whenever `use_1x1conv=False`; and one where we adjust channels and resolution by means of a $1 \times 1$ convolution before adding. :numref:`fig_resnet_block` illustrates this.
+Đoạn code này tạo ra hai loại mạng: một loại cộng đầu vào vào đầu ra trước khi áp dụng phi tuyến ReLU bất cứ khi nào `use_1x1conv=False`; và một loại điều chỉnh channel và độ phân giải bằng convolution $1 \times 1$ trước khi cộng. :numref:`fig_resnet_block` minh họa điều này.
 
-![ResNet block with and without $1 \times 1$ convolution, which transforms the input into the desired shape for the addition operation.](../img/resnet-block.svg)
+![Khối ResNet có và không có convolution $1 \times 1$, phép toán này biến đổi đầu vào thành shape mong muốn cho phép toán cộng.](../img/resnet-block.svg)
 :label:`fig_resnet_block`
 
-Now let's look at [**a situation where the input and output are of the same shape**], where $1 \times 1$ convolution is not needed.
+Bây giờ, hãy xem xét [**trường hợp đầu vào và đầu ra có cùng shape**], khi không cần convolution $1 \times 1$.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -269,8 +268,8 @@ X = jax.random.normal(d2l.get_key(), (4, 6, 6, 3))
 blk.init_with_output(d2l.get_key(), X)[0].shape
 ```
 
-We also have the option to [**halve the output height and width while increasing the number of output channels**].
-In this case we use $1 \times 1$ convolutions via `use_1x1conv=True`. This comes in handy at the beginning of each ResNet block to reduce the spatial dimensionality via `strides=2`.
+Chúng ta cũng có lựa chọn [**giảm một nửa chiều cao và chiều rộng đầu ra trong khi tăng số lượng output channel**].
+Trong trường hợp này, chúng ta sử dụng convolution $1 \times 1$ thông qua `use_1x1conv=True`. Điều này hữu ích ở đầu mỗi khối ResNet để giảm số chiều không gian thông qua `strides=2`.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -286,9 +285,9 @@ blk = Residual(6, use_1x1conv=True, strides=(2, 2))
 blk.init_with_output(d2l.get_key(), X)[0].shape
 ```
 
-## [**ResNet Model**]
+## [**Mô hình ResNet**]
 
-The first two layers of ResNet are the same as those of the GoogLeNet we described before: the $7\times 7$ convolutional layer with 64 output channels and a stride of 2 is followed by the $3\times 3$ max-pooling layer with a stride of 2. The difference is the batch normalization layer added after each convolutional layer in ResNet.
+Hai lớp đầu tiên của ResNet giống với GoogLeNet mà chúng ta đã mô tả trước đó: convolutional layer $7\times 7$ với 64 output channel và stride bằng 2, theo sau là max-pooling layer $3\times 3$ với stride bằng 2. Điểm khác biệt là batch normalization layer được thêm sau mỗi convolutional layer trong ResNet.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -334,9 +333,9 @@ class ResNet(d2l.Classifier):
                                   padding='same')])
 ```
 
-GoogLeNet uses four modules made up of Inception blocks.
-However, ResNet uses four modules made up of residual blocks, each of which uses several residual blocks with the same number of output channels.
-The number of channels in the first module is the same as the number of input channels. Since a max-pooling layer with a stride of 2 has already been used, it is not necessary to reduce the height and width. In the first residual block for each of the subsequent modules, the number of channels is doubled compared with that of the previous module, and the height and width are halved.
+GoogLeNet sử dụng bốn mô-đun được tạo thành từ các khối Inception.
+Tuy nhiên, ResNet sử dụng bốn mô-đun được tạo thành từ các khối residual, trong đó mỗi mô-đun sử dụng một số khối residual có cùng số kênh đầu ra.
+Số kênh trong mô-đun đầu tiên bằng số kênh đầu vào. Vì một lớp max-pooling với stride bằng 2 đã được sử dụng, nên không cần giảm chiều cao và chiều rộng. Trong khối residual đầu tiên của mỗi mô-đun tiếp theo, số kênh được tăng gấp đôi so với mô-đun trước đó, còn chiều cao và chiều rộng được giảm một nửa.
 
 ```{.python .input}
 %%tab mxnet
@@ -391,7 +390,7 @@ def block(self, num_residuals, num_channels, first_block=False):
     return nn.Sequential(blk)
 ```
 
-Then, we add all the modules to ResNet. Here, two residual blocks are used for each module. Lastly, just like GoogLeNet, we add a global average pooling layer, followed by the fully connected layer output.
+Sau đó, chúng ta thêm tất cả các mô-đun vào ResNet. Ở đây, hai khối residual được dùng cho mỗi mô-đun. Cuối cùng, giống như GoogLeNet, chúng ta thêm một lớp global average pooling, theo sau là đầu ra từ lớp fully connected.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -439,13 +438,13 @@ def create_net(self):
     return net
 ```
 
-There are four convolutional layers in each module (excluding the $1\times 1$ convolutional layer). Together with the first $7\times 7$ convolutional layer and the final fully connected layer, there are 18 layers in total. Therefore, this model is commonly known as ResNet-18.
-By configuring different numbers of channels and residual blocks in the module, we can create different ResNet models, such as the deeper 152-layer ResNet-152. Although the main architecture of ResNet is similar to that of GoogLeNet, ResNet's structure is simpler and easier to modify. All these factors have resulted in the rapid and widespread use of ResNet. :numref:`fig_resnet18` depicts the full ResNet-18.
+Mỗi mô-đun có bốn lớp convolutional (không tính lớp convolutional $1\times 1$). Cùng với lớp convolutional $7\times 7$ đầu tiên và lớp fully connected cuối cùng, tổng cộng có 18 lớp. Do đó, mô hình này thường được gọi là ResNet-18.
+Bằng cách cấu hình số lượng kênh và khối residual khác nhau trong mô-đun, chúng ta có thể tạo các mô hình ResNet khác nhau, chẳng hạn ResNet-152 sâu hơn với 152 lớp. Mặc dù kiến trúc chính của ResNet tương tự GoogLeNet, cấu trúc của ResNet đơn giản hơn và dễ chỉnh sửa hơn. Tất cả các yếu tố này đã dẫn đến việc ResNet được sử dụng nhanh chóng và rộng rãi. :numref:`fig_resnet18` minh họa ResNet-18 hoàn chỉnh.
 
-![The ResNet-18 architecture.](../img/resnet18-90.svg)
+![Kiến trúc ResNet-18.](../img/resnet18-90.svg)
 :label:`fig_resnet18`
 
-Before training ResNet, let's [**observe how the input shape changes across different modules in ResNet**]. As in all the previous architectures, the resolution decreases while the number of channels increases up until the point where a global average pooling layer aggregates all features.
+Trước khi huấn luyện ResNet, hãy [**quan sát cách hình dạng đầu vào thay đổi qua các mô-đun khác nhau trong ResNet**]. Giống như trong tất cả các kiến trúc trước đó, độ phân giải giảm trong khi số kênh tăng cho đến khi một lớp global average pooling tổng hợp toàn bộ đặc trưng.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -478,9 +477,9 @@ ResNet18().layer_summary((1, 96, 96, 1))
 ResNet18(training=False).layer_summary((1, 96, 96, 1))
 ```
 
-## [**Training**]
+## [**Huấn luyện**]
 
-We train ResNet on the Fashion-MNIST dataset, just like before. ResNet is quite a powerful and flexible architecture. The plot capturing training and validation loss illustrates a significant gap between both graphs, with the training loss being considerably lower. For a network of this flexibility, more training data would offer distinct benefit in closing the gap and improving accuracy.
+Chúng ta huấn luyện ResNet trên tập dữ liệu Fashion-MNIST, giống như trước đây. ResNet là một kiến trúc khá mạnh mẽ và linh hoạt. Biểu đồ thể hiện loss huấn luyện và validation cho thấy khoảng cách đáng kể giữa hai đường, trong đó training loss thấp hơn đáng kể. Đối với một mạng có độ linh hoạt này, thêm dữ liệu huấn luyện sẽ mang lại lợi ích rõ rệt trong việc thu hẹp khoảng cách và cải thiện độ chính xác.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -504,26 +503,26 @@ with d2l.try_gpu():
 ## ResNeXt
 :label:`subsec_resnext`
 
-One of the challenges one encounters in the design of ResNet is the trade-off between nonlinearity and dimensionality within a given block. That is, we could add more nonlinearity by increasing the number of layers, or by increasing the width of the convolutions. An alternative strategy is to increase the number of channels that can carry information between blocks. Unfortunately, the latter comes with a quadratic penalty since the computational cost of ingesting $c_\textrm{i}$ channels and emitting $c_\textrm{o}$ channels is proportional to $\mathcal{O}(c_\textrm{i} \cdot c_\textrm{o})$ (see our discussion in :numref:`sec_channels`). 
+Một trong các thách thức khi thiết kế ResNet là sự đánh đổi giữa tính phi tuyến và số chiều trong một block nhất định. Nghĩa là, chúng ta có thể tăng tính phi tuyến bằng cách tăng số lớp hoặc tăng chiều rộng của các convolution. Một chiến lược thay thế là tăng số kênh có thể truyền thông tin giữa các block. Không may là cách sau đi kèm chi phí tăng bậc hai, vì chi phí tính toán để nhận $c_\textrm{i}$ kênh và tạo ra $c_\textrm{o}$ kênh tỉ lệ với $\mathcal{O}(c_\textrm{i} \cdot c_\textrm{o})$ (xem phần thảo luận của chúng ta trong :numref:`sec_channels`). 
 
-We can take some inspiration from the Inception block of :numref:`fig_inception` which has information flowing through the block in separate groups. Applying the idea of multiple independent groups to the ResNet block of :numref:`fig_resnet_block` led to the design of ResNeXt :cite:`Xie.Girshick.Dollar.ea.2017`.
-Different from the smorgasbord of transformations in Inception, 
-ResNeXt adopts the *same* transformation in all branches,
-thus minimizing the need for manual tuning of each branch. 
+Chúng ta có thể lấy cảm hứng từ block Inception trong :numref:`fig_inception`, nơi thông tin đi qua block theo các nhóm riêng biệt. Áp dụng ý tưởng về nhiều nhóm độc lập vào block ResNet trong :numref:`fig_resnet_block` đã dẫn đến thiết kế ResNeXt :cite:`Xie.Girshick.Dollar.ea.2017`.
+Khác với tập hợp đa dạng các phép biến đổi trong Inception, 
+ResNeXt áp dụng *cùng một* phép biến đổi ở mọi nhánh,
+do đó giảm thiểu nhu cầu tinh chỉnh thủ công từng nhánh. 
 
-![The ResNeXt block. The use of grouped convolution with $\mathit{g}$ groups is $\mathit{g}$ times faster than a dense convolution. It is a bottleneck residual block when the number of intermediate channels $\mathit{b}$ is less than $\mathit{c}$.](../img/resnext-block.svg)
+![Block ResNeXt. Việc sử dụng grouped convolution với $\mathit{g}$ nhóm nhanh hơn $\mathit{g}$ lần so với dense convolution. Đây là một bottleneck residual block khi số kênh trung gian $\mathit{b}$ nhỏ hơn $\mathit{c}$.](../img/resnext-block.svg)
 :label:`fig_resnext_block`
 
-Breaking up a convolution from $c_\textrm{i}$ to $c_\textrm{o}$ channels into one of $g$ groups of size $c_\textrm{i}/g$ generating $g$ outputs of size $c_\textrm{o}/g$ is called, quite fittingly, a *grouped convolution*. The computational cost (proportionally) is reduced from $\mathcal{O}(c_\textrm{i} \cdot c_\textrm{o})$ to $\mathcal{O}(g \cdot (c_\textrm{i}/g) \cdot (c_\textrm{o}/g)) = \mathcal{O}(c_\textrm{i} \cdot c_\textrm{o} / g)$, i.e., it is $g$ times faster. Even better, the number of parameters needed to generate the output is also reduced from a $c_\textrm{i} \times c_\textrm{o}$ matrix to $g$ smaller matrices of size $(c_\textrm{i}/g) \times (c_\textrm{o}/g)$, again a $g$ times reduction. In what follows we assume that both $c_\textrm{i}$ and $c_\textrm{o}$ are divisible by $g$. 
+Việc chia một convolution từ $c_\textrm{i}$ kênh sang $c_\textrm{o}$ kênh thành một trong $g$ nhóm có kích thước $c_\textrm{i}/g$, tạo ra $g$ đầu ra có kích thước $c_\textrm{o}/g$, được gọi rất phù hợp là *grouped convolution*. Chi phí tính toán (theo tỉ lệ) được giảm từ $\mathcal{O}(c_\textrm{i} \cdot c_\textrm{o})$ xuống $\mathcal{O}(g \cdot (c_\textrm{i}/g) \cdot (c_\textrm{o}/g)) = \mathcal{O}(c_\textrm{i} \cdot c_\textrm{o} / g)$, tức là nhanh hơn $g$ lần. Tuyệt hơn nữa, số tham số cần để tạo đầu ra cũng được giảm từ một ma trận $c_\textrm{i} \times c_\textrm{o}$ xuống $g$ ma trận nhỏ hơn có kích thước $(c_\textrm{i}/g) \times (c_\textrm{o}/g)$, một lần nữa giảm $g$ lần. Trong phần sau, chúng ta giả sử cả $c_\textrm{i}$ và $c_\textrm{o}$ đều chia hết cho $g$. 
 
-The only challenge in this design is that no information is exchanged between the $g$ groups. The ResNeXt block of 
-:numref:`fig_resnext_block` amends this in two ways: the grouped convolution with a $3 \times 3$ kernel is sandwiched in between two $1 \times 1$ convolutions. The second one serves double duty in changing the number of channels back. The benefit is that we only pay the $\mathcal{O}(c \cdot b)$ cost for $1 \times 1$ kernels and can make do with an $\mathcal{O}(b^2 / g)$ cost for $3 \times 3$ kernels. Similar to the residual block implementation in
-:numref:`subsec_residual-blks`, the residual connection is replaced (thus generalized) by a $1 \times 1$ convolution.
+Thách thức duy nhất trong thiết kế này là không có thông tin nào được trao đổi giữa $g$ nhóm. Block ResNeXt trong 
+:numref:`fig_resnext_block` khắc phục điều này theo hai cách: grouped convolution với kernel $3 \times 3$ được đặt giữa hai convolution $1 \times 1$. Convolution thứ hai thực hiện đồng thời nhiệm vụ thay đổi số kênh trở lại. Lợi ích là chúng ta chỉ phải trả chi phí $\mathcal{O}(c \cdot b)$ cho các kernel $1 \times 1$ và có thể dùng chi phí $\mathcal{O}(b^2 / g)$ cho các kernel $3 \times 3$. Tương tự cách triển khai residual block trong
+:numref:`subsec_residual-blks`, kết nối residual được thay thế (và do đó được tổng quát hóa) bằng một convolution $1 \times 1$.
 
-The right-hand figure in :numref:`fig_resnext_block` provides a much more concise summary of the resulting network block. It will also play a major role in the design of generic modern CNNs in :numref:`sec_cnn-design`. Note that the idea of grouped convolutions dates back to the implementation of AlexNet :cite:`Krizhevsky.Sutskever.Hinton.2012`. When distributing the network across two GPUs with limited memory, the implementation treated each GPU as its own channel with no ill effects. 
+Hình bên phải trong :numref:`fig_resnext_block` cung cấp bản tóm tắt súc tích hơn nhiều về network block thu được. Nó cũng sẽ đóng vai trò quan trọng trong thiết kế các CNN hiện đại tổng quát ở :numref:`sec_cnn-design`. Lưu ý rằng ý tưởng grouped convolution bắt nguồn từ cách triển khai AlexNet :cite:`Krizhevsky.Sutskever.Hinton.2012`. Khi phân phối mạng trên hai GPU có bộ nhớ hạn chế, cách triển khai này coi mỗi GPU là một kênh riêng mà không gây tác động xấu nào. 
 
-The following implementation of the `ResNeXtBlock` class takes as argument `groups` ($g$), with 
-`bot_channels` ($b$) intermediate (bottleneck) channels. Lastly, when we need to reduce the height and width of the representation, we add a stride of $2$ by setting `use_1x1conv=True, strides=2`.
+Cách triển khai sau đây của lớp `ResNeXtBlock` nhận `groups` ($g$) làm đối số, với 
+`bot_channels` ($b$) kênh trung gian (bottleneck). Cuối cùng, khi cần giảm chiều cao và chiều rộng của biểu diễn, chúng ta thêm stride bằng $2$ bằng cách đặt `use_1x1conv=True, strides=2`.
 
 ```{.python .input}
 %%tab mxnet
@@ -661,7 +660,7 @@ class ResNeXtBlock(nn.Module):  #@save
         return nn.relu(Y + X)
 ```
 
-Its use is entirely analogous to that of the `ResNetBlock` discussed previously. For instance, when using (`use_1x1conv=False, strides=1`), the input and output are of the same shape. Alternatively, setting `use_1x1conv=True, strides=2` halves the output height and width.
+Cách sử dụng của nó hoàn toàn tương tự với `ResNetBlock` đã được thảo luận trước đó. Ví dụ, khi sử dụng (`use_1x1conv=False, strides=1`), đầu vào và đầu ra có cùng hình dạng. Hoặc, đặt `use_1x1conv=True, strides=2` sẽ giảm một nửa chiều cao và chiều rộng đầu ra.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -687,52 +686,52 @@ X = jnp.zeros((4, 96, 96, 32))
 blk.init_with_output(d2l.get_key(), X)[0].shape
 ```
 
-## Summary and Discussion
+## Tóm tắt và Thảo luận
 
-Nested function classes are desirable since they allow us to obtain strictly *more powerful* rather than also subtly *different* function classes when adding capacity. One way of accomplishing this is by letting additional layers to simply pass through the input to the output. Residual connections allow for this. As a consequence, this changes the inductive bias from simple functions being of the form $f(\mathbf{x}) = 0$ to simple functions looking like $f(\mathbf{x}) = \mathbf{x}$. 
+Các lớp hàm lồng nhau là mong muốn vì chúng cho phép chúng ta thu được các lớp hàm *mạnh hơn* một cách chặt chẽ, thay vì đồng thời trở nên *khác biệt* một cách tinh vi khi tăng năng lực. Một cách để thực hiện điều này là để các lớp bổ sung chỉ đơn giản truyền đầu vào sang đầu ra. Các kết nối residual cho phép điều đó. Do đó, điều này thay đổi inductive bias từ các hàm đơn giản có dạng $f(\mathbf{x}) = 0$ thành các hàm đơn giản có dạng $f(\mathbf{x}) = \mathbf{x}$. 
 
 
-The residual mapping can learn the identity function more easily, such as pushing parameters in the weight layer to zero. We can train an effective *deep* neural network by having residual blocks. Inputs can forward propagate faster through the residual connections across layers. As a consequence, we can thus train much deeper networks. For instance, the original ResNet paper :cite:`He.Zhang.Ren.ea.2016` allowed for up to 152 layers. Another benefit of residual networks is that it allows us to add layers, initialized as the identity function, *during* the training process. After all, the default behavior of a layer is to let the data pass through unchanged. This can accelerate the training of very large networks in some cases. 
+Ánh xạ residual có thể học hàm đồng nhất dễ dàng hơn, chẳng hạn bằng cách đưa các tham số trong lớp trọng số về không. Chúng ta có thể huấn luyện một mạng nơ-ron *sâu* hiệu quả nhờ các residual block. Đầu vào có thể lan truyền xuôi nhanh hơn qua các kết nối residual giữa các lớp. Do đó, chúng ta có thể huấn luyện các mạng sâu hơn nhiều. Ví dụ, bài báo ResNet gốc :cite:`He.Zhang.Ren.ea.2016` cho phép lên đến 152 lớp. Một lợi ích khác của mạng residual là nó cho phép chúng ta thêm các lớp, được khởi tạo là hàm đồng nhất, *trong khi* huấn luyện. Xét cho cùng, hành vi mặc định của một lớp là để dữ liệu đi qua mà không thay đổi. Điều này trong một số trường hợp có thể tăng tốc huấn luyện các mạng rất lớn. 
 
-Prior to residual connections,
-bypassing paths with gating units were introduced
-to effectively train highway networks with over 100 layers
+Trước các kết nối residual,
+các đường bypass với các đơn vị gating đã được giới thiệu
+để huấn luyện hiệu quả các highway network có hơn 100 lớp
 :cite:`srivastava2015highway`.
-Using identity functions as bypassing paths,
-ResNet performed remarkably well
-on multiple computer vision tasks.
-Residual connections had a major influence on the design of subsequent deep neural networks, of either convolutional or sequential nature.
-As we will introduce later,
-the Transformer architecture :cite:`Vaswani.Shazeer.Parmar.ea.2017`
-adopts residual connections (together with other design choices) and is pervasive
-in areas as diverse as
-language, vision, speech, and reinforcement learning.
+Sử dụng các hàm đồng nhất làm đường bypass,
+ResNet hoạt động nổi bật
+trên nhiều tác vụ computer vision.
+Các kết nối residual đã ảnh hưởng lớn đến thiết kế của các mạng nơ-ron sâu sau này, dù có bản chất convolutional hay tuần tự.
+Như chúng ta sẽ giới thiệu sau,
+kiến trúc Transformer :cite:`Vaswani.Shazeer.Parmar.ea.2017`
+áp dụng các kết nối residual (cùng với các lựa chọn thiết kế khác) và phổ biến
+trong những lĩnh vực đa dạng như
+ngôn ngữ, thị giác, giọng nói và reinforcement learning.
 
-ResNeXt is an example for how the design of convolutional neural networks has evolved over time: by being more frugal with computation and trading it off against the size of the activations (number of channels), it allows for faster and more accurate networks at lower cost. An alternative way of viewing grouped convolutions is to think of a block-diagonal matrix for the convolutional weights. Note that there are quite a few such "tricks" that lead to more efficient networks. For instance, ShiftNet :cite:`wu2018shift` mimicks the effects of a $3 \times 3$ convolution, simply by adding shifted activations to the channels, offering increased function complexity, this time without any computational cost. 
+ResNeXt là một ví dụ về cách thiết kế mạng nơ-ron tích chập đã phát triển theo thời gian: bằng cách sử dụng tính toán tiết kiệm hơn và đánh đổi nó với kích thước của các activation (số lượng kênh), mô hình cho phép tạo ra các mạng nhanh hơn và chính xác hơn với chi phí thấp hơn. Một cách khác để xem grouped convolution là coi các trọng số convolution như một ma trận block-diagonal. Lưu ý rằng có khá nhiều “mẹo” như vậy giúp tạo ra các mạng hiệu quả hơn. Ví dụ, ShiftNet :cite:`wu2018shift` mô phỏng hiệu ứng của một convolution $3 \times 3$ chỉ bằng cách cộng các activation đã dịch chuyển vào các kênh, mang lại độ phức tạp hàm tăng lên mà lần này không tốn bất kỳ chi phí tính toán nào. 
 
-A common feature of the designs we have discussed so far is that the network design is fairly manual, primarily relying on the ingenuity of the designer to find the "right" network hyperparameters. While clearly feasible, it is also very costly in terms of human time and there is no guarantee that the outcome is optimal in any sense. In :numref:`sec_cnn-design` we will discuss a number of strategies for obtaining high quality networks in a more automated fashion. In particular, we will review the notion of *network design spaces* that led to the RegNetX/Y models
+Một đặc điểm chung của các thiết kế mà chúng ta đã thảo luận cho đến nay là việc thiết kế mạng khá thủ công, chủ yếu dựa vào sự khéo léo của người thiết kế để tìm ra các siêu tham số mạng “đúng”. Mặc dù rõ ràng là khả thi, cách này cũng rất tốn thời gian của con người và không có bảo đảm rằng kết quả đạt được là tối ưu theo bất kỳ nghĩa nào. Trong :numref:`sec_cnn-design` chúng ta sẽ thảo luận một số chiến lược để thu được các mạng chất lượng cao theo cách tự động hóa hơn. Cụ thể, chúng ta sẽ xem xét khái niệm *không gian thiết kế mạng* (network design spaces), vốn đã dẫn đến các mô hình RegNetX/Y
 :cite:`Radosavovic.Kosaraju.Girshick.ea.2020`.
 
-## Exercises
+## Bài tập
 
-1. What are the major differences between the Inception block in :numref:`fig_inception` and the residual block? How do they compare in terms of computation, accuracy, and the classes of functions they can describe?
-1. Refer to Table 1 in the ResNet paper :cite:`He.Zhang.Ren.ea.2016` to implement different variants of the network. 
-1. For deeper networks, ResNet introduces a "bottleneck" architecture to reduce model complexity. Try to implement it.
-1. In subsequent versions of ResNet, the authors changed the "convolution, batch normalization, and activation" structure to the "batch normalization, activation, and convolution" structure. Make this improvement yourself. See Figure 1 in :citet:`He.Zhang.Ren.ea.2016*1` for details.
-1. Why can't we just increase the complexity of functions without bound, even if the function classes are nested?
+1. Những khác biệt chính giữa Inception block trong :numref:`fig_inception` và residual block là gì? Chúng khác nhau như thế nào về tính toán, độ chính xác và các lớp hàm mà chúng có thể biểu diễn?
+1. Tham khảo Bảng 1 trong bài báo ResNet :cite:`He.Zhang.Ren.ea.2016` để triển khai các biến thể khác nhau của mạng. 
+1. Với các mạng sâu hơn, ResNet giới thiệu kiến trúc “bottleneck” để giảm độ phức tạp của mô hình. Hãy thử triển khai kiến trúc này.
+1. Trong các phiên bản ResNet sau này, các tác giả đã thay đổi cấu trúc “convolution, batch normalization, và activation” thành cấu trúc “batch normalization, activation, và convolution”. Hãy tự thực hiện cải tiến này. Xem Hình 1 trong :citet:`He.Zhang.Ren.ea.2016*1` để biết chi tiết.
+1. Tại sao chúng ta không thể cứ tăng độ phức tạp của các hàm vô hạn, ngay cả khi các lớp hàm được lồng nhau?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/85)
+[Thảo luận](https://discuss.d2l.ai/t/85)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/86)
+[Thảo luận](https://discuss.d2l.ai/t/86)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/8737)
+[Thảo luận](https://discuss.d2l.ai/t/8737)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18006)
+[Thảo luận](https://discuss.d2l.ai/t/18006)
 :end_tab:

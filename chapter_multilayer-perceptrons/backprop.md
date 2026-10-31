@@ -1,180 +1,179 @@
-# Forward Propagation, Backward Propagation, and Computational Graphs
+# Lan truyền xuôi, lan truyền ngược và đồ thị tính toán
 :label:`sec_backprop`
 
-So far, we have trained our models
-with minibatch stochastic gradient descent.
-However, when we implemented the algorithm,
-we only worried about the calculations involved
-in *forward propagation* through the model.
-When it came time to calculate the gradients,
-we just invoked the backpropagation function provided by the deep learning framework.
+Cho đến nay, chúng ta đã huấn luyện các mô hình
+bằng stochastic gradient descent theo minibatch.
+Tuy nhiên, khi triển khai thuật toán,
+chúng ta chỉ quan tâm đến các phép tính liên quan
+đến *lan truyền xuôi* qua mô hình.
+Khi đến lúc tính gradient,
+chúng ta chỉ cần gọi hàm backpropagation do framework deep learning cung cấp.
 
-The automatic calculation of gradients
-profoundly simplifies
-the implementation of deep learning algorithms.
-Before automatic differentiation,
-even small changes to complicated models required
-recalculating complicated derivatives by hand.
-Surprisingly often, academic papers had to allocate
-numerous pages to deriving update rules.
-While we must continue to rely on automatic differentiation
-so we can focus on the interesting parts,
-you ought to know how these gradients
-are calculated under the hood
-if you want to go beyond a shallow
-understanding of deep learning.
+Việc tự động tính gradient
+đơn giản hóa sâu sắc
+quá trình triển khai các thuật toán deep learning.
+Trước khi có automatic differentiation,
+ngay cả những thay đổi nhỏ đối với các mô hình phức tạp cũng đòi hỏi
+phải tính lại các đạo hàm phức tạp bằng tay.
+Đáng ngạc nhiên là các bài báo học thuật thường phải dành
+nhiều trang để suy ra các quy tắc cập nhật.
+Mặc dù chúng ta vẫn phải dựa vào automatic differentiation
+để có thể tập trung vào những phần thú vị,
+bạn nên biết các gradient này
+được tính như thế nào ở bên trong
+nếu muốn vượt qua sự hiểu biết
+hời hợt về deep learning.
 
-In this section, we take a deep dive
-into the details of *backward propagation*
-(more commonly called *backpropagation*).
-To convey some insight for both the
-techniques and their implementations,
-we rely on some basic mathematics and computational graphs.
-To start, we focus our exposition on
-a one-hidden-layer MLP
-with weight decay ($\ell_2$ regularization, to be described in subsequent chapters).
+Trong phần này, chúng ta sẽ đi sâu
+vào chi tiết của *lan truyền ngược*
+(thường được gọi là *backpropagation*).
+Để cung cấp một số hiểu biết về cả
+kỹ thuật lẫn cách triển khai chúng,
+chúng ta dựa vào một số kiến thức toán học cơ bản và đồ thị tính toán.
+Để bắt đầu, chúng ta tập trung trình bày
+một MLP có một hidden layer
+với weight decay ($\ell_2$ regularization, sẽ được mô tả trong các chương sau).
 
-## Forward Propagation
+## Lan truyền xuôi
 
-*Forward propagation* (or *forward pass*) refers to the calculation and storage
-of intermediate variables (including outputs)
-for a neural network in order
-from the input layer to the output layer.
-We now work step-by-step through the mechanics
-of a neural network with one hidden layer.
-This may seem tedious but in the eternal words
-of funk virtuoso James Brown,
-you must "pay the cost to be the boss".
+*Lan truyền xuôi* (hoặc *forward pass*) là việc tính toán và lưu trữ
+các biến trung gian (bao gồm cả đầu ra)
+cho một neural network theo thứ tự
+từ input layer đến output layer.
+Bây giờ, chúng ta sẽ lần lượt tìm hiểu cơ chế
+của một neural network có một hidden layer.
+Điều này có vẻ tẻ nhạt, nhưng theo lời bất hủ
+của bậc thầy funk James Brown,
+bạn phải "trả giá để làm chủ".
 
 
-For the sake of simplicity, let's assume
-that the input example is $\mathbf{x}\in \mathbb{R}^d$
-and that our hidden layer does not include a bias term.
-Here the intermediate variable is:
+Để đơn giản, giả sử
+rằng ví dụ đầu vào là $\mathbf{x}\in \mathbb{R}^d$
+và hidden layer của chúng ta không bao gồm bias term.
+Ở đây, biến trung gian là:
 
 $$\mathbf{z}= \mathbf{W}^{(1)} \mathbf{x},$$
 
-where $\mathbf{W}^{(1)} \in \mathbb{R}^{h \times d}$
-is the weight parameter of the hidden layer.
-After running the intermediate variable
-$\mathbf{z}\in \mathbb{R}^h$ through the
-activation function $\phi$
-we obtain our hidden activation vector of length $h$:
+trong đó $\mathbf{W}^{(1)} \in \mathbb{R}^{h \times d}$
+là tham số trọng số của hidden layer.
+Sau khi đưa biến trung gian
+$\mathbf{z}\in \mathbb{R}^h$ qua
+hàm kích hoạt $\phi$,
+ta thu được vector kích hoạt hidden có độ dài $h$:
 
 $$\mathbf{h}= \phi (\mathbf{z}).$$
 
-The hidden layer output $\mathbf{h}$
-is also an intermediate variable.
-Assuming that the parameters of the output layer
-possess only a weight of
+Đầu ra của hidden layer $\mathbf{h}$
+cũng là một biến trung gian.
+Giả sử các tham số của output layer
+chỉ có trọng số
 $\mathbf{W}^{(2)} \in \mathbb{R}^{q \times h}$,
-we can obtain an output layer variable
-with a vector of length $q$:
+chúng ta có thể thu được một biến output layer
+với vector có độ dài $q$:
 
 $$\mathbf{o}= \mathbf{W}^{(2)} \mathbf{h}.$$
 
-Assuming that the loss function is $l$
-and the example label is $y$,
-we can then calculate the loss term
-for a single data example,
+Giả sử hàm mất mát là $l$
+và nhãn của ví dụ là $y$,
+khi đó chúng ta có thể tính hạng tử mất mát
+cho một ví dụ dữ liệu đơn lẻ,
 
 $$L = l(\mathbf{o}, y).$$
 
-As we will see the definition of $\ell_2$ regularization
-to be introduced later,
-given the hyperparameter $\lambda$,
-the regularization term is
+Như chúng ta sẽ thấy trong định nghĩa về $\ell_2$ regularization
+được giới thiệu sau,
+với hyperparameter $\lambda$,
+hạng tử regularization là
 
 $$s = \frac{\lambda}{2} \left(\|\mathbf{W}^{(1)}\|_\textrm{F}^2 + \|\mathbf{W}^{(2)}\|_\textrm{F}^2\right),$$
 :eqlabel:`eq_forward-s`
 
-where the Frobenius norm of the matrix
-is simply the $\ell_2$ norm applied
-after flattening the matrix into a vector.
-Finally, the model's regularized loss
-on a given data example is:
+trong đó Frobenius norm của ma trận
+đơn giản là $\ell_2$ norm được áp dụng
+sau khi làm phẳng ma trận thành một vector.
+Cuối cùng, mất mát đã regularize của mô hình
+trên một ví dụ dữ liệu cho trước là:
 
 $$J = L + s.$$
 
-We refer to $J$ as the *objective function*
-in the following discussion.
+Chúng ta gọi $J$ là *hàm mục tiêu*
+trong phần thảo luận sau đây.
 
 
-## Computational Graph of Forward Propagation
+## Đồ thị tính toán của lan truyền xuôi
 
-Plotting *computational graphs* helps us visualize
-the dependencies of operators
-and variables within the calculation.
-:numref:`fig_forward` contains the graph associated
-with the simple network described above,
-where squares denote variables and circles denote operators.
-The lower-left corner signifies the input
-and the upper-right corner is the output.
-Notice that the directions of the arrows
-(which illustrate data flow)
-are primarily rightward and upward.
+Việc vẽ *đồ thị tính toán* giúp chúng ta trực quan hóa
+các phụ thuộc của toán tử
+và biến trong phép tính.
+:numref:`fig_forward` chứa đồ thị liên quan
+đến mạng đơn giản được mô tả ở trên,
+trong đó hình vuông biểu thị biến và hình tròn biểu thị toán tử.
+Góc dưới bên trái biểu thị đầu vào
+và góc trên bên phải là đầu ra.
+Lưu ý rằng hướng của các mũi tên
+(minh họa luồng dữ liệu)
+chủ yếu hướng sang phải và lên trên.
 
-![Computational graph of forward propagation.](../img/forward.svg)
+![Đồ thị tính toán của lan truyền xuôi.](../img/forward.svg)
 :label:`fig_forward`
 
-## Backpropagation
+## Lan truyền ngược
 
-*Backpropagation* refers to the method of calculating
-the gradient of neural network parameters.
-In short, the method traverses the network in reverse order,
-from the output to the input layer,
-according to the *chain rule* from calculus.
-The algorithm stores any intermediate variables
-(partial derivatives)
-required while calculating the gradient
-with respect to some parameters.
-Assume that we have functions
+*Backpropagation* là phương pháp tính
+gradient của các tham số neural network.
+Tóm lại, phương pháp này duyệt mạng theo thứ tự ngược,
+từ output layer đến input layer,
+theo *quy tắc chuỗi* của phép tính vi phân.
+Thuật toán lưu trữ mọi biến trung gian
+(đạo hàm riêng)
+cần thiết khi tính gradient
+theo một số tham số.
+Giả sử chúng ta có các hàm
 $\mathsf{Y}=f(\mathsf{X})$
-and $\mathsf{Z}=g(\mathsf{Y})$,
-in which the input and the output
+và $\mathsf{Z}=g(\mathsf{Y})$,
+trong đó đầu vào và đầu ra
 $\mathsf{X}, \mathsf{Y}, \mathsf{Z}$
-are tensors of arbitrary shapes.
-By using the chain rule,
-we can compute the derivative
-of $\mathsf{Z}$ with respect to $\mathsf{X}$ via
+là các tensor có hình dạng tùy ý.
+Bằng cách sử dụng quy tắc chuỗi,
+chúng ta có thể tính đạo hàm
+của $\mathsf{Z}$ theo $\mathsf{X}$ thông qua
 
 $$\frac{\partial \mathsf{Z}}{\partial \mathsf{X}} = \textrm{prod}\left(\frac{\partial \mathsf{Z}}{\partial \mathsf{Y}}, \frac{\partial \mathsf{Y}}{\partial \mathsf{X}}\right).$$
 
-Here we use the $\textrm{prod}$ operator
-to multiply its arguments
-after the necessary operations,
-such as transposition and swapping input positions,
-have been carried out.
-For vectors, this is straightforward:
-it is simply matrix--matrix multiplication.
-For higher dimensional tensors,
-we use the appropriate counterpart.
-The operator $\textrm{prod}$ hides all the notational overhead.
+Ở đây, chúng ta sử dụng toán tử $\textrm{prod}$
+để nhân các đối số của nó
+sau khi thực hiện các thao tác cần thiết,
+chẳng hạn như chuyển vị và hoán đổi vị trí đầu vào.
+Đối với vector, điều này rất đơn giản:
+nó chỉ là phép nhân ma trận--ma trận.
+Đối với tensor có số chiều cao hơn,
+chúng ta sử dụng phép tương ứng phù hợp.
+Toán tử $\textrm{prod}$ che giấu toàn bộ phần ký hiệu phức tạp.
 
-Recall that
-the parameters of the simple network with one hidden layer,
-whose computational graph is in :numref:`fig_forward`,
-are $\mathbf{W}^{(1)}$ and $\mathbf{W}^{(2)}$.
-The objective of backpropagation is to
-calculate the gradients $\partial J/\partial \mathbf{W}^{(1)}$
-and $\partial J/\partial \mathbf{W}^{(2)}$.
-To accomplish this, we apply the chain rule
-and calculate, in turn, the gradient of
-each intermediate variable and parameter.
-The order of calculations are reversed
-relative to those performed in forward propagation,
-since we need to start with the outcome of the computational graph
-and work our way towards the parameters.
-The first step is to calculate the gradients
-of the objective function $J=L+s$
-with respect to the loss term $L$
-and the regularization term $s$:
+Hãy nhớ rằng
+các tham số của mạng đơn giản có một hidden layer,
+có đồ thị tính toán trong :numref:`fig_forward`,
+là $\mathbf{W}^{(1)}$ và $\mathbf{W}^{(2)}$.
+Mục tiêu của backpropagation là
+tính các gradient $\partial J/\partial \mathbf{W}^{(1)}$
+và $\partial J/\partial \mathbf{W}^{(2)}$.
+Để thực hiện điều này, chúng ta áp dụng quy tắc chuỗi
+và lần lượt tính gradient của
+mỗi biến trung gian và tham số.
+Thứ tự tính toán được đảo ngược
+so với thứ tự trong lan truyền xuôi,
+vì chúng ta cần bắt đầu từ kết quả của đồ thị tính toán
+và lần ngược về phía các tham số.
+Bước đầu tiên là tính gradient
+của hàm mục tiêu $J=L+s$
+theo hạng tử mất mát $L$
+và hạng tử regularization $s$:
 
 $$\frac{\partial J}{\partial L} = 1 \; \textrm{and} \; \frac{\partial J}{\partial s} = 1.$$
 
-Next, we compute the gradient of the objective function
-with respect to variable of the output layer $\mathbf{o}$
-according to the chain rule:
+Tiếp theo, chúng ta tính gradient của hàm mục tiêu
+theo biến của output layer $\mathbf{o}$
+dựa trên quy tắc chuỗi:
 
 $$
 \frac{\partial J}{\partial \mathbf{o}}
@@ -183,27 +182,27 @@ $$
 \in \mathbb{R}^q.
 $$
 
-Next, we calculate the gradients
-of the regularization term
-with respect to both parameters:
+Tiếp theo, chúng ta tính gradient
+của hạng tử regularization
+theo cả hai tham số:
 
 $$\frac{\partial s}{\partial \mathbf{W}^{(1)}} = \lambda \mathbf{W}^{(1)}
 \; \textrm{and} \;
 \frac{\partial s}{\partial \mathbf{W}^{(2)}} = \lambda \mathbf{W}^{(2)}.$$
 
-Now we are able to calculate the gradient
+Bây giờ, chúng ta có thể tính gradient
 $\partial J/\partial \mathbf{W}^{(2)} \in \mathbb{R}^{q \times h}$
-of the model parameters closest to the output layer.
-Using the chain rule yields:
+của các tham số mô hình gần output layer nhất.
+Áp dụng quy tắc chuỗi cho ta:
 
 $$\frac{\partial J}{\partial \mathbf{W}^{(2)}}= \textrm{prod}\left(\frac{\partial J}{\partial \mathbf{o}}, \frac{\partial \mathbf{o}}{\partial \mathbf{W}^{(2)}}\right) + \textrm{prod}\left(\frac{\partial J}{\partial s}, \frac{\partial s}{\partial \mathbf{W}^{(2)}}\right)= \frac{\partial J}{\partial \mathbf{o}} \mathbf{h}^\top + \lambda \mathbf{W}^{(2)}.$$
 :eqlabel:`eq_backprop-J-h`
 
-To obtain the gradient with respect to $\mathbf{W}^{(1)}$
-we need to continue backpropagation
-along the output layer to the hidden layer.
-The gradient with respect to the hidden layer output
-$\partial J/\partial \mathbf{h} \in \mathbb{R}^h$ is given by
+Để thu được gradient theo $\mathbf{W}^{(1)}$
+chúng ta cần tiếp tục backpropagation
+dọc theo output layer đến hidden layer.
+Gradient theo đầu ra của hidden layer
+$\partial J/\partial \mathbf{h} \in \mathbb{R}^h$ được cho bởi
 
 
 $$
@@ -212,11 +211,11 @@ $$
 = {\mathbf{W}^{(2)}}^\top \frac{\partial J}{\partial \mathbf{o}}.
 $$
 
-Since the activation function $\phi$ applies elementwise,
-calculating the gradient $\partial J/\partial \mathbf{z} \in \mathbb{R}^h$
-of the intermediate variable $\mathbf{z}$
-requires that we use the elementwise multiplication operator,
-which we denote by $\odot$:
+Vì hàm kích hoạt $\phi$ áp dụng theo từng phần tử,
+việc tính gradient $\partial J/\partial \mathbf{z} \in \mathbb{R}^h$
+của biến trung gian $\mathbf{z}$
+yêu cầu chúng ta sử dụng toán tử nhân theo từng phần tử,
+ký hiệu là $\odot$:
 
 $$
 \frac{\partial J}{\partial \mathbf{z}}
@@ -224,10 +223,10 @@ $$
 = \frac{\partial J}{\partial \mathbf{h}} \odot \phi'\left(\mathbf{z}\right).
 $$
 
-Finally, we can obtain the gradient
+Cuối cùng, ta có thể thu được gradient
 $\partial J/\partial \mathbf{W}^{(1)} \in \mathbb{R}^{h \times d}$
-of the model parameters closest to the input layer.
-According to the chain rule, we get
+của các tham số mô hình gần lớp đầu vào nhất.
+Theo quy tắc chuỗi, ta có
 
 $$
 \frac{\partial J}{\partial \mathbf{W}^{(1)}}
@@ -237,62 +236,62 @@ $$
 
 
 
-## Training Neural Networks
+## Huấn luyện Mạng nơ-ron
 
-When training neural networks,
-forward and backward propagation depend on each other.
-In particular, for forward propagation,
-we traverse the computational graph in the direction of dependencies
-and compute all the variables on its path.
-These are then used for backpropagation
-where the compute order on the graph is reversed.
+Khi huấn luyện mạng nơ-ron,
+lan truyền xuôi và lan truyền ngược phụ thuộc lẫn nhau.
+Cụ thể, đối với lan truyền xuôi,
+ta duyệt đồ thị tính toán theo hướng của các phụ thuộc
+và tính tất cả các biến trên đường đi của nó.
+Sau đó, chúng được dùng cho backpropagation,
+trong đó thứ tự tính toán trên đồ thị được đảo ngược.
 
-Take the aforementioned simple network as an illustrative example.
-On the one hand,
-computing the regularization term :eqref:`eq_forward-s`
-during forward propagation
-depends on the current values of model parameters $\mathbf{W}^{(1)}$ and $\mathbf{W}^{(2)}$.
-They are given by the optimization algorithm according to backpropagation in the most recent iteration.
-On the other hand,
-the gradient calculation for the parameter
-:eqref:`eq_backprop-J-h` during backpropagation
-depends on the current value of the hidden layer output $\mathbf{h}$,
-which is given by forward propagation.
-
-
-Therefore when training neural networks, once model parameters are initialized,
-we alternate forward propagation with backpropagation,
-updating model parameters using gradients given by backpropagation.
-Note that backpropagation reuses the stored intermediate values from forward propagation to avoid duplicate calculations.
-One of the consequences is that we need to retain
-the intermediate values until backpropagation is complete.
-This is also one of the reasons why training
-requires significantly more memory than plain prediction.
-Besides, the size of such intermediate values is roughly
-proportional to the number of network layers and the batch size.
-Thus,
-training deeper networks using larger batch sizes
-more easily leads to *out-of-memory* errors.
+Hãy lấy mạng đơn giản đã đề cập ở trên làm ví dụ minh họa.
+Một mặt,
+việc tính hạng tử regularization :eqref:`eq_forward-s`
+trong quá trình lan truyền xuôi
+phụ thuộc vào các giá trị hiện tại của tham số mô hình $\mathbf{W}^{(1)}$ và $\mathbf{W}^{(2)}$.
+Chúng được thuật toán tối ưu hóa cung cấp dựa trên backpropagation ở lần lặp gần nhất.
+Mặt khác,
+việc tính gradient cho tham số
+:eqref:`eq_backprop-J-h` trong quá trình backpropagation
+phụ thuộc vào giá trị hiện tại của đầu ra lớp ẩn $\mathbf{h}$,
+được cung cấp bởi lan truyền xuôi.
 
 
-## Summary
+Vì vậy, khi huấn luyện mạng nơ-ron, sau khi các tham số mô hình được khởi tạo,
+ta luân phiên lan truyền xuôi với backpropagation,
+cập nhật các tham số mô hình bằng gradient do backpropagation cung cấp.
+Lưu ý rằng backpropagation tái sử dụng các giá trị trung gian đã lưu từ lan truyền xuôi để tránh các phép tính trùng lặp.
+Một hệ quả là ta cần giữ lại
+các giá trị trung gian cho đến khi backpropagation hoàn tất.
+Đây cũng là một trong các lý do khiến việc huấn luyện
+cần nhiều bộ nhớ hơn đáng kể so với dự đoán thông thường.
+Ngoài ra, kích thước của các giá trị trung gian này xấp xỉ
+tỷ lệ thuận với số lượng lớp mạng và kích thước batch.
+Do đó,
+việc huấn luyện các mạng sâu hơn với batch size lớn hơn
+dễ dẫn đến lỗi *out-of-memory* hơn.
 
-Forward propagation sequentially calculates and stores intermediate variables within the computational graph defined by the neural network. It proceeds from the input to the output layer.
-Backpropagation sequentially calculates and stores the gradients of intermediate variables and parameters within the neural network in the reversed order.
-When training deep learning models, forward propagation and backpropagation are interdependent,
-and training requires significantly more memory than prediction.
+
+## Tóm tắt
+
+Lan truyền xuôi tính toán tuần tự và lưu trữ các biến trung gian trong đồ thị tính toán được xác định bởi mạng nơ-ron. Quá trình này đi từ lớp đầu vào đến lớp đầu ra.
+Backpropagation tính toán tuần tự và lưu trữ gradient của các biến trung gian và tham số trong mạng nơ-ron theo thứ tự đảo ngược.
+Khi huấn luyện các mô hình deep learning, lan truyền xuôi và backpropagation phụ thuộc lẫn nhau,
+và việc huấn luyện cần nhiều bộ nhớ hơn đáng kể so với dự đoán.
 
 
-## Exercises
+## Bài tập
 
-1. Assume that the inputs $\mathbf{X}$ to some scalar function $f$ are $n \times m$ matrices. What is the dimensionality of the gradient of $f$ with respect to $\mathbf{X}$?
-1. Add a bias to the hidden layer of the model described in this section (you do not need to include bias in the regularization term).
-    1. Draw the corresponding computational graph.
-    1. Derive the forward and backward propagation equations.
-1. Compute the memory footprint for training and prediction in the model described in this section.
-1. Assume that you want to compute second derivatives. What happens to the computational graph? How long do you expect the calculation to take?
-1. Assume that the computational graph is too large for your GPU.
-    1. Can you partition it over more than one GPU?
-    1. What are the advantages and disadvantages over training on a smaller minibatch?
+1. Giả sử các đầu vào $\mathbf{X}$ của một hàm vô hướng $f$ nào đó là các ma trận $n \times m$. Gradient của $f$ theo $\mathbf{X}$ có số chiều là bao nhiêu?
+1. Thêm một bias vào lớp ẩn của mô hình được mô tả trong phần này (bạn không cần đưa bias vào hạng tử regularization).
+    1. Vẽ đồ thị tính toán tương ứng.
+    1. Suy ra các phương trình lan truyền xuôi và lan truyền ngược.
+1. Tính mức sử dụng bộ nhớ khi huấn luyện và dự đoán trong mô hình được mô tả ở phần này.
+1. Giả sử bạn muốn tính đạo hàm bậc hai. Điều gì xảy ra với đồ thị tính toán? Bạn dự đoán phép tính sẽ mất bao lâu?
+1. Giả sử đồ thị tính toán quá lớn đối với GPU của bạn.
+    1. Bạn có thể phân vùng nó trên nhiều GPU không?
+    1. Những ưu điểm và nhược điểm so với việc huấn luyện trên một minibatch nhỏ hơn là gì?
 
-[Discussions](https://discuss.d2l.ai/t/102)
+[Thảo luận](https://discuss.d2l.ai/t/102)

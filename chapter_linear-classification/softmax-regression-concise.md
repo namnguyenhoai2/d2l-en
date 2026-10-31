@@ -3,15 +3,15 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Concise Implementation of Softmax Regression
+# Cài đặt Ngắn gọn Hồi quy Softmax
 :label:`sec_softmax_concise`
 
 
 
-Just as high-level deep learning frameworks
-made it easier to implement linear regression
-(see :numref:`sec_linear_concise`),
-they are similarly convenient here.
+Cũng như các framework deep learning cấp cao
+đã giúp việc cài đặt hồi quy tuyến tính trở nên dễ dàng hơn
+(xem :numref:`sec_linear_concise`),
+chúng cũng tiện lợi tương tự trong trường hợp này.
 
 ```{.python .input}
 %%tab mxnet
@@ -45,38 +45,38 @@ from jax import numpy as jnp
 import optax
 ```
 
-## Defining the Model
+## Định nghĩa Mô hình
 
-As in :numref:`sec_linear_concise`, 
-we construct our fully connected layer 
-using the built-in layer. 
-The built-in `__call__` method then invokes `forward` 
-whenever we need to apply the network to some input.
+Như trong :numref:`sec_linear_concise`, 
+chúng ta xây dựng lớp fully connected 
+bằng lớp tích hợp sẵn. 
+Phương thức `__call__` tích hợp sẵn sau đó gọi `forward` 
+mỗi khi cần áp dụng mạng lên một đầu vào nào đó.
 
 :begin_tab:`mxnet`
-Even though the input `X` is a fourth-order tensor, 
-the built-in `Dense` layer 
-will automatically convert `X` into a second-order tensor 
-by keeping the dimensionality along the first axis unchanged.
+Mặc dù đầu vào `X` là một tensor bậc bốn, 
+lớp `Dense` tích hợp sẵn 
+sẽ tự động chuyển đổi `X` thành tensor bậc hai 
+bằng cách giữ nguyên số chiều dọc theo trục đầu tiên.
 :end_tab:
 
 :begin_tab:`pytorch`
-We use a `Flatten` layer to convert the fourth-order tensor `X` to second order 
-by keeping the dimensionality along the first axis unchanged.
+Chúng ta sử dụng một lớp `Flatten` để chuyển đổi tensor bậc bốn `X` sang bậc hai 
+bằng cách giữ nguyên số chiều dọc theo trục đầu tiên.
 
 :end_tab:
 
 :begin_tab:`tensorflow`
-We use a `Flatten` layer to convert the fourth-order tensor `X` 
-by keeping the dimension along the first axis unchanged.
+Chúng ta sử dụng một lớp `Flatten` để chuyển đổi tensor bậc bốn `X` 
+bằng cách giữ nguyên số chiều dọc theo trục đầu tiên.
 :end_tab:
 
 :begin_tab:`jax`
-Flax allows users to write the network class in a more compact way
-using `@nn.compact` dectorator. With `@nn.compact`, one
-can simply write all network logic inside a single “forward pass”
-method, without needing to define the standard `setup` method in
-the dataclass.
+Flax cho phép người dùng viết lớp mạng theo cách gọn hơn
+bằng cách sử dụng decorator `@nn.compact`. Với `@nn.compact`, người dùng
+có thể đơn giản viết toàn bộ logic mạng bên trong một phương thức
+“forward pass” duy nhất mà không cần định nghĩa phương thức `setup` tiêu chuẩn trong
+dataclass.
 :end_tab:
 
 ```{.python .input}
@@ -125,25 +125,25 @@ class SoftmaxRegression(d2l.Classifier):  #@save
         return X
 ```
 
-## Softmax Revisited
+## Xem lại Softmax
 :label:`subsec_softmax-implementation-revisited`
 
-In :numref:`sec_softmax_scratch` we calculated our model's output
-and applied the cross-entropy loss. While this is perfectly
-reasonable mathematically, it is risky computationally, because of
-numerical underflow and overflow in the exponentiation.
+Trong :numref:`sec_softmax_scratch`, chúng ta đã tính đầu ra của mô hình
+và áp dụng hàm mất mát cross-entropy. Mặc dù điều này hoàn toàn
+hợp lý về mặt toán học, nó lại rủi ro về mặt tính toán do
+hiện tượng underflow và overflow số học khi lũy thừa.
 
-Recall that the softmax function computes probabilities via
+Hãy nhớ rằng hàm softmax tính xác suất theo
 $\hat y_j = \frac{\exp(o_j)}{\sum_k \exp(o_k)}$.
-If some of the $o_k$ are very large, i.e., very positive,
-then $\exp(o_k)$ might be larger than the largest number
-we can have for certain data types. This is called *overflow*. Likewise,
-if every argument is a very large negative number, we will get *underflow*.
-For instance, single precision floating point numbers approximately
-cover the range of $10^{-38}$ to $10^{38}$. As such, if the largest term in $\mathbf{o}$
-lies outside the interval $[-90, 90]$, the result will not be stable.
-A way round this problem is to subtract $\bar{o} \stackrel{\textrm{def}}{=} \max_k o_k$ from
-all entries:
+Nếu một vài $o_k$ rất lớn, tức là rất dương,
+thì $\exp(o_k)$ có thể lớn hơn số lớn nhất
+mà chúng ta có thể biểu diễn với một số kiểu dữ liệu nhất định. Điều này được gọi là *overflow*. Tương tự,
+nếu mọi đối số đều là số âm rất lớn, chúng ta sẽ gặp *underflow*.
+Ví dụ, số dấu phẩy động độ chính xác đơn xấp xỉ
+bao phủ khoảng từ $10^{-38}$ đến $10^{38}$. Do đó, nếu hạng tử lớn nhất trong $\mathbf{o}$
+nằm ngoài khoảng $[-90, 90]$, kết quả sẽ không ổn định.
+Một cách giải quyết vấn đề này là trừ $\bar{o} \stackrel{\textrm{def}}{=} \max_k o_k$ khỏi
+mọi phần tử:
 
 $$
 \hat y_j = \frac{\exp o_j}{\sum_k \exp o_k} =
@@ -151,21 +151,21 @@ $$
 \frac{\exp(o_j - \bar{o})}{\sum_k \exp (o_k - \bar{o})}.
 $$
 
-By construction we know that $o_j - \bar{o} \leq 0$ for all $j$. As such, for a $q$-class
-classification problem, the denominator is contained in the interval $[1, q]$. Moreover, the
-numerator never exceeds $1$, thus preventing numerical overflow. Numerical underflow only
-occurs when $\exp(o_j - \bar{o})$ numerically evaluates as $0$. Nonetheless, a few steps down
-the road we might find ourselves in trouble when we want to compute $\log \hat{y}_j$ as $\log 0$.
-In particular, in backpropagation,
-we might find ourselves faced with a screenful
-of the dreaded `NaN` (Not a Number) results.
+Theo cách xây dựng, chúng ta biết rằng $o_j - \bar{o} \leq 0$ với mọi $j$. Do đó, đối với bài toán
+phân loại $q$ lớp, mẫu số nằm trong khoảng $[1, q]$. Hơn nữa,
+tử số không bao giờ vượt quá $1$, nhờ đó ngăn chặn overflow số học. Underflow số học chỉ
+xảy ra khi $\exp(o_j - \bar{o})$ được tính về mặt số học thành $0$. Tuy nhiên, sau vài bước
+chúng ta có thể gặp rắc rối khi muốn tính $\log \hat{y}_j$ dưới dạng $\log 0$.
+Đặc biệt, trong backpropagation,
+chúng ta có thể phải đối mặt với cả một màn hình
+đầy các kết quả `NaN` (Không phải là Số) đáng sợ.
 
-Fortunately, we are saved by the fact that
-even though we are computing exponential functions,
-we ultimately intend to take their log
-(when calculating the cross-entropy loss).
-By combining softmax and cross-entropy,
-we can escape the numerical stability issues altogether. We have:
+May mắn thay, chúng ta được cứu bởi thực tế rằng
+mặc dù đang tính các hàm mũ,
+cuối cùng chúng ta lại muốn lấy log của chúng
+(khi tính hàm mất mát cross-entropy).
+Bằng cách kết hợp softmax và cross-entropy,
+chúng ta có thể hoàn toàn tránh được các vấn đề ổn định số học. Ta có:
 
 $$
 \log \hat{y}_j =
@@ -173,14 +173,14 @@ $$
 o_j - \bar{o} - \log \sum_k \exp (o_k - \bar{o}).
 $$
 
-This avoids both overflow and underflow.
-We will want to keep the conventional softmax function handy
-in case we ever want to evaluate the output probabilities by our model.
-But instead of passing softmax probabilities into our new loss function,
-we just
-[**pass the logits and compute the softmax and its log
-all at once inside the cross-entropy loss function,**]
-which does smart things like the ["LogSumExp trick"](https://en.wikipedia.org/wiki/LogSumExp).
+Điều này tránh được cả overflow lẫn underflow.
+Chúng ta vẫn cần giữ sẵn hàm softmax thông thường
+trong trường hợp muốn đánh giá xác suất đầu ra của mô hình.
+Nhưng thay vì truyền các xác suất softmax vào hàm mất mát mới,
+chúng ta chỉ
+[**truyền các logits và tính softmax cùng log của nó
+trong một lần bên trong hàm mất mát cross-entropy,**]
+vốn thực hiện các thao tác thông minh như ["mẹo LogSumExp"](https://en.wikipedia.org/wiki/LogSumExp).
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -216,9 +216,9 @@ def loss(self, params, X, Y, state, averaged=True):
     return (fn(Y_hat, Y).mean(), {}) if averaged else (fn(Y_hat, Y), {})
 ```
 
-## Training
+## Huấn luyện
 
-Next we train our model. We use Fashion-MNIST images, flattened to 784-dimensional feature vectors.
+Tiếp theo, chúng ta huấn luyện mô hình. Chúng ta sử dụng các ảnh Fashion-MNIST, được làm phẳng thành các vector đặc trưng 784 chiều.
 
 ```{.python .input}
 %%tab all
@@ -228,39 +228,38 @@ trainer = d2l.Trainer(max_epochs=10)
 trainer.fit(model, data)
 ```
 
-As before, this algorithm converges to a solution
-that is reasonably accurate,
-albeit this time with fewer lines of code than before.
+Như trước đây, thuật toán này hội tụ đến một nghiệm
+có độ chính xác khá tốt,
+mặc dù lần này với ít dòng mã hơn trước.
 
 
-## Summary
+## Tóm tắt
 
-High-level APIs are very convenient at hiding from their user potentially dangerous aspects, such as numerical stability. Moreover, they allow users to design models concisely with very few lines of code. This is both a blessing and a curse. The obvious benefit is that it makes things highly accessible, even to engineers who never took a single class of statistics in their life (in fact, they are part of the target audience of the book). But hiding the sharp edges also comes with a price: a disincentive to add new and different components on your own, since there is little muscle memory for doing it. Moreover, it makes it more difficult to *fix* things whenever the protective padding of
-a framework fails to cover all the corner cases entirely. Again, this is due to lack of familiarity.
+Các API cấp cao rất tiện lợi trong việc che giấu khỏi người dùng những khía cạnh có thể nguy hiểm, chẳng hạn như độ ổn định số học. Hơn nữa, chúng cho phép người dùng thiết kế mô hình một cách ngắn gọn chỉ với rất ít dòng mã. Đây vừa là phúc lành vừa là lời nguyền. Lợi ích rõ ràng là chúng làm mọi thứ trở nên rất dễ tiếp cận, ngay cả với những kỹ sư chưa từng học một lớp thống kê nào trong đời (thực tế, họ là một phần đối tượng mục tiêu của cuốn sách). Nhưng việc che giấu các góc cạnh sắc bén cũng đi kèm cái giá phải trả: làm giảm động lực tự thêm các thành phần mới và khác biệt, vì có rất ít kinh nghiệm thực hành để làm điều đó. Hơn nữa, nó khiến việc *sửa* mọi thứ trở nên khó khăn hơn mỗi khi lớp bảo vệ của
+một framework không bao phủ hoàn toàn mọi trường hợp biên. Một lần nữa, điều này là do thiếu sự quen thuộc.
 
-As such, we strongly urge you to review *both* the bare bones and the elegant versions of many of the implementations that follow. While we emphasize ease of understanding, the implementations are nonetheless usually quite performant (convolutions are the big exception here). It is our intention to allow you to build on these when you invent something new that no framework can give you.
+Vì vậy, chúng tôi đặc biệt khuyến nghị bạn xem lại *cả hai* phiên bản tối giản và thanh lịch của nhiều cách cài đặt tiếp theo. Mặc dù chúng tôi nhấn mạnh tính dễ hiểu, các cách cài đặt này thường vẫn có hiệu năng khá tốt (convolution là ngoại lệ lớn ở đây). Mục tiêu của chúng tôi là cho phép bạn xây dựng dựa trên chúng khi bạn phát minh ra điều gì đó mới mà không framework nào có thể cung cấp.
 
 
-## Exercises
+## Bài tập
 
-1. Deep learning uses many different number formats, including FP64 double precision (used extremely rarely),
-FP32 single precision, BFLOAT16 (good for compressed representations), FP16 (very unstable), TF32 (a new format from NVIDIA), and INT8. Compute the smallest and largest argument of the exponential function for which the result does not lead to numerical underflow or overflow.
-1. INT8 is a very limited format consisting of nonzero numbers from $1$ to $255$. How could you extend its dynamic range without using more bits? Do standard multiplication and addition still work?
-1. Increase the number of epochs for training. Why might the validation accuracy decrease after a while? How could we fix this?
-1. What happens as you increase the learning rate? Compare the loss curves for several learning rates. Which one works better? When?
+1. Deep learning sử dụng nhiều định dạng số khác nhau, bao gồm độ chính xác kép FP64 (được dùng cực kỳ hiếm), độ chính xác đơn FP32, BFLOAT16 (tốt cho các biểu diễn nén), FP16 (rất không ổn định), TF32 (một định dạng mới của NVIDIA), và INT8. Hãy tính đối số nhỏ nhất và lớn nhất của hàm mũ sao cho kết quả không dẫn đến underflow hoặc overflow số học.
+1. INT8 là một định dạng rất hạn chế gồm các số khác không từ $1$ đến $255$. Làm thế nào bạn có thể mở rộng dynamic range của nó mà không sử dụng thêm bit? Phép nhân và phép cộng tiêu chuẩn có còn hoạt động không?
+1. Tăng số epoch huấn luyện. Vì sao độ chính xác validation có thể giảm sau một thời gian? Chúng ta có thể khắc phục điều này như thế nào?
+1. Điều gì xảy ra khi bạn tăng learning rate? Hãy so sánh các đường cong loss với nhiều learning rate khác nhau. Giá trị nào hoạt động tốt hơn? Khi nào?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/52)
+[Thảo luận](https://discuss.d2l.ai/t/52)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/53)
+[Thảo luận](https://discuss.d2l.ai/t/53)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/260)
+[Thảo luận](https://discuss.d2l.ai/t/260)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17983)
+[Thảo luận](https://discuss.d2l.ai/t/17983)
 :end_tab:

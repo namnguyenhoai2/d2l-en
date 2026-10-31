@@ -3,34 +3,34 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Designing Convolution Network Architectures
+# Thiết kế Kiến trúc Mạng Tích chập
 :label:`sec_cnn-design`
 
-The previous sections have taken us on a tour of modern network design for computer vision. Common to all the work we covered was that it greatly relied on the intuition of scientists. Many of the architectures are heavily informed by human creativity and to a much lesser extent by systematic exploration of the design space that deep networks offer. Nonetheless, this *network engineering* approach has been tremendously successful. 
+Các phần trước đã đưa chúng ta đi tham quan thiết kế mạng hiện đại cho thị giác máy tính. Điểm chung của tất cả các công trình mà chúng ta đã đề cập là chúng phụ thuộc rất nhiều vào trực giác của các nhà khoa học. Nhiều kiến trúc chịu ảnh hưởng lớn từ sự sáng tạo của con người và ở mức độ thấp hơn nhiều từ việc khám phá có hệ thống không gian thiết kế mà các mạng sâu mang lại. Tuy vậy, cách tiếp cận *network engineering* này đã thành công vượt bậc.
 
-Ever since AlexNet (:numref:`sec_alexnet`)
-beat conventional computer vision models on ImageNet,
-it has become popular to construct very deep networks
-by stacking blocks of convolutions, all designed according to the same pattern. 
-In particular, $3 \times 3$ convolutions were 
-popularized by VGG networks (:numref:`sec_vgg`).
-NiN (:numref:`sec_nin`) showed that even $1 \times 1$ convolutions could 
-be beneficial by adding local nonlinearities. 
-Moreover, NiN solved the problem of aggregating information at the head of a network 
-by aggregating across all locations. 
-GoogLeNet (:numref:`sec_googlenet`) added multiple branches of different convolution width, 
-combining the advantages of VGG and NiN in its Inception block. 
-ResNets (:numref:`sec_resnet`) 
-changed the inductive bias towards the identity mapping (from $f(x) = 0$). This allowed for very deep networks. Almost a decade later, the ResNet design is still popular, a testament to its design. Lastly, ResNeXt (:numref:`subsec_resnext`) added grouped convolutions, offering a better trade-off between parameters and computation. A precursor to Transformers for vision, the Squeeze-and-Excitation Networks (SENets) allow for efficient information transfer between locations
-:cite:`Hu.Shen.Sun.2018`. This was accomplished by computing a per-channel global attention function. 
+Kể từ khi AlexNet (:numref:`sec_alexnet`)
+đánh bại các mô hình thị giác máy tính truyền thống trên ImageNet,
+việc xây dựng các mạng rất sâu
+bằng cách xếp chồng các khối tích chập, tất cả đều được thiết kế theo cùng một mẫu, đã trở nên phổ biến.
+Đặc biệt, các phép tích chập $3 \times 3$ đã được
+các mạng VGG phổ biến hóa (:numref:`sec_vgg`).
+NiN (:numref:`sec_nin`) cho thấy rằng ngay cả các phép tích chập $1 \times 1$ cũng có thể
+hữu ích nhờ bổ sung các phi tuyến tính cục bộ.
+Hơn nữa, NiN đã giải quyết bài toán tổng hợp thông tin ở phần đầu của mạng
+bằng cách tổng hợp trên mọi vị trí.
+GoogLeNet (:numref:`sec_googlenet`) đã thêm nhiều nhánh với độ rộng tích chập khác nhau,
+kết hợp các ưu điểm của VGG và NiN trong khối Inception của nó.
+ResNet (:numref:`sec_resnet`)
+đã thay đổi inductive bias theo hướng ánh xạ đồng nhất (từ $f(x) = 0$). Điều này cho phép tạo ra các mạng rất sâu. Gần một thập kỷ sau, thiết kế ResNet vẫn phổ biến, minh chứng cho chất lượng thiết kế của nó. Cuối cùng, ResNeXt (:numref:`subsec_resnext`) đã bổ sung các phép tích chập theo nhóm, mang lại sự đánh đổi tốt hơn giữa số lượng tham số và tính toán. Là tiền thân của Transformers cho thị giác, Squeeze-and-Excitation Networks (SENets) cho phép truyền thông tin hiệu quả giữa các vị trí
+:cite:`Hu.Shen.Sun.2018`. Điều này được thực hiện bằng cách tính một hàm attention toàn cục cho mỗi kênh.
 
-Up to now we have omitted networks obtained via *neural architecture search* (NAS) :cite:`zoph2016neural,liu2018darts`. We chose to do so since their cost is usually enormous, relying on brute-force search, genetic algorithms, reinforcement learning, or some other form of hyperparameter optimization. Given a fixed search space,
-NAS uses a search strategy to automatically select
-an architecture based on the returned performance estimation.
-The outcome of NAS
-is a single network instance. EfficientNets are a notable outcome of this search :cite:`tan2019efficientnet`.
+Cho đến nay, chúng ta đã bỏ qua các mạng được tạo ra thông qua *neural architecture search* (NAS) :cite:`zoph2016neural,liu2018darts`. Chúng ta chọn làm vậy vì chi phí của chúng thường rất lớn, dựa vào tìm kiếm vét cạn, thuật toán di truyền, reinforcement learning, hoặc một dạng tối ưu hóa hyperparameter nào khác. Với một không gian tìm kiếm cố định,
+NAS sử dụng một chiến lược tìm kiếm để tự động chọn
+một kiến trúc dựa trên ước lượng hiệu năng trả về.
+Kết quả của NAS
+là một thể hiện mạng duy nhất. EfficientNet là một kết quả đáng chú ý của quá trình tìm kiếm này :cite:`tan2019efficientnet`.
 
-In the following we discuss an idea that is quite different to the quest for the *single best network*. It is computationally relatively inexpensive, it leads to scientific insights on the way, and it is quite effective in terms of the quality of outcomes. Let's review the strategy by :citet:`Radosavovic.Kosaraju.Girshick.ea.2020` to *design network design spaces*. The strategy combines the strength of manual design and NAS. It accomplishes this by operating on *distributions of networks* and optimizing the distributions in a way to obtain good performance for entire families of networks. The outcome of it are *RegNets*, specifically RegNetX and RegNetY, plus a range of guiding principles for the design of performant CNNs.
+Tiếp theo, chúng ta sẽ thảo luận một ý tưởng khá khác với việc tìm kiếm *mạng đơn lẻ tốt nhất*. Ý tưởng này tương đối ít tốn kém về tính toán, đồng thời mang lại các hiểu biết khoa học, và khá hiệu quả xét về chất lượng kết quả. Hãy xem lại chiến lược của :citet:`Radosavovic.Kosaraju.Girshick.ea.2020` nhằm *thiết kế không gian thiết kế mạng*. Chiến lược này kết hợp thế mạnh của thiết kế thủ công và NAS. Nó đạt được điều này bằng cách hoạt động trên *các phân phối mạng* và tối ưu hóa các phân phối để đạt hiệu năng tốt cho toàn bộ họ mạng. Kết quả của phương pháp này là *RegNets*, cụ thể là RegNetX và RegNetY, cùng một loạt nguyên tắc định hướng cho việc thiết kế các CNN hiệu năng cao.
 
 ```{.python .input}
 %%tab mxnet
@@ -61,26 +61,26 @@ from d2l import jax as d2l
 from flax import linen as nn
 ```
 
-## The AnyNet Design Space
+## Không gian thiết kế AnyNet
 :label:`subsec_the-anynet-design-space`
 
-The description below closely follows the reasoning in :citet:`Radosavovic.Kosaraju.Girshick.ea.2020` with some abbreviations to make it fit in the scope of the book. 
-To begin, we need a template for the family of networks to explore. One of the commonalities of the designs in this chapter is that the networks consist of a *stem*, a *body* and a *head*. The stem performs initial image processing, often through convolutions with a larger window size. The body consists of multiple blocks, carrying out the bulk of the transformations needed to go from raw images to object representations. Lastly, the head converts this into the desired outputs, such as via a softmax regressor for multiclass classification. 
-The body, in turn, consists of multiple stages, operating on the image at decreasing resolutions. In fact, both the stem and each subsequent stage quarter the spatial resolution. Lastly, each stage consists of one or more blocks. This pattern is common to all networks, from VGG to ResNeXt. Indeed, for the design of generic AnyNet networks, :citet:`Radosavovic.Kosaraju.Girshick.ea.2020` used the ResNeXt block of :numref:`fig_resnext_block`.
+Mô tả dưới đây bám sát lập luận trong :citet:`Radosavovic.Kosaraju.Girshick.ea.2020`, với một số rút gọn để phù hợp với phạm vi của cuốn sách.
+Để bắt đầu, chúng ta cần một khuôn mẫu cho họ mạng cần khám phá. Một điểm chung trong các thiết kế của chương này là các mạng gồm một *stem*, một *body* và một *head*. Stem thực hiện xử lý ảnh ban đầu, thường thông qua các phép tích chập với kích thước cửa sổ lớn hơn. Body gồm nhiều khối, thực hiện phần lớn các phép biến đổi cần thiết để đi từ ảnh thô đến biểu diễn đối tượng. Cuối cùng, head chuyển đổi biểu diễn này thành các đầu ra mong muốn, chẳng hạn thông qua một softmax regressor cho phân loại đa lớp.
+Đến lượt mình, body gồm nhiều stage, hoạt động trên ảnh ở các độ phân giải giảm dần. Trên thực tế, cả stem và mỗi stage tiếp theo đều giảm độ phân giải không gian xuống còn một phần tư. Cuối cùng, mỗi stage gồm một hoặc nhiều block. Mẫu này phổ biến trong mọi mạng, từ VGG đến ResNeXt. Thật vậy, để thiết kế các mạng AnyNet tổng quát, :citet:`Radosavovic.Kosaraju.Girshick.ea.2020` đã sử dụng block ResNeXt trong :numref:`fig_resnext_block`.
 
 
-![The AnyNet design space. The numbers $(\mathit{c}, \mathit{r})$ along each arrow indicate the number of channels $c$ and the resolution $\mathit{r} \times \mathit{r}$ of the images at that point. From left to right: generic network structure composed of stem, body, and head; body composed of four stages; detailed structure of a stage; two alternative structures for blocks, one without downsampling and one that halves the resolution in each dimension. Design choices include depth $\mathit{d_i}$, the number of output channels $\mathit{c_i}$, the number of groups $\mathit{g_i}$, and bottleneck ratio $\mathit{k_i}$ for any stage $\mathit{i}$.](../img/anynet.svg)
+![Không gian thiết kế AnyNet. Các số $(\mathit{c}, \mathit{r})$ dọc theo mỗi mũi tên biểu thị số kênh $c$ và độ phân giải $\mathit{r} \times \mathit{r}$ của ảnh tại điểm đó. Từ trái sang phải: cấu trúc mạng tổng quát gồm stem, body và head; body gồm bốn stage; cấu trúc chi tiết của một stage; hai cấu trúc thay thế cho block, một không có downsampling và một giảm một nửa độ phân giải theo mỗi chiều. Các lựa chọn thiết kế bao gồm độ sâu $\mathit{d_i}$, số kênh đầu ra $\mathit{c_i}$, số nhóm $\mathit{g_i}$, và tỷ lệ bottleneck $\mathit{k_i}$ cho bất kỳ stage $\mathit{i}$ nào.](../img/anynet.svg)
 :label:`fig_anynet_full`
 
-Let's review the structure outlined in :numref:`fig_anynet_full` in detail. As mentioned, an AnyNet consists of a stem, body, and head. The stem takes as its input RGB images (3 channels), using a $3 \times 3$ convolution with a stride of $2$, followed by a batch norm, to halve the resolution from $r \times r$ to $r/2 \times r/2$. Moreover, it generates $c_0$ channels that serve as input to the body. 
+Hãy xem xét chi tiết cấu trúc được phác thảo trong :numref:`fig_anynet_full`. Như đã đề cập, một AnyNet gồm stem, body và head. Stem nhận ảnh RGB (3 kênh) làm đầu vào, sử dụng một phép tích chập $3 \times 3$ với stride là $2$, tiếp theo là batch norm, để giảm một nửa độ phân giải từ $r \times r$ xuống $r/2 \times r/2$. Hơn nữa, nó tạo ra $c_0$ kênh làm đầu vào cho body.
 
-Since the network is designed to work well with ImageNet images of shape $224 \times 224 \times 3$, the body serves to reduce this to $7 \times 7 \times c_4$ through 4 stages (recall that $224 / 2^{1+4} = 7$), each with an eventual stride of $2$. Lastly, the head employs an entirely standard design via global average pooling, similar to NiN (:numref:`sec_nin`), followed by a fully connected layer to emit an $n$-dimensional vector for $n$-class classification. 
+Do mạng được thiết kế để hoạt động tốt với ảnh ImageNet có kích thước $224 \times 224 \times 3$, body có nhiệm vụ giảm ảnh này xuống $7 \times 7 \times c_4$ qua 4 stage (nhớ rằng $224 / 2^{1+4} = 7$), mỗi stage cuối cùng có stride là $2$. Cuối cùng, head sử dụng thiết kế hoàn toàn tiêu chuẩn thông qua global average pooling, tương tự NiN (:numref:`sec_nin`), tiếp theo là một fully connected layer để xuất ra vector $n$ chiều cho phân loại $n$ lớp.
 
-Most of the relevant design decisions are inherent to the body of the network. It proceeds in stages, where each stage is composed of the same type of ResNeXt blocks as we discussed in :numref:`subsec_resnext`. The design there is again entirely generic: we begin with a block that halves the resolution by using a stride of $2$ (the rightmost in :numref:`fig_anynet_full`). To match this, the residual branch of the ResNeXt block needs to pass through a $1 \times 1$ convolution. This block is followed by a variable number of additional ResNeXt blocks that leave both resolution and the number of channels unchanged. Note that a common design practice is to add a slight bottleneck in the design of convolutional blocks. 
-As such, with bottleneck ratio $k_i \geq 1$ we afford some number of channels, $c_i/k_i$,  within each block for stage $i$ (as the experiments show, this is not really effective and should be skipped). Lastly, since we are dealing with ResNeXt blocks, we also need to pick the number of groups $g_i$ for grouped convolutions at stage $i$. 
+Hầu hết các quyết định thiết kế liên quan đều nằm trong body của mạng. Nó tiến hành theo các stage, trong đó mỗi stage gồm cùng loại block ResNeXt như chúng ta đã thảo luận trong :numref:`subsec_resnext`. Thiết kế ở đây một lần nữa hoàn toàn tổng quát: chúng ta bắt đầu bằng một block giảm một nửa độ phân giải bằng stride $2$ (block ngoài cùng bên phải trong :numref:`fig_anynet_full`). Để khớp với điều này, nhánh residual của block ResNeXt cần đi qua một phép tích chập $1 \times 1$. Sau block này là một số lượng biến thiên các block ResNeXt bổ sung, giữ nguyên cả độ phân giải lẫn số kênh. Lưu ý rằng một thực hành thiết kế phổ biến là thêm một bottleneck nhẹ trong thiết kế các block tích chập.
+Do đó, với tỷ lệ bottleneck $k_i \geq 1$, chúng ta dành một số kênh, $c_i/k_i$, bên trong mỗi block cho stage $i$ (như các thí nghiệm cho thấy, điều này thực sự không hiệu quả và nên được bỏ qua). Cuối cùng, vì đang xử lý các block ResNeXt, chúng ta cũng cần chọn số nhóm $g_i$ cho các phép tích chập theo nhóm tại stage $i$.
 
-This seemingly generic design space provides us nonetheless with many parameters: we can set the block width (number of channels) $c_0, \ldots c_4$, the depth (number of blocks) per stage $d_1, \ldots d_4$, the bottleneck ratios $k_1, \ldots k_4$, and the group widths (numbers of groups) $g_1, \ldots g_4$. 
-In total this adds up to 17 parameters, resulting in an unreasonably large number of configurations that would warrant exploring. We need some tools to reduce this huge design space effectively. This is where the conceptual beauty of design spaces comes in. Before we do so, let's implement the generic design first.
+Không gian thiết kế có vẻ tổng quát này vẫn cung cấp cho chúng ta nhiều tham số: chúng ta có thể đặt độ rộng block (số kênh) $c_0, \ldots c_4$, độ sâu (số block) mỗi stage $d_1, \ldots d_4$, các tỷ lệ bottleneck $k_1, \ldots k_4$, và độ rộng nhóm (số nhóm) $g_1, \ldots g_4$.
+Tổng cộng có 17 tham số, dẫn đến số lượng cấu hình cần khám phá lớn đến mức không hợp lý. Chúng ta cần một số công cụ để thu hẹp hiệu quả không gian thiết kế khổng lồ này. Đây là lúc vẻ đẹp về mặt khái niệm của các không gian thiết kế phát huy tác dụng. Trước khi làm điều đó, trước hết hãy triển khai thiết kế tổng quát.
 
 ```{.python .input}
 %%tab mxnet
@@ -133,9 +133,9 @@ class AnyNet(d2l.Classifier):
         ])
 ```
 
-Each stage consists of `depth` ResNeXt blocks,
-where `num_channels` specifies the block width.
-Note that the first block halves the height and width of input images.
+Mỗi stage gồm `depth` block ResNeXt,
+trong đó `num_channels` chỉ định độ rộng block.
+Lưu ý rằng block đầu tiên giảm một nửa chiều cao và chiều rộng của ảnh đầu vào.
 
 ```{.python .input}
 %%tab mxnet
@@ -195,8 +195,8 @@ def stage(self, depth, num_channels, groups, bot_mul):
     return nn.Sequential(blk)
 ```
 
-Putting the network stem, body, and head together,
-we complete the implementation of AnyNet.
+Kết hợp stem, body và head của mạng,
+chúng ta hoàn tất việc triển khai AnyNet.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -243,48 +243,47 @@ def create_net(self):
     return net
 ```
 
-## Distributions and Parameters of Design Spaces
+## Phân phối và Tham số của Không gian Thiết kế
 
-As just discussed in :numref:`subsec_the-anynet-design-space`, parameters of a design space are hyperparameters of networks in that design space.
-Consider the problem of identifying good parameters in the AnyNet design space. We could try finding the *single best* parameter choice for a given amount of computation (e.g., FLOPs and compute time). If we allowed for even only *two* possible choices for each parameter, we would have to explore $2^{17} = 131072$ combinations to find the best solution. This is clearly infeasible because of its exorbitant cost. Even worse, we do not really learn anything from this exercise in terms of how one should design a network. Next time we add, say, an X-stage, or a shift operation, or similar, we would need to start from scratch. Even worse, due to the stochasticity in training (rounding, shuffling, bit errors), no two runs are likely to produce exactly the same results. A better strategy would be to try to determine general guidelines of how the choices of parameters should be related. For instance, the bottleneck ratio, the number of channels, blocks, groups, or their change between layers should ideally be governed by a collection of simple rules. The approach in :citet:`radosavovic2019network` relies on the following four assumptions:
+Như vừa thảo luận trong :numref:`subsec_the-anynet-design-space`, các tham số của một không gian thiết kế là các hyperparameter của mạng trong không gian thiết kế đó.
+Xét bài toán xác định các tham số tốt trong không gian thiết kế AnyNet. Chúng ta có thể thử tìm lựa chọn tham số *đơn lẻ tốt nhất* cho một lượng tính toán nhất định (ví dụ: FLOPs và thời gian tính toán). Nếu chỉ cho phép *hai* lựa chọn khả dĩ cho mỗi tham số, chúng ta sẽ phải khám phá $2^{17} = 131072$ tổ hợp để tìm được lời giải tốt nhất. Điều này rõ ràng không khả thi vì chi phí quá cao. Tệ hơn nữa, từ bài tập này chúng ta thực sự không học được gì về cách nên thiết kế một mạng. Lần sau khi thêm, chẳng hạn, một X-stage, một phép toán shift, hoặc tương tự, chúng ta sẽ phải bắt đầu lại từ đầu. Tệ hơn nữa, do tính ngẫu nhiên trong huấn luyện (làm tròn, xáo trộn, lỗi bit), không có hai lần chạy nào có khả năng cho kết quả hoàn toàn giống nhau. Một chiến lược tốt hơn là cố gắng xác định các hướng dẫn tổng quát về cách các lựa chọn tham số nên liên hệ với nhau. Chẳng hạn, tỷ lệ bottleneck, số kênh, block, nhóm, hoặc sự thay đổi của chúng giữa các layer lý tưởng nhất nên được chi phối bởi một tập hợp các quy tắc đơn giản. Cách tiếp cận trong :citet:`radosavovic2019network` dựa trên bốn giả định sau:
 
-1. We assume that general design principles actually exist, so that many networks satisfying these requirements should offer good performance. Consequently, identifying a *distribution* over networks can be a sensible strategy. In other words, we assume that there are many good needles in the haystack.
-1. We need not train networks to convergence before we can assess whether a network is good. Instead, it is sufficient to use the intermediate results as reliable guidance for final accuracy. Using (approximate) proxies to optimize an objective is referred to as multi-fidelity optimization :cite:`forrester2007multi`. Consequently, design optimization is carried out, based on the accuracy achieved after only a few passes through the dataset, reducing the cost significantly. 
-1. Results obtained at a smaller scale (for smaller networks) generalize to larger ones. Consequently, optimization is carried out for networks that are structurally similar, but with a smaller number of blocks, fewer channels, etc. Only in the end will we need to verify that the so-found networks also offer good performance at scale. 
-1. Aspects of the design can be approximately factorized so that it is possible to infer their effect on the quality of the outcome somewhat independently. In other words, the optimization problem is moderately easy.
+1. Chúng tôi giả định rằng các nguyên tắc thiết kế tổng quát thực sự tồn tại, vì vậy nhiều mạng thỏa mãn các yêu cầu này sẽ cho hiệu năng tốt. Do đó, việc xác định một *phân phối* trên các mạng có thể là một chiến lược hợp lý. Nói cách khác, chúng tôi giả định rằng có nhiều cây kim tốt trong đống cỏ khô.
+1. Chúng ta không cần huấn luyện mạng đến hội tụ trước khi có thể đánh giá liệu một mạng có tốt hay không. Thay vào đó, chỉ cần sử dụng các kết quả trung gian làm chỉ dẫn đáng tin cậy cho độ chính xác cuối cùng. Việc sử dụng các proxy (xấp xỉ) để tối ưu một mục tiêu được gọi là tối ưu hóa đa độ trung thực (multi-fidelity optimization) :cite:`forrester2007multi`. Do đó, quá trình tối ưu hóa thiết kế được thực hiện dựa trên độ chính xác đạt được chỉ sau vài lượt đi qua tập dữ liệu, giúp giảm đáng kể chi phí. 
+1. Các kết quả thu được ở quy mô nhỏ hơn (đối với các mạng nhỏ hơn) có thể khái quát hóa sang các mạng lớn hơn. Do đó, việc tối ưu hóa được thực hiện cho các mạng có cấu trúc tương tự, nhưng có số block ít hơn, ít channel hơn, v.v. Chỉ đến cuối cùng chúng ta mới cần xác minh rằng các mạng được tìm thấy như vậy cũng mang lại hiệu năng tốt ở quy mô lớn. 
+1. Các khía cạnh của thiết kế có thể được phân tích thành các nhân tố một cách xấp xỉ, sao cho có thể suy ra ảnh hưởng của chúng lên chất lượng đầu ra tương đối độc lập. Nói cách khác, bài toán tối ưu hóa ở mức độ vừa phải là dễ.
 
-These assumptions allow us to test many networks cheaply. In particular, we can *sample* uniformly from the space of configurations and evaluate their performance. Subsequently, we can evaluate the quality of the choice of parameters by reviewing the *distribution* of error/accuracy that can be achieved with said networks. Denote by $F(e)$ the cumulative distribution function (CDF) for errors committed by networks of a given design space, drawn using probability disribution $p$. That is, 
+Các giả định này cho phép chúng ta kiểm tra nhiều mạng với chi phí thấp. Cụ thể, chúng ta có thể *lấy mẫu* đồng đều từ không gian cấu hình và đánh giá hiệu năng của chúng. Sau đó, chúng ta có thể đánh giá chất lượng của lựa chọn tham số bằng cách xem xét *phân phối* lỗi/độ chính xác có thể đạt được với các mạng nói trên. Ký hiệu $F(e)$ là hàm phân phối tích lũy (CDF) cho các lỗi do mạng trong một không gian thiết kế nhất định gây ra, được lấy theo phân phối xác suất $p$. Tức là, 
 
 $$F(e, p) \stackrel{\textrm{def}}{=} P_{\textrm{net} \sim p} \{e(\textrm{net}) \leq e\}.$$
 
-Our goal is now to find a distribution $p$ over *networks* such that most networks have a very low error rate and where the support of $p$ is concise. Of course, this is computationally infeasible to perform accurately. We resort to a sample of networks $\mathcal{Z} \stackrel{\textrm{def}}{=} \{\textrm{net}_1, \ldots \textrm{net}_n\}$ (with errors $e_1, \ldots, e_n$, respectively) from $p$ and use the empirical CDF $\hat{F}(e, \mathcal{Z})$ instead:
+Mục tiêu của chúng ta lúc này là tìm một phân phối $p$ trên các *mạng* sao cho hầu hết các mạng có tỷ lệ lỗi rất thấp và miền hỗ trợ của $p$ là gọn. Dĩ nhiên, việc thực hiện điều này một cách chính xác là không khả thi về mặt tính toán. Chúng ta sử dụng một mẫu các mạng $\mathcal{Z} \stackrel{\textrm{def}}{=} \{\textrm{net}_1, \ldots \textrm{net}_n\}$ (với các lỗi tương ứng là $e_1, \ldots, e_n$) từ $p$ và thay vào đó dùng CDF thực nghiệm $\hat{F}(e, \mathcal{Z})$:
 
 $$\hat{F}(e, \mathcal{Z}) = \frac{1}{n}\sum_{i=1}^n \mathbf{1}(e_i \leq e).$$
 
-Whenever the CDF for one set of choices majorizes (or matches) another CDF it follows that its choice of parameters is superior (or indifferent). Accordingly 
-:citet:`Radosavovic.Kosaraju.Girshick.ea.2020` experimented with a shared network bottleneck ratio $k_i = k$ for all stages $i$ of the network. This gets rid of three of the four parameters governing the bottleneck ratio. To assess whether this (negatively) affects the performance one can draw networks from the constrained and from the unconstrained distribution and compare the corresonding CDFs. It turns out that this constraint does not affect the accuracy of the distribution of networks at all, as can be seen in the first panel of :numref:`fig_regnet-fig`. 
-Likewise, we could choose to pick the same group width $g_i = g$ occurring at the various stages of the network. Again, this does not affect performance, as can be seen in the second panel of :numref:`fig_regnet-fig`.
-Both steps combined reduce the number of free parameters by six. 
+Bất cứ khi nào CDF cho một tập lựa chọn nào đó trội hơn (hoặc bằng) một CDF khác, thì lựa chọn tham số của nó là tốt hơn (hoặc không khác biệt). Theo đó, :citet:`Radosavovic.Kosaraju.Girshick.ea.2020` đã thử nghiệm một tỷ lệ bottleneck dùng chung $k_i = k$ cho mọi stage $i$ của mạng. Điều này loại bỏ ba trong số bốn tham số chi phối tỷ lệ bottleneck. Để đánh giá liệu điều này có ảnh hưởng (tiêu cực) đến hiệu năng hay không, ta có thể lấy mẫu các mạng từ phân phối bị ràng buộc và không bị ràng buộc, rồi so sánh các CDF tương ứng. Hóa ra ràng buộc này hoàn toàn không ảnh hưởng đến độ chính xác của phân phối các mạng, như có thể thấy trong panel đầu tiên của :numref:`fig_regnet-fig`. 
+Tương tự, chúng ta có thể chọn cùng một độ rộng group $g_i = g$ xuất hiện ở các stage khác nhau của mạng. Một lần nữa, điều này không ảnh hưởng đến hiệu năng, như có thể thấy trong panel thứ hai của :numref:`fig_regnet-fig`.
+Kết hợp cả hai bước sẽ giảm số lượng tham số tự do đi sáu. 
 
-![Comparing error empirical distribution functions of design spaces. $\textrm{AnyNet}_\mathit{A}$ is the original design space; $\textrm{AnyNet}_\mathit{B}$ ties the bottleneck ratios, $\textrm{AnyNet}_\mathit{C}$ also ties group widths, $\textrm{AnyNet}_\mathit{D}$ increases the network depth across stages. From left to right: (i) tying bottleneck ratios has no effect on performance; (ii) tying group widths has no effect on performance; (iii) increasing network widths (channels) across stages improves performance; (iv) increasing network depths across stages improves performance. Figure courtesy of :citet:`Radosavovic.Kosaraju.Girshick.ea.2020`.](../img/regnet-fig.png)
+![So sánh các hàm phân phối thực nghiệm của lỗi trong các không gian thiết kế. $\textrm{AnyNet}_\mathit{A}$ là không gian thiết kế gốc; $\textrm{AnyNet}_\mathit{B}$ ràng buộc các tỷ lệ bottleneck giống nhau, $\textrm{AnyNet}_\mathit{C}$ cũng ràng buộc các độ rộng group giống nhau, $\textrm{AnyNet}_\mathit{D}$ tăng độ sâu mạng qua các stage. Từ trái sang phải: (i) ràng buộc các tỷ lệ bottleneck giống nhau không ảnh hưởng đến hiệu năng; (ii) ràng buộc các độ rộng group giống nhau không ảnh hưởng đến hiệu năng; (iii) tăng độ rộng mạng (channel) qua các stage cải thiện hiệu năng; (iv) tăng độ sâu mạng qua các stage cải thiện hiệu năng. Hình do :citet:`Radosavovic.Kosaraju.Girshick.ea.2020` cung cấp.](../img/regnet-fig.png)
 :label:`fig_regnet-fig`
 
-Next we look for ways to reduce the multitude of potential choices for width and depth of the stages. It is a reasonable assumption that, as we go deeper, the number of channels should increase, i.e., $c_i \geq c_{i-1}$ ($w_{i+1} \geq w_i$ per their notation in :numref:`fig_regnet-fig`), yielding 
-$\textrm{AnyNetX}_D$. Likewise, it is equally reasonable to assume that as the stages progress, they should become deeper, i.e., $d_i \geq d_{i-1}$, yielding $\textrm{AnyNetX}_E$. This can be experimentally verified in the third and fourth panel of :numref:`fig_regnet-fig`, respectively.
+Tiếp theo, chúng ta tìm cách giảm số lượng lớn các lựa chọn tiềm năng về độ rộng và độ sâu của các stage. Một giả định hợp lý là khi đi sâu hơn, số lượng channel nên tăng lên, tức là $c_i \geq c_{i-1}$ ($w_{i+1} \geq w_i$ theo ký hiệu của họ trong :numref:`fig_regnet-fig`), tạo ra 
+$\textrm{AnyNetX}_D$. Tương tự, cũng hợp lý khi giả định rằng khi các stage tiến triển, chúng nên sâu hơn, tức là $d_i \geq d_{i-1}$, tạo ra $\textrm{AnyNetX}_E$. Điều này có thể được xác minh bằng thực nghiệm lần lượt trong panel thứ ba và thứ tư của :numref:`fig_regnet-fig`.
 
 ## RegNet
 
-The resulting $\textrm{AnyNetX}_E$ design space consists of simple networks
-following easy-to-interpret design principles:
+Không gian thiết kế $\textrm{AnyNetX}_E$ thu được bao gồm các mạng đơn giản
+tuân theo các nguyên tắc thiết kế dễ diễn giải:
 
-* Share the bottleneck ratio $k_i = k$ for all stages $i$;
-* Share the group width $g_i = g$ for all stages $i$;
-* Increase network width across stages: $c_{i} \leq c_{i+1}$;
-* Increase network depth across stages: $d_{i} \leq d_{i+1}$.
+* Dùng chung tỷ lệ bottleneck $k_i = k$ cho mọi stage $i$;
+* Dùng chung độ rộng group $g_i = g$ cho mọi stage $i$;
+* Tăng độ rộng mạng qua các stage: $c_{i} \leq c_{i+1}$;
+* Tăng độ sâu mạng qua các stage: $d_{i} \leq d_{i+1}$.
 
-This leaves us with a final set of choices: how to pick the specific values for the above parameters of the eventual $\textrm{AnyNetX}_E$ design space. By studying the best-performing networks from the distribution in $\textrm{AnyNetX}_E$ one can observe the following: the width of the network ideally increases linearly with the block index across the network, i.e., $c_j \approx c_0 + c_a j$, where $j$ is the block index and slope $c_a > 0$. Given that we get to choose a different block width only per stage, we arrive at a piecewise constant function, engineered to match this dependence. Furthermore, experiments also show that a bottleneck ratio of $k = 1$ performs best, i.e., we are advised not to use bottlenecks at all. 
+Điều này để lại cho chúng ta tập lựa chọn cuối cùng: cách chọn các giá trị cụ thể cho các tham số trên của không gian thiết kế $\textrm{AnyNetX}_E$ cuối cùng. Bằng cách nghiên cứu các mạng có hiệu năng tốt nhất từ phân phối trong $\textrm{AnyNetX}_E$, ta có thể quan sát điều sau: lý tưởng nhất là độ rộng của mạng tăng tuyến tính theo chỉ số block trong toàn mạng, tức là $c_j \approx c_0 + c_a j$, trong đó $j$ là chỉ số block và độ dốc $c_a > 0$. Vì chúng ta chỉ có thể chọn độ rộng block khác nhau cho từng stage, ta thu được một hàm hằng từng đoạn, được thiết kế để khớp với sự phụ thuộc này. Hơn nữa, các thí nghiệm cũng cho thấy tỷ lệ bottleneck $k = 1$ cho hiệu năng tốt nhất, tức là chúng ta được khuyến nghị không sử dụng bottleneck nào cả. 
 
-We recommend the interested reader reviews further details in the design of specific networks for different amounts of computation by perusing :citet:`Radosavovic.Kosaraju.Girshick.ea.2020`. For instance, an effective 32-layer RegNetX variant is given by $k = 1$ (no bottleneck), $g = 16$ (group width is 16), $c_1 = 32$ and $c_2 = 80$ channels for the first and second stage, respectively, chosen to be $d_1=4$ and $d_2=6$ blocks deep. The astonishing insight from the design is that it still applies, even when investigating networks at a larger scale. Even better, it even holds for Squeeze-and-Excitation (SE) network designs (RegNetY) that have a global channel activation :cite:`Hu.Shen.Sun.2018`.
+Chúng tôi khuyến nghị độc giả quan tâm xem thêm chi tiết về thiết kế các mạng cụ thể cho các mức tính toán khác nhau trong :citet:`Radosavovic.Kosaraju.Girshick.ea.2020`. Ví dụ, một biến thể RegNetX 32 tầng hiệu quả được xác định bởi $k = 1$ (không có bottleneck), $g = 16$ (độ rộng group là 16), $c_1 = 32$ và $c_2 = 80$ channel lần lượt cho stage thứ nhất và thứ hai, với độ sâu được chọn là $d_1=4$ và $d_2=6$ block. Điểm đáng kinh ngạc từ thiết kế này là nó vẫn áp dụng được, ngay cả khi khảo sát các mạng ở quy mô lớn hơn. Hơn nữa, nó thậm chí còn đúng với các thiết kế mạng Squeeze-and-Excitation (SE) (RegNetY) có kích hoạt channel toàn cục :cite:`Hu.Shen.Sun.2018`.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -307,7 +306,7 @@ class RegNetX32(AnyNet):
     arch: tuple = ((4, 32, 16, 1), (6, 80, 16, 1))
 ```
 
-We can see that each RegNetX stage progressively reduces resolution and increases output channels.
+Chúng ta có thể thấy rằng mỗi stage RegNetX dần giảm độ phân giải và tăng số channel đầu ra.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -324,9 +323,9 @@ RegNetX32().layer_summary((1, 96, 96, 1))
 RegNetX32(training=False).layer_summary((1, 96, 96, 1))
 ```
 
-## Training
+## Huấn luyện
 
-Training the 32-layer RegNetX on the Fashion-MNIST dataset is just like before.
+Việc huấn luyện RegNetX 32 tầng trên tập dữ liệu Fashion-MNIST cũng giống như trước.
 
 ```{.python .input}
 %%tab mxnet, pytorch, jax
@@ -345,38 +344,37 @@ with d2l.try_gpu():
     trainer.fit(model, data)
 ```
 
-## Discussion
+## Thảo luận
 
-With desirable inductive biases (assumptions or preferences) like locality and translation invariance (:numref:`sec_why-conv`)
-for vision, CNNs have been the dominant architectures in this area. This remained the case from LeNet up until Transformers (:numref:`sec_transformer`) :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021,touvron2021training` started surpassing CNNs in terms of accuracy. While much of the recent progress in terms of vision Transformers *can* be backported into CNNs :cite:`liu2022convnet`, it is only possible at a higher computational cost. Just as importantly, recent hardware optimizations (NVIDIA Ampere and Hopper) have only widened the gap in favor of Transformers. 
+Với các inductive bias (giả định hoặc ưu tiên) mong muốn như tính cục bộ và tính bất biến với phép tịnh tiến (:numref:`sec_why-conv`)
+cho thị giác máy tính, CNN là kiến trúc chủ đạo trong lĩnh vực này. Điều này vẫn đúng từ LeNet cho đến khi Transformers (:numref:`sec_transformer`) :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021,touvron2021training` bắt đầu vượt qua CNN về độ chính xác. Mặc dù phần lớn tiến bộ gần đây của vision Transformers *có thể* được áp dụng ngược vào CNN :cite:`liu2022convnet`, điều này chỉ khả thi với chi phí tính toán cao hơn. Quan trọng không kém, các tối ưu hóa phần cứng gần đây (NVIDIA Ampere và Hopper) chỉ càng nới rộng khoảng cách theo hướng có lợi cho Transformers. 
 
-It is worth noting that Transformers have a significantly lower degree of inductive bias towards locality and translation invariance than CNNs. That learned structures prevailed is due, not least, to the availability of large image collections, such as LAION-400m and LAION-5B :cite:`schuhmann2022laion` with up to 5 billion images. Quite surprisingly, some of the more relevant work in this context even includes MLPs :cite:`tolstikhin2021mlp`. 
+Đáng lưu ý rằng Transformers có mức độ inductive bias hướng tới tính cục bộ và tính bất biến với phép tịnh tiến thấp hơn đáng kể so với CNN. Việc các cấu trúc được học chiếm ưu thế một phần không nhỏ là nhờ sự sẵn có của các bộ sưu tập ảnh lớn, chẳng hạn như LAION-400m và LAION-5B :cite:`schuhmann2022laion` với tối đa 5 tỷ ảnh. Khá đáng ngạc nhiên, một số công trình phù hợp hơn trong bối cảnh này thậm chí còn bao gồm MLP :cite:`tolstikhin2021mlp`. 
 
-In sum, vision Transformers (:numref:`sec_vision-transformer`) by now lead in terms of 
-state-of-the-art performance in large-scale image classification, 
-showing that *scalability trumps inductive biases* :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`.
-This includes pretraining large-scale Transformers (:numref:`sec_large-pretraining-transformers`) with multi-head self-attention (:numref:`sec_multihead-attention`). We invite the readers to dive into these chapters for a much more detailed discussion.
+Tóm lại, vision Transformers (:numref:`sec_vision-transformer`) hiện nay dẫn đầu về 
+hiệu năng state-of-the-art trong phân loại ảnh quy mô lớn, 
+cho thấy rằng *khả năng mở rộng vượt trội hơn inductive bias* :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`.
+Điều này bao gồm việc pretraining các Transformers quy mô lớn (:numref:`sec_large-pretraining-transformers`) với self-attention đa đầu (:numref:`sec_multihead-attention`). Chúng tôi mời độc giả đi sâu vào các chương này để có thảo luận chi tiết hơn nhiều.
 
-## Exercises
+## Bài tập
 
-1. Increase the number of stages to four. Can you design a deeper RegNetX that performs better?
-1. De-ResNeXt-ify RegNets by replacing the ResNeXt block with the ResNet block. How does your new model perform?
-1. Implement multiple instances of a "VioNet" family by *violating* the design principles of RegNetX. How do they perform? Which of ($d_i$, $c_i$, $g_i$, $b_i$) is the most important factor?
-1. Your goal is to design the "perfect" MLP. Can you use the design principles introduced above to find good architectures? Is it possible to extrapolate from small to large networks?
+1. Tăng số lượng stage lên bốn. Bạn có thể thiết kế một RegNetX sâu hơn với hiệu năng tốt hơn không?
+1. Loại bỏ ResNeXt khỏi RegNet bằng cách thay block ResNeXt bằng block ResNet. Mô hình mới của bạn hoạt động như thế nào?
+1. Triển khai nhiều biến thể của một họ "VioNet" bằng cách *vi phạm* các nguyên tắc thiết kế của RegNetX. Chúng hoạt động như thế nào? Trong số ($d_i$, $c_i$, $g_i$, $b_i$), yếu tố nào là quan trọng nhất?
+1. Mục tiêu của bạn là thiết kế MLP "hoàn hảo". Bạn có thể sử dụng các nguyên tắc thiết kế được giới thiệu ở trên để tìm các kiến trúc tốt không? Có thể ngoại suy từ mạng nhỏ sang mạng lớn không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/7462)
+[Thảo luận](https://discuss.d2l.ai/t/7462)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/7463)
+[Thảo luận](https://discuss.d2l.ai/t/7463)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/8738)
+[Thảo luận](https://discuss.d2l.ai/t/8738)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18009)
+[Thảo luận](https://discuss.d2l.ai/t/18009)
 :end_tab:
-

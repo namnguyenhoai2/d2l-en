@@ -1,358 +1,356 @@
-# Environment and Distribution Shift
+# Môi trường và Dịch chuyển Phân phối
 :label:`sec_environment-and-distribution-shift`
 
-In the previous sections, we worked through
-a number of hands-on applications of machine learning,
-fitting models to a variety of datasets.
-And yet, we never stopped to contemplate
-either where data came from in the first place
-or what we ultimately plan to do
-with the outputs from our models.
-Too often, machine learning developers
-in possession of data rush to develop models
-without pausing to consider these fundamental issues.
+Trong các phần trước, chúng ta đã thực hành
+nhiều ứng dụng thực tế của machine learning,
+huấn luyện mô hình trên nhiều tập dữ liệu khác nhau.
+Tuy nhiên, chúng ta chưa từng dừng lại để suy nghĩ
+về việc dữ liệu ban đầu đến từ đâu
+hoặc cuối cùng chúng ta dự định làm gì
+với đầu ra từ các mô hình của mình.
+Quá thường xuyên, các nhà phát triển machine learning
+sở hữu dữ liệu đã vội vàng phát triển mô hình
+mà không dừng lại để cân nhắc những vấn đề cơ bản này.
 
-Many failed machine learning deployments
-can be traced back to this failure.
-Sometimes models appear to perform marvelously
-as measured by test set accuracy
-but fail catastrophically in deployment
-when the distribution of data suddenly shifts.
-More insidiously, sometimes the very deployment of a model
-can be the catalyst that perturbs the data distribution.
-Say, for example, that we trained a model
-to predict who will repay rather than default on a loan,
-finding that an applicant's choice of footwear
-was associated with the risk of default
-(Oxfords indicate repayment, sneakers indicate default).
-We might be inclined 
-thereafter to grant a loan
-to any applicant wearing Oxfords
-and to deny all applicants wearing sneakers.
+Nhiều lần deploy machine learning thất bại
+có thể được truy nguyên về sự thiếu sót này.
+Đôi khi các mô hình dường như hoạt động xuất sắc
+khi được đo bằng độ chính xác trên tập kiểm tra
+nhưng lại thất bại nghiêm trọng khi deploy
+khi phân phối dữ liệu đột ngột thay đổi.
+Nguy hiểm hơn, đôi khi chính việc deploy một mô hình
+có thể là tác nhân làm xáo trộn phân phối dữ liệu.
+Ví dụ, giả sử chúng ta huấn luyện một mô hình
+để dự đoán ai sẽ trả nợ thay vì vỡ nợ,
+và nhận thấy rằng lựa chọn giày dép của người nộp đơn
+có liên quan đến rủi ro vỡ nợ
+(giày Oxford biểu thị khả năng trả nợ, giày sneaker biểu thị vỡ nợ).
+Sau đó, chúng ta có thể có xu hướng
+cấp khoản vay cho bất kỳ người nộp đơn nào đi giày Oxford
+và từ chối tất cả người nộp đơn đi giày sneaker.
 
-In this case, our ill-considered leap from
-pattern recognition to decision-making
-and our failure to critically consider the environment
-might have disastrous consequences.
-For starters, as soon as we began
-making decisions based on footwear,
-customers would catch on and change their behavior.
-Before long, all applicants would be wearing Oxfords,
-without any coincident improvement in credit-worthiness.
-Take a minute to digest this because similar issues abound
-in many applications of machine learning:
-by introducing our model-based decisions to the environment,
-we might break the model.
+Trong trường hợp này, bước nhảy thiếu cân nhắc của chúng ta từ
+nhận dạng mẫu sang ra quyết định
+và việc không xem xét môi trường một cách phản biện
+có thể dẫn đến những hậu quả tai hại.
+Trước hết, ngay khi chúng ta bắt đầu
+đưa ra quyết định dựa trên giày dép,
+khách hàng sẽ nhận ra và thay đổi hành vi của họ.
+Chẳng bao lâu sau, mọi người nộp đơn đều sẽ đi giày Oxford,
+mà không có bất kỳ sự cải thiện tương ứng nào về mức độ đáng tin cậy tín dụng.
+Hãy dành một phút để suy ngẫm điều này vì các vấn đề tương tự xuất hiện rất nhiều
+trong nhiều ứng dụng machine learning:
+bằng cách đưa các quyết định dựa trên mô hình vào môi trường,
+chúng ta có thể làm hỏng mô hình.
 
-While we cannot possibly give these topics
-a complete treatment in one section,
-we aim here to expose some common concerns,
-and to stimulate the critical thinking
-required to detect such situations early,
-mitigate damage, and use machine learning responsibly.
-Some of the solutions are simple
-(ask for the "right" data),
-some are technically difficult
-(implement a reinforcement learning system),
-and others require that we step outside the realm of
-statistical prediction altogether and
-grapple with difficult philosophical questions
-concerning the ethical application of algorithms.
+Dù không thể trình bày đầy đủ các chủ đề này
+trong một phần duy nhất,
+mục tiêu của chúng ta ở đây là nêu ra một số mối quan ngại phổ biến,
+và thúc đẩy tư duy phản biện
+cần thiết để phát hiện sớm các tình huống như vậy,
+giảm thiểu thiệt hại, và sử dụng machine learning một cách có trách nhiệm.
+Một số giải pháp đơn giản
+(hỏi dữ liệu "đúng"),
+một số khác khó về mặt kỹ thuật
+(implement một hệ thống reinforcement learning),
+và những giải pháp khác yêu cầu chúng ta bước ra khỏi phạm vi
+của dự đoán thống kê hoàn toàn và
+đối mặt với những câu hỏi triết học khó khăn
+liên quan đến việc áp dụng thuật toán một cách có đạo đức.
 
-## Types of Distribution Shift
+## Các loại Dịch chuyển Phân phối
 
-To begin, we stick with the passive prediction setting
-considering the various ways that data distributions might shift
-and what might be done to salvage model performance.
-In one classic setup, we assume that our training data
-was sampled from some distribution $p_S(\mathbf{x},y)$
-but that our test data will consist
-of unlabeled examples drawn from
-some different distribution $p_T(\mathbf{x},y)$.
-Already, we must confront a sobering reality.
-Absent any assumptions on how $p_S$
-and $p_T$ relate to each other,
-learning a robust classifier is impossible.
+Để bắt đầu, chúng ta giới hạn ở bối cảnh dự đoán thụ động,
+xem xét các cách khác nhau mà phân phối dữ liệu có thể dịch chuyển
+và những việc có thể thực hiện để cứu vãn hiệu năng mô hình.
+Trong một thiết lập cổ điển, chúng ta giả định rằng dữ liệu huấn luyện
+được lấy mẫu từ một phân phối $p_S(\mathbf{x},y)$ nào đó,
+nhưng dữ liệu kiểm tra sẽ bao gồm
+các ví dụ không có nhãn được lấy từ
+một phân phối khác $p_T(\mathbf{x},y)$.
+Ngay từ đây, chúng ta đã phải đối mặt với một thực tế đáng lo ngại.
+Nếu không có bất kỳ giả định nào về cách $p_S$
+và $p_T$ liên hệ với nhau,
+thì không thể học được một bộ phân loại robust.
 
-Consider a binary classification problem,
-where we wish to distinguish between dogs and cats.
-If the distribution can shift in arbitrary ways,
-then our setup permits the pathological case
-in which the distribution over inputs remains
-constant: $p_S(\mathbf{x}) = p_T(\mathbf{x})$,
-but the labels are all flipped:
+Hãy xét một bài toán phân loại nhị phân,
+trong đó chúng ta muốn phân biệt chó và mèo.
+Nếu phân phối có thể dịch chuyển theo những cách tùy ý,
+thì thiết lập của chúng ta cho phép trường hợp bệnh lý
+mà phân phối trên đầu vào vẫn giữ nguyên:
+$p_S(\mathbf{x}) = p_T(\mathbf{x})$,
+nhưng tất cả nhãn đều bị đảo:
 $p_S(y \mid \mathbf{x}) = 1 - p_T(y \mid \mathbf{x})$.
-In other words, if God can suddenly decide
-that in the future all "cats" are now dogs
-and what we previously called "dogs" are now cats---without
-any change in the distribution of inputs $p(\mathbf{x})$,
-then we cannot possibly distinguish this setting
-from one in which the distribution did not change at all.
+Nói cách khác, nếu Chúa có thể đột ngột quyết định
+rằng trong tương lai mọi "con mèo" giờ là chó
+và thứ chúng ta trước đây gọi là "chó" giờ là mèo---mà không có
+bất kỳ thay đổi nào trong phân phối đầu vào $p(\mathbf{x})$,
+thì chúng ta hoàn toàn không thể phân biệt được thiết lập này
+với một thiết lập mà phân phối hoàn toàn không thay đổi.
 
-Fortunately, under some restricted assumptions
-on the ways our data might change in the future,
-principled algorithms can detect shift
-and sometimes even adapt on the fly,
-improving on the accuracy of the original classifier.
+May mắn thay, dưới một số giả định giới hạn
+về những cách dữ liệu của chúng ta có thể thay đổi trong tương lai,
+các thuật toán có nguyên tắc có thể phát hiện sự dịch chuyển
+và đôi khi thậm chí thích nghi ngay lập tức,
+cải thiện độ chính xác của bộ phân loại ban đầu.
 
-### Covariate Shift
+### Dịch chuyển Hiệp biến
 
-Among categories of distribution shift,
-covariate shift may be the most widely studied.
-Here, we assume that while the distribution of inputs
-may change over time, the labeling function,
-i.e., the conditional distribution
-$P(y \mid \mathbf{x})$ does not change.
-Statisticians call this *covariate shift*
-because the problem arises due to a
-shift in the distribution of the covariates (features).
-While we can sometimes reason about distribution shift
-without invoking causality, we note that covariate shift
-is the natural assumption to invoke in settings
-where we believe that $\mathbf{x}$ causes $y$.
+Trong các loại dịch chuyển phân phối,
+dịch chuyển hiệp biến có lẽ được nghiên cứu rộng rãi nhất.
+Ở đây, chúng ta giả định rằng mặc dù phân phối đầu vào
+có thể thay đổi theo thời gian, hàm gán nhãn,
+tức là phân phối có điều kiện
+$P(y \mid \mathbf{x})$ không thay đổi.
+Các nhà thống kê gọi đây là *dịch chuyển hiệp biến*
+vì vấn đề phát sinh do sự
+dịch chuyển trong phân phối của các hiệp biến (đặc trưng).
+Mặc dù đôi khi chúng ta có thể lập luận về dịch chuyển phân phối
+mà không cần viện đến quan hệ nhân quả, hãy lưu ý rằng dịch chuyển hiệp biến
+là giả định tự nhiên trong các bối cảnh
+mà chúng ta tin rằng $\mathbf{x}$ gây ra $y$.
 
-Consider the challenge of distinguishing cats and dogs.
-Our training data might consist of images of the kind in :numref:`fig_cat-dog-train`.
+Hãy xem xét thách thức phân biệt mèo và chó.
+Dữ liệu huấn luyện của chúng ta có thể gồm các hình ảnh như trong :numref:`fig_cat-dog-train`.
 
-![Training data for distinguishing cats and dogs (illustrations: Lafeez Hossain / 500px / Getty Images; ilkermetinkursova / iStock / Getty Images Plus; GlobalP / iStock / Getty Images Plus; Musthafa Aboobakuru / 500px / Getty Images).](../img/cat-dog-train.png)
+![Dữ liệu huấn luyện để phân biệt mèo và chó (minh họa: Lafeez Hossain / 500px / Getty Images; ilkermetinkursova / iStock / Getty Images Plus; GlobalP / iStock / Getty Images Plus; Musthafa Aboobakuru / 500px / Getty Images).](../img/cat-dog-train.png)
 :label:`fig_cat-dog-train`
 
 
-At test time we are asked to classify the images in :numref:`fig_cat-dog-test`.
+Tại thời điểm kiểm tra, chúng ta được yêu cầu phân loại các hình ảnh trong :numref:`fig_cat-dog-test`.
 
-![Test data for distinguishing cats and dogs (illustrations: SIBAS_minich / iStock / Getty Images Plus; Ghrzuzudu / iStock / Getty Images Plus; id-work / DigitalVision Vectors / Getty Images; Yime / iStock / Getty Images Plus).](../img/cat-dog-test.png)
+![Dữ liệu kiểm tra để phân biệt mèo và chó (minh họa: SIBAS_minich / iStock / Getty Images Plus; Ghrzuzudu / iStock / Getty Images Plus; id-work / DigitalVision Vectors / Getty Images; Yime / iStock / Getty Images Plus).](../img/cat-dog-test.png)
 :label:`fig_cat-dog-test`
 
-The training set consists of photos,
-while the test set contains only cartoons.
-Training on a dataset with substantially different
-characteristics from the test set
-can spell trouble absent a coherent plan
-for how to adapt to the new domain.
+Tập huấn luyện gồm các ảnh chụp,
+trong khi tập kiểm tra chỉ chứa hình hoạt họa.
+Huấn luyện trên một tập dữ liệu có các đặc tính khác biệt đáng kể
+so với tập kiểm tra
+có thể gây ra vấn đề nếu không có một kế hoạch rõ ràng
+để thích nghi với domain mới.
 
-### Label Shift
+### Dịch chuyển Nhãn
 
-*Label shift* describes the converse problem.
-Here, we assume that the label marginal $P(y)$
-can change
-but the class-conditional distribution
-$P(\mathbf{x} \mid y)$ remains fixed across domains.
-Label shift is a reasonable assumption to make
-when we believe that $y$ causes $\mathbf{x}$.
-For example, we may want to predict diagnoses
-given their symptoms (or other manifestations),
-even as the relative prevalence of diagnoses
-are changing over time.
-Label shift is the appropriate assumption here
-because diseases cause symptoms.
-In some degenerate cases the label shift
-and covariate shift assumptions can hold simultaneously.
-For example, when the label is deterministic,
-the covariate shift assumption will be satisfied,
-even when $y$ causes $\mathbf{x}$.
-Interestingly, in these cases,
-it is often advantageous to work with methods
-that flow from the label shift assumption.
-That is because these methods tend
-to involve manipulating objects that look like labels (often low-dimensional),
-as opposed to objects that look like inputs,
-which tend to be high-dimensional in deep learning.
+*Dịch chuyển nhãn* mô tả vấn đề ngược lại.
+Ở đây, chúng ta giả định rằng biên của nhãn $P(y)$
+có thể thay đổi
+nhưng phân phối có điều kiện theo lớp
+$P(\mathbf{x} \mid y)$ vẫn cố định giữa các domain.
+Dịch chuyển nhãn là một giả định hợp lý
+khi chúng ta tin rằng $y$ gây ra $\mathbf{x}$.
+Ví dụ, chúng ta có thể muốn dự đoán chẩn đoán
+dựa trên các triệu chứng (hoặc các biểu hiện khác),
+ngay cả khi mức độ phổ biến tương đối của các chẩn đoán
+thay đổi theo thời gian.
+Dịch chuyển nhãn là giả định phù hợp ở đây
+vì bệnh gây ra triệu chứng.
+Trong một số trường hợp suy biến, các giả định dịch chuyển nhãn
+và dịch chuyển hiệp biến có thể đồng thời đúng.
+Ví dụ, khi nhãn mang tính xác định,
+giả định dịch chuyển hiệp biến sẽ được thỏa mãn,
+ngay cả khi $y$ gây ra $\mathbf{x}$.
+Điều thú vị là trong những trường hợp này,
+thường sẽ có lợi khi làm việc với các phương pháp
+xuất phát từ giả định dịch chuyển nhãn.
+Đó là vì các phương pháp này thường
+thao tác trên những đối tượng giống nhãn (thường có số chiều thấp),
+trái với các đối tượng giống đầu vào,
+vốn thường có số chiều cao trong deep learning.
 
-### Concept Shift
+### Dịch chuyển Khái niệm
 
-We may also encounter the related problem of *concept shift*,
-which arises when the very definitions of labels can change.
-This sounds weird---a *cat* is a *cat*, no?
-However, other categories are subject to changes in usage over time.
-Diagnostic criteria for mental illness,
-what passes for fashionable, and job titles,
-are all subject to considerable
-amounts of concept shift.
-It turns out that if we navigate around the United States,
-shifting the source of our data by geography,
-we will find considerable concept shift regarding
-the distribution of names for *soft drinks*
-as shown in :numref:`fig_popvssoda`.
+Chúng ta cũng có thể gặp vấn đề liên quan là *dịch chuyển khái niệm*,
+xảy ra khi chính định nghĩa của các nhãn có thể thay đổi.
+Điều này nghe có vẻ lạ---một *con mèo* vẫn là một *con mèo*, phải không?
+Tuy nhiên, các danh mục khác có thể thay đổi cách sử dụng theo thời gian.
+Tiêu chí chẩn đoán bệnh tâm thần,
+những gì được coi là thời thượng, và chức danh công việc,
+đều chịu những mức độ dịch chuyển khái niệm
+đáng kể.
+Hóa ra rằng nếu chúng ta di chuyển khắp Hoa Kỳ,
+thay đổi nguồn dữ liệu theo địa lý,
+chúng ta sẽ thấy sự dịch chuyển khái niệm đáng kể liên quan đến
+phân phối các tên gọi của *nước ngọt có ga*
+như minh họa trong :numref:`fig_popvssoda`.
 
-![Concept shift for soft drink names in the United States (CC-BY: Alan McConchie, PopVsSoda.com).](../img/popvssoda.png)
+![Dịch chuyển khái niệm về tên gọi nước ngọt có ga tại Hoa Kỳ (CC-BY: Alan McConchie, PopVsSoda.com).](../img/popvssoda.png)
 :width:`400px`
 :label:`fig_popvssoda`
 
-If we were to build a machine translation system,
-the distribution $P(y \mid \mathbf{x})$ might be different
-depending on our location.
-This problem can be tricky to spot.
-We might hope to exploit knowledge
-that shift only takes place gradually
-either in a temporal or geographic sense.
+Nếu chúng ta xây dựng một hệ thống machine translation,
+phân phối $P(y \mid \mathbf{x})$ có thể khác nhau
+tùy thuộc vào vị trí của chúng ta.
+Vấn đề này có thể khó nhận ra.
+Chúng ta có thể hy vọng khai thác kiến thức
+rằng sự dịch chuyển chỉ diễn ra dần dần
+theo thời gian hoặc địa lý.
 
-## Examples of Distribution Shift
+## Ví dụ về Dịch chuyển Phân phối
 
-Before delving into formalism and algorithms,
-we can discuss some concrete situations
-where covariate or concept shift might not be obvious.
-
-
-### Medical Diagnostics
-
-Imagine that you want to design an algorithm to detect cancer.
-You collect data from healthy and sick people
-and you train your algorithm.
-It works fine, giving you high accuracy
-and you conclude that you are ready
-for a successful career in medical diagnostics.
-*Not so fast.*
-
-The distributions that gave rise to the training data
-and those you will encounter in the wild might differ considerably.
-This happened to an unfortunate startup
-that some of we authors worked with years ago.
-They were developing a blood test for a disease
-that predominantly affects older men
-and hoped to study it using blood samples
-that they had collected from patients.
-However, it is considerably more difficult
-to obtain blood samples from healthy men
-than from sick patients already in the system.
-To compensate, the startup solicited
-blood donations from students on a university campus
-to serve as healthy controls in developing their test.
-Then they asked whether we could help them
-to build a classifier for detecting the disease.
-
-As we explained to them,
-it would indeed be easy to distinguish
-between the healthy and sick cohorts
-with near-perfect accuracy.
-However, that is because the test subjects
-differed in age, hormone levels,
-physical activity, diet, alcohol consumption,
-and many more factors unrelated to the disease.
-This was unlikely to be the case with real patients.
-Due to their sampling procedure,
-we could expect to encounter extreme covariate shift.
-Moreover, this case was unlikely to be
-correctable via conventional methods.
-In short, they wasted a significant sum of money.
+Trước khi đi sâu vào tính hình thức và các thuật toán,
+chúng ta có thể thảo luận một số tình huống cụ thể
+mà dịch chuyển hiệp biến hoặc dịch chuyển khái niệm có thể không rõ ràng.
 
 
+### Chẩn đoán Y khoa
 
-### Self-Driving Cars
+Hãy tưởng tượng rằng bạn muốn thiết kế một thuật toán phát hiện ung thư.
+Bạn thu thập dữ liệu từ người khỏe mạnh và người bệnh
+rồi huấn luyện thuật toán của mình.
+Nó hoạt động tốt, mang lại độ chính xác cao
+và bạn kết luận rằng mình đã sẵn sàng
+cho một sự nghiệp thành công trong chẩn đoán y khoa.
+*Chưa nhanh vậy.*
 
-Say a company wanted to leverage machine learning
-for developing self-driving cars.
-One key component here is a roadside detector.
-Since real annotated data is expensive to get,
-they had the (smart and questionable) idea
-to use synthetic data from a game rendering engine
-as additional training data.
-This worked really well on "test data"
-drawn from the rendering engine.
-Alas, inside a real car it was a disaster.
-As it turned out, the roadside had been rendered
-with a very simplistic texture.
-More importantly, *all* the roadside had been rendered
-with the *same* texture and the roadside detector
-learned about this "feature" very quickly.
+Các phân phối tạo ra dữ liệu huấn luyện
+và những phân phối bạn sẽ gặp trong thực tế có thể khác biệt đáng kể.
+Điều này đã xảy ra với một startup không may mắn
+mà một số tác giả chúng tôi từng hợp tác cách đây nhiều năm.
+Họ đang phát triển một xét nghiệm máu cho một căn bệnh
+chủ yếu ảnh hưởng đến nam giới lớn tuổi
+và hy vọng nghiên cứu nó bằng các mẫu máu
+mà họ đã thu thập từ bệnh nhân.
+Tuy nhiên, việc lấy mẫu máu từ nam giới khỏe mạnh
+khó hơn đáng kể so với từ các bệnh nhân đã mắc bệnh trong hệ thống.
+Để bù đắp, startup này đã kêu gọi
+sinh viên tại một khuôn viên đại học hiến máu
+để làm nhóm đối chứng khỏe mạnh trong quá trình phát triển xét nghiệm.
+Sau đó, họ hỏi liệu chúng tôi có thể giúp họ
+xây dựng một bộ phân loại để phát hiện căn bệnh này hay không.
 
-A similar thing happened to the US Army
-when they first tried to detect tanks in the forest.
-They took aerial photographs of the forest without tanks,
-then drove the tanks into the forest
-and took another set of pictures.
-The classifier appeared to work *perfectly*.
-Unfortunately, it had merely learned
-how to distinguish trees with shadows
-from trees without shadows---the first set
-of pictures was taken in the early morning,
-the second set at noon.
+Như chúng tôi đã giải thích với họ,
+thực sự sẽ dễ dàng phân biệt
+giữa các nhóm khỏe mạnh và mắc bệnh
+với độ chính xác gần như hoàn hảo.
+Tuy nhiên, đó là vì các đối tượng kiểm tra
+khác nhau về độ tuổi, mức hormone,
+hoạt động thể chất, chế độ ăn, mức tiêu thụ rượu,
+và nhiều yếu tố khác không liên quan đến căn bệnh.
+Điều này khó có thể đúng với bệnh nhân thực tế.
+Do quy trình lấy mẫu của họ,
+chúng tôi có thể kỳ vọng gặp phải covariate shift cực đoan.
+Hơn nữa, trường hợp này khó có thể
+được khắc phục bằng các phương pháp thông thường.
+Tóm lại, họ đã lãng phí một khoản tiền đáng kể.
 
-### Nonstationary Distributions
 
-A much more subtle situation arises
-when the distribution changes slowly
-(also known as *nonstationary distribution*)
-and the model is not updated adequately.
-Below are some typical cases.
 
-* We train a computational advertising model and then fail to update it frequently (e.g., we forget to incorporate that an obscure new device called an iPad was just launched).
-* We build a spam filter. It works well at detecting all spam that we have seen so far. But then the spammers wise up and craft new messages that look unlike anything we have seen before.
-* We build a product recommendation system. It works throughout the winter but then continues to recommend Santa hats long after Christmas.
+### Xe tự lái
 
-### More Anecdotes
+Giả sử một công ty muốn tận dụng machine learning
+để phát triển xe tự lái.
+Một thành phần then chốt ở đây là bộ phát hiện lề đường.
+Vì dữ liệu thực đã được gán nhãn rất tốn kém để có được,
+họ có ý tưởng (thông minh nhưng cũng đáng nghi ngờ)
+là sử dụng dữ liệu tổng hợp từ một game rendering engine
+làm dữ liệu huấn luyện bổ sung.
+Điều này hoạt động rất tốt trên "dữ liệu kiểm tra"
+được lấy từ rendering engine.
+Than ôi, bên trong một chiếc xe thật thì đó là thảm họa.
+Hóa ra, lề đường đã được render
+bằng một texture rất đơn giản.
+Quan trọng hơn, *toàn bộ* lề đường đã được render
+bằng *cùng một* texture và bộ phát hiện lề đường
+đã học "đặc trưng" này rất nhanh.
 
-* We build a face detector. It works well on all benchmarks. Unfortunately it fails on test data---the offending examples are close-ups where the face fills the entire image (no such data was in the training set).
-* We build a web search engine for the US market and want to deploy it in the UK.
-* We train an image classifier by compiling a large dataset where each among a large set of classes is equally represented in the dataset, say 1000 categories, represented by 1000 images each. Then we deploy the system in the real world, where the actual label distribution of photographs is decidedly non-uniform.
+Một điều tương tự đã xảy ra với Quân đội Mỹ
+khi họ lần đầu thử phát hiện xe tăng trong rừng.
+Họ chụp ảnh trên không của khu rừng không có xe tăng,
+sau đó lái xe tăng vào rừng
+và chụp một bộ ảnh khác.
+Classifier dường như hoạt động *hoàn hảo*.
+Không may, nó chỉ học được
+cách phân biệt cây có bóng
+với cây không có bóng---bộ ảnh đầu tiên
+được chụp vào sáng sớm,
+bộ ảnh thứ hai được chụp vào buổi trưa.
 
+### Phân phối không dừng
+
+Một tình huống tinh tế hơn nhiều nảy sinh
+khi phân phối thay đổi chậm
+(còn được gọi là *phân phối không dừng*)
+và mô hình không được cập nhật đầy đủ.
+Dưới đây là một số trường hợp điển hình.
+
+* Chúng ta huấn luyện một mô hình quảng cáo tính toán rồi không cập nhật nó thường xuyên (ví dụ: chúng ta quên bổ sung thông tin rằng một thiết bị mới ít người biết đến có tên iPad vừa được ra mắt).
+* Chúng ta xây dựng một bộ lọc spam. Nó hoạt động tốt trong việc phát hiện mọi spam mà chúng ta từng thấy cho đến nay. Nhưng rồi những kẻ gửi spam trở nên khôn ngoan hơn và tạo ra các thư mới không giống bất cứ thứ gì chúng ta từng thấy trước đây.
+* Chúng ta xây dựng một hệ thống gợi ý sản phẩm. Nó hoạt động suốt mùa đông nhưng sau Giáng sinh rất lâu vẫn tiếp tục gợi ý mũ ông già Noel.
+
+### Thêm các giai thoại
+
+* Chúng ta xây dựng một bộ phát hiện khuôn mặt. Nó hoạt động tốt trên mọi benchmark. Không may, nó thất bại trên dữ liệu kiểm tra---các ví dụ gây lỗi là ảnh cận cảnh mà khuôn mặt chiếm toàn bộ ảnh (không có dữ liệu như vậy trong tập huấn luyện).
+* Chúng ta xây dựng một web search engine cho thị trường Mỹ và muốn deploy nó tại Vương quốc Anh.
+* Chúng ta huấn luyện một image classifier bằng cách tổng hợp một dataset lớn, trong đó mỗi lớp trong một tập lớn các lớp được biểu diễn đồng đều trong dataset, chẳng hạn 1000 danh mục, mỗi danh mục được biểu diễn bởi 1000 ảnh. Sau đó, chúng ta deploy hệ thống trong thế giới thực, nơi phân phối nhãn thực tế của ảnh rõ ràng là không đồng đều.
 
 
 
 
 
-## Correction of Distribution Shift
 
-As we have discussed, there are many cases
-where training and test distributions
-$P(\mathbf{x}, y)$ are different.
-In some cases, we get lucky and the models work
-despite covariate, label, or concept shift.
-In other cases, we can do better by employing
-principled strategies to cope with the shift.
-The remainder of this section grows considerably more technical.
-The impatient reader could continue on to the next section
-as this material is not prerequisite to subsequent concepts.
+## Hiệu chỉnh Distribution Shift
 
-### Empirical Risk and  Risk
+Như chúng ta đã thảo luận, có nhiều trường hợp
+mà các phân phối huấn luyện và kiểm tra
+$P(\mathbf{x}, y)$ khác nhau.
+Trong một số trường hợp, chúng ta may mắn và các mô hình vẫn hoạt động
+bất chấp covariate shift, label shift hoặc concept shift.
+Trong những trường hợp khác, chúng ta có thể làm tốt hơn bằng cách áp dụng
+các chiến lược có cơ sở để ứng phó với shift.
+Phần còn lại của mục này mang tính kỹ thuật hơn đáng kể.
+Người đọc thiếu kiên nhẫn có thể tiếp tục sang mục tiếp theo
+vì nội dung này không phải điều kiện tiên quyết cho các khái niệm sau đó.
+
+### Rủi ro thực nghiệm và Rủi ro
 :label:`subsec_empirical-risk-and-risk`
 
-Let's first reflect on what exactly
-is happening during model training:
-we iterate over features and associated labels
-of training data
+Trước tiên, hãy xem xét chính xác
+điều gì diễn ra trong quá trình huấn luyện mô hình:
+chúng ta lặp qua các đặc trưng và nhãn liên kết
+của dữ liệu huấn luyện
 $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$
-and update the parameters of a model $f$ after every minibatch.
-For simplicity we do not consider regularization,
-so we largely minimize the loss on the training:
+và cập nhật các tham số của mô hình $f$ sau mỗi minibatch.
+Để đơn giản, chúng ta không xét regularization,
+vì vậy về cơ bản chúng ta tối thiểu hóa loss trên dữ liệu huấn luyện:
 
 $$\mathop{\mathrm{minimize}}_f \frac{1}{n} \sum_{i=1}^n l(f(\mathbf{x}_i), y_i),$$
 :eqlabel:`eq_empirical-risk-min`
 
-where $l$ is the loss function
-measuring "how bad" the prediction $f(\mathbf{x}_i)$ is given the associated label $y_i$.
-Statisticians call the term in :eqref:`eq_empirical-risk-min` *empirical risk*.
-The *empirical risk* is an average loss over the training data
-for approximating the *risk*,
-which is the
-expectation of the loss over the entire population of data drawn from their true distribution
+trong đó $l$ là loss function
+đo lường dự đoán $f(\mathbf{x}_i)$ "tệ đến mức nào" với nhãn liên kết $y_i$.
+Các nhà thống kê gọi số hạng trong :eqref:`eq_empirical-risk-min` là *rủi ro thực nghiệm*.
+*Rủi ro thực nghiệm* là loss trung bình trên dữ liệu huấn luyện
+để xấp xỉ *rủi ro*,
+tức là
+kỳ vọng của loss trên toàn bộ quần thể dữ liệu được lấy từ phân phối thực của chúng
 $p(\mathbf{x},y)$:
 
 $$E_{p(\mathbf{x}, y)} [l(f(\mathbf{x}), y)] = \int\int l(f(\mathbf{x}), y) p(\mathbf{x}, y) \;d\mathbf{x}dy.$$
 :eqlabel:`eq_true-risk`
 
-However, in practice we typically cannot obtain the entire population of data.
-Thus, *empirical risk minimization*,
-which is minimizing the empirical risk in :eqref:`eq_empirical-risk-min`,
-is a practical strategy for machine learning,
-with the hope of approximately
-minimizing the risk.
+Tuy nhiên, trên thực tế, chúng ta thường không thể thu được toàn bộ quần thể dữ liệu.
+Vì vậy, *tối thiểu hóa rủi ro thực nghiệm*,
+tức tối thiểu hóa rủi ro thực nghiệm trong :eqref:`eq_empirical-risk-min`,
+là một chiến lược thực tiễn cho machine learning,
+với hy vọng xấp xỉ
+tối thiểu hóa rủi ro.
 
 
 
-### Covariate Shift Correction
+### Hiệu chỉnh Covariate Shift
 :label:`subsec_covariate-shift-correction`
 
-Assume that we want to estimate
-some dependency $P(y \mid \mathbf{x})$
-for which we have labeled data $(\mathbf{x}_i, y_i)$.
-Unfortunately, the observations $\mathbf{x}_i$ are drawn
-from some *source distribution* $q(\mathbf{x})$
-rather than the *target distribution* $p(\mathbf{x})$.
-Fortunately,
-the dependency assumption means
-that the conditional distribution does not change: $p(y \mid \mathbf{x}) = q(y \mid \mathbf{x})$.
-If the source distribution $q(\mathbf{x})$ is "wrong",
-we can correct for that by using the following simple identity in the risk:
+Giả sử chúng ta muốn ước lượng
+một quan hệ phụ thuộc $P(y \mid \mathbf{x})$
+mà chúng ta có dữ liệu đã gán nhãn $(\mathbf{x}_i, y_i)$.
+Không may, các quan sát $\mathbf{x}_i$ được lấy
+từ một *phân phối nguồn* $q(\mathbf{x})$
+thay vì *phân phối đích* $p(\mathbf{x})$.
+May mắn thay,
+giả định về quan hệ phụ thuộc có nghĩa
+là phân phối có điều kiện không thay đổi: $p(y \mid \mathbf{x}) = q(y \mid \mathbf{x})$.
+Nếu phân phối nguồn $q(\mathbf{x})$ là "sai",
+chúng ta có thể hiệu chỉnh điều đó bằng cách sử dụng đẳng thức đơn giản sau trong rủi ro:
 
 $$
 \begin{aligned}
@@ -361,119 +359,119 @@ $$
 \end{aligned}
 $$
 
-In other words, we need to reweigh each data example
-by the ratio of the
-probability
-that it would have been drawn from the correct distribution to that from the wrong one:
+Nói cách khác, chúng ta cần gán lại trọng số cho mỗi ví dụ dữ liệu
+theo tỷ lệ giữa
+xác suất
+mà nó được lấy từ phân phối đúng và xác suất từ phân phối sai:
 
 $$\beta_i \stackrel{\textrm{def}}{=} \frac{p(\mathbf{x}_i)}{q(\mathbf{x}_i)}.$$
 
-Plugging in the weight $\beta_i$ for
-each data example $(\mathbf{x}_i, y_i)$
-we can train our model using
-*weighted empirical risk minimization*:
+Thay trọng số $\beta_i$ vào
+mỗi ví dụ dữ liệu $(\mathbf{x}_i, y_i)$,
+chúng ta có thể huấn luyện mô hình bằng
+*tối thiểu hóa rủi ro thực nghiệm có trọng số*:
 
 $$\mathop{\mathrm{minimize}}_f \frac{1}{n} \sum_{i=1}^n \beta_i l(f(\mathbf{x}_i), y_i).$$
 :eqlabel:`eq_weighted-empirical-risk-min`
 
 
 
-Alas, we do not know that ratio,
-so before we can do anything useful we need to estimate it.
-Many methods are available,
-including some fancy operator-theoretic approaches
-that attempt to recalibrate the expectation operator directly
-using a minimum-norm or a maximum entropy principle.
-Note that for any such approach, we need samples
-drawn from both distributions---the "true" $p$, e.g.,
-by access to test data, and the one used
-for generating the training set $q$ (the latter is trivially available).
-Note however, that we only need features $\mathbf{x} \sim p(\mathbf{x})$;
-we do not need to access labels $y \sim p(y)$.
+Than ôi, chúng ta không biết tỷ lệ đó,
+vì vậy trước khi có thể làm bất cứ điều gì hữu ích, chúng ta cần ước lượng nó.
+Có nhiều phương pháp khả dụng,
+bao gồm một số phương pháp lý thuyết toán tử tinh vi
+cố gắng hiệu chỉnh lại trực tiếp toán tử kỳ vọng
+bằng nguyên lý chuẩn tối thiểu hoặc entropy cực đại.
+Lưu ý rằng với bất kỳ phương pháp nào như vậy, chúng ta cần các mẫu
+được lấy từ cả hai phân phối---$p$ "thực", ví dụ
+thông qua quyền truy cập vào dữ liệu kiểm tra, và phân phối
+được dùng để tạo tập huấn luyện $q$ (phân phối sau hiển nhiên là có sẵn).
+Tuy nhiên, lưu ý rằng chúng ta chỉ cần các đặc trưng $\mathbf{x} \sim p(\mathbf{x})$;
+chúng ta không cần truy cập các nhãn $y \sim p(y)$.
 
-In this case, there exists a very effective approach
-that will give almost as good results as the original: namely, logistic regression,
-which is a special case of softmax regression (see :numref:`sec_softmax`)
-for binary classification.
-This is all that is needed to compute estimated probability ratios.
-We learn a classifier to distinguish
-between data drawn from $p(\mathbf{x})$
-and data drawn from $q(\mathbf{x})$.
-If it is impossible to distinguish
-between the two distributions
-then it means that the associated instances
-are equally likely to come from
-either one of those two distributions.
-On the other hand, any instances
-that can be well discriminated
-should be significantly overweighted
-or underweighted accordingly.
+Trong trường hợp này, có một phương pháp rất hiệu quả
+cho kết quả gần tốt như phương pháp ban đầu: đó là logistic regression,
+một trường hợp đặc biệt của softmax regression (xem :numref:`sec_softmax`)
+cho phân loại nhị phân.
+Đây là tất cả những gì cần để tính các tỷ lệ xác suất ước lượng.
+Chúng ta học một classifier để phân biệt
+giữa dữ liệu được lấy từ $p(\mathbf{x})$
+và dữ liệu được lấy từ $q(\mathbf{x})$.
+Nếu không thể phân biệt
+giữa hai phân phối,
+thì điều đó có nghĩa là các instance liên quan
+có xác suất như nhau đến từ
+một trong hai phân phối đó.
+Mặt khác, mọi instance
+có thể được phân biệt tốt
+nên được tăng hoặc giảm trọng số
+đáng kể tương ứng.
 
-For simplicity's sake assume that we have
-an equal number of instances from both distributions
+Để đơn giản, giả sử chúng ta có
+số lượng instance bằng nhau từ hai phân phối
 $p(\mathbf{x})$
-and $q(\mathbf{x})$, respectively.
-Now denote by $z$ labels that are $1$
-for data drawn from $p$ and $-1$ for data drawn from $q$.
-Then the probability in a mixed dataset is given by
+và $q(\mathbf{x})$, tương ứng.
+Bây giờ, ký hiệu $z$ là các nhãn bằng $1$
+cho dữ liệu được lấy từ $p$ và $-1$ cho dữ liệu được lấy từ $q$.
+Khi đó, xác suất trong một dataset trộn được cho bởi
 
 $$P(z=1 \mid \mathbf{x}) = \frac{p(\mathbf{x})}{p(\mathbf{x})+q(\mathbf{x})} \textrm{ and hence } \frac{P(z=1 \mid \mathbf{x})}{P(z=-1 \mid \mathbf{x})} = \frac{p(\mathbf{x})}{q(\mathbf{x})}.$$
 
-Thus, if we use a logistic regression approach,
-where $P(z=1 \mid \mathbf{x})=\frac{1}{1+\exp(-h(\mathbf{x}))}$ ($h$ is a parametrized function),
-it follows that
+Do đó, nếu chúng ta sử dụng phương pháp logistic regression,
+trong đó $P(z=1 \mid \mathbf{x})=\frac{1}{1+\exp(-h(\mathbf{x}))}$ ($h$ là một hàm được tham số hóa),
+thì suy ra rằng
 
 $$
 \beta_i = \frac{1/(1 + \exp(-h(\mathbf{x}_i)))}{\exp(-h(\mathbf{x}_i))/(1 + \exp(-h(\mathbf{x}_i)))} = \exp(h(\mathbf{x}_i)).
 $$
 
-As a result, we need to solve two problems:
-the first, to distinguish between
-data drawn from both distributions,
-and then a weighted empirical risk minimization problem
-in :eqref:`eq_weighted-empirical-risk-min`
-where we weigh terms by $\beta_i$.
+Kết quả là, chúng ta cần giải quyết hai vấn đề:
+thứ nhất, phân biệt giữa
+dữ liệu được lấy từ cả hai phân phối,
+sau đó là bài toán tối thiểu hóa rủi ro thực nghiệm có trọng số
+trong :eqref:`eq_weighted-empirical-risk-min`
+mà chúng ta gán trọng số cho các số hạng bằng $\beta_i$.
 
-Now we are ready to describe a correction algorithm.
-Suppose that we have a training set $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$ and an unlabeled test set $\{\mathbf{u}_1, \ldots, \mathbf{u}_m\}$.
-For covariate shift,
-we assume that $\mathbf{x}_i$ for all $1 \leq i \leq n$ are drawn from some source distribution
-and $\mathbf{u}_i$ for all $1 \leq i \leq m$
-are drawn from the target distribution.
-Here is a prototypical algorithm
-for correcting covariate shift:
+Bây giờ chúng ta đã sẵn sàng mô tả một thuật toán hiệu chỉnh.
+Giả sử rằng chúng ta có một tập huấn luyện $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$ và một tập kiểm tra chưa gán nhãn $\{\mathbf{u}_1, \ldots, \mathbf{u}_m\}$.
+Đối với dịch chuyển biến đồng biến,
+chúng ta giả định rằng $\mathbf{x}_i$ với mọi $1 \leq i \leq n$ được lấy mẫu từ một phân phối nguồn nào đó
+và $\mathbf{u}_i$ với mọi $1 \leq i \leq m$
+được lấy mẫu từ phân phối đích.
+Đây là một thuật toán điển hình
+để hiệu chỉnh dịch chuyển biến đồng biến:
 
-1. Create a binary-classification training set: $\{(\mathbf{x}_1, -1), \ldots, (\mathbf{x}_n, -1), (\mathbf{u}_1, 1), \ldots, (\mathbf{u}_m, 1)\}$.
-1. Train a binary classifier using logistic regression to get the function $h$.
-1. Weigh training data using $\beta_i = \exp(h(\mathbf{x}_i))$ or better $\beta_i = \min(\exp(h(\mathbf{x}_i)), c)$ for some constant $c$.
-1. Use weights $\beta_i$ for training on $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$ in :eqref:`eq_weighted-empirical-risk-min`.
+1. Tạo một tập huấn luyện phân loại nhị phân: $\{(\mathbf{x}_1, -1), \ldots, (\mathbf{x}_n, -1), (\mathbf{u}_1, 1), \ldots, (\mathbf{u}_m, 1)\}$.
+1. Huấn luyện một bộ phân loại nhị phân bằng logistic regression để thu được hàm $h$.
+1. Gán trọng số cho dữ liệu huấn luyện bằng $\beta_i = \exp(h(\mathbf{x}_i))$ hoặc tốt hơn là $\beta_i = \min(\exp(h(\mathbf{x}_i)), c)$ với một hằng số $c$ nào đó.
+1. Sử dụng các trọng số $\beta_i$ để huấn luyện trên $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$ trong :eqref:`eq_weighted-empirical-risk-min`.
 
-Note that the above algorithm relies on a crucial assumption.
-For this scheme to work, we need that each data example
-in the target (e.g., test time) distribution
-had nonzero probability of occurring at training time.
-If we find a point where $p(\mathbf{x}) > 0$ but $q(\mathbf{x}) = 0$,
-then the corresponding importance weight should be infinity.
-
-
+Lưu ý rằng thuật toán trên dựa vào một giả định then chốt.
+Để phương pháp này hoạt động, chúng ta cần mọi ví dụ dữ liệu
+trong phân phối đích (ví dụ, tại thời điểm kiểm tra)
+đều có xác suất khác không xuất hiện tại thời điểm huấn luyện.
+Nếu chúng ta tìm thấy một điểm mà $p(\mathbf{x}) > 0$ nhưng $q(\mathbf{x}) = 0$,
+thì trọng số importance tương ứng phải là vô hạn.
 
 
 
 
-### Label Shift Correction
 
-Assume that we are dealing with a
-classification task with $k$ categories.
-Using the same notation in :numref:`subsec_covariate-shift-correction`,
-$q$ and $p$ are the source distribution (e.g., training time) and target distribution (e.g., test time), respectively.
-Assume that the distribution of labels shifts over time:
-$q(y) \neq p(y)$, but the class-conditional distribution
-stays the same: $q(\mathbf{x} \mid y)=p(\mathbf{x} \mid y)$.
-If the source distribution $q(y)$ is "wrong",
-we can correct for that
-according to
-the following identity in the risk
-as defined in
+
+### Hiệu chỉnh dịch chuyển nhãn
+
+Giả sử rằng chúng ta đang xử lý một
+bài toán phân loại với $k$ danh mục.
+Sử dụng cùng ký hiệu trong :numref:`subsec_covariate-shift-correction`,
+$q$ và $p$ lần lượt là phân phối nguồn (ví dụ, thời điểm huấn luyện) và phân phối đích (ví dụ, thời điểm kiểm tra).
+Giả sử rằng phân phối của các nhãn thay đổi theo thời gian:
+$q(y) \neq p(y)$, nhưng phân phối có điều kiện theo lớp
+vẫn giữ nguyên: $q(\mathbf{x} \mid y)=p(\mathbf{x} \mid y)$.
+Nếu phân phối nguồn $q(y)$ là "không đúng",
+chúng ta có thể hiệu chỉnh điều đó
+theo
+đồng nhất thức sau trong rủi ro
+như được định nghĩa trong
 :eqref:`eq_true-risk`:
 
 $$
@@ -485,205 +483,205 @@ $$
 
 
 
-Here, our importance weights will correspond to the
-label likelihood ratios:
+Ở đây, các trọng số importance của chúng ta sẽ tương ứng với
+các tỷ số likelihood của nhãn:
 
 $$\beta_i \stackrel{\textrm{def}}{=} \frac{p(y_i)}{q(y_i)}.$$
 
-One nice thing about label shift is that
-if we have a reasonably good model
-on the source distribution,
-then we can get consistent estimates of these weights
-without ever having to deal with the ambient dimension.
-In deep learning, the inputs tend
-to be high-dimensional objects like images,
-while the labels are often simpler objects like categories.
+Một điểm hay của dịch chuyển nhãn là
+nếu chúng ta có một mô hình đủ tốt
+trên phân phối nguồn,
+thì chúng ta có thể có được các ước lượng nhất quán của những trọng số này
+mà không bao giờ phải xử lý chiều không gian dữ liệu.
+Trong deep learning, đầu vào thường
+là các đối tượng có số chiều cao như hình ảnh,
+trong khi nhãn thường là các đối tượng đơn giản hơn như danh mục.
 
-To estimate the target label distribution,
-we first take our reasonably good off-the-shelf classifier
-(typically trained on the training data)
-and compute its "confusion" matrix using the validation set
-(also from the training distribution).
-The *confusion matrix*, $\mathbf{C}$, is simply a $k \times k$ matrix,
-where each column corresponds to the label category (ground truth)
-and each row corresponds to our model's predicted category.
-Each cell's value $c_{ij}$ is the fraction of total predictions on the validation set
-where the true label was $j$ and our model predicted $i$.
+Để ước lượng phân phối nhãn đích,
+trước tiên chúng ta lấy bộ phân loại có sẵn đủ tốt của mình
+(thường được huấn luyện trên dữ liệu huấn luyện)
+và tính ma trận "nhầm lẫn" của nó bằng tập validation
+(cũng thuộc phân phối huấn luyện).
+*Ma trận nhầm lẫn*, $\mathbf{C}$, đơn giản là một ma trận $k \times k$,
+trong đó mỗi cột tương ứng với danh mục nhãn (nhãn thực)
+và mỗi hàng tương ứng với danh mục do mô hình của chúng ta dự đoán.
+Giá trị của mỗi ô $c_{ij}$ là tỷ lệ trên tổng số dự đoán trong tập validation
+mà nhãn thực là $j$ và mô hình của chúng ta dự đoán là $i$.
 
-Now, we cannot calculate the confusion matrix
-on the target data directly
-because we do not get to see the labels for the examples
-that we see in the wild,
-unless we invest in a complex real-time annotation pipeline.
-What we can do, however, is average all of our model's predictions
-at test time together, yielding the mean model outputs $\mu(\hat{\mathbf{y}}) \in \mathbb{R}^k$,
-where the $i^\textrm{th}$ element $\mu(\hat{y}_i)$
-is the fraction of the total predictions on the test set
-where our model predicted $i$.
+Tuy nhiên, chúng ta không thể tính ma trận nhầm lẫn
+trực tiếp trên dữ liệu đích
+vì chúng ta không được xem các nhãn của những ví dụ
+mà mình gặp trong thực tế,
+trừ khi đầu tư vào một pipeline gán nhãn thời gian thực phức tạp.
+Dù vậy, điều chúng ta có thể làm là lấy trung bình tất cả các dự đoán của mô hình
+tại thời điểm kiểm tra, thu được đầu ra trung bình của mô hình $\mu(\hat{\mathbf{y}}) \in \mathbb{R}^k$,
+trong đó phần tử thứ $i^\textrm{th}$ $\mu(\hat{y}_i)$
+là tỷ lệ trên tổng số dự đoán trong tập kiểm tra
+mà mô hình của chúng ta dự đoán là $i$.
 
-It turns out that under some mild conditions---if
-our classifier was reasonably accurate in the first place,
-and if the target data contains only categories
-that we have seen before,
-and if the label shift assumption holds in the first place
-(the strongest assumption here)---we can estimate the test set label distribution
-by solving a simple linear system
+Hóa ra rằng dưới một số điều kiện tương đối nhẹ---nếu
+bộ phân loại của chúng ta vốn đã có độ chính xác hợp lý,
+và nếu dữ liệu đích chỉ chứa các danh mục
+mà chúng ta đã từng thấy trước đó,
+và nếu giả định dịch chuyển nhãn ngay từ đầu là đúng
+(đây là giả định mạnh nhất)---chúng ta có thể ước lượng phân phối nhãn của tập kiểm tra
+bằng cách giải một hệ tuyến tính đơn giản
 
 $$\mathbf{C} p(\mathbf{y}) = \mu(\hat{\mathbf{y}}),$$
 
-because as an estimate $\sum_{j=1}^k c_{ij} p(y_j) = \mu(\hat{y}_i)$ holds for all $1 \leq i \leq k$,
-where $p(y_j)$ is the $j^\textrm{th}$ element of the $k$-dimensional label distribution vector $p(\mathbf{y})$.
-If our classifier is sufficiently accurate to begin with,
-then the confusion matrix $\mathbf{C}$ will be invertible,
-and we get a solution $p(\mathbf{y}) = \mathbf{C}^{-1} \mu(\hat{\mathbf{y}})$.
+vì ước lượng $\sum_{j=1}^k c_{ij} p(y_j) = \mu(\hat{y}_i)$ đúng với mọi $1 \leq i \leq k$,
+trong đó $p(y_j)$ là phần tử thứ $j^\textrm{th}$ của vector phân phối nhãn $k$ chiều $p(\mathbf{y})$.
+Nếu ngay từ đầu bộ phân loại của chúng ta đủ chính xác,
+thì ma trận nhầm lẫn $\mathbf{C}$ sẽ khả nghịch,
+và chúng ta có nghiệm $p(\mathbf{y}) = \mathbf{C}^{-1} \mu(\hat{\mathbf{y}})$.
 
-Because we observe the labels on the source data,
-it is easy to estimate the distribution $q(y)$.
-Then, for any training example $i$ with label $y_i$,
-we can take the ratio of our estimated $p(y_i)/q(y_i)$
-to calculate the weight $\beta_i$,
-and plug this into weighted empirical risk minimization
-in :eqref:`eq_weighted-empirical-risk-min`.
-
-
-### Concept Shift Correction
-
-Concept shift is much harder to fix in a principled manner.
-For instance, in a situation where suddenly the problem changes
-from distinguishing cats from dogs to one of
-distinguishing white from black animals,
-it will be unreasonable to assume
-that we can do much better than just collecting new labels
-and training from scratch.
-Fortunately, in practice, such extreme shifts are rare.
-Instead, what usually happens is that the task keeps on changing slowly.
-To make things more concrete, here are some examples:
-
-* In computational advertising, new products are launched,
-old products become less popular. This means that the distribution over ads and their popularity changes gradually and any click-through rate predictor needs to change gradually with it.
-* Traffic camera lenses degrade gradually due to environmental wear, affecting image quality progressively.
-* News content changes gradually (i.e., most of the news remains unchanged but new stories appear).
-
-In such cases, we can use the same approach that we used for training networks to make them adapt to the change in the data. In other words, we use the existing network weights and simply perform a few update steps with the new data rather than training from scratch.
+Vì chúng ta quan sát được các nhãn trong dữ liệu nguồn,
+việc ước lượng phân phối $q(y)$ là dễ dàng.
+Sau đó, với bất kỳ ví dụ huấn luyện $i$ nào có nhãn $y_i$,
+chúng ta có thể lấy tỷ số $p(y_i)/q(y_i)$ đã ước lượng
+để tính trọng số $\beta_i$,
+và đưa giá trị này vào quá trình tối thiểu hóa rủi ro thực nghiệm có trọng số
+trong :eqref:`eq_weighted-empirical-risk-min`.
 
 
-## A Taxonomy of Learning Problems
+### Hiệu chỉnh dịch chuyển khái niệm
 
-Armed with knowledge about how to deal with changes in distributions, we can now consider some other aspects of machine learning problem formulation.
+Dịch chuyển khái niệm khó khắc phục một cách có nguyên tắc hơn nhiều.
+Chẳng hạn, trong tình huống mà bài toán đột ngột thay đổi
+từ phân biệt mèo với chó sang
+phân biệt động vật trắng với đen,
+sẽ không hợp lý khi giả định
+rằng chúng ta có thể làm tốt hơn nhiều so với chỉ thu thập nhãn mới
+và huấn luyện lại từ đầu.
+May mắn thay, trong thực tế, những dịch chuyển cực đoan như vậy rất hiếm.
+Thay vào đó, điều thường xảy ra là nhiệm vụ tiếp tục thay đổi chậm rãi.
+Để làm rõ hơn, đây là một số ví dụ:
+
+* Trong quảng cáo tính toán, các sản phẩm mới được ra mắt,
+các sản phẩm cũ trở nên ít phổ biến hơn. Điều này có nghĩa là phân phối của quảng cáo và mức độ phổ biến của chúng thay đổi dần dần, và mọi bộ dự đoán tỷ lệ nhấp chuột đều cần thay đổi dần theo nó.
+* Thấu kính camera giao thông xuống cấp dần do hao mòn từ môi trường, làm ảnh hưởng đến chất lượng hình ảnh theo thời gian.
+* Nội dung tin tức thay đổi dần dần (tức là phần lớn tin tức vẫn không thay đổi nhưng các câu chuyện mới xuất hiện).
+
+Trong những trường hợp như vậy, chúng ta có thể sử dụng cùng cách tiếp cận đã dùng khi huấn luyện network để làm cho chúng thích nghi với thay đổi trong dữ liệu. Nói cách khác, chúng ta sử dụng các trọng số network hiện có và chỉ thực hiện vài bước cập nhật với dữ liệu mới thay vì huấn luyện lại từ đầu.
 
 
-### Batch Learning
+## Phân loại các bài toán học máy
 
-In *batch learning*, we have access to training features and labels $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$, which we use to train a model $f(\mathbf{x})$. Later on, we deploy this model to score new data $(\mathbf{x}, y)$ drawn from the same distribution. This is the default assumption for any of the problems that we discuss here. For instance, we might train a cat detector based on lots of pictures of cats and dogs. Once we have trained it, we ship it as part of a smart catdoor computer vision system that lets only cats in. This is then installed in a customer's home and is never updated again (barring extreme circumstances).
+Với kiến thức về cách xử lý các thay đổi trong phân phối, giờ đây chúng ta có thể xem xét một số khía cạnh khác của việc xây dựng bài toán học máy.
 
 
-### Online Learning
+### Học theo batch
 
-Now imagine that the data $(\mathbf{x}_i, y_i)$ arrives one sample at a time. More specifically, assume that we first observe $\mathbf{x}_i$, then we need to come up with an estimate $f(\mathbf{x}_i)$. Only once we have done this do we observe $y_i$ and so receive a reward or incur a loss, given our decision.
-Many real problems fall into this category. For example, we need to predict tomorrow's stock price, which allows us to trade based on that estimate and at the end of the day we find out whether our estimate made us a profit. In other words, in *online learning*, we have the following cycle where we are continuously improving our model given new observations:
+Trong *học theo batch*, chúng ta có quyền truy cập vào các đặc trưng và nhãn huấn luyện $\{(\mathbf{x}_1, y_1), \ldots, (\mathbf{x}_n, y_n)\}$, được sử dụng để huấn luyện một mô hình $f(\mathbf{x})$. Sau đó, chúng ta deploy mô hình này để đánh giá dữ liệu mới $(\mathbf{x}, y)$ được lấy mẫu từ cùng một phân phối. Đây là giả định mặc định cho bất kỳ bài toán nào mà chúng ta thảo luận ở đây. Chẳng hạn, chúng ta có thể huấn luyện một bộ phát hiện mèo dựa trên rất nhiều hình ảnh mèo và chó. Sau khi huấn luyện xong, chúng ta đưa nó vào như một phần của hệ thống computer vision cửa cho mèo thông minh chỉ cho phép mèo đi vào. Sau đó, hệ thống này được lắp đặt tại nhà khách hàng và không bao giờ được cập nhật lại (trừ những trường hợp cực đoan).
+
+
+### Học trực tuyến
+
+Bây giờ hãy tưởng tượng rằng dữ liệu $(\mathbf{x}_i, y_i)$ đến từng mẫu một. Cụ thể hơn, giả sử rằng trước tiên chúng ta quan sát $\mathbf{x}_i$, sau đó cần đưa ra một ước lượng $f(\mathbf{x}_i)$. Chỉ sau khi làm điều này, chúng ta mới quan sát $y_i$ và do đó nhận được phần thưởng hoặc chịu tổn thất, tùy theo quyết định của mình.
+Nhiều bài toán thực tế thuộc loại này. Ví dụ, chúng ta cần dự đoán giá cổ phiếu vào ngày mai, điều này cho phép chúng ta giao dịch dựa trên ước lượng đó, và vào cuối ngày chúng ta biết được liệu ước lượng của mình có mang lại lợi nhuận hay không. Nói cách khác, trong *học trực tuyến*, chúng ta có chu trình sau, trong đó liên tục cải thiện mô hình dựa trên các quan sát mới:
 
 $$\begin{aligned}&\textrm{model } f_t \longrightarrow \textrm{data }  \mathbf{x}_t \longrightarrow \textrm{estimate } f_t(\mathbf{x}_t) \longrightarrow\\ \textrm{obs}&\textrm{ervation } y_t \longrightarrow \textrm{loss } l(y_t, f_t(\mathbf{x}_t)) \longrightarrow \textrm{model } f_{t+1}\end{aligned}$$
 
-### Bandits
+### Bandit
 
-*Bandits* are a special case of the problem above. While in most learning problems we have a continuously parametrized function $f$ where we want to learn its parameters (e.g., a deep network), in a *bandit* problem we only have a finite number of arms that we can pull, i.e., a finite number of actions that we can take. It is not very surprising that for this simpler problem stronger theoretical guarantees in terms of optimality can be obtained. We list it mainly since this problem is often (confusingly) treated as if it were a distinct learning setting.
+*Bandit* là một trường hợp đặc biệt của bài toán ở trên. Trong khi ở hầu hết các bài toán học máy, chúng ta có một hàm $f$ được tham số hóa liên tục mà các tham số của nó cần được học (ví dụ, một deep network), thì trong một bài toán *bandit*, chúng ta chỉ có một số hữu hạn các cần gạt (arm) có thể chọn, tức là một số hữu hạn hành động có thể thực hiện. Không quá ngạc nhiên khi với bài toán đơn giản hơn này, ta có thể đạt được những đảm bảo lý thuyết mạnh hơn về tính tối ưu. Chúng tôi chủ yếu liệt kê nó vì bài toán này thường bị xem (một cách gây nhầm lẫn) như thể nó là một bối cảnh học máy riêng biệt.
 
 
-### Control
+### Điều khiển
 
-In many cases the environment remembers what we did. Not necessarily in an adversarial manner but it will just remember and the response will depend on what happened before. For instance, a coffee boiler controller will observe different temperatures depending on whether it was heating the boiler previously. PID (proportional-integral-derivative) controller algorithms are a popular choice there.
-Likewise, a user's behavior on a news site will depend on what we showed them previously (e.g., they will read most news only once). Many such algorithms form a model of the environment in which they act so as to make their decisions appear less random.
-Recently,
-control theory (e.g., PID variants) has also been used
-to automatically tune hyperparameters
-to achieve better disentangling and reconstruction quality,
-and improve the diversity of generated text and the reconstruction quality of generated images :cite:`Shao.Yao.Sun.ea.2020`.
+Trong nhiều trường hợp, môi trường ghi nhớ những gì chúng ta đã làm. Không nhất thiết theo cách đối kháng, nhưng nó vẫn sẽ ghi nhớ và phản hồi sẽ phụ thuộc vào những gì đã xảy ra trước đó. Chẳng hạn, một bộ điều khiển nồi đun cà phê sẽ quan sát các nhiệt độ khác nhau tùy theo việc trước đó nó có đang làm nóng nồi hay không. Các thuật toán điều khiển PID (proportional-integral-derivative) là một lựa chọn phổ biến trong trường hợp này.
+Tương tự, hành vi của người dùng trên một trang tin tức sẽ phụ thuộc vào những gì chúng ta đã hiển thị cho họ trước đó (ví dụ, họ thường chỉ đọc hầu hết tin tức một lần). Nhiều thuật toán như vậy xây dựng một mô hình về môi trường mà chúng hoạt động để khiến các quyết định của chúng có vẻ ít ngẫu nhiên hơn.
+Gần đây,
+lý thuyết điều khiển (ví dụ, các biến thể PID) cũng đã được sử dụng
+để tự động điều chỉnh các hyperparameter
+nhằm đạt được chất lượng tách biệt biểu diễn và tái tạo tốt hơn,
+cũng như cải thiện tính đa dạng của văn bản được sinh ra và chất lượng tái tạo của hình ảnh được sinh ra :cite:`Shao.Yao.Sun.ea.2020`.
 
 
 
 
 ### Reinforcement Learning
 
-In the more general case of an environment with memory, we may encounter situations where the environment is trying to cooperate with us (cooperative games, in particular for non-zero-sum games), or others where the environment will try to win. Chess, Go, Backgammon, or StarCraft are some of the cases in *reinforcement learning*. Likewise, we might want to build a good controller for autonomous cars. Other cars are likely to respond to the autonomous car's driving style in nontrivial ways, e.g., trying to avoid it, trying to cause an accident, or trying to cooperate with it.
+Trong trường hợp tổng quát hơn về một môi trường có bộ nhớ, chúng ta có thể gặp các tình huống mà môi trường cố gắng hợp tác với chúng ta (các trò chơi hợp tác, đặc biệt là đối với trò chơi không có tổng bằng không), hoặc những tình huống khác mà môi trường sẽ cố gắng chiến thắng. Cờ vua, Go, Backgammon hoặc StarCraft là một số trường hợp trong *reinforcement learning*. Tương tự, chúng ta có thể muốn xây dựng một bộ điều khiển tốt cho xe tự hành. Những xe khác có khả năng sẽ phản hồi theo những cách không tầm thường trước phong cách lái xe của xe tự hành, ví dụ như cố gắng tránh nó, cố gắng gây tai nạn, hoặc cố gắng hợp tác với nó.
 
-### Considering the Environment
+### Xem xét Môi trường
 
-One key distinction between the different situations above is that a strategy that might have worked throughout in the case of a stationary environment, might not work throughout in an environment that can adapt. For instance, an arbitrage opportunity discovered by a trader is likely to disappear once it is exploited. The speed and manner at which the environment changes determines to a large extent the type of algorithms that we can bring to bear. For instance, if we know that things may only change slowly, we can force any estimate to change only slowly, too. If we know that the environment might change instantaneously, but only very infrequently, we can make allowances for that. These types of knowledge are crucial for the aspiring data scientist in dealing with concept shift, i.e., when the problem that is being solved can change over time.
-
-
+Một điểm khác biệt then chốt giữa các tình huống khác nhau ở trên là một chiến lược có thể luôn hiệu quả trong trường hợp môi trường tĩnh lại có thể không luôn hiệu quả trong một môi trường có thể thích nghi. Chẳng hạn, một cơ hội arbitrage được nhà giao dịch phát hiện có khả năng sẽ biến mất khi nó được khai thác. Tốc độ và cách thức mà môi trường thay đổi quyết định phần lớn loại thuật toán mà chúng ta có thể áp dụng. Ví dụ, nếu biết rằng mọi thứ chỉ có thể thay đổi chậm, chúng ta cũng có thể buộc mọi ước lượng chỉ thay đổi chậm. Nếu biết rằng môi trường có thể thay đổi tức thời nhưng chỉ rất hiếm khi, chúng ta có thể dự liệu điều đó. Những loại kiến thức này rất quan trọng đối với một data scientist đang phát triển kỹ năng khi xử lý concept shift, tức là khi bài toán đang được giải có thể thay đổi theo thời gian.
 
 
-## Fairness, Accountability, and Transparency in Machine Learning
-
-Finally, it is important to remember
-that when you deploy machine learning systems
-you are not merely optimizing a predictive model---you
-are typically providing a tool that will
-be used to (partially or fully) automate decisions.
-These technical systems can impact the lives
-of individuals who are subject to the resulting decisions.
-The leap from considering predictions to making decisions
-raises not only new technical questions,
-but also a slew of ethical questions
-that must be carefully considered.
-If we are deploying a medical diagnostic system,
-we need to know for which populations
-it may work and for which it may not.
-Overlooking foreseeable risks to the welfare of
-a subpopulation could cause us to administer inferior care.
-Moreover, once we contemplate decision-making systems,
-we must step back and reconsider how we evaluate our technology.
-Among other consequences of this change of scope,
-we will find that *accuracy* is seldom the right measure.
-For instance, when translating predictions into actions,
-we will often want to take into account
-the potential cost sensitivity of erring in various ways.
-If one way of misclassifying an image
-could be perceived as a racial sleight of hand,
-while misclassification to a different category
-would be harmless, then we might want to adjust
-our thresholds accordingly, accounting for societal values
-in designing the decision-making protocol.
-We also want to be careful about
-how prediction systems can lead to feedback loops.
-For example, consider predictive policing systems,
-which allocate patrol officers
-to areas with high forecasted crime.
-It is easy to see how a worrying pattern can emerge:
-
- 1. Neighborhoods with more crime get more patrols.
- 1. Consequently, more crimes are discovered in these neighborhoods, entering the training data available for future iterations.
- 1. Exposed to more positives, the model predicts yet more crime in these neighborhoods.
- 1. In the next iteration, the updated model targets the same neighborhood even more heavily leading to yet more crimes discovered, etc.
-
-Often, the various mechanisms by which
-a model's predictions become coupled to its training data
-are unaccounted for in the modeling process.
-This can lead to what researchers call *runaway feedback loops*.
-Additionally, we want to be careful about
-whether we are addressing the right problem in the first place.
-Predictive algorithms now play an outsize role
-in mediating the dissemination of information.
-Should the news that an individual encounters
-be determined by the set of Facebook pages they have *Liked*?
-These are just a few among the many pressing ethical dilemmas
-that you might encounter in a career in machine learning.
 
 
-## Summary
+## Tính Công bằng, Trách nhiệm giải trình và Tính Minh bạch trong Machine Learning
 
-In many cases training and test sets do not come from the same distribution. This is called distribution shift.
-The risk is the expectation of the loss over the entire population of data drawn from their true distribution. However, this entire population is usually unavailable. Empirical risk is an average loss over the training data to approximate the risk. In practice, we perform empirical risk minimization.
+Cuối cùng, điều quan trọng cần nhớ
+là khi bạn deploy các hệ thống machine learning,
+bạn không chỉ đơn thuần tối ưu hóa một mô hình dự đoán---bạn
+thường đang cung cấp một công cụ sẽ
+được sử dụng để tự động hóa (một phần hoặc hoàn toàn) các quyết định.
+Các hệ thống kỹ thuật này có thể tác động đến cuộc sống
+của những cá nhân chịu ảnh hưởng bởi các quyết định tạo ra.
+Bước chuyển từ việc xem xét dự đoán sang đưa ra quyết định
+không chỉ đặt ra các câu hỏi kỹ thuật mới,
+mà còn đặt ra hàng loạt câu hỏi đạo đức
+cần được cân nhắc cẩn thận.
+Nếu chúng ta deploy một hệ thống chẩn đoán y tế,
+chúng ta cần biết hệ thống đó có thể hoạt động với những nhóm dân số nào
+và có thể không hoạt động với những nhóm nào.
+Việc bỏ qua các rủi ro có thể lường trước đối với phúc lợi của
+một nhóm dân số con có thể khiến chúng ta cung cấp dịch vụ chăm sóc kém hơn.
+Hơn nữa, khi xem xét các hệ thống ra quyết định,
+chúng ta phải lùi lại và xem xét lại cách đánh giá công nghệ của mình.
+Trong số các hệ quả khác của sự thay đổi phạm vi này,
+chúng ta sẽ nhận thấy rằng *accuracy* hiếm khi là thước đo phù hợp.
+Chẳng hạn, khi chuyển các dự đoán thành hành động,
+chúng ta thường sẽ muốn tính đến
+chi phí tiềm ẩn khác nhau của các kiểu mắc lỗi.
+Nếu một cách phân loại sai hình ảnh
+có thể bị xem là một sự xúc phạm ngầm về chủng tộc,
+trong khi phân loại sai sang một hạng mục khác
+sẽ vô hại, thì chúng ta có thể muốn điều chỉnh
+các ngưỡng của mình cho phù hợp, có xét đến các giá trị xã hội
+khi thiết kế giao thức ra quyết định.
+Chúng ta cũng cần cẩn thận về
+cách các hệ thống dự đoán có thể dẫn đến các feedback loop.
+Ví dụ, hãy xem xét các hệ thống cảnh sát dự đoán,
+vốn phân bổ các sĩ quan tuần tra
+đến những khu vực có dự báo tội phạm cao.
+Có thể dễ dàng thấy một mô hình đáng lo ngại có thể xuất hiện như thế nào:
 
-Under the corresponding assumptions, covariate and label shift can be detected and corrected for at test time. Failure to account for this bias can become problematic at test time.
-In some cases, the environment may remember automated actions and respond in surprising ways. We must account for this possibility when building models and continue to monitor live systems, open to the possibility that our models and the environment will become entangled in unanticipated ways.
+ 1. Các khu dân cư có nhiều tội phạm hơn sẽ có nhiều tuần tra hơn.
+ 1. Hệ quả là, nhiều tội phạm hơn được phát hiện tại các khu dân cư này, đi vào dữ liệu huấn luyện có sẵn cho các lần lặp sau.
+ 1. Khi tiếp xúc với nhiều mẫu dương tính hơn, mô hình dự đoán còn nhiều tội phạm hơn tại các khu dân cư này.
+ 1. Trong lần lặp tiếp theo, mô hình đã cập nhật nhắm đến cùng khu dân cư đó với mức độ còn cao hơn, dẫn đến việc phát hiện thêm nhiều tội phạm hơn, v.v.
 
-## Exercises
+Thông thường, các cơ chế khác nhau khiến
+dự đoán của một mô hình gắn kết với dữ liệu huấn luyện của nó
+không được tính đến trong quá trình mô hình hóa.
+Điều này có thể dẫn đến cái mà các nhà nghiên cứu gọi là *runaway feedback loops*.
+Ngoài ra, chúng ta cần cẩn thận về
+liệu ngay từ đầu chúng ta có đang giải quyết đúng vấn đề hay không.
+Các thuật toán dự đoán hiện nay đóng một vai trò quá lớn
+trong việc chi phối sự phổ biến thông tin.
+Liệu tin tức mà một cá nhân tiếp cận
+có nên được quyết định bởi tập hợp các trang Facebook mà họ đã *Liked*?
+Đây chỉ là một vài trong số rất nhiều tình huống nan giải về đạo đức cấp bách
+mà bạn có thể gặp phải trong sự nghiệp machine learning.
 
-1. What could happen when we change the behavior of a search engine? What might the users do? What about the advertisers?
-1. Implement a covariate shift detector. Hint: build a classifier.
-1. Implement a covariate shift corrector.
-1. Besides distribution shift, what else could affect how the empirical risk approximates the risk?
+
+## Tóm tắt
+
+Trong nhiều trường hợp, tập huấn luyện và tập kiểm tra không đến từ cùng một phân phối. Điều này được gọi là distribution shift.
+Risk là kỳ vọng của loss trên toàn bộ quần thể dữ liệu được lấy từ phân phối thực của chúng. Tuy nhiên, toàn bộ quần thể này thường không khả dụng. Empirical risk là loss trung bình trên dữ liệu huấn luyện để xấp xỉ risk. Trong thực tế, chúng ta thực hiện empirical risk minimization.
+
+Với các giả định tương ứng, covariate shift và label shift có thể được phát hiện và hiệu chỉnh tại thời điểm kiểm tra. Việc không tính đến độ chệch này có thể trở thành vấn đề tại thời điểm kiểm tra.
+Trong một số trường hợp, môi trường có thể ghi nhớ các hành động tự động và phản hồi theo những cách đáng ngạc nhiên. Chúng ta phải tính đến khả năng này khi xây dựng mô hình và tiếp tục giám sát các hệ thống đang vận hành, sẵn sàng với khả năng các mô hình và môi trường của chúng ta sẽ đan xen với nhau theo những cách không lường trước.
+
+## Bài tập
+
+1. Điều gì có thể xảy ra khi chúng ta thay đổi hành vi của một search engine? Người dùng có thể làm gì? Còn các nhà quảng cáo thì sao?
+1. Hãy triển khai một bộ phát hiện covariate shift. Gợi ý: xây dựng một classifier.
+1. Hãy triển khai một bộ hiệu chỉnh covariate shift.
+1. Ngoài distribution shift, điều gì khác có thể ảnh hưởng đến cách empirical risk xấp xỉ risk?
 
 
-[Discussions](https://discuss.d2l.ai/t/105)
+[Thảo luận](https://discuss.d2l.ai/t/105)

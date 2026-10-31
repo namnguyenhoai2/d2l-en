@@ -6,37 +6,37 @@ tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 # Pooling
 :label:`sec_pooling`
 
-In many cases our ultimate task asks some global question about the image,
-e.g., *does it contain a cat?* Consequently, the units of our final layer 
-should be sensitive to the entire input.
-By gradually aggregating information, yielding coarser and coarser maps,
-we accomplish this goal of ultimately learning a global representation,
-while keeping all of the advantages of convolutional layers at the intermediate layers of processing.
-The deeper we go in the network,
-the larger the receptive field (relative to the input)
-to which each hidden node is sensitive. Reducing spatial resolution 
-accelerates this process, 
-since the convolution kernels cover a larger effective area. 
+Trong nhiều trường hợp, tác vụ cuối cùng của chúng ta đặt ra một câu hỏi toàn cục về ảnh,
+ví dụ: *ảnh có chứa một con mèo không?* Do đó, các đơn vị của tầng cuối cùng
+cần nhạy cảm với toàn bộ đầu vào.
+Bằng cách dần dần tổng hợp thông tin, tạo ra các ánh xạ ngày càng thô hơn,
+chúng ta đạt được mục tiêu cuối cùng là học một biểu diễn toàn cục,
+đồng thời vẫn giữ được mọi ưu điểm của các tầng convolution ở các tầng xử lý trung gian.
+Càng đi sâu vào mạng,
+trường tiếp nhận (receptive field, so với đầu vào)
+mà mỗi nút ẩn nhạy cảm càng lớn. Việc giảm độ phân giải không gian
+đẩy nhanh quá trình này,
+vì các kernel convolution bao phủ một vùng hiệu dụng lớn hơn.
 
-Moreover, when detecting lower-level features, such as edges
-(as discussed in :numref:`sec_conv_layer`),
-we often want our representations to be somewhat invariant to translation.
-For instance, if we take the image `X`
-with a sharp delineation between black and white
-and shift the whole image by one pixel to the right,
-i.e., `Z[i, j] = X[i, j + 1]`,
-then the output for the new image `Z` might be vastly different.
-The edge will have shifted by one pixel.
-In reality, objects hardly ever occur exactly at the same place.
-In fact, even with a tripod and a stationary object,
-vibration of the camera due to the movement of the shutter
-might shift everything by a pixel or so
-(high-end cameras are loaded with special features to address this problem).
+Hơn nữa, khi phát hiện các đặc trưng cấp thấp, chẳng hạn như các cạnh
+(như đã thảo luận trong :numref:`sec_conv_layer`),
+chúng ta thường muốn các biểu diễn của mình có tính bất biến nhất định đối với phép tịnh tiến.
+Ví dụ, nếu lấy ảnh `X`
+có ranh giới rõ nét giữa màu đen và trắng
+và dịch toàn bộ ảnh sang phải một pixel,
+tức là `Z[i, j] = X[i, j + 1]`,
+thì đầu ra cho ảnh mới `Z` có thể khác biệt rất nhiều.
+Cạnh sẽ bị dịch đi một pixel.
+Trên thực tế, các đối tượng hầu như không bao giờ xuất hiện chính xác ở cùng một vị trí.
+Thực tế, ngay cả khi dùng chân máy và đối tượng đứng yên,
+rung động của máy ảnh do chuyển động của màn trập
+cũng có thể làm mọi thứ dịch chuyển khoảng một pixel
+(các máy ảnh cao cấp được trang bị nhiều tính năng đặc biệt để xử lý vấn đề này).
 
-This section introduces *pooling layers*,
-which serve the dual purposes of
-mitigating the sensitivity of convolutional layers to location
-and of spatially downsampling representations.
+Phần này giới thiệu *các tầng pooling*,
+có hai mục đích:
+giảm thiểu độ nhạy của các tầng convolution đối với vị trí
+và giảm lấy mẫu không gian của các biểu diễn.
 
 ```{.python .input}
 %%tab mxnet
@@ -61,47 +61,47 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Maximum Pooling and Average Pooling
+## Maximum Pooling và Average Pooling
 
-Like convolutional layers, *pooling* operators
-consist of a fixed-shape window that is slid over
-all regions in the input according to its stride,
-computing a single output for each location traversed
-by the fixed-shape window (sometimes known as the *pooling window*).
-However, unlike the cross-correlation computation
-of the inputs and kernels in the convolutional layer,
-the pooling layer contains no parameters (there is no *kernel*).
-Instead, pooling operators are deterministic,
-typically calculating either the maximum or the average value
-of the elements in the pooling window.
-These operations are called *maximum pooling* (*max-pooling* for short)
-and *average pooling*, respectively.
+Giống như các tầng convolution, các toán tử *pooling*
+bao gồm một cửa sổ có hình dạng cố định được trượt qua
+mọi vùng trong đầu vào theo stride của nó,
+tính một đầu ra duy nhất cho mỗi vị trí mà
+cửa sổ hình dạng cố định đi qua (đôi khi được gọi là *pooling window*).
+Tuy nhiên, không giống phép tính cross-correlation
+giữa đầu vào và kernel trong tầng convolution,
+tầng pooling không chứa tham số nào (không có *kernel*).
+Thay vào đó, các toán tử pooling mang tính xác định,
+thường tính giá trị lớn nhất hoặc giá trị trung bình
+của các phần tử trong pooling window.
+Các phép toán này lần lượt được gọi là *maximum pooling* (*max-pooling* viết tắt)
+và *average pooling*.
 
-*Average pooling* is essentially as old as CNNs. The idea is akin to 
-downsampling an image. Rather than just taking the value of every second (or third) 
-pixel for the lower resolution image, we can average over adjacent pixels to obtain 
-an image with better signal-to-noise ratio since we are combining the information 
-from multiple adjacent pixels. *Max-pooling* was introduced in 
-:citet:`Riesenhuber.Poggio.1999` in the context of cognitive neuroscience to describe 
-how information aggregation might be aggregated hierarchically for the purpose 
-of object recognition; there already was an earlier version in speech recognition :cite:`Yamaguchi.Sakamoto.Akabane.ea.1990`. In almost all cases, max-pooling, as it is also referred to, 
-is preferable to average pooling. 
+*Average pooling* gần như xuất hiện từ khi có CNN. Ý tưởng này tương tự như
+giảm lấy mẫu một ảnh. Thay vì chỉ lấy giá trị của mỗi pixel thứ hai (hoặc thứ ba)
+cho ảnh có độ phân giải thấp hơn, ta có thể lấy trung bình các pixel lân cận để thu được
+một ảnh có tỷ lệ tín hiệu trên nhiễu tốt hơn, vì đang kết hợp thông tin
+từ nhiều pixel liền kề. *Max-pooling* được giới thiệu trong
+:citet:`Riesenhuber.Poggio.1999` trong ngữ cảnh khoa học thần kinh nhận thức để mô tả
+cách việc tổng hợp thông tin có thể được thực hiện theo cấp bậc nhằm
+nhận dạng đối tượng; một phiên bản trước đó đã tồn tại trong nhận dạng giọng nói :cite:`Yamaguchi.Sakamoto.Akabane.ea.1990`. Trong hầu hết mọi trường hợp, max-pooling, như cách gọi khác của nó,
+được ưu tiên hơn average pooling.
 
-In both cases, as with the cross-correlation operator,
-we can think of the pooling window
-as starting from the upper-left of the input tensor
-and sliding across it from left to right and top to bottom.
-At each location that the pooling window hits,
-it computes the maximum or average
-value of the input subtensor in the window,
-depending on whether max or average pooling is employed.
+Trong cả hai trường hợp, cũng như với toán tử cross-correlation,
+ta có thể xem pooling window
+bắt đầu từ góc trên bên trái của tensor đầu vào
+và trượt qua nó từ trái sang phải và từ trên xuống dưới.
+Tại mỗi vị trí mà pooling window đi qua,
+nó tính giá trị lớn nhất hoặc trung bình
+của subtensor đầu vào trong cửa sổ,
+tùy thuộc vào việc sử dụng max pooling hay average pooling.
 
 
-![Max-pooling with a pooling window shape of $2\times 2$. The shaded portions are the first output element as well as the input tensor elements used for the output computation: $\max(0, 1, 3, 4)=4$.](../img/pooling.svg)
+![Max-pooling với pooling window có hình dạng $2\times 2$. Các phần được tô bóng là phần tử đầu ra đầu tiên cũng như các phần tử tensor đầu vào được dùng để tính đầu ra: $\max(0, 1, 3, 4)=4$.](../img/pooling.svg)
 :label:`fig_pooling`
 
-The output tensor in :numref:`fig_pooling`  has a height of 2 and a width of 2.
-The four elements are derived from the maximum value in each pooling window:
+Tensor đầu ra trong :numref:`fig_pooling` có chiều cao là 2 và chiều rộng là 2.
+Bốn phần tử được suy ra từ giá trị lớn nhất trong từng pooling window:
 
 $$
 \max(0, 1, 3, 4)=4,\\
@@ -110,24 +110,24 @@ $$
 \max(4, 5, 7, 8)=8.\\
 $$
 
-More generally, we can define a $p \times q$ pooling layer by aggregating over 
-a region of said size. Returning to the problem of edge detection, 
-we use the output of the convolutional layer
-as input for $2\times 2$ max-pooling.
-Denote by `X` the input of the convolutional layer input and `Y` the pooling layer output. 
-Regardless of whether or not the values of `X[i, j]`, `X[i, j + 1]`, 
-`X[i+1, j]` and `X[i+1, j + 1]` are different,
-the pooling layer always outputs `Y[i, j] = 1`.
-That is to say, using the $2\times 2$ max-pooling layer,
-we can still detect if the pattern recognized by the convolutional layer
-moves no more than one element in height or width.
+Tổng quát hơn, ta có thể định nghĩa một tầng pooling $p \times q$ bằng cách tổng hợp trên
+một vùng có kích thước như vậy. Quay lại bài toán phát hiện cạnh,
+ta sử dụng đầu ra của tầng convolution
+làm đầu vào cho max-pooling $2\times 2$.
+Gọi `X` là đầu vào của tầng convolution và `Y` là đầu ra của tầng pooling.
+Bất kể các giá trị của `X[i, j]`, `X[i, j + 1]`,
+`X[i+1, j]` và `X[i+1, j + 1]` có khác nhau hay không,
+tầng pooling luôn xuất ra `Y[i, j] = 1`.
+Nói cách khác, khi dùng tầng max-pooling $2\times 2$,
+ta vẫn có thể phát hiện liệu mẫu được tầng convolution nhận diện
+có di chuyển không quá một phần tử theo chiều cao hoặc chiều rộng hay không.
 
-In the code below, we (**implement the forward propagation
-of the pooling layer**) in the `pool2d` function.
-This function is similar to the `corr2d` function
-in :numref:`sec_conv_layer`.
-However, no kernel is needed, computing the output
-as either the maximum or the average of each region in the input.
+Trong đoạn mã dưới đây, chúng ta (**triển khai lan truyền xuôi
+của tầng pooling**) trong hàm `pool2d`.
+Hàm này tương tự với hàm `corr2d`
+trong :numref:`sec_conv_layer`.
+Tuy nhiên, không cần kernel, đầu ra được tính
+là giá trị lớn nhất hoặc trung bình của từng vùng trong đầu vào.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -173,7 +173,7 @@ def pool2d(X, pool_size, mode='max'):
     return Y
 ```
 
-We can construct the input tensor `X` in :numref:`fig_pooling` to [**validate the output of the two-dimensional max-pooling layer**].
+Ta có thể xây dựng tensor đầu vào `X` trong :numref:`fig_pooling` để [**xác thực đầu ra của tầng max-pooling hai chiều**].
 
 ```{.python .input}
 %%tab all
@@ -181,27 +181,27 @@ X = d2l.tensor([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0]])
 pool2d(X, (2, 2))
 ```
 
-Also, we can experiment with (**the average pooling layer**).
+Ta cũng có thể thử nghiệm với (**tầng average pooling**).
 
 ```{.python .input}
 %%tab all
 pool2d(X, (2, 2), 'avg')
 ```
 
-## [**Padding and Stride**]
+## [**Padding và Stride**]
 
-As with convolutional layers, pooling layers
-change the output shape.
-And as before, we can adjust the operation to achieve a desired output shape
-by padding the input and adjusting the stride.
-We can demonstrate the use of padding and strides
-in pooling layers via the built-in two-dimensional max-pooling layer from the deep learning framework.
-We first construct an input tensor `X` whose shape has four dimensions,
-where the number of examples (batch size) and number of channels are both 1.
+Cũng như các tầng convolution, các tầng pooling
+làm thay đổi hình dạng đầu ra.
+Và như trước, ta có thể điều chỉnh phép toán để đạt được hình dạng đầu ra mong muốn
+bằng cách padding đầu vào và điều chỉnh stride.
+Ta có thể minh họa việc sử dụng padding và stride
+trong các tầng pooling thông qua tầng max-pooling hai chiều có sẵn của framework deep learning.
+Trước tiên, ta xây dựng tensor đầu vào `X` có hình dạng gồm bốn chiều,
+trong đó số lượng ví dụ (batch size) và số lượng kênh đều bằng 1.
 
 :begin_tab:`tensorflow`
-Note that unlike other frameworks, TensorFlow
-prefers and is optimized for *channels-last* input.
+Lưu ý rằng không giống các framework khác, TensorFlow
+ưu tiên và được tối ưu hóa cho đầu vào *channels-last*.
 :end_tab:
 
 ```{.python .input}
@@ -216,8 +216,8 @@ X = d2l.reshape(d2l.arange(16, dtype=d2l.float32), (1, 4, 4, 1))
 X
 ```
 
-Since pooling aggregates information from an area, (**deep learning frameworks default to matching pooling window sizes and stride.**) For instance, if we use a pooling window of shape `(3, 3)`
-we get a stride shape of `(3, 3)` by default.
+Vì pooling tổng hợp thông tin từ một vùng, (**các framework deep learning mặc định đặt kích thước pooling window và stride giống nhau.**) Ví dụ, nếu sử dụng pooling window có hình dạng `(3, 3)`
+thì mặc định ta nhận được hình dạng stride là `(3, 3)`.
 
 ```{.python .input}
 %%tab mxnet
@@ -246,7 +246,7 @@ pool2d(X)
 nn.max_pool(X, window_shape=(3, 3), strides=(3, 3))
 ```
 
-Needless to say, [**the stride and padding can be manually specified**] to override framework defaults if required.
+Không cần phải nói, [**stride và padding có thể được chỉ định thủ công**] để ghi đè các giá trị mặc định của framework nếu cần.
 
 ```{.python .input}
 %%tab mxnet
@@ -275,7 +275,7 @@ X_padded = jnp.pad(X, ((0, 0), (1, 0), (1, 0), (0, 0)), mode='constant')
 nn.max_pool(X_padded, window_shape=(3, 3), padding='VALID', strides=(2, 2))
 ```
 
-Of course, we can specify an arbitrary rectangular pooling window with arbitrary height and width respectively, as the example below shows.
+Dĩ nhiên, ta có thể chỉ định một pooling window hình chữ nhật bất kỳ với chiều cao và chiều rộng tùy ý, như ví dụ dưới đây cho thấy.
 
 ```{.python .input}
 %%tab mxnet
@@ -306,20 +306,20 @@ X_padded = jnp.pad(X, ((0, 0), (0, 0), (1, 1), (0, 0)), mode='constant')
 nn.max_pool(X_padded, window_shape=(2, 3), strides=(2, 3), padding='VALID')
 ```
 
-## Multiple Channels
+## Nhiều kênh
 
-When processing multi-channel input data,
-[**the pooling layer pools each input channel separately**],
-rather than summing the inputs up over channels
-as in a convolutional layer.
-This means that the number of output channels for the pooling layer
-is the same as the number of input channels.
-Below, we will concatenate tensors `X` and `X + 1`
-on the channel dimension to construct an input with two channels.
+Khi xử lý dữ liệu đầu vào nhiều kênh,
+[**tầng pooling xử lý pooling riêng cho từng kênh đầu vào**],
+thay vì cộng các đầu vào qua các kênh
+như trong tầng convolution.
+Điều này có nghĩa là số kênh đầu ra của tầng pooling
+bằng số kênh đầu vào.
+Dưới đây, chúng ta sẽ nối các tensor `X` và `X + 1`
+theo chiều kênh để xây dựng đầu vào có hai kênh.
 
 :begin_tab:`tensorflow`
-Note that this will require a
-concatenation along the last dimension for TensorFlow due to the channels-last syntax.
+Lưu ý rằng điều này sẽ yêu cầu
+nối theo chiều cuối cùng trong TensorFlow do cú pháp channels-last.
 :end_tab:
 
 ```{.python .input}
@@ -335,7 +335,7 @@ X = d2l.concat([X, X + 1], 3)
 X
 ```
 
-As we can see, the number of output channels is still two after pooling.
+Như có thể thấy, số kênh đầu ra vẫn là hai sau khi pooling.
 
 ```{.python .input}
 %%tab mxnet
@@ -366,45 +366,44 @@ nn.max_pool(X_padded, window_shape=(3, 3), padding='VALID', strides=(2, 2))
 ```
 
 :begin_tab:`tensorflow`
-Note that the output for the TensorFlow pooling appears at first glance to be different, however
-numerically the same results are presented as MXNet and PyTorch.
-The difference lies in the dimensionality, and reading the
-output vertically yields the same output as the other implementations.
+Lưu ý rằng thoạt nhìn, đầu ra của TensorFlow pooling có vẻ khác biệt, tuy nhiên
+về mặt số học, kết quả được trình bày giống như MXNet và PyTorch.
+Khác biệt nằm ở số chiều, và khi đọc
+đầu ra theo chiều dọc, ta sẽ có đầu ra giống như các cách triển khai khác.
 :end_tab:
 
-## Summary
+## Tóm tắt
 
-Pooling is an exceedingly simple operation. It does exactly what its name indicates, aggregate results over a window of values. All convolution semantics, such as strides and padding apply in the same way as they did previously. Note that pooling is indifferent to channels, i.e., it leaves the number of channels unchanged and it applies to each channel separately. Lastly, of the two popular pooling choices, max-pooling is preferable to average pooling, as it confers some degree of invariance to output. A popular choice is to pick a pooling window size of $2 \times 2$ to quarter the spatial resolution of output. 
+Pooling là một phép toán cực kỳ đơn giản. Nó thực hiện đúng như tên gọi: tổng hợp kết quả trên một cửa sổ các giá trị. Mọi ngữ nghĩa của convolution, chẳng hạn như stride và padding, đều được áp dụng giống như trước. Lưu ý rằng pooling không phụ thuộc vào kênh, tức là nó giữ nguyên số lượng kênh và áp dụng riêng cho từng kênh. Cuối cùng, trong hai lựa chọn pooling phổ biến, max-pooling được ưu tiên hơn average pooling, vì nó mang lại một mức độ bất biến nhất định cho đầu ra. Một lựa chọn phổ biến là chọn kích thước pooling window $2 \times 2$ để giảm độ phân giải không gian của đầu ra xuống còn một phần tư.
 
-Note that there are many more ways of reducing resolution beyond pooling. For instance, in stochastic pooling :cite:`Zeiler.Fergus.2013` and fractional max-pooling :cite:`Graham.2014` aggregation is combined with randomization. This can slightly improve the accuracy in some cases. Lastly, as we will see later with the attention mechanism, there are more refined ways of aggregating over outputs, e.g., by using the alignment between a query and representation vectors. 
+Lưu ý rằng có nhiều cách khác để giảm độ phân giải ngoài pooling. Ví dụ, trong stochastic pooling :cite:`Zeiler.Fergus.2013` và fractional max-pooling :cite:`Graham.2014`, việc tổng hợp được kết hợp với ngẫu nhiên hóa. Điều này có thể cải thiện đôi chút độ chính xác trong một số trường hợp. Cuối cùng, như chúng ta sẽ thấy sau này với cơ chế attention, có các cách tinh vi hơn để tổng hợp đầu ra, ví dụ bằng cách sử dụng sự liên kết giữa một query và các vector biểu diễn.
 
 
-## Exercises
+## Bài tập
 
-1. Implement average pooling through a convolution. 
-1. Prove that max-pooling cannot be implemented through a convolution alone. 
-1. Max-pooling can be accomplished using ReLU operations, i.e., $\textrm{ReLU}(x) = \max(0, x)$.
-    1. Express $\max (a, b)$ by using only ReLU operations.
-    1. Use this to implement max-pooling by means of convolutions and ReLU layers. 
-    1. How many channels and layers do you need for a $2 \times 2$ convolution? How many for a $3 \times 3$ convolution?
-1. What is the computational cost of the pooling layer? Assume that the input to the pooling layer is of size $c\times h\times w$, the pooling window has a shape of $p_\textrm{h}\times p_\textrm{w}$ with a padding of $(p_\textrm{h}, p_\textrm{w})$ and a stride of $(s_\textrm{h}, s_\textrm{w})$.
-1. Why do you expect max-pooling and average pooling to work differently?
-1. Do we need a separate minimum pooling layer? Can you replace it with another operation?
-1. We could use the softmax operation for pooling. Why might it not be so popular?
+1. Triển khai average pooling thông qua một phép convolution. 
+1. Chứng minh rằng không thể triển khai max-pooling chỉ bằng một phép convolution. 
+1. Max-pooling có thể được thực hiện bằng các phép toán ReLU, tức là $\textrm{ReLU}(x) = \max(0, x)$.
+    1. Biểu diễn $\max (a, b)$ chỉ bằng các phép toán ReLU.
+    1. Dùng cách này để triển khai max-pooling bằng các phép convolution và các lớp ReLU. 
+    1. Bạn cần bao nhiêu channel và layer cho một phép convolution $2 \times 2$? Bao nhiêu cho một phép convolution $3 \times 3$?
+1. Chi phí tính toán của lớp pooling là bao nhiêu? Giả sử đầu vào của lớp pooling có kích thước $c\times h\times w$, cửa sổ pooling có dạng $p_\textrm{h}\times p_\textrm{w}$ với padding $(p_\textrm{h}, p_\textrm{w})$ và stride $(s_\textrm{h}, s_\textrm{w})$.
+1. Vì sao bạn kỳ vọng max-pooling và average pooling hoạt động khác nhau?
+1. Chúng ta có cần một lớp minimum pooling riêng biệt không? Bạn có thể thay thế nó bằng một phép toán khác không?
+1. Chúng ta có thể dùng phép toán softmax để pooling. Vì sao nó có thể không phổ biến?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/71)
+[Thảo luận](https://discuss.d2l.ai/t/71)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/72)
+[Thảo luận](https://discuss.d2l.ai/t/72)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/274)
+[Thảo luận](https://discuss.d2l.ai/t/274)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17999)
+[Thảo luận](https://discuss.d2l.ai/t/17999)
 :end_tab:
-
