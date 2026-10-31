@@ -3,43 +3,43 @@
 tab.interact_select(['pytorch', 'jax'])
 ```
 
-# Transformers for Vision
+# Transformers cho Thị giác
 :label:`sec_vision-transformer`
 
-The Transformer architecture was initially proposed
-for sequence-to-sequence learning,
-with a focus on machine translation.
-Subsequently, Transformers emerged as the model of choice
-in various natural language processing tasks :cite:`Radford.Narasimhan.Salimans.ea.2018,Radford.Wu.Child.ea.2019,brown2020language,Devlin.Chang.Lee.ea.2018,raffel2020exploring`.
-However, in the field of computer vision
-the dominant architecture has remained
-the CNN (:numref:`chap_modern_cnn`).
-Naturally, researchers started to wonder
-if it might be possible to do better
-by adapting Transformer models to image data.
-This question sparked immense interest
-in the computer vision community.
-Recently, :citet:`ramachandran2019stand` proposed
-a scheme for replacing convolution with self-attention.
-However, its use of specialized patterns in attention
-makes it hard to scale up models on hardware accelerators.
-Then, :citet:`cordonnier2020relationship` theoretically proved
-that self-attention can learn to behave similarly to convolution.
-Empirically, $2 \times 2$ patches were taken from images as inputs,
-but the small patch size makes the model
-only applicable to image data with low resolutions.
+Kiến trúc Transformer ban đầu được đề xuất
+cho việc học sequence-to-sequence,
+tập trung vào dịch máy.
+Sau đó, Transformers đã trở thành mô hình được lựa chọn
+trong nhiều tác vụ xử lý ngôn ngữ tự nhiên :cite:`Radford.Narasimhan.Salimans.ea.2018,Radford.Wu.Child.ea.2019,brown2020language,Devlin.Chang.Lee.ea.2018,raffel2020exploring`.
+Tuy nhiên, trong lĩnh vực thị giác máy tính,
+kiến trúc thống trị vẫn là
+CNN (:numref:`chap_modern_cnn`).
+Một cách tự nhiên, các nhà nghiên cứu bắt đầu tự hỏi
+liệu có thể làm tốt hơn hay không
+bằng cách điều chỉnh các mô hình Transformer cho dữ liệu ảnh.
+Câu hỏi này đã khơi dậy sự quan tâm to lớn
+trong cộng đồng thị giác máy tính.
+Gần đây, :citet:`ramachandran2019stand` đã đề xuất
+một phương án thay thế convolution bằng self-attention.
+Tuy nhiên, việc sử dụng các mẫu chuyên biệt trong attention
+khiến việc mở rộng quy mô mô hình trên các hardware accelerator trở nên khó khăn.
+Sau đó, :citet:`cordonnier2020relationship` đã chứng minh về mặt lý thuyết
+rằng self-attention có thể học cách hoạt động tương tự convolution.
+Về mặt thực nghiệm, các patch $2 \times 2$ được lấy từ ảnh làm đầu vào,
+nhưng kích thước patch nhỏ khiến mô hình
+chỉ áp dụng được cho dữ liệu ảnh có độ phân giải thấp.
 
-Without specific constraints on patch size,
+Không có ràng buộc cụ thể về kích thước patch,
 *vision Transformers* (ViTs)
-extract patches from images
-and feed them into a Transformer encoder
-to obtain a global representation,
-which will finally be transformed for classification :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`.
-Notably, Transformers show better scalability than CNNs:
-and when training larger models on larger datasets,
-vision Transformers outperform ResNets by a significant margin.
-Similar to the landscape of network architecture design in natural language processing,
-Transformers have also become a game-changer in computer vision.
+trích xuất các patch từ ảnh
+và đưa chúng vào một Transformer encoder
+để thu được biểu diễn toàn cục,
+cuối cùng sẽ được biến đổi để phân loại :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`.
+Đáng chú ý, Transformers có khả năng mở rộng tốt hơn CNN:
+khi huấn luyện các mô hình lớn hơn trên các tập dữ liệu lớn hơn,
+vision Transformers vượt trội hơn ResNets với một khoảng cách đáng kể.
+Tương tự bối cảnh thiết kế kiến trúc mạng trong xử lý ngôn ngữ tự nhiên,
+Transformers cũng đã trở thành yếu tố thay đổi cuộc chơi trong thị giác máy tính.
 
 ```{.python .input}
 %%tab pytorch
@@ -56,47 +56,47 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Model
+## Mô hình
 
-:numref:`fig_vit` depicts
-the model architecture of vision Transformers.
-This architecture consists of a stem
-that patchifies images,
-a body based on the multilayer Transformer encoder,
-and a head that transforms the global representation
-into the output label.
+:numref:`fig_vit` minh họa
+kiến trúc mô hình của vision Transformers.
+Kiến trúc này gồm một stem
+chia ảnh thành các patch,
+một body dựa trên Transformer encoder nhiều tầng,
+và một head biến đổi biểu diễn toàn cục
+thành nhãn đầu ra.
 
-![The vision Transformer architecture. In this example, an image is split into nine patches. A special “&lt;cls&gt;” token and the nine flattened image patches are transformed via patch embedding and $\mathit{n}$ Transformer encoder blocks into ten representations, respectively. The “&lt;cls&gt;” representation is further transformed into the output label.](../img/vit.svg)
+![Kiến trúc vision Transformer. Trong ví dụ này, một ảnh được chia thành chín patch. Một token đặc biệt “&lt;cls&gt;” và chín patch ảnh đã được làm phẳng lần lượt được biến đổi thông qua patch embedding và $\mathit{n}$ khối Transformer encoder thành mười biểu diễn. Biểu diễn “&lt;cls&gt;” tiếp tục được biến đổi thành nhãn đầu ra.](../img/vit.svg)
 :label:`fig_vit`
 
-Consider an input image with height $h$, width $w$,
-and $c$ channels.
-Specifying the patch height and width both as $p$,
-the image is split into a sequence of $m = hw/p^2$ patches,
-where each patch is flattened to a vector of length $cp^2$.
-In this way, image patches can be treated similarly to tokens in text sequences by Transformer encoders.
-A special “&lt;cls&gt;” (class) token and
-the $m$ flattened image patches are linearly projected
-into a sequence of $m+1$ vectors,
-summed with learnable positional embeddings.
-The multilayer Transformer encoder
-transforms $m+1$ input vectors
-into the same number of output vector representations of the same length.
-It works exactly the same way as the original Transformer encoder in :numref:`fig_transformer`,
-only differing in the position of normalization.
-Since the “&lt;cls&gt;” token attends to all the image patches
-via self-attention (see :numref:`fig_cnn-rnn-self-attention`),
-its representation from the Transformer encoder output
-will be further transformed into the output label.
+Xét một ảnh đầu vào có chiều cao $h$, chiều rộng $w$,
+và $c$ kênh.
+Khi chỉ định cả chiều cao và chiều rộng của patch là $p$,
+ảnh được chia thành một chuỗi gồm $m = hw/p^2$ patch,
+trong đó mỗi patch được làm phẳng thành một vector có độ dài $cp^2$.
+Theo cách này, các patch ảnh có thể được Transformer encoder xử lý tương tự các token trong chuỗi văn bản.
+Một token “&lt;cls&gt;” (class) đặc biệt và
+$m$ patch ảnh đã làm phẳng được chiếu tuyến tính
+thành một chuỗi gồm $m+1$ vector,
+sau đó cộng với positional embedding có thể học được.
+Transformer encoder nhiều tầng
+biến đổi $m+1$ vector đầu vào
+thành cùng số lượng biểu diễn vector đầu ra có cùng độ dài.
+Nó hoạt động hoàn toàn giống Transformer encoder gốc trong :numref:`fig_transformer`,
+chỉ khác ở vị trí của normalization.
+Vì token “&lt;cls&gt;” attention tới tất cả các patch ảnh
+thông qua self-attention (xem :numref:`fig_cnn-rnn-self-attention`),
+biểu diễn của nó từ đầu ra Transformer encoder
+sẽ tiếp tục được biến đổi thành nhãn đầu ra.
 
 ## Patch Embedding
 
-To implement a vision Transformer, let's start
-with patch embedding in :numref:`fig_vit`.
-Splitting an image into patches
-and linearly projecting these flattened patches
-can be simplified as a single convolution operation,
-where both the kernel size and the stride size are set to the patch size.
+Để triển khai vision Transformer, hãy bắt đầu
+với patch embedding trong :numref:`fig_vit`.
+Việc chia ảnh thành các patch
+và chiếu tuyến tính các patch đã làm phẳng này
+có thể được đơn giản hóa thành một phép convolution duy nhất,
+trong đó cả kernel size và stride size đều được đặt bằng kích thước patch.
 
 ```{.python .input}
 %%tab pytorch
@@ -142,9 +142,9 @@ class PatchEmbedding(nn.Module):
         return X.reshape((X.shape[0], -1, X.shape[3]))
 ```
 
-In the following example, taking images with height and width of `img_size` as inputs,
-the patch embedding outputs `(img_size//patch_size)**2` patches
-that are linearly projected to vectors of length `num_hiddens`.
+Trong ví dụ sau, sử dụng các ảnh có chiều cao và chiều rộng `img_size` làm đầu vào,
+patch embedding xuất ra `(img_size//patch_size)**2` patch
+được chiếu tuyến tính thành các vector có độ dài `num_hiddens`.
 
 ```{.python .input}
 %%tab pytorch
@@ -167,12 +167,12 @@ d2l.check_shape(output, (batch_size, (img_size//patch_size)**2, num_hiddens))
 ## Vision Transformer Encoder
 :label:`subsec_vit-encoder`
 
-The MLP of the vision Transformer encoder is slightly different
-from the positionwise FFN of the original Transformer encoder
-(see :numref:`subsec_positionwise-ffn`).
-First, here the activation function uses the Gaussian error linear unit (GELU),
-which can be considered as a smoother version of the ReLU :cite:`Hendrycks.Gimpel.2016`.
-Second, dropout is applied to the output of each fully connected layer in the MLP for regularization.
+MLP của vision Transformer encoder hơi khác
+so với FFN theo vị trí của Transformer encoder gốc
+(xem :numref:`subsec_positionwise-ffn`).
+Thứ nhất, ở đây hàm kích hoạt sử dụng Gaussian error linear unit (GELU),
+có thể được xem là phiên bản mượt hơn của ReLU :cite:`Hendrycks.Gimpel.2016`.
+Thứ hai, dropout được áp dụng lên đầu ra của mỗi fully connected layer trong MLP để regularization.
 
 ```{.python .input}
 %%tab pytorch
@@ -207,12 +207,12 @@ class ViTMLP(nn.Module):
         return x
 ```
 
-The vision Transformer encoder block implementation
-just follows the pre-normalization design in :numref:`fig_vit`,
-where normalization is applied right *before* multi-head attention or the MLP.
-In contrast to post-normalization ("add & norm" in :numref:`fig_transformer`),
-where normalization is placed right *after* residual connections,
-pre-normalization leads to more effective or efficient training for Transformers :cite:`baevski2018adaptive,wang2019learning,xiong2020layer`.
+Việc triển khai khối vision Transformer encoder
+tuân theo thiết kế pre-normalization trong :numref:`fig_vit`,
+trong đó normalization được áp dụng ngay *trước* multi-head attention hoặc MLP.
+Trái ngược với post-normalization ("add & norm" trong :numref:`fig_transformer`),
+trong đó normalization được đặt ngay *sau* residual connection,
+pre-normalization giúp việc huấn luyện Transformers hiệu quả hoặc hiệu suất hơn :cite:`baevski2018adaptive,wang2019learning,xiong2020layer`.
 
 ```{.python .input}
 %%tab pytorch
@@ -252,8 +252,8 @@ class ViTBlock(nn.Module):
         return X + self.mlp(nn.LayerNorm()(X), training=training)
 ```
 
-Just as in :numref:`subsec_transformer-encoder`,
-no vision Transformer encoder block changes its input shape.
+Cũng như trong :numref:`subsec_transformer-encoder`,
+không có khối vision Transformer encoder nào thay đổi shape đầu vào của nó.
 
 ```{.python .input}
 %%tab pytorch
@@ -270,14 +270,14 @@ encoder_blk = ViTBlock(24, 48, 8, 0.5)
 d2l.check_shape(encoder_blk.init_with_output(d2l.get_key(), X)[0], X.shape)
 ```
 
-## Putting It All Together
+## Kết hợp tất cả
 
-The forward pass of vision Transformers below is straightforward.
-First, input images are fed into an `PatchEmbedding` instance,
-whose output is concatenated with the “&lt;cls&gt;”  token embedding.
-They are summed with learnable positional embeddings before dropout.
-Then the output is fed into the Transformer encoder that stacks `num_blks` instances of the `ViTBlock` class.
-Finally, the representation of the “&lt;cls&gt;”  token is projected by the network head.
+Forward pass của vision Transformers dưới đây rất trực tiếp.
+Đầu tiên, các ảnh đầu vào được đưa vào một instance `PatchEmbedding`,
+mà đầu ra của nó được nối với token embedding “&lt;cls&gt;”.
+Chúng được cộng với positional embedding có thể học được trước khi dropout.
+Sau đó, đầu ra được đưa vào Transformer encoder, nơi xếp chồng `num_blks` instance của lớp `ViTBlock`.
+Cuối cùng, biểu diễn của token “&lt;cls&gt;” được chiếu bởi network head.
 
 ```{.python .input}
 %%tab pytorch
@@ -354,9 +354,9 @@ class ViT(d2l.Classifier):
         return self.head(X[:, 0])
 ```
 
-## Training
+## Huấn luyện
 
-Training a vision Transformer on the Fashion-MNIST dataset is just like how CNNs were trained in :numref:`chap_modern_cnn`.
+Huấn luyện vision Transformer trên tập dữ liệu Fashion-MNIST cũng giống như cách CNNs được huấn luyện trong :numref:`chap_modern_cnn`.
 
 ```{.python .input}
 %%tab all
@@ -370,42 +370,42 @@ data = d2l.FashionMNIST(batch_size=128, resize=(img_size, img_size))
 trainer.fit(model, data)
 ```
 
-## Summary and Discussion
+## Tóm tắt và Thảo luận
 
-You may have noticed that for small datasets like Fashion-MNIST,
-our implemented vision Transformer
-does not outperform the ResNet in :numref:`sec_resnet`.
-Similar observations can be made even on the ImageNet dataset (1.2 million images).
-This is because Transformers *lack* those useful principles in convolution,
-such as translation invariance and locality (:numref:`sec_why-conv`).
-However, the picture changes when training larger models on larger datasets (e.g., 300 million images),
-where vision Transformers outperform ResNets by a large margin in image classification, demonstrating
-intrinsic superiority of Transformers in scalability :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`.
-The introduction of vision Transformers
-has changed the landscape of network design for modeling image data.
-They were soon shown to be effective on the ImageNet dataset
-with data-efficient training strategies of DeiT :cite:`touvron2021training`.
-However, the quadratic complexity of self-attention
+Bạn có thể đã nhận thấy rằng với các tập dữ liệu nhỏ như Fashion-MNIST,
+vision Transformer mà chúng ta triển khai
+không vượt trội hơn ResNet trong :numref:`sec_resnet`.
+Các quan sát tương tự có thể được đưa ra ngay cả trên tập dữ liệu ImageNet (1,2 triệu ảnh).
+Điều này là do Transformers *thiếu* những nguyên lý hữu ích của convolution,
+chẳng hạn như tính bất biến tịnh tiến và tính cục bộ (:numref:`sec_why-conv`).
+Tuy nhiên, bức tranh thay đổi khi huấn luyện các mô hình lớn hơn trên các tập dữ liệu lớn hơn (ví dụ: 300 triệu ảnh),
+nơi vision Transformers vượt trội hơn ResNets với khoảng cách lớn trong phân loại ảnh, cho thấy
+ưu thế nội tại của Transformers về khả năng mở rộng :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`.
+Sự ra đời của vision Transformers
+đã thay đổi bối cảnh thiết kế mạng để mô hình hóa dữ liệu ảnh.
+Chúng nhanh chóng được chứng minh là hiệu quả trên tập dữ liệu ImageNet
+với các chiến lược huấn luyện hiệu quả dữ liệu của DeiT :cite:`touvron2021training`.
+Tuy nhiên, độ phức tạp bậc hai của self-attention
 (:numref:`sec_self-attention-and-positional-encoding`)
-makes the Transformer architecture
-less suitable for higher-resolution images.
-Towards a general-purpose backbone network in computer vision,
-Swin Transformers addressed the quadratic computational complexity
-with respect to image size (:numref:`subsec_cnn-rnn-self-attention`)
-and reinstated convolution-like priors,
-extending the applicability of Transformers to a range of computer vision tasks
-beyond image classification with state-of-the-art results :cite:`liu2021swin`.
+khiến kiến trúc Transformer
+ít phù hợp hơn với các ảnh có độ phân giải cao.
+Hướng tới một backbone network đa dụng trong thị giác máy tính,
+Swin Transformers đã giải quyết độ phức tạp tính toán bậc hai
+theo kích thước ảnh (:numref:`subsec_cnn-rnn-self-attention`)
+và khôi phục các prior giống convolution,
+mở rộng khả năng ứng dụng của Transformers cho một loạt tác vụ thị giác máy tính
+ngoài phân loại ảnh với các kết quả state-of-the-art :cite:`liu2021swin`.
 
-## Exercises
+## Bài tập
 
-1. How does the value of `img_size` affect training time?
-1. Instead of projecting the “&lt;cls&gt;” token representation to the output, how would you project the averaged patch representations? Implement this change and see how it affects the accuracy.
-1. Can you modify hyperparameters to improve the accuracy of the vision Transformer?
+1. Giá trị của `img_size` ảnh hưởng đến thời gian huấn luyện như thế nào?
+1. Thay vì chiếu biểu diễn token “&lt;cls&gt;” thành đầu ra, bạn sẽ chiếu các biểu diễn patch đã lấy trung bình như thế nào? Hãy triển khai thay đổi này và xem nó ảnh hưởng đến độ chính xác ra sao.
+1. Bạn có thể điều chỉnh các hyperparameter để cải thiện độ chính xác của vision Transformer không?
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/8943)
+[Thảo luận](https://discuss.d2l.ai/t/8943)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18032)
+[Thảo luận](https://discuss.d2l.ai/t/18032)
 :end_tab:

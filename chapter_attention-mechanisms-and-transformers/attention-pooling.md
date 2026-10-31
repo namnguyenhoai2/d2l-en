@@ -1,9 +1,9 @@
-# Attention Pooling by Similarity
+# Attention Pooling theo Độ tương đồng
 
 :label:`sec_attention-pooling`
 
-Now that we have introduced the primary components of the attention mechanism, let's use them in a rather classical setting, namely regression and classification via kernel density estimation :cite:`Nadaraya.1964,Watson.1964`. This detour simply provides additional background: it is entirely optional and can be skipped if needed. 
-At their core, Nadaraya--Watson estimators rely on some similarity kernel $\alpha(\mathbf{q}, \mathbf{k})$ relating queries $\mathbf{q}$ to keys $\mathbf{k}$. Some common kernels are
+Giờ đây, khi đã giới thiệu các thành phần chính của cơ chế attention, hãy sử dụng chúng trong một bối cảnh khá cổ điển, cụ thể là hồi quy và phân loại thông qua ước lượng mật độ kernel :cite:`Nadaraya.1964,Watson.1964`. Phần mở rộng này chỉ nhằm cung cấp thêm kiến thức nền: hoàn toàn không bắt buộc và có thể bỏ qua nếu cần. 
+Về cốt lõi, các bộ ước lượng Nadaraya--Watson dựa vào một kernel độ tương đồng $\alpha(\mathbf{q}, \mathbf{k})$ liên hệ các query $\mathbf{q}$ với các key $\mathbf{k}$. Một số kernel phổ biến là
 
 $$\begin{aligned}
 \alpha(\mathbf{q}, \mathbf{k}) & = \exp\left(-\frac{1}{2} \|\mathbf{q} - \mathbf{k}\|^2 \right) && \textrm{Gaussian;} \\
@@ -12,11 +12,11 @@ $$\begin{aligned}
 \end{aligned}
 $$
 
-There are many more choices that we could pick. See a [Wikipedia article](https://en.wikipedia.org/wiki/Kernel_(statistics)) for a more extensive review and how the choice of kernels is related to kernel density estimation, sometimes also called *Parzen Windows* :cite:`parzen1957consistent`. All of the kernels are heuristic and can be tuned. For instance, we can adjust the width, not only on a global basis but even on a per-coordinate basis. Regardless, all of them lead to the following equation for regression and classification alike:
+Chúng ta có thể chọn thêm rất nhiều phương án khác. Hãy xem một [bài viết Wikipedia](https://en.wikipedia.org/wiki/Kernel_(statistics)) để có phần tổng quan mở rộng hơn và tìm hiểu cách lựa chọn kernel liên quan đến ước lượng mật độ kernel, đôi khi còn được gọi là *Parzen Windows* :cite:`parzen1957consistent`. Tất cả các kernel đều mang tính heuristic và có thể được tinh chỉnh. Chẳng hạn, chúng ta có thể điều chỉnh độ rộng, không chỉ trên phạm vi toàn cục mà thậm chí theo từng tọa độ. Dù vậy, tất cả chúng đều dẫn đến phương trình sau cho cả hồi quy lẫn phân loại:
 
 $$f(\mathbf{q}) = \sum_i \mathbf{v}_i \frac{\alpha(\mathbf{q}, \mathbf{k}_i)}{\sum_j \alpha(\mathbf{q}, \mathbf{k}_j)}.$$
 
-In the case of a (scalar) regression with observations $(\mathbf{x}_i, y_i)$ for features and labels respectively, $\mathbf{v}_i = y_i$ are scalars, $\mathbf{k}_i = \mathbf{x}_i$ are vectors, and the query $\mathbf{q}$ denotes the new location where $f$ should be evaluated. In the case of (multiclass) classification, we use one-hot-encoding of $y_i$ to obtain $\mathbf{v}_i$. One of the convenient properties of this estimator is that it requires no training. Even more so, if we suitably narrow the kernel with increasing amounts of data, the approach is consistent :cite:`mack1982weak`, i.e., it will converge to some statistically optimal solution. Let's start by inspecting some kernels.
+Trong trường hợp hồi quy (vô hướng) với các quan sát $(\mathbf{x}_i, y_i)$ lần lượt cho feature và label, $\mathbf{v}_i = y_i$ là các vô hướng, $\mathbf{k}_i = \mathbf{x}_i$ là các vector, và query $\mathbf{q}$ biểu thị vị trí mới mà tại đó $f$ cần được đánh giá. Trong trường hợp phân loại (đa lớp), chúng ta dùng one-hot encoding của $y_i$ để thu được $\mathbf{v}_i$. Một thuộc tính thuận tiện của bộ ước lượng này là không cần huấn luyện. Hơn nữa, nếu thu hẹp kernel một cách phù hợp khi lượng dữ liệu tăng lên, phương pháp này là nhất quán :cite:`mack1982weak`, tức là nó sẽ hội tụ về một nghiệm tối ưu theo thống kê nào đó. Hãy bắt đầu bằng cách xem xét một số kernel.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -60,9 +60,9 @@ from jax import numpy as jnp
 from flax import linen as nn
 ```
 
-## [**Kernels and Data**]
+## [**Kernel và Dữ liệu**]
 
-All the kernels $\alpha(\mathbf{k}, \mathbf{q})$ defined in this section are *translation and rotation invariant*; that is, if we shift and rotate $\mathbf{k}$ and $\mathbf{q}$ in the same manner, the value of $\alpha$ remains unchanged. For simplicity we thus pick scalar arguments $k, q \in \mathbb{R}$ and pick the key $k = 0$ as the origin. This yields:
+Tất cả các kernel $\alpha(\mathbf{k}, \mathbf{q})$ được định nghĩa trong phần này đều *bất biến đối với phép tịnh tiến và phép quay*; nghĩa là, nếu chúng ta dịch chuyển và xoay $\mathbf{k}$ và $\mathbf{q}$ theo cùng một cách, giá trị của $\alpha$ vẫn không đổi. Để đơn giản, do đó ta chọn các đối số vô hướng $k, q \in \mathbb{R}$ và chọn key $k = 0$ làm gốc tọa độ. Khi đó ta có:
 
 ```{.python .input}
 %%tab all
@@ -107,13 +107,13 @@ for kernel, name, ax in zip(kernels, names, axes):
 d2l.plt.show()
 ```
 
-Different kernels correspond to different notions of range and smoothness. For instance, the boxcar kernel only attends to observations within a distance of $1$ (or some otherwise defined hyperparameter) and does so indiscriminately. 
+Các kernel khác nhau tương ứng với những khái niệm khác nhau về phạm vi và độ trơn. Chẳng hạn, kernel boxcar chỉ attention đến các quan sát trong khoảng cách $1$ (hoặc một hyperparameter được xác định theo cách khác) và thực hiện điều này không phân biệt.
 
-To see Nadaraya--Watson estimation in action, let's define some training data. In the following we use the dependency
+Để thấy ước lượng Nadaraya--Watson hoạt động như thế nào, hãy định nghĩa một số dữ liệu huấn luyện. Sau đây, chúng ta sử dụng quan hệ phụ thuộc
 
 $$y_i = 2\sin(x_i) + x_i + \epsilon,$$
 
-where $\epsilon$ is drawn from a normal distribution with zero mean and unit variance. We draw 40 training examples.
+trong đó $\epsilon$ được lấy mẫu từ phân phối chuẩn có trung bình bằng không và phương sai đơn vị. Chúng ta lấy 40 mẫu huấn luyện.
 
 ```{.python .input}
 %%tab all
@@ -137,11 +137,11 @@ x_val = d2l.arange(0, 5, 0.1)
 y_val = f(x_val)
 ```
 
-## [**Attention Pooling via Nadaraya--Watson Regression**]
+## [**Attention Pooling qua Hồi quy Nadaraya--Watson**]
 
-Now that we have data and kernels, all we need is a function that computes the kernel regression estimates. Note that we also want to obtain the relative kernel weights in order to perform some minor diagnostics. Hence we first compute the kernel between all training features (covariates) `x_train` and all validation features `x_val`. This yields a matrix, which we subsequently normalize. When multiplied with the training labels `y_train` we obtain the estimates.
+Giờ đây, khi đã có dữ liệu và các kernel, tất cả những gì ta cần là một hàm tính các ước lượng hồi quy kernel. Lưu ý rằng chúng ta cũng muốn thu được các trọng số kernel tương đối để thực hiện một số chẩn đoán nhỏ. Vì vậy, trước hết ta tính kernel giữa tất cả feature huấn luyện (biến đồng biến) `x_train` và tất cả feature xác thực `x_val`. Điều này tạo ra một ma trận, sau đó chúng ta chuẩn hóa nó. Khi nhân với các label huấn luyện `y_train`, ta thu được các ước lượng.
 
-Recall attention pooling in :eqref:`eq_attention_pooling`. Let each validation feature be a query, and each training feature--label pair be a key--value pair. As a result, the  normalized relative kernel weights (`attention_w` below) are the *attention weights*.
+Hãy nhớ lại attention pooling trong :eqref:`eq_attention_pooling`. Hãy coi mỗi feature xác thực là một query, còn mỗi cặp feature--label huấn luyện là một cặp key--value. Do đó, các trọng số kernel tương đối đã chuẩn hóa (`attention_w` bên dưới) chính là *trọng số attention*.
 
 ```{.python .input}
 %%tab all
@@ -162,7 +162,7 @@ def nadaraya_watson(x_train, y_train, x_val, kernel):
     return y_hat, attention_w
 ```
 
-Let's have a look at the kind of estimates that the different kernels produce.
+Hãy xem các kernel khác nhau tạo ra kiểu ước lượng nào.
 
 ```{.python .input}
 %%tab all
@@ -191,19 +191,19 @@ def plot(x_train, y_train, x_val, y_val, kernels, names, attention=False):
 plot(x_train, y_train, x_val, y_val, kernels, names)
 ```
 
-The first thing that stands out is that all three nontrivial kernels (Gaussian, Boxcar, and Epanechikov) produce fairly workable estimates that are not too far from the true function. Only the constant kernel that leads to the trivial estimate $f(x) = \frac{1}{n} \sum_i y_i$ produces a rather unrealistic result. Let's inspect the attention weighting a bit more closely:
+Điều đầu tiên dễ nhận thấy là cả ba kernel không tầm thường (Gaussian, Boxcar và Epanechikov) đều tạo ra các ước lượng khá hữu dụng và không quá xa hàm thực. Chỉ kernel hằng, dẫn đến ước lượng tầm thường $f(x) = \frac{1}{n} \sum_i y_i$, mới cho kết quả khá phi thực tế. Hãy xem xét kỹ hơn trọng số attention:
 
 ```{.python .input}
 %%tab all
 plot(x_train, y_train, x_val, y_val, kernels, names, attention=True)
 ```
 
-The visualization clearly shows why the estimates for Gaussian, Boxcar, and Epanechikov are very similar: after all, they are derived from very similar attention weights, despite the different functional form of the kernel. This raises the question as to whether this is always the case. 
+Phần trực quan hóa cho thấy rõ vì sao các ước lượng của Gaussian, Boxcar và Epanechikov rất giống nhau: xét cho cùng, chúng được suy ra từ các trọng số attention rất tương tự nhau, bất chấp dạng hàm khác nhau của kernel. Điều này đặt ra câu hỏi liệu có phải lúc nào cũng như vậy hay không.
 
-## [**Adapting Attention Pooling**]
+## [**Điều chỉnh Attention Pooling**]
 
-We could replace the Gaussian kernel with one of a different width. That is, we could use 
-$\alpha(\mathbf{q}, \mathbf{k}) = \exp\left(-\frac{1}{2 \sigma^2} \|\mathbf{q} - \mathbf{k}\|^2 \right)$ where $\sigma^2$ determines the width of the kernel. Let's see whether this affects the outcomes.
+Chúng ta có thể thay kernel Gaussian bằng một kernel có độ rộng khác. Tức là, chúng ta có thể dùng 
+$\alpha(\mathbf{q}, \mathbf{k}) = \exp\left(-\frac{1}{2 \sigma^2} \|\mathbf{q} - \mathbf{k}\|^2 \right)$ trong đó $\sigma^2$ xác định độ rộng của kernel. Hãy xem liệu điều này có ảnh hưởng đến kết quả hay không.
 
 ```{.python .input}
 %%tab all
@@ -217,45 +217,45 @@ kernels = [gaussian_with_width(sigma) for sigma in sigmas]
 plot(x_train, y_train, x_val, y_val, kernels, names)
 ```
 
-Clearly, the narrower the kernel, the less smooth the estimate. At the same time, it adapts better to the local variations. Let's look at the corresponding attention weights.
+Rõ ràng, kernel càng hẹp thì ước lượng càng ít trơn. Đồng thời, nó thích ứng tốt hơn với các biến thiên cục bộ. Hãy xem các trọng số attention tương ứng.
 
 ```{.python .input}
 %%tab all
 plot(x_train, y_train, x_val, y_val, kernels, names, attention=True)
 ```
 
-As we would expect, the narrower the kernel, the narrower the range of large attention weights. It is also clear that picking the same width might not be ideal. In fact, :citet:`Silverman86` proposed a heuristic that depends on the local density. Many more such "tricks" have been proposed. For instance, :citet:`norelli2022asif` used a similar nearest-neighbor interpolation technique for designing cross-modal image and text representations. 
+Như dự đoán, kernel càng hẹp thì phạm vi các trọng số attention lớn càng hẹp. Cũng rõ ràng rằng việc chọn cùng một độ rộng có thể không lý tưởng. Thực tế, :citet:`Silverman86` đã đề xuất một heuristic phụ thuộc vào mật độ cục bộ. Nhiều "mẹo" như vậy khác đã được đề xuất. Chẳng hạn, :citet:`norelli2022asif` đã sử dụng một kỹ thuật nội suy láng giềng gần tương tự để thiết kế các biểu diễn hình ảnh và văn bản đa phương thức.
 
-The astute reader might wonder why we are providing this deep dive for a method that is over half a century old. First, it is one of the earliest precursors of modern attention mechanisms. Second, it is great for visualization. Third, and just as importantly, it demonstrates the limits of hand-crafted attention mechanisms. A much better strategy is to *learn* the mechanism, by learning the representations for queries and keys. This is what we will embark on in the following sections.
+Người đọc tinh ý có thể tự hỏi vì sao chúng ta lại đi sâu vào một phương pháp đã hơn nửa thế kỷ tuổi. Thứ nhất, đây là một trong những tiền thân sớm nhất của các cơ chế attention hiện đại. Thứ hai, nó rất phù hợp để trực quan hóa. Thứ ba, và cũng quan trọng không kém, nó cho thấy những giới hạn của các cơ chế attention được thiết kế thủ công. Một chiến lược tốt hơn nhiều là *học* cơ chế này, bằng cách học các biểu diễn cho query và key. Đây là nội dung chúng ta sẽ bắt đầu trong các phần tiếp theo.
 
 
-## Summary
+## Tóm tắt
 
-Nadaraya--Watson kernel regression is an early precursor of the current attention mechanisms. 
-It can be used directly with little to no training or tuning, either for classification or regression. 
-The attention weight is assigned according to the similarity (or distance) between query and key, and according to how many similar observations are available. 
+Hồi quy kernel Nadaraya--Watson là một tiền thân sớm của các cơ chế attention hiện nay. 
+Nó có thể được sử dụng trực tiếp với rất ít hoặc không cần huấn luyện hay tinh chỉnh, cho cả phân loại lẫn hồi quy. 
+Trọng số attention được gán theo độ tương đồng (hoặc khoảng cách) giữa query và key, cũng như theo số lượng quan sát tương tự có sẵn.
 
-## Exercises
+## Bài tập
 
-1. Parzen windows density estimates are given by $\hat{p}(\mathbf{x}) = \frac{1}{n} \sum_i k(\mathbf{x}, \mathbf{x}_i)$. Prove that for binary classification the function $\hat{p}(\mathbf{x}, y=1) - \hat{p}(\mathbf{x}, y=-1)$, as obtained by Parzen windows is equivalent to Nadaraya--Watson classification. 
-1. Implement stochastic gradient descent to learn a good value for kernel widths in Nadaraya--Watson regression. 
-    1. What happens if you just use the above estimates to minimize $(f(\mathbf{x_i}) - y_i)^2$ directly? Hint: $y_i$ is part of the terms used to compute $f$.
-    1. Remove $(\mathbf{x}_i, y_i)$ from the estimate for $f(\mathbf{x}_i)$ and optimize over the kernel widths. Do you still observe overfitting?
-1. Assume that all $\mathbf{x}$ lie on the unit sphere, i.e., all satisfy $\|\mathbf{x}\| = 1$. Can you simplify the $\|\mathbf{x} - \mathbf{x}_i\|^2$ term in the exponential? Hint: we will later see that this is very closely related to dot product attention. 
-1. Recall that :citet:`mack1982weak` proved that Nadaraya--Watson estimation is consistent. How quickly should you reduce the scale for the attention mechanism as you get more data? Provide some intuition for your answer. Does it depend on the dimensionality of the data? How?
+1. Các ước lượng mật độ Parzen windows được cho bởi $\hat{p}(\mathbf{x}) = \frac{1}{n} \sum_i k(\mathbf{x}, \mathbf{x}_i)$. Hãy chứng minh rằng, đối với phân loại nhị phân, hàm $\hat{p}(\mathbf{x}, y=1) - \hat{p}(\mathbf{x}, y=-1)$ thu được bằng Parzen windows tương đương với phân loại Nadaraya--Watson.
+1. Cài đặt stochastic gradient descent để học một giá trị tốt cho độ rộng kernel trong hồi quy Nadaraya--Watson.
+    1. Điều gì xảy ra nếu bạn chỉ sử dụng các ước lượng ở trên để tối thiểu hóa trực tiếp $(f(\mathbf{x_i}) - y_i)^2$? Gợi ý: $y_i$ là một phần của các hạng tử dùng để tính $f$.
+    1. Loại bỏ $(\mathbf{x}_i, y_i)$ khỏi ước lượng cho $f(\mathbf{x}_i)$ và tối ưu theo độ rộng kernel. Bạn vẫn quan sát thấy overfitting chứ?
+1. Giả sử mọi $\mathbf{x}$ đều nằm trên mặt cầu đơn vị, tức là tất cả đều thỏa mãn $\|\mathbf{x}\| = 1$. Bạn có thể đơn giản hóa hạng tử $\|\mathbf{x} - \mathbf{x}_i\|^2$ trong số mũ không? Gợi ý: sau này chúng ta sẽ thấy rằng điều này liên hệ rất chặt chẽ với dot product attention.
+1. Hãy nhớ rằng :citet:`mack1982weak` đã chứng minh ước lượng Nadaraya--Watson là nhất quán. Bạn nên giảm scale cho cơ chế attention nhanh đến mức nào khi có thêm dữ liệu? Hãy đưa ra một số trực giác cho câu trả lời của bạn. Điều này có phụ thuộc vào số chiều của dữ liệu không? Phụ thuộc như thế nào?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/1598)
+[Thảo luận](https://discuss.d2l.ai/t/1598)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1599)
+[Thảo luận](https://discuss.d2l.ai/t/1599)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3866)
+[Thảo luận](https://discuss.d2l.ai/t/3866)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18026)
+[Thảo luận](https://discuss.d2l.ai/t/18026)
 :end_tab:

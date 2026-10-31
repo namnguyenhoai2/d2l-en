@@ -1,98 +1,97 @@
-# Working with Sequences
+# Làm việc với Dãy
 :label:`sec_sequence`
 
-Up until now, we have focused on models whose inputs
-consisted of a single feature vector $\mathbf{x} \in \mathbb{R}^d$.
-The main change of perspective when developing models
-capable of processing sequences is that we now
-focus on inputs that consist of an ordered list
-of feature vectors $\mathbf{x}_1, \dots, \mathbf{x}_T$,
-where each feature vector $\mathbf{x}_t$ is
-indexed by a time step $t \in \mathbb{Z}^+$
-lying in $\mathbb{R}^d$.
+Cho đến nay, chúng ta đã tập trung vào các mô hình có đầu vào
+bao gồm một vector đặc trưng duy nhất $\mathbf{x} \in \mathbb{R}^d$.
+Sự thay đổi chính về góc nhìn khi phát triển các mô hình
+có khả năng xử lý dãy là giờ đây chúng ta
+tập trung vào các đầu vào bao gồm một danh sách có thứ tự
+các vector đặc trưng $\mathbf{x}_1, \dots, \mathbf{x}_T$,
+trong đó mỗi vector đặc trưng $\mathbf{x}_t$ được
+đánh chỉ mục bởi một bước thời gian $t \in \mathbb{Z}^+$
+và thuộc $\mathbb{R}^d$.
 
-Some datasets consist of a single massive sequence.
-Consider, for example, the extremely long streams
-of sensor readings that might be available to climate scientists.
-In such cases, we might create training datasets
-by randomly sampling subsequences of some predetermined length.
-More often, our data arrives as a collection of sequences.
-Consider the following examples:
-(i) a collection of documents,
-each represented as its own sequence of words,
-and each having its own length $T_i$;
-(ii) sequence representation of
-patient stays in the hospital,
-where each stay consists of a number of events
-and the sequence length depends roughly
-on the length of the stay.
-
-
-Previously, when dealing with individual inputs,
-we assumed that they were sampled independently
-from the same underlying distribution $P(X)$.
-While we still assume that entire sequences
-(e.g., entire documents or patient trajectories)
-are sampled independently,
-we cannot assume that the data arriving
-at each time step are independent of each other.
-For example, the words that likely to appear later in a document
-depend heavily on words occurring earlier in the document.
-The medicine a patient is likely to receive
-on the 10th day of a hospital visit
-depends heavily on what transpired
-in the previous nine days.
-
-This should come as no surprise.
-If we did not believe that the elements in a sequence were related,
-we would not have bothered to model them as a sequence in the first place.
-Consider the usefulness of the auto-fill features
-that are popular on search tools and modern email clients.
-They are useful precisely because it is often possible
-to predict (imperfectly, but better than random guessing)
-what the likely continuations of a sequence might be,
-given some initial prefix.
-For most sequence models,
-we do not require independence,
-or even stationarity, of our sequences.
-Instead, we require only that
-the sequences themselves are sampled
-from some fixed underlying distribution
-over entire sequences.
-
-This flexible approach allows for such phenomena
-as (i) documents looking significantly different
-at the beginning than at the end;
-or (ii) patient status evolving either
-towards recovery or towards death
-over the course of a hospital stay;
-or (iii) customer taste evolving in predictable ways
-over the course of continued interaction with a recommender system.
+Một số tập dữ liệu bao gồm một dãy đơn khổng lồ.
+Ví dụ, hãy xem xét các luồng dữ liệu cảm biến cực dài
+có thể उपलब्ध cho các nhà khoa học khí hậu.
+Trong những trường hợp như vậy, chúng ta có thể tạo tập dữ liệu huấn luyện
+bằng cách lấy mẫu ngẫu nhiên các dãy con có độ dài được xác định trước.
+Tuy nhiên, thường thì dữ liệu của chúng ta đến dưới dạng một tập hợp các dãy.
+Hãy xem xét các ví dụ sau:
+(i) một tập hợp tài liệu,
+mỗi tài liệu được biểu diễn bằng dãy từ riêng,
+và mỗi tài liệu có độ dài $T_i$ riêng;
+(ii) biểu diễn dạng dãy của
+các đợt điều trị nội trú của bệnh nhân,
+trong đó mỗi đợt điều trị bao gồm một số sự kiện
+và độ dài dãy phụ thuộc gần đúng
+vào thời gian điều trị.
 
 
-We sometimes wish to predict a fixed target $y$
-given sequentially structured input
-(e.g., sentiment classification based on a movie review).
-At other times, we wish to predict a sequentially structured target
+Trước đây, khi xử lý các đầu vào riêng lẻ,
+chúng ta giả định rằng chúng được lấy mẫu độc lập
+từ cùng một phân phối nền tảng $P(X)$.
+Mặc dù chúng ta vẫn giả định rằng toàn bộ các dãy
+(ví dụ, toàn bộ tài liệu hoặc lộ trình của bệnh nhân)
+được lấy mẫu độc lập, chúng ta không thể giả định
+rằng dữ liệu đến tại mỗi bước thời gian
+độc lập với nhau.
+Ví dụ, các từ có khả năng xuất hiện về sau trong một tài liệu
+phụ thuộc rất nhiều vào các từ xuất hiện trước đó trong tài liệu.
+Loại thuốc mà một bệnh nhân có khả năng nhận
+vào ngày thứ 10 của một đợt điều trị nội trú
+phụ thuộc rất nhiều vào những gì đã xảy ra
+trong chín ngày trước đó.
+
+Điều này không có gì đáng ngạc nhiên.
+Nếu chúng ta không tin rằng các phần tử trong một dãy có liên hệ với nhau,
+ngay từ đầu chúng ta đã không cần mô hình hóa chúng thành một dãy.
+Hãy xem xét tính hữu ích của các tính năng tự động điền
+phổ biến trong các công cụ tìm kiếm và ứng dụng email hiện đại.
+Chúng hữu ích chính bởi vì thường có thể
+dự đoán (không hoàn hảo, nhưng tốt hơn việc đoán ngẫu nhiên)
+các phần tiếp theo có khả năng xảy ra của một dãy,
+khi biết một tiền tố ban đầu.
+Đối với hầu hết các mô hình dãy,
+chúng ta không yêu cầu tính độc lập,
+hay thậm chí tính dừng, của các dãy.
+Thay vào đó, chúng ta chỉ yêu cầu rằng
+bản thân các dãy được lấy mẫu
+từ một phân phối nền tảng cố định nào đó
+trên toàn bộ các dãy.
+
+Cách tiếp cận linh hoạt này cho phép các hiện tượng như
+(i) tài liệu có phần đầu và phần cuối khác biệt đáng kể;
+hoặc (ii) trạng thái bệnh nhân diễn biến
+theo hướng hồi phục hoặc tử vong
+trong suốt thời gian điều trị nội trú;
+hoặc (iii) sở thích của khách hàng biến đổi theo những cách có thể dự đoán
+trong quá trình tiếp tục tương tác với một hệ thống gợi ý.
+
+
+Đôi khi chúng ta muốn dự đoán một mục tiêu cố định $y$
+khi biết đầu vào có cấu trúc tuần tự
+(ví dụ: phân loại cảm xúc dựa trên một bài đánh giá phim).
+Vào những lúc khác, chúng ta muốn dự đoán một mục tiêu có cấu trúc tuần tự
 ($y_1, \ldots, y_T$)
-given a fixed input (e.g., image captioning).
-Still other times, our goal is to predict sequentially structured targets
-based on sequentially structured inputs
-(e.g., machine translation or video captioning).
-Such sequence-to-sequence tasks take two forms:
-(i) *aligned*: where the input at each time step
-aligns with a corresponding target (e.g., part of speech tagging);
-(ii) *unaligned*: where the input and target
-do not necessarily exhibit a step-for-step correspondence
-(e.g., machine translation).
+khi biết một đầu vào cố định (ví dụ: tạo chú thích ảnh).
+Trong những trường hợp khác nữa, mục tiêu của chúng ta là dự đoán các mục tiêu có cấu trúc tuần tự
+dựa trên các đầu vào có cấu trúc tuần tự
+(ví dụ: dịch máy hoặc tạo chú thích video).
+Các tác vụ sequence-to-sequence như vậy có hai dạng:
+(i) *căn chỉnh*: đầu vào ở mỗi bước thời gian
+căn chỉnh với một mục tiêu tương ứng (ví dụ: gán nhãn từ loại);
+(ii) *không căn chỉnh*: đầu vào và mục tiêu
+không nhất thiết có sự tương ứng từng bước
+(ví dụ: dịch máy).
 
-Before we worry about handling targets of any kind,
-we can tackle the most straightforward problem:
-unsupervised density modeling (also called *sequence modeling*).
-Here, given a collection of sequences,
-our goal is to estimate the probability mass function
-that tells us how likely we are to see any given sequence,
-i.e., $p(\mathbf{x}_1, \ldots, \mathbf{x}_T)$.
+Trước khi quan tâm đến việc xử lý các mục tiêu thuộc bất kỳ loại nào,
+chúng ta có thể giải quyết bài toán đơn giản nhất:
+mô hình hóa mật độ không giám sát (còn gọi là *mô hình hóa dãy*).
+Ở đây, với một tập hợp các dãy,
+mục tiêu của chúng ta là ước lượng hàm khối xác suất
+cho biết khả năng chúng ta quan sát được bất kỳ dãy nào,
+tức là $p(\mathbf{x}_1, \ldots, \mathbf{x}_T)$.
 
 ```{.python .input  n=6}
 %load_ext d2lbook.tab
@@ -132,273 +131,272 @@ from jax import numpy as jnp
 import numpy as np
 ```
 
-## Autoregressive Models
+## Mô hình Tự hồi quy
 
 
-Before introducing specialized neural networks
-designed to handle sequentially structured data,
-let's take a look at some actual sequence data
-and build up some basic intuitions and statistical tools.
-In particular, we will focus on stock price data
-from the FTSE 100 index (:numref:`fig_ftse100`).
-At each *time step* $t \in \mathbb{Z}^+$, we observe
-the price, $x_t$, of the index at that time.
+Trước khi giới thiệu các mạng nơ-ron chuyên biệt
+được thiết kế để xử lý dữ liệu có cấu trúc tuần tự,
+hãy xem xét một số dữ liệu dãy thực tế
+và xây dựng một vài trực giác cùng các công cụ thống kê cơ bản.
+Cụ thể, chúng ta sẽ tập trung vào dữ liệu giá cổ phiếu
+từ chỉ số FTSE 100 (:numref:`fig_ftse100`).
+Tại mỗi *bước thời gian* $t \in \mathbb{Z}^+$, chúng ta quan sát
+giá, $x_t$, của chỉ số tại thời điểm đó.
 
 
-![FTSE 100 index over about 30 years.](../img/ftse100.png)
+![Chỉ số FTSE 100 trong khoảng 30 năm.](../img/ftse100.png)
 :width:`400px`
 :label:`fig_ftse100`
 
 
-Now suppose that a trader would like to make short-term trades,
-strategically getting into or out of the index,
-depending on whether they believe
-that it will rise or decline
-in the subsequent time step.
-Absent any other features
-(news, financial reporting data, etc.),
-the only available signal for predicting
-the subsequent value is the history of prices to date.
-The trader is thus interested in knowing
-the probability distribution
+Bây giờ, giả sử một nhà giao dịch muốn thực hiện các giao dịch ngắn hạn,
+vào hoặc thoát khỏi chỉ số một cách chiến lược,
+tùy theo việc họ tin rằng
+chỉ số sẽ tăng hay giảm
+ở bước thời gian tiếp theo.
+Khi không có bất kỳ đặc trưng nào khác
+(tin tức, dữ liệu báo cáo tài chính, v.v.),
+tín hiệu duy nhất có sẵn để dự đoán
+giá trị tiếp theo là lịch sử giá cho đến hiện tại.
+Do đó, nhà giao dịch quan tâm đến phân phối xác suất
 
 $$P(x_t \mid x_{t-1}, \ldots, x_1)$$
 
-over prices that the index might take
-in the subsequent time step.
-While estimating the entire distribution
-over a continuously valued random variable
-can be difficult, the trader would be happy
-to focus on a few key statistics of the distribution,
-particularly the expected value and the variance.
-One simple strategy for estimating the conditional expectation
+của các mức giá mà chỉ số có thể nhận
+ở bước thời gian tiếp theo.
+Mặc dù việc ước lượng toàn bộ phân phối
+trên một biến ngẫu nhiên có giá trị liên tục
+có thể khó khăn, nhà giao dịch sẽ hài lòng
+khi tập trung vào một vài thống kê chính của phân phối,
+đặc biệt là giá trị kỳ vọng và phương sai.
+Một chiến lược đơn giản để ước lượng kỳ vọng có điều kiện
 
 $$\mathbb{E}[(x_t \mid x_{t-1}, \ldots, x_1)],$$
 
-would be to apply a linear regression model
-(recall :numref:`sec_linear_regression`).
-Such models that regress the value of a signal
-on the previous values of that same signal
-are naturally called *autoregressive models*.
-There is just one major problem: the number of inputs,
-$x_{t-1}, \ldots, x_1$ varies, depending on $t$.
-In other words, the number of inputs increases
-with the amount of data that we encounter.
-Thus if we want to treat our historical data
-as a training set, we are left with the problem
-that each example has a different number of features.
-Much of what follows in this chapter
-will revolve around techniques
-for overcoming these challenges
-when engaging in such *autoregressive* modeling problems
-where the object of interest is
+là áp dụng một mô hình hồi quy tuyến tính
+(xem lại :numref:`sec_linear_regression`).
+Những mô hình hồi quy giá trị của một tín hiệu
+theo các giá trị trước đó của chính tín hiệu đó
+được gọi một cách tự nhiên là *mô hình tự hồi quy*.
+Chỉ có một vấn đề lớn: số lượng đầu vào,
+$x_{t-1}, \ldots, x_1$ thay đổi tùy thuộc vào $t$.
+Nói cách khác, số lượng đầu vào tăng lên
+theo lượng dữ liệu mà chúng ta gặp phải.
+Do đó, nếu muốn coi dữ liệu lịch sử
+là một tập huấn luyện, chúng ta gặp phải vấn đề
+rằng mỗi mẫu có một số lượng đặc trưng khác nhau.
+Phần lớn nội dung tiếp theo trong chương này
+sẽ xoay quanh các kỹ thuật
+để vượt qua những thách thức này
+khi xử lý các bài toán mô hình hóa *tự hồi quy* như vậy,
+trong đó đối tượng cần quan tâm là
 $P(x_t \mid x_{t-1}, \ldots, x_1)$
-or some statistic(s) of this distribution.
+hoặc một hay nhiều thống kê của phân phối này.
 
-A few strategies recur frequently.
-First of all,
-we might believe that although long sequences
-$x_{t-1}, \ldots, x_1$ are available,
-it may not be necessary
-to look back so far in the history
-when predicting the near future.
-In this case we might content ourselves
-to condition on some window of length $\tau$
-and only use $x_{t-1}, \ldots, x_{t-\tau}$ observations.
-The immediate benefit is that now the number of arguments
-is always the same, at least for $t > \tau$.
-This allows us to train any linear model or deep network
-that requires fixed-length vectors as inputs.
-Second, we might develop models that maintain
-some summary $h_t$ of the past observations
-(see :numref:`fig_sequence-model`)
-and at the same time update $h_t$
-in addition to the prediction $\hat{x}_t$.
-This leads to models that estimate not only $x_t$
-with $\hat{x}_t = P(x_t \mid h_{t})$
-but also updates of the form
+Một vài chiến lược thường xuyên xuất hiện.
+Trước hết,
+chúng ta có thể tin rằng mặc dù các dãy dài
+$x_{t-1}, \ldots, x_1$ có sẵn,
+có thể không cần thiết
+phải nhìn quá xa vào lịch sử
+khi dự đoán tương lai gần.
+Trong trường hợp này, chúng ta có thể chỉ cần
+điều kiện hóa trên một cửa sổ có độ dài $\tau$
+và chỉ sử dụng các quan sát $x_{t-1}, \ldots, x_{t-\tau}$.
+Lợi ích tức thì là giờ đây số lượng đối số
+luôn giống nhau, ít nhất đối với $t > \tau$.
+Điều này cho phép chúng ta huấn luyện bất kỳ mô hình tuyến tính hoặc mạng sâu nào
+yêu cầu các vector có độ dài cố định làm đầu vào.
+Thứ hai, chúng ta có thể phát triển các mô hình duy trì
+một bản tóm tắt $h_t$ nào đó của các quan sát trong quá khứ
+(xem :numref:`fig_sequence-model`)
+và đồng thời cập nhật $h_t$
+bên cạnh dự đoán $\hat{x}_t$.
+Điều này dẫn đến các mô hình không chỉ ước lượng $x_t$
+bằng $\hat{x}_t = P(x_t \mid h_{t})$
+mà còn cập nhật theo dạng
 $h_t = g(h_{t-1}, x_{t-1})$.
-Since $h_t$ is never observed,
-these models are also called
-*latent autoregressive models*.
+Vì $h_t$ không bao giờ được quan sát,
+các mô hình này còn được gọi là
+*mô hình tự hồi quy tiềm ẩn*.
 
-![A latent autoregressive model.](../img/sequence-model.svg)
+![Một mô hình tự hồi quy tiềm ẩn.](../img/sequence-model.svg)
 :label:`fig_sequence-model`
 
-To construct training data from historical data, one
-typically creates examples by sampling windows randomly.
-In general, we do not expect time to stand still.
-However, we often assume that while
-the specific values of $x_t$ might change,
-the dynamics according to which each subsequent
-observation is generated given the previous observations do not.
-Statisticians call dynamics that do not change *stationary*.
+Để xây dựng dữ liệu huấn luyện từ dữ liệu lịch sử, người ta
+thường tạo các mẫu bằng cách lấy mẫu ngẫu nhiên các cửa sổ.
+Nói chung, chúng ta không kỳ vọng thời gian đứng yên.
+Tuy nhiên, chúng ta thường giả định rằng mặc dù
+các giá trị cụ thể của $x_t$ có thể thay đổi,
+động lực theo đó mỗi quan sát tiếp theo
+được tạo ra khi biết các quan sát trước đó thì không thay đổi.
+Các nhà thống kê gọi các động lực không thay đổi là *dừng*.
 
 
 
-## Sequence Models
+## Mô hình Dãy
 
-Sometimes, especially when working with language,
-we wish to estimate the joint probability
-of an entire sequence.
-This is a common task when working with sequences
-composed of discrete *tokens*, such as words.
-Generally, these estimated functions are called *sequence models*
-and for natural language data, they are called *language models*.
-The field of sequence modeling has been driven so much by natural language processing,
-that we often describe sequence models as "language models",
-even when dealing with non-language data.
-Language models prove useful for all sorts of reasons.
-Sometimes we want to evaluate the likelihood of sentences.
-For example, we might wish to compare
-the naturalness of two candidate outputs
-generated by a machine translation system
-or by a speech recognition system.
-But language modeling gives us not only
-the capacity to *evaluate* likelihood,
-but the ability to *sample* sequences,
-and even to optimize for the most likely sequences.
+Đôi khi, đặc biệt khi làm việc với ngôn ngữ,
+chúng ta muốn ước lượng xác suất đồng thời
+của toàn bộ một dãy.
+Đây là một tác vụ phổ biến khi làm việc với các dãy
+được cấu thành từ các *token* rời rạc, chẳng hạn như từ.
+Thông thường, các hàm được ước lượng này được gọi là *mô hình dãy*
+và đối với dữ liệu ngôn ngữ tự nhiên, chúng được gọi là *mô hình ngôn ngữ*.
+Lĩnh vực mô hình hóa dãy được thúc đẩy mạnh mẽ bởi xử lý ngôn ngữ tự nhiên,
+đến mức chúng ta thường mô tả các mô hình dãy là "mô hình ngôn ngữ",
+ngay cả khi xử lý dữ liệu không phải ngôn ngữ.
+Mô hình ngôn ngữ hữu ích vì đủ loại lý do.
+Đôi khi chúng ta muốn đánh giá khả năng xảy ra của các câu.
+Ví dụ, chúng ta có thể muốn so sánh
+tính tự nhiên của hai đầu ra ứng viên
+được tạo bởi một hệ thống dịch máy
+hoặc bởi một hệ thống nhận dạng giọng nói.
+Nhưng mô hình hóa ngôn ngữ không chỉ cho chúng ta
+khả năng *đánh giá* likelihood,
+mà còn khả năng *lấy mẫu* các dãy,
+và thậm chí tối ưu hóa để tìm ra các dãy có khả năng xảy ra cao nhất.
 
-While language modeling might not, at first glance, look
-like an autoregressive problem,
-we can reduce language modeling to autoregressive prediction
-by decomposing the joint density  of a sequence $p(x_1, \ldots, x_T)$
-into the product of conditional densities
-in a left-to-right fashion
-by applying the chain rule of probability:
+Mặc dù thoạt nhìn mô hình hóa ngôn ngữ có thể không giống
+một bài toán tự hồi quy,
+chúng ta có thể quy mô hình hóa ngôn ngữ về dự đoán tự hồi quy
+bằng cách phân rã mật độ đồng thời của một dãy $p(x_1, \ldots, x_T)$
+thành tích của các mật độ có điều kiện
+theo hướng từ trái sang phải
+bằng cách áp dụng quy tắc chuỗi của xác suất:
 
 $$P(x_1, \ldots, x_T) = P(x_1) \prod_{t=2}^T P(x_t \mid x_{t-1}, \ldots, x_1).$$
 
-Note that if we are working with discrete signals such as words,
-then the autoregressive model must be a probabilistic classifier,
-outputting a full probability distribution
-over the vocabulary for whatever word will come next,
-given the leftwards context.
+Lưu ý rằng nếu chúng ta làm việc với các tín hiệu rời rạc như từ,
+thì mô hình tự hồi quy phải là một bộ phân loại xác suất,
+xuất ra một phân phối xác suất đầy đủ
+trên từ vựng cho bất kỳ từ nào sẽ xuất hiện tiếp theo,
+với ngữ cảnh phía bên trái đã cho.
 
 
 
-### Markov Models
+### Mô hình Markov
 :label:`subsec_markov-models`
 
 
-Now suppose that we wish to employ the strategy mentioned above,
-where we condition only on the $\tau$ previous time steps,
-i.e., $x_{t-1}, \ldots, x_{t-\tau}$, rather than
-the entire sequence history $x_{t-1}, \ldots, x_1$.
-Whenever we can throw away the history
-beyond the previous $\tau$ steps
-without any loss in predictive power,
-we say that the sequence satisfies a *Markov condition*,
-i.e., *that the future is conditionally independent of the past,
-given the recent history*.
-When $\tau = 1$, we say that the data is characterized
-by a *first-order Markov model*,
-and when $\tau = k$, we say that the data is characterized
-by a $k^{\textrm{th}}$-order Markov model.
-For when the first-order Markov condition holds ($\tau = 1$)
-the factorization of our joint probability becomes a product
-of probabilities of each word given the previous *word*:
+Bây giờ, giả sử rằng chúng ta muốn sử dụng chiến lược đã đề cập ở trên,
+trong đó chúng ta chỉ điều kiện hóa trên $\tau$ bước thời gian trước đó,
+tức là $x_{t-1}, \ldots, x_{t-\tau}$, thay vì
+toàn bộ lịch sử chuỗi $x_{t-1}, \ldots, x_1$.
+Bất cứ khi nào chúng ta có thể bỏ đi lịch sử
+ngoài $\tau$ bước trước đó
+mà không làm mất bất kỳ khả năng dự đoán nào,
+chúng ta nói rằng chuỗi thỏa mãn một *điều kiện Markov*,
+tức là *tương lai độc lập có điều kiện với quá khứ,
+khi biết lịch sử gần đây*.
+Khi $\tau = 1$, chúng ta nói dữ liệu được đặc trưng
+bởi một *mô hình Markov bậc một*,
+và khi $\tau = k$, chúng ta nói dữ liệu được đặc trưng
+bởi một mô hình Markov bậc $k^{\textrm{th}}$.
+Khi điều kiện Markov bậc một được thỏa mãn ($\tau = 1$),
+phân tích nhân tử của xác suất đồng thời trở thành tích
+của xác suất mỗi từ khi biết *từ* trước đó:
 
 $$P(x_1, \ldots, x_T) = P(x_1) \prod_{t=2}^T P(x_t \mid x_{t-1}).$$
 
-We often find it useful to work with models that proceed
-as though a Markov condition were satisfied,
-even when we know that this is only *approximately* true.
-With real text documents we continue to gain information
-as we include more and more leftwards context.
-But these gains diminish rapidly.
-Thus, sometimes we compromise, obviating computational and statistical difficulties
-by training models whose validity depends
-on a $k^{\textrm{th}}$-order Markov condition.
-Even today's massive RNN- and Transformer-based language models
-seldom incorporate more than thousands of words of context.
+Chúng ta thường thấy hữu ích khi làm việc với các mô hình
+hoạt động như thể một điều kiện Markov được thỏa mãn,
+ngay cả khi chúng ta biết điều này chỉ đúng *xấp xỉ*.
+Với các tài liệu văn bản thực tế, chúng ta vẫn tiếp tục thu được thông tin
+khi đưa ngày càng nhiều ngữ cảnh phía bên trái vào.
+Nhưng những lợi ích này giảm nhanh chóng.
+Do đó, đôi khi chúng ta thỏa hiệp, tránh các khó khăn về tính toán và thống kê
+bằng cách huấn luyện các mô hình mà tính hợp lệ của chúng phụ thuộc
+vào điều kiện Markov bậc $k^{\textrm{th}}$.
+Ngay cả các mô hình ngôn ngữ khổng lồ dựa trên RNN và Transformer hiện nay
+cũng hiếm khi kết hợp quá vài nghìn từ ngữ cảnh.
 
 
-With discrete data, a true Markov model
-simply counts the number of times
-that each word has occurred in each context, producing
-the relative frequency estimate of $P(x_t \mid x_{t-1})$.
-Whenever the data assumes only discrete values
-(as in language),
-the most likely sequence of words can be computed efficiently
-using dynamic programming.
+Với dữ liệu rời rạc, một mô hình Markov thực thụ
+chỉ đơn giản đếm số lần
+mỗi từ xuất hiện trong từng ngữ cảnh, từ đó tạo ra
+ước lượng tần suất tương đối của $P(x_t \mid x_{t-1})$.
+Bất cứ khi nào dữ liệu chỉ nhận các giá trị rời rạc
+(như trong ngôn ngữ),
+chuỗi từ có xác suất cao nhất có thể được tính hiệu quả
+bằng dynamic programming.
 
 
-### The Order of Decoding
+### Thứ tự giải mã
 
-You may be wondering why we represented
-the factorization of a text sequence $P(x_1, \ldots, x_T)$
-as a left-to-right chain of conditional probabilities.
-Why not right-to-left or some other, seemingly random order?
-In principle, there is nothing wrong with unfolding
-$P(x_1, \ldots, x_T)$ in reverse order.
-The result is a valid factorization:
+Bạn có thể đang tự hỏi tại sao chúng ta biểu diễn
+phân tích nhân tử của một chuỗi văn bản $P(x_1, \ldots, x_T)$
+dưới dạng một chuỗi xác suất có điều kiện từ trái sang phải.
+Tại sao không từ phải sang trái hoặc theo một thứ tự ngẫu nhiên có vẻ khác?
+Về nguyên tắc, không có gì sai khi khai triển
+$P(x_1, \ldots, x_T)$ theo thứ tự ngược lại.
+Kết quả là một phân tích nhân tử hợp lệ:
 
 $$P(x_1, \ldots, x_T) = P(x_T) \prod_{t=T-1}^1 P(x_t \mid x_{t+1}, \ldots, x_T).$$
 
 
-However, there are many reasons why factorizing text
-in the same direction in which we read it
-(left-to-right for most languages,
-but right-to-left for Arabic and Hebrew)
-is preferred for the task of language modeling.
-First, this is just a more natural direction for us to think about.
-After all we all read text every day,
-and this process is guided by our ability
-to anticipate which words and phrases
-are likely to come next.
-Just think of how many times you have completed
-someone else's sentence.
-Thus, even if we had no other reason to prefer such in-order decodings,
-they would be useful if only because we have better intuitions
-for what should be likely when predicting in this order.
+Tuy nhiên, có nhiều lý do khiến việc phân tích nhân tử văn bản
+theo cùng hướng mà chúng ta đọc nó
+(từ trái sang phải đối với hầu hết ngôn ngữ,
+nhưng từ phải sang trái đối với tiếng Ả Rập và tiếng Do Thái)
+được ưu tiên cho nhiệm vụ mô hình hóa ngôn ngữ.
+Trước hết, đây đơn giản là hướng tự nhiên hơn để chúng ta suy nghĩ.
+Dù sao, tất cả chúng ta đều đọc văn bản mỗi ngày,
+và quá trình này được dẫn dắt bởi khả năng
+dự đoán những từ và cụm từ nào
+có khả năng xuất hiện tiếp theo.
+Hãy nghĩ xem bạn đã bao nhiêu lần hoàn thành
+câu nói của người khác.
+Vì vậy, ngay cả khi chúng ta không có lý do nào khác để ưu tiên các cách giải mã theo thứ tự như vậy,
+chúng vẫn hữu ích chỉ vì chúng ta có trực giác tốt hơn
+về điều gì có khả năng xảy ra khi dự đoán theo thứ tự này.
 
-Second, by factorizing in order,
-we can assign probabilities to arbitrarily long sequences
-using the same language model.
-To convert a probability over steps $1$ through $t$
-into one that extends to word $t+1$ we simply
-multiply by the conditional probability
-of the additional token given the previous ones:
+Thứ hai, bằng cách phân tích nhân tử theo thứ tự,
+chúng ta có thể gán xác suất cho các chuỗi dài tùy ý
+bằng cùng một mô hình ngôn ngữ.
+Để chuyển một xác suất trên các bước từ $1$ đến $t$
+thành một xác suất mở rộng đến từ $t+1$, chúng ta chỉ cần
+nhân với xác suất có điều kiện
+của token bổ sung khi biết các token trước đó:
 $P(x_{t+1}, \ldots, x_1) = P(x_{t}, \ldots, x_1) \cdot P(x_{t+1} \mid x_{t}, \ldots, x_1)$.
 
-Third, we have stronger predictive models
-for predicting adjacent words than
-words at arbitrary other locations.
-While all orders of factorization are valid,
-they do not necessarily all represent equally easy
-predictive modeling problems.
-This is true not only for language,
-but for other kinds of data as well,
-e.g., when the data is causally structured.
-For example, we believe that future events cannot influence the past.
-Hence, if we change $x_t$, we may be able to influence
-what happens for $x_{t+1}$ going forward but not the converse.
-That is, if we change $x_t$, the distribution over past events will not change.
-In some contexts, this makes it easier to predict $P(x_{t+1} \mid x_t)$
-than to predict $P(x_t \mid x_{t+1})$.
-For instance, in some cases, we can find $x_{t+1} = f(x_t) + \epsilon$
-for some additive noise $\epsilon$,
-whereas the converse is not true :cite:`Hoyer.Janzing.Mooij.ea.2009`.
-This is great news, since it is typically the forward direction
-that we are interested in estimating.
-The book by :citet:`Peters.Janzing.Scholkopf.2017` contains more on this topic.
-We barely scratch the surface of it.
+Thứ ba, chúng ta có các mô hình dự đoán mạnh hơn
+để dự đoán các từ liền kề so với
+các từ ở những vị trí khác tùy ý.
+Mặc dù mọi thứ tự phân tích nhân tử đều hợp lệ,
+chúng không nhất thiết đều biểu diễn các bài toán
+mô hình hóa dự đoán dễ như nhau.
+Điều này không chỉ đúng với ngôn ngữ,
+mà còn với các loại dữ liệu khác,
+ví dụ, khi dữ liệu có cấu trúc nhân quả.
+Chẳng hạn, chúng ta tin rằng các sự kiện trong tương lai không thể ảnh hưởng đến quá khứ.
+Do đó, nếu thay đổi $x_t$, chúng ta có thể tác động
+đến những gì xảy ra với $x_{t+1}$ về sau nhưng không thể theo chiều ngược lại.
+Tức là, nếu thay đổi $x_t$, phân phối trên các sự kiện trong quá khứ sẽ không thay đổi.
+Trong một số ngữ cảnh, điều này giúp dự đoán $P(x_{t+1} \mid x_t)$
+dễ hơn so với dự đoán $P(x_t \mid x_{t+1})$.
+Ví dụ, trong một số trường hợp, chúng ta có thể tìm được $x_{t+1} = f(x_t) + \epsilon$
+với một nhiễu cộng $\epsilon$,
+trong khi điều ngược lại không đúng :cite:`Hoyer.Janzing.Mooij.ea.2009`.
+Đây là tin tốt, vì thông thường hướng thuận
+là hướng mà chúng ta quan tâm đến việc ước lượng.
+Cuốn sách của :citet:`Peters.Janzing.Scholkopf.2017` có thêm nội dung về chủ đề này.
+Chúng ta mới chỉ đề cập sơ lược về nó.
 
 
-## Training
+## Huấn luyện
 
-Before we focus our attention on text data,
-let's first try this out with some
-continuous-valued synthetic data.
+Trước khi tập trung vào dữ liệu văn bản,
+trước tiên hãy thử điều này với một số
+dữ liệu tổng hợp có giá trị liên tục.
 
-(**Here, our 1000 synthetic data will follow
-the trigonometric `sin` function,
-applied to 0.01 times the time step.
-To make the problem a little more interesting,
-we corrupt each sample with additive noise.**)
-From this sequence we extract training examples,
-each consisting of features and a label.
+(**Ở đây, 1000 dữ liệu tổng hợp của chúng ta sẽ tuân theo
+hàm lượng giác `sin`,
+được áp dụng cho 0.01 lần bước thời gian.
+Để bài toán thú vị hơn một chút,
+chúng ta làm nhiễu mỗi mẫu bằng nhiễu cộng.**)
+Từ chuỗi này, chúng ta trích xuất các ví dụ huấn luyện,
+mỗi ví dụ gồm đặc trưng và nhãn.
 
 ```{.python .input  n=10}
 %%tab all
@@ -422,21 +420,21 @@ data = Data()
 d2l.plot(data.time, data.x, 'time', 'x', xlim=[1, 1000], figsize=(6, 3))
 ```
 
-To begin, we try a model that acts as if
-the data satisfied a $\tau^{\textrm{th}}$-order Markov condition,
-and thus predicts $x_t$ using only the past $\tau$ observations.
-[**Thus for each time step we have an example
-with label $y  = x_t$ and features
+Để bắt đầu, chúng ta thử một mô hình hoạt động như thể
+dữ liệu thỏa mãn điều kiện Markov bậc $\tau^{\textrm{th}}$,
+và do đó dự đoán $x_t$ chỉ bằng $\tau$ quan sát trong quá khứ.
+[**Vì vậy, với mỗi bước thời gian, chúng ta có một ví dụ
+với nhãn $y  = x_t$ và các đặc trưng
 $\mathbf{x}_t = [x_{t-\tau}, \ldots, x_{t-1}]$.**]
-The astute reader might have noticed that
-this results in $1000-\tau$ examples,
-since we lack sufficient history for $y_1, \ldots, y_\tau$.
-While we could pad the first $\tau$ sequences with zeros,
-to keep things simple, we drop them for now.
-The resulting dataset contains $T - \tau$ examples,
-where each input to the model has sequence length $\tau$.
-We (**create a data iterator on the first 600 examples**),
-covering a period of the sin function.
+Người đọc tinh ý có thể nhận ra rằng
+điều này tạo ra $1000-\tau$ ví dụ,
+vì chúng ta không có đủ lịch sử cho $y_1, \ldots, y_\tau$.
+Mặc dù chúng ta có thể đệm các chuỗi $\tau$ đầu tiên bằng số không,
+để đơn giản, hiện tại chúng ta loại bỏ chúng.
+Dataset kết quả chứa $T - \tau$ ví dụ,
+trong đó mỗi đầu vào của mô hình có độ dài chuỗi là $\tau$.
+Chúng ta (**tạo một data iterator trên 600 ví dụ đầu tiên**),
+bao phủ một giai đoạn của hàm sin.
 
 ```{.python .input}
 %%tab all
@@ -449,7 +447,7 @@ def get_dataloader(self, train):
     return self.get_tensorloader([self.features, self.labels], train, i)
 ```
 
-In this example our model will be a standard linear regression.
+Trong ví dụ này, mô hình của chúng ta sẽ là linear regression tiêu chuẩn.
 
 ```{.python .input}
 %%tab all
@@ -458,10 +456,10 @@ trainer = d2l.Trainer(max_epochs=5)
 trainer.fit(model, data)
 ```
 
-## Prediction
+## Dự đoán
 
-[**To evaluate our model, we first check
-how well it performs at one-step-ahead prediction**].
+[**Để đánh giá mô hình, trước tiên chúng ta kiểm tra
+mô hình hoạt động tốt đến đâu trong dự đoán trước một bước**].
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -477,22 +475,22 @@ d2l.plot(data.time[data.tau:], [data.labels, onestep_preds], 'time', 'x',
          legend=['labels', '1-step preds'], figsize=(6, 3))
 ```
 
-These predictions look good,
-even near the end at $t=1000$.
+Các dự đoán này trông tốt,
+ngay cả gần cuối tại $t=1000$.
 
-But what if we only observed sequence data
-up until time step 604 (`n_train + tau`)
-and wished to make predictions several steps
-into the future?
-Unfortunately, we cannot directly compute
-the one-step-ahead prediction for time step 609,
-because we do not know the corresponding inputs,
-having seen only up to $x_{604}$.
-We can address this problem by plugging in
-our earlier predictions as inputs to our model
-for making subsequent predictions,
-projecting forward, one step at a time,
-until reaching the desired time step:
+Nhưng điều gì xảy ra nếu chúng ta chỉ quan sát dữ liệu chuỗi
+cho đến bước thời gian 604 (`n_train + tau`)
+và muốn dự đoán nhiều bước
+trong tương lai?
+Thật không may, chúng ta không thể trực tiếp tính
+dự đoán trước một bước cho bước thời gian 609,
+vì chúng ta không biết các đầu vào tương ứng,
+do chỉ quan sát đến $x_{604}$.
+Chúng ta có thể giải quyết vấn đề này bằng cách đưa vào
+các dự đoán trước đó của mình làm đầu vào cho mô hình
+để tạo các dự đoán tiếp theo,
+chiếu về phía trước, từng bước một,
+cho đến khi đạt bước thời gian mong muốn:
 
 $$\begin{aligned}
 \hat{x}_{605} &= f(x_{601}, x_{602}, x_{603}, x_{604}), \\
@@ -502,15 +500,15 @@ $$\begin{aligned}
 \hat{x}_{609} &= f(\hat{x}_{605}, \hat{x}_{606}, \hat{x}_{607}, \hat{x}_{608}),\\
 &\vdots\end{aligned}$$
 
-Generally, for an observed sequence $x_1, \ldots, x_t$,
-its predicted output $\hat{x}_{t+k}$ at time step $t+k$
-is called the $k$*-step-ahead prediction*.
-Since we have observed up to $x_{604}$,
-its $k$-step-ahead prediction is $\hat{x}_{604+k}$.
-In other words, we will have to
-keep on using our own predictions
-to make multistep-ahead predictions.
-Let's see how well this goes.
+Nói chung, với một chuỗi đã quan sát $x_1, \ldots, x_t$,
+đầu ra dự đoán $\hat{x}_{t+k}$ của nó tại bước thời gian $t+k$
+được gọi là *dự đoán trước $k$ bước*.
+Vì chúng ta đã quan sát đến $x_{604}$,
+dự đoán trước $k$ bước của nó là $\hat{x}_{604+k}$.
+Nói cách khác, chúng ta sẽ phải
+tiếp tục sử dụng các dự đoán của chính mình
+để tạo các dự đoán nhiều bước phía trước.
+Hãy xem điều này diễn ra tốt đến đâu.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -548,30 +546,30 @@ d2l.plot([data.time[data.tau:], data.time[data.num_train+data.tau:]],
          'x', legend=['1-step preds', 'multistep preds'], figsize=(6, 3))
 ```
 
-Unfortunately, in this case we fail spectacularly.
-The predictions decay to a constant
-pretty quickly after a few steps.
-Why did the algorithm perform so much worse
-when predicting further into the future?
-Ultimately, this is down to the fact
-that errors build up.
-Let's say that after step 1 we have some error $\epsilon_1 = \bar\epsilon$.
-Now the *input* for step 2 is perturbed by $\epsilon_1$,
-hence we suffer some error in the order of
+Thật không may, trong trường hợp này chúng ta thất bại thảm hại.
+Các dự đoán nhanh chóng suy giảm về một hằng số
+sau vài bước.
+Tại sao thuật toán lại hoạt động kém hơn nhiều
+khi dự đoán xa hơn trong tương lai?
+Cuối cùng, nguyên nhân là do
+lỗi tích lũy.
+Giả sử sau bước 1 chúng ta có một lỗi $\epsilon_1 = \bar\epsilon$.
+Bây giờ *đầu vào* cho bước 2 bị nhiễu bởi $\epsilon_1$,
+do đó chúng ta gặp một lỗi cỡ
 $\epsilon_2 = \bar\epsilon + c \epsilon_1$
-for some constant $c$, and so on.
-The predictions can diverge rapidly
-from the true observations.
-You may already be familiar
-with this common phenomenon.
-For instance, weather forecasts for the next 24 hours
-tend to be pretty accurate but beyond that,
-accuracy declines rapidly.
-We will discuss methods for improving this
-throughout this chapter and beyond.
+với một hằng số $c$, và cứ tiếp tục như vậy.
+Các dự đoán có thể nhanh chóng lệch xa
+khỏi các quan sát thực.
+Có thể bạn đã quen thuộc
+với hiện tượng phổ biến này.
+Chẳng hạn, dự báo thời tiết cho 24 giờ tiếp theo
+thường khá chính xác, nhưng sau đó
+độ chính xác giảm nhanh chóng.
+Chúng ta sẽ thảo luận các phương pháp để cải thiện điều này
+trong toàn bộ chương này và các chương sau.
 
-Let's [**take a closer look at the difficulties in $k$-step-ahead predictions**]
-by computing predictions on the entire sequence for $k = 1, 4, 16, 64$.
+Hãy [**xem xét kỹ hơn những khó khăn trong dự đoán trước $k$ bước**]
+bằng cách tính dự đoán trên toàn bộ chuỗi với $k = 1, 4, 16, 64$.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -609,58 +607,58 @@ d2l.plot(data.time[data.tau+steps[-1]-1:],
          legend=[f'{k}-step preds' for k in steps], figsize=(6, 3))
 ```
 
-This clearly illustrates how the quality of the prediction changes
-as we try to predict further into the future.
-While the 4-step-ahead predictions still look good,
-anything beyond that is almost useless.
+Điều này minh họa rõ ràng cách chất lượng dự đoán thay đổi
+khi chúng ta cố dự đoán xa hơn vào tương lai.
+Mặc dù các dự đoán trước 4 bước vẫn có vẻ tốt,
+mọi dự đoán xa hơn thế gần như vô dụng.
 
-## Summary
+## Tóm tắt
 
-There is quite a difference in difficulty
-between interpolation and extrapolation.
-Consequently, if you have a sequence, always respect
-the temporal order of the data when training,
-i.e., never train on future data.
-Given this kind of data,
-sequence models require specialized statistical tools for estimation.
-Two popular choices are autoregressive models
-and latent-variable autoregressive models.
-For causal models (e.g., time going forward),
-estimating the forward direction is typically
-a lot easier than the reverse direction.
-For an observed sequence up to time step $t$,
-its predicted output at time step $t+k$
-is the $k$*-step-ahead prediction*.
-As we predict further in time by increasing $k$,
-the errors accumulate and the quality of the prediction degrades,
-often dramatically.
+Có sự khác biệt đáng kể về độ khó
+giữa nội suy và ngoại suy.
+Do đó, nếu bạn có một chuỗi, hãy luôn tôn trọng
+thứ tự thời gian của dữ liệu khi huấn luyện,
+tức là không bao giờ huấn luyện trên dữ liệu tương lai.
+Với loại dữ liệu này,
+các mô hình chuỗi cần những công cụ thống kê chuyên biệt để ước lượng.
+Hai lựa chọn phổ biến là mô hình tự hồi quy
+và mô hình tự hồi quy biến tiềm ẩn.
+Đối với các mô hình nhân quả (ví dụ: thời gian tiến về phía trước),
+việc ước lượng theo chiều thuận thường
+dễ hơn rất nhiều so với chiều ngược.
+Với một chuỗi được quan sát đến bước thời gian $t$,
+đầu ra dự đoán của nó tại bước thời gian $t+k$
+là *dự đoán trước $k$ bước*.
+Khi dự đoán xa hơn theo thời gian bằng cách tăng $k$,
+các lỗi sẽ tích lũy và chất lượng dự đoán suy giảm,
+thường là rất đáng kể.
 
-## Exercises
+## Bài tập
 
-1. Improve the model in the experiment of this section.
-    1. Incorporate more than the past four observations? How many do you really need?
-    1. How many past observations would you need if there was no noise? Hint: you can write $\sin$ and $\cos$ as a differential equation.
-    1. Can you incorporate older observations while keeping the total number of features constant? Does this improve accuracy? Why?
-    1. Change the neural network architecture and evaluate the performance. You may train the new model with more epochs. What do you observe?
-1. An investor wants to find a good security to buy.
-   They look at past returns to decide which one is likely to do well.
-   What could possibly go wrong with this strategy?
-1. Does causality also apply to text? To which extent?
-1. Give an example for when a latent autoregressive model
-   might be needed to capture the dynamic of the data.
+1. Cải thiện mô hình trong thí nghiệm của phần này.
+    1. Kết hợp nhiều hơn bốn quan sát trong quá khứ? Bạn thực sự cần bao nhiêu?
+    1. Bạn sẽ cần bao nhiêu quan sát trong quá khứ nếu không có nhiễu? Gợi ý: bạn có thể viết $\sin$ và $\cos$ dưới dạng một phương trình vi phân.
+    1. Bạn có thể kết hợp các quan sát cũ hơn trong khi giữ tổng số đặc trưng không đổi không? Điều này có cải thiện độ chính xác không? Tại sao?
+    1. Thay đổi kiến trúc mạng nơ-ron và đánh giá hiệu năng. Bạn có thể huấn luyện mô hình mới với nhiều epoch hơn. Bạn quan sát được gì?
+1. Một nhà đầu tư muốn tìm một chứng khoán tốt để mua.
+   Họ xem xét lợi nhuận trong quá khứ để quyết định chứng khoán nào có khả năng hoạt động tốt.
+   Điều gì có thể xảy ra sai với chiến lược này?
+1. Tính nhân quả có áp dụng cho văn bản không? Ở mức độ nào?
+1. Hãy đưa ra một ví dụ về trường hợp cần một mô hình tự hồi quy biến tiềm ẩn
+   để nắm bắt động lực của dữ liệu.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/113)
+[Thảo luận](https://discuss.d2l.ai/t/113)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/114)
+[Thảo luận](https://discuss.d2l.ai/t/114)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1048)
+[Thảo luận](https://discuss.d2l.ai/t/1048)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18010)
+[Thảo luận](https://discuss.d2l.ai/t/18010)
 :end_tab:

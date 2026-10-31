@@ -1,20 +1,20 @@
-# Converting Raw Text into Sequence Data
+# Chuyển đổi Văn bản Thô thành Dữ liệu Chuỗi
 :label:`sec_text-sequence`
 
-Throughout this book,
-we will often work with text data
-represented as sequences
-of words, characters, or word pieces.
-To get going, we will need some basic
-tools for converting raw text
-into sequences of the appropriate form.
-Typical preprocessing pipelines
-execute the following steps:
+Xuyên suốt cuốn sách này,
+chúng ta sẽ thường xuyên làm việc với dữ liệu văn bản
+được biểu diễn dưới dạng chuỗi
+các từ, ký tự hoặc mảnh từ.
+Để bắt đầu, chúng ta sẽ cần một số công cụ cơ bản
+để chuyển đổi văn bản thô
+thành các chuỗi có dạng phù hợp.
+Các quy trình tiền xử lý điển hình
+thực hiện các bước sau:
 
-1. Load text as strings into memory.
-1. Split the strings into tokens (e.g., words or characters).
-1. Build a vocabulary dictionary to associate each vocabulary element with a numerical index.
-1. Convert the text into sequences of numerical indices.
+1. Tải văn bản dưới dạng chuỗi vào bộ nhớ.
+1. Tách các chuỗi thành token (ví dụ: từ hoặc ký tự).
+1. Xây dựng từ điển từ vựng để liên kết mỗi phần tử từ vựng với một chỉ số số.
+1. Chuyển đổi văn bản thành các chuỗi chỉ số số.
 
 ```{.python .input  n=1}
 %load_ext d2lbook.tab
@@ -59,17 +59,17 @@ import random
 import re
 ```
 
-## Reading the Dataset
+## Đọc Tập dữ liệu
 
-Here, we will work with H. G. Wells'
+Ở đây, chúng ta sẽ làm việc với tác phẩm của H. G. Wells
 [The Time Machine](http://www.gutenberg.org/ebooks/35),
-a book containing just over 30,000 words.
-While real applications will typically
-involve significantly larger datasets,
-this is sufficient to demonstrate
-the preprocessing pipeline.
-The following `_download` method
-(**reads the raw text into a string**).
+một cuốn sách có hơn 30.000 từ một chút.
+Mặc dù các ứng dụng thực tế thường
+liên quan đến những tập dữ liệu lớn hơn đáng kể,
+điều này là đủ để minh họa
+quy trình tiền xử lý.
+Phương thức `_download` sau đây
+(**đọc văn bản thô vào một chuỗi**).
 
 ```{.python .input  n=5}
 %%tab all
@@ -86,7 +86,7 @@ raw_text = data._download()
 raw_text[:60]
 ```
 
-For simplicity, we ignore punctuation and capitalization when preprocessing the raw text.
+Để đơn giản, chúng ta bỏ qua dấu câu và chữ hoa/chữ thường khi tiền xử lý văn bản thô.
 
 ```{.python .input  n=6}
 %%tab all
@@ -98,23 +98,23 @@ text = data._preprocess(raw_text)
 text[:60]
 ```
 
-## Tokenization
+## Phân tách Token
 
-*Tokens* are the atomic (indivisible) units of text.
-Each time step corresponds to 1 token,
-but what precisely constitutes a token is a design choice.
-For example, we could represent the sentence
+*Token* là các đơn vị nguyên tử (không thể chia nhỏ) của văn bản.
+Mỗi bước thời gian tương ứng với 1 token,
+nhưng chính xác token là gì là một lựa chọn thiết kế.
+Ví dụ, chúng ta có thể biểu diễn câu
 "Baby needs a new pair of shoes"
-as a sequence of 7 words,
-where the set of all words comprise
-a large vocabulary (typically tens
-or hundreds of thousands of words).
-Or we would represent the same sentence
-as a much longer sequence of 30 characters,
-using a much smaller vocabulary
-(there are only 256 distinct ASCII characters).
-Below, we tokenize our preprocessed text
-into a sequence of characters.
+dưới dạng một chuỗi gồm 7 từ,
+trong đó tập hợp tất cả các từ tạo thành
+một từ vựng lớn (thường là hàng chục
+hoặc hàng trăm nghìn từ).
+Hoặc chúng ta có thể biểu diễn cùng câu đó
+dưới dạng một chuỗi dài hơn nhiều gồm 30 ký tự,
+sử dụng một từ vựng nhỏ hơn nhiều
+(chỉ có 256 ký tự ASCII riêng biệt).
+Bên dưới, chúng ta token hóa văn bản đã tiền xử lý
+thành một chuỗi ký tự.
 
 ```{.python .input  n=7}
 %%tab all
@@ -126,24 +126,24 @@ tokens = data._tokenize(text)
 ','.join(tokens[:30])
 ```
 
-## Vocabulary
+## Từ vựng
 
-These tokens are still strings.
-However, the inputs to our models
-must ultimately consist
-of numerical inputs.
-[**Next, we introduce a class
-for constructing *vocabularies*,
-i.e., objects that associate
-each distinct token value
-with a unique index.**]
-First, we determine the set of unique tokens in our training *corpus*.
-We then assign a numerical index to each unique token.
-Rare vocabulary elements are often dropped for convenience.
-Whenever we encounter a token at training or test time
-that had not been previously seen or was dropped from the vocabulary,
-we represent it by a special "&lt;unk&gt;" token,
-signifying that this is an *unknown* value.
+Các token này vẫn là chuỗi.
+Tuy nhiên, đầu vào cho các mô hình của chúng ta
+cuối cùng phải bao gồm
+các đầu vào dạng số.
+[**Tiếp theo, chúng ta giới thiệu một lớp
+để xây dựng *từ vựng*,
+tức là các đối tượng liên kết
+mỗi giá trị token riêng biệt
+với một chỉ số duy nhất.**]
+Trước tiên, chúng ta xác định tập token duy nhất trong *corpus* huấn luyện.
+Sau đó, chúng ta gán một chỉ số số cho mỗi token duy nhất.
+Các phần tử từ vựng hiếm thường bị loại bỏ để thuận tiện.
+Bất cứ khi nào gặp một token trong lúc huấn luyện hoặc kiểm thử
+chưa từng được thấy trước đó hoặc đã bị loại khỏi từ vựng,
+chúng ta biểu diễn nó bằng token đặc biệt "&lt;unk&gt;",
+cho biết đây là một giá trị *không xác định*.
 
 ```{.python .input  n=8}
 %%tab all
@@ -181,12 +181,12 @@ class Vocab:  #@save
         return self.token_to_idx['<unk>']
 ```
 
-We now [**construct a vocabulary**] for our dataset,
-converting the sequence of strings
-into a list of numerical indices.
-Note that we have not lost any information
-and can easily convert our dataset
-back to its original (string) representation.
+Bây giờ, chúng ta [**xây dựng một từ vựng**] cho tập dữ liệu của mình,
+chuyển đổi chuỗi các chuỗi
+thành một danh sách các chỉ số số.
+Lưu ý rằng chúng ta không mất bất kỳ thông tin nào
+và có thể dễ dàng chuyển đổi tập dữ liệu của mình
+trở lại biểu diễn ban đầu (chuỗi).
 
 ```{.python .input  n=9}
 %%tab all
@@ -196,19 +196,19 @@ print('indices:', indices)
 print('words:', vocab.to_tokens(indices))
 ```
 
-## Putting It All Together
+## Kết hợp Tất cả
 
-Using the above classes and methods,
-we [**package everything into the following
-`build` method of the `TimeMachine` class**],
-which returns `corpus`, a list of token indices, and `vocab`,
-the vocabulary of *The Time Machine* corpus.
-The modifications we did here are:
-(i) we tokenize text into characters, not words,
-to simplify the training in later sections;
-(ii) `corpus` is a single list, not a list of token lists,
-since each text line in *The Time Machine* dataset
-is not necessarily a sentence or paragraph.
+Sử dụng các lớp và phương thức ở trên,
+chúng ta [**đóng gói mọi thứ vào
+phương thức `build` sau đây của lớp `TimeMachine`**],
+phương thức này trả về `corpus`, một danh sách các chỉ số token, và `vocab`,
+từ vựng của corpus *The Time Machine*.
+Các thay đổi chúng ta đã thực hiện ở đây là:
+(i) chúng ta token hóa văn bản thành ký tự, không phải từ,
+để đơn giản hóa việc huấn luyện trong các phần sau;
+(ii) `corpus` là một danh sách đơn, không phải danh sách các danh sách token,
+vì mỗi dòng văn bản trong tập dữ liệu *The Time Machine*
+không nhất thiết là một câu hoặc đoạn văn.
 
 ```{.python .input  n=10}
 %%tab all
@@ -223,13 +223,13 @@ corpus, vocab = data.build(raw_text)
 len(corpus), len(vocab)
 ```
 
-## Exploratory Language Statistics
+## Thống kê Ngôn ngữ Khám phá
 :label:`subsec_natural-lang-stat`
 
-Using the real corpus and the `Vocab` class defined over words,
-we can inspect basic statistics concerning word use in our corpus.
-Below, we construct a vocabulary from words used in *The Time Machine*
-and print the ten most frequently occurring of them.
+Sử dụng corpus thực tế và lớp `Vocab` được định nghĩa trên các từ,
+chúng ta có thể kiểm tra các thống kê cơ bản về việc sử dụng từ trong corpus của mình.
+Bên dưới, chúng ta xây dựng một từ vựng từ các từ được dùng trong *The Time Machine*
+và in ra mười từ xuất hiện thường xuyên nhất.
 
 ```{.python .input  n=11}
 %%tab all
@@ -238,32 +238,32 @@ vocab = Vocab(words)
 vocab.token_freqs[:10]
 ```
 
-Note that (**the ten most frequent words**)
-are not all that descriptive.
-You might even imagine that
-we might see a very similar list
-if we had chosen any book at random.
-Articles like "the" and "a",
-pronouns like "i" and "my",
-and prepositions like "of", "to", and "in"
-occur often because they serve common syntactic roles.
-Such words that are common but not particularly descriptive
-are often called (***stop words***) and,
-in previous generations of text classifiers
-based on so-called bag-of-words representations,
-they were most often filtered out.
-However, they carry meaning and
-it is not necessary to filter them out
-when working with modern RNN- and
-Transformer-based neural models.
-If you look further down the list,
-you will notice
-that word frequency decays quickly.
-The $10^{\textrm{th}}$ most frequent word
-is less than $1/5$ as common as the most popular.
-Word frequency tends to follow a power law distribution
-(specifically the Zipfian) as we go down the ranks.
-To get a better idea, we [**plot the figure of the word frequency**].
+Lưu ý rằng (**mười từ xuất hiện thường xuyên nhất**)
+không mang nhiều tính mô tả.
+Bạn thậm chí có thể hình dung rằng
+chúng ta có thể thấy một danh sách rất tương tự
+nếu chọn ngẫu nhiên bất kỳ cuốn sách nào.
+Các mạo từ như "the" và "a",
+đại từ như "i" và "my",
+và giới từ như "of", "to", và "in"
+xuất hiện thường xuyên vì chúng đảm nhiệm các vai trò cú pháp phổ biến.
+Những từ phổ biến nhưng không đặc biệt mang tính mô tả như vậy
+thường được gọi là (***stop words***) và,
+trong các thế hệ trước của bộ phân loại văn bản
+dựa trên cái gọi là biểu diễn bag-of-words,
+chúng thường bị lọc bỏ.
+Tuy nhiên, chúng mang ý nghĩa và
+không cần thiết phải lọc chúng ra
+khi làm việc với các mô hình mạng nơ-ron hiện đại
+dựa trên RNN và Transformer.
+Nếu nhìn sâu hơn xuống danh sách,
+bạn sẽ nhận thấy
+tần suất từ giảm nhanh.
+Từ phổ biến thứ $10^{\textrm{th}}$
+có tần suất chưa đến $1/5$ so với từ phổ biến nhất.
+Tần suất từ có xu hướng tuân theo phân phối luật lũy thừa
+(cụ thể là Zipfian) khi chúng ta đi xuống theo thứ hạng.
+Để có hình dung rõ hơn, chúng ta [**vẽ biểu đồ tần suất từ**].
 
 ```{.python .input  n=12}
 %%tab all
@@ -272,25 +272,25 @@ d2l.plot(freqs, xlabel='token: x', ylabel='frequency: n(x)',
          xscale='log', yscale='log')
 ```
 
-After dealing with the first few words as exceptions,
-all the remaining words roughly follow a straight line on a log--log plot.
-This phenomenon is captured by *Zipf's law*,
-which states that the frequency $n_i$
-of the $i^\textrm{th}$ most frequent word is:
+Sau khi coi vài từ đầu tiên là các ngoại lệ,
+tất cả các từ còn lại gần đúng theo một đường thẳng trên biểu đồ log--log.
+Hiện tượng này được mô tả bởi *định luật Zipf*,
+phát biểu rằng tần suất $n_i$
+của từ phổ biến thứ $i^\textrm{th}$ là:
 
 $$n_i \propto \frac{1}{i^\alpha},$$
 :eqlabel:`eq_zipf_law`
 
-which is equivalent to
+tương đương với
 
 $$\log n_i = -\alpha \log i + c,$$
 
-where $\alpha$ is the exponent that characterizes
-the distribution and $c$ is a constant.
-This should already give us pause for thought if we want
-to model words by counting statistics.
-After all, we will significantly overestimate the frequency of the tail, also known as the infrequent words. But [**what about the other word combinations, such as two consecutive words (bigrams), three consecutive words (trigrams)**], and beyond?
-Let's see whether the bigram frequency behaves in the same manner as the single word (unigram) frequency.
+trong đó $\alpha$ là số mũ đặc trưng cho
+phân phối và $c$ là một hằng số.
+Điều này hẳn đã khiến chúng ta phải suy nghĩ nếu muốn
+mô hình hóa từ bằng thống kê đếm.
+Xét cho cùng, chúng ta sẽ ước lượng quá cao đáng kể tần suất của phần đuôi, còn được gọi là các từ không thường xuyên. Nhưng [**còn các tổ hợp từ khác thì sao, chẳng hạn như hai từ liên tiếp (bigram), ba từ liên tiếp (trigram)**], và xa hơn nữa?
+Hãy xem liệu tần suất bigram có hành xử giống tần suất từ đơn lẻ (unigram) hay không.
 
 ```{.python .input  n=13}
 %%tab all
@@ -299,7 +299,7 @@ bigram_vocab = Vocab(bigram_tokens)
 bigram_vocab.token_freqs[:10]
 ```
 
-One thing is notable here. Out of the ten most frequent word pairs, nine are composed of both stop words and only one is relevant to the actual book---"the time". Furthermore, let's see whether the trigram frequency behaves in the same manner.
+Có một điều đáng chú ý ở đây. Trong mười cặp từ thường xuyên nhất, chín cặp chỉ gồm các stop word và chỉ một cặp liên quan đến nội dung thực tế của cuốn sách---"the time". Hơn nữa, hãy xem liệu tần suất trigram có hành xử theo cùng cách hay không.
 
 ```{.python .input  n=14}
 %%tab all
@@ -309,7 +309,7 @@ trigram_vocab = Vocab(trigram_tokens)
 trigram_vocab.token_freqs[:10]
 ```
 
-Now, let's [**visualize the token frequency**] among these three models: unigrams, bigrams, and trigrams.
+Bây giờ, hãy [**trực quan hóa tần suất token**] trong ba mô hình này: unigram, bigram và trigram.
 
 ```{.python .input  n=15}
 %%tab all
@@ -320,47 +320,47 @@ d2l.plot([freqs, bigram_freqs, trigram_freqs], xlabel='token: x',
          legend=['unigram', 'bigram', 'trigram'])
 ```
 
-This figure is quite exciting.
-First, beyond unigram words, sequences of words
-also appear to be following Zipf's law,
-albeit with a smaller exponent
-$\alpha$ in :eqref:`eq_zipf_law`,
-depending on the sequence length.
-Second, the number of distinct $n$-grams is not that large.
-This gives us hope that there is quite a lot of structure in language.
-Third, many $n$-grams occur very rarely.
-This makes certain methods unsuitable for language modeling
-and motivates the use of deep learning models.
-We will discuss this in the next section.
+Hình này khá thú vị.
+Thứ nhất, ngoài các từ unigram, các chuỗi từ
+dường như cũng tuân theo định luật Zipf,
+mặc dù có số mũ
+$\alpha$ nhỏ hơn trong :eqref:`eq_zipf_law`,
+phụ thuộc vào độ dài chuỗi.
+Thứ hai, số lượng $n$-gram riêng biệt không quá lớn.
+Điều này cho chúng ta hy vọng rằng ngôn ngữ có khá nhiều cấu trúc.
+Thứ ba, nhiều $n$-gram xuất hiện rất hiếm.
+Điều này khiến một số phương pháp không phù hợp cho mô hình hóa ngôn ngữ
+và thúc đẩy việc sử dụng các mô hình deep learning.
+Chúng ta sẽ thảo luận điều này trong phần tiếp theo.
 
 
-## Summary
+## Tóm tắt
 
-Text is among the most common forms of sequence data encountered in deep learning.
-Common choices for what constitutes a token are characters, words, and word pieces.
-To preprocess text, we usually (i) split text into tokens; (ii) build a vocabulary to map token strings to numerical indices; and (iii) convert text data into token indices for models to manipulate.
-In practice, the frequency of words tends to follow Zipf's law. This is true not just for individual words (unigrams), but also for $n$-grams.
+Văn bản là một trong những dạng dữ liệu chuỗi phổ biến nhất gặp trong deep learning.
+Các lựa chọn phổ biến về thành phần tạo nên một token là ký tự, từ và mảnh từ.
+Để tiền xử lý văn bản, chúng ta thường (i) tách văn bản thành token; (ii) xây dựng từ vựng để ánh xạ các chuỗi token thành chỉ số số; và (iii) chuyển đổi dữ liệu văn bản thành các chỉ số token để mô hình xử lý.
+Trong thực tế, tần suất từ có xu hướng tuân theo định luật Zipf. Điều này không chỉ đúng với các từ riêng lẻ (unigram), mà còn đúng với $n$-gram.
 
 
-## Exercises
+## Bài tập
 
-1. In the experiment of this section, tokenize text into words and vary the `min_freq` argument value of the `Vocab` instance. Qualitatively characterize how changes in `min_freq` impact the size of the resulting vocabulary.
-1. Estimate the exponent of Zipfian distribution for unigrams, bigrams, and trigrams in this corpus.
-1. Find some other sources of data (download a standard machine learning dataset, pick another public domain book,
-   scrape a website, etc). For each, tokenize the data at both the word and character levels. How do the vocabulary sizes compare with *The Time Machine* corpus at equivalent values of `min_freq`. Estimate the exponent of the Zipfian distribution corresponding to the unigram and bigram distributions for these corpora. How do they compare with the values that you observed for *The Time Machine* corpus?
+1. Trong thí nghiệm của phần này, token hóa văn bản thành từ và thay đổi giá trị đối số `min_freq` của instance `Vocab`. Mô tả định tính cách các thay đổi trong `min_freq` ảnh hưởng đến kích thước từ vựng thu được.
+1. Ước lượng số mũ của phân phối Zipfian cho unigram, bigram và trigram trong corpus này.
+1. Tìm một số nguồn dữ liệu khác (tải xuống một tập dữ liệu machine learning tiêu chuẩn, chọn một cuốn sách thuộc phạm vi công cộng khác,
+   scrape một website, v.v.). Với mỗi nguồn, token hóa dữ liệu ở cả cấp độ từ và ký tự. Kích thước từ vựng so với corpus *The Time Machine* như thế nào tại các giá trị tương đương của `min_freq`? Ước lượng số mũ của phân phối Zipfian tương ứng với các phân phối unigram và bigram cho các corpus này. Chúng so sánh thế nào với các giá trị bạn quan sát được đối với corpus *The Time Machine*?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/117)
+[Thảo luận](https://discuss.d2l.ai/t/117)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/118)
+[Thảo luận](https://discuss.d2l.ai/t/118)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1049)
+[Thảo luận](https://discuss.d2l.ai/t/1049)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18011)
+[Thảo luận](https://discuss.d2l.ai/t/18011)
 :end_tab:

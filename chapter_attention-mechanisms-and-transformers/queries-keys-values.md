@@ -3,47 +3,46 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow')
 ```
 
-# Queries, Keys, and Values
+# Truy vấn, Khóa và Giá trị
 :label:`sec_queries-keys-values`
 
-So far all the networks we have reviewed crucially relied on the input being of a well-defined size. For instance, the images in ImageNet are of size $224 \times 224$ pixels and CNNs are specifically tuned to this size. Even in natural language processing the input size for RNNs is well defined and fixed. Variable size is addressed by sequentially processing one token at a time, or by specially designed convolution kernels :cite:`Kalchbrenner.Grefenstette.Blunsom.2014`. This approach can lead to significant problems when the input is truly of varying size with varying information content, such as in :numref:`sec_seq2seq` in the transformation of text :cite:`Sutskever.Vinyals.Le.2014`. In particular, for long sequences it becomes quite difficult to keep track of everything that has already been generated or even viewed by the network. Even explicit tracking heuristics such as proposed by :citet:`yang2016neural` only offer limited benefit. 
+Cho đến nay, tất cả các mạng mà chúng ta đã xem xét đều phụ thuộc thiết yếu vào việc đầu vào có kích thước được xác định rõ ràng. Ví dụ, các ảnh trong ImageNet có kích thước $224 \times 224$ pixel và CNN được tinh chỉnh riêng cho kích thước này. Ngay cả trong xử lý ngôn ngữ tự nhiên, kích thước đầu vào của RNN cũng được xác định rõ và cố định. Kích thước biến thiên được xử lý bằng cách tuần tự xử lý từng token một, hoặc bằng các convolution kernel được thiết kế đặc biệt :cite:`Kalchbrenner.Grefenstette.Blunsom.2014`. Cách tiếp cận này có thể dẫn đến các vấn đề đáng kể khi đầu vào thực sự có kích thước và lượng thông tin biến thiên, như trong :numref:`sec_seq2seq` khi biến đổi văn bản :cite:`Sutskever.Vinyals.Le.2014`. Đặc biệt, với các chuỗi dài, việc theo dõi mọi thứ đã được tạo ra hoặc thậm chí đã được mạng xem qua trở nên khá khó khăn. Ngay cả các heuristic theo dõi tường minh như được đề xuất bởi :citet:`yang2016neural` cũng chỉ mang lại lợi ích hạn chế.
 
-Compare this to databases. In their simplest form they are collections of keys ($k$) and values ($v$). For instance, our database $\mathcal{D}$ might consist of tuples \{("Zhang", "Aston"), ("Lipton", "Zachary"), ("Li", "Mu"), ("Smola", "Alex"), ("Hu", "Rachel"), ("Werness", "Brent")\} with the last name being the key and the first name being the value. We can operate on $\mathcal{D}$, for instance with the exact query ($q$) for "Li" which would return the value "Mu". If ("Li", "Mu") was not a record in $\mathcal{D}$, there would be no valid answer. If we also allowed for approximate matches, we would retrieve ("Lipton", "Zachary") instead. This quite simple and trivial example nonetheless teaches us a number of useful things:
+Hãy so sánh điều này với cơ sở dữ liệu. Ở dạng đơn giản nhất, chúng là tập hợp các khóa ($k$) và giá trị ($v$). Ví dụ, cơ sở dữ liệu $\mathcal{D}$ của chúng ta có thể gồm các bộ \{("Zhang", "Aston"), ("Lipton", "Zachary"), ("Li", "Mu"), ("Smola", "Alex"), ("Hu", "Rachel"), ("Werness", "Brent")\}, trong đó họ là khóa và tên là giá trị. Chúng ta có thể thao tác trên $\mathcal{D}$, chẳng hạn bằng truy vấn chính xác ($q$) cho "Li", sẽ trả về giá trị "Mu". Nếu ("Li", "Mu") không phải là một bản ghi trong $\mathcal{D}$, sẽ không có câu trả lời hợp lệ. Nếu chúng ta cũng cho phép các khớp gần đúng, thay vào đó chúng ta sẽ truy xuất ("Lipton", "Zachary"). Tuy đơn giản và hiển nhiên, ví dụ này vẫn cho chúng ta thấy một số điều hữu ích:
 
-* We can design queries $q$ that operate on ($k$,$v$) pairs in such a manner as to be valid regardless of the  database size. 
-* The same query can receive different answers, according to the contents of the database. 
-* The "code" being executed for operating on a large state space (the database) can be quite simple (e.g., exact match, approximate match, top-$k$). 
-* There is no need to compress or simplify the database to make the operations effective. 
+* Chúng ta có thể thiết kế các truy vấn $q$ hoạt động trên các cặp ($k$,$v$) sao cho vẫn hợp lệ bất kể kích thước cơ sở dữ liệu.
+* Cùng một truy vấn có thể nhận được các câu trả lời khác nhau, tùy theo nội dung của cơ sở dữ liệu.
+* "Mã" được thực thi để thao tác trên một không gian trạng thái lớn (cơ sở dữ liệu) có thể khá đơn giản (ví dụ: khớp chính xác, khớp gần đúng, top-$k$).
+* Không cần nén hoặc đơn giản hóa cơ sở dữ liệu để các thao tác trở nên hiệu quả.
 
-Clearly we would not have introduced a simple database here if it wasn't for the purpose of explaining deep learning. Indeed, this leads to one of the most exciting concepts introduced in deep learning in the past decade: the *attention mechanism* :cite:`Bahdanau.Cho.Bengio.2014`. We will cover the specifics of its application to machine translation later. For now, simply consider the following: denote by $\mathcal{D} \stackrel{\textrm{def}}{=} \{(\mathbf{k}_1, \mathbf{v}_1), \ldots (\mathbf{k}_m, \mathbf{v}_m)\}$ a database of $m$ tuples of *keys* and *values*. Moreover, denote by $\mathbf{q}$ a *query*. Then we can define the *attention* over $\mathcal{D}$ as
+Rõ ràng, chúng ta sẽ không giới thiệu một cơ sở dữ liệu đơn giản ở đây nếu không nhằm mục đích giải thích deep learning. Thật vậy, điều này dẫn đến một trong những khái niệm thú vị nhất được giới thiệu trong deep learning trong thập kỷ qua: *cơ chế attention* :cite:`Bahdanau.Cho.Bengio.2014`. Chúng ta sẽ trình bày chi tiết về ứng dụng của nó cho dịch máy ở phần sau. Còn bây giờ, chỉ cần xét điều sau: ký hiệu $\mathcal{D} \stackrel{\textrm{def}}{=} \{(\mathbf{k}_1, \mathbf{v}_1), \ldots (\mathbf{k}_m, \mathbf{v}_m)\}$ là một cơ sở dữ liệu gồm $m$ bộ *khóa* và *giá trị*. Hơn nữa, ký hiệu $\mathbf{q}$ là một *truy vấn*. Khi đó, ta có thể định nghĩa *attention* trên $\mathcal{D}$ là
 
 $$\textrm{Attention}(\mathbf{q}, \mathcal{D}) \stackrel{\textrm{def}}{=} \sum_{i=1}^m \alpha(\mathbf{q}, \mathbf{k}_i) \mathbf{v}_i,$$
 :eqlabel:`eq_attention_pooling`
 
-where $\alpha(\mathbf{q}, \mathbf{k}_i) \in \mathbb{R}$ ($i = 1, \ldots, m$) are scalar attention weights. The operation itself is typically referred to as *attention pooling*. The name *attention* derives from the fact that the operation pays particular attention to the terms for which the weight $\alpha$ is significant (i.e., large). As such, the attention over $\mathcal{D}$ generates a linear combination of values contained in the database. In fact, this contains the above example as a special case where all but one weight is zero. We have a number of special cases:
+trong đó $\alpha(\mathbf{q}, \mathbf{k}_i) \in \mathbb{R}$ ($i = 1, \ldots, m$) là các trọng số attention vô hướng. Bản thân phép toán này thường được gọi là *attention pooling*. Tên gọi *attention* xuất phát từ thực tế rằng phép toán này đặc biệt chú ý đến các hạng có trọng số $\alpha$ đáng kể (tức là lớn). Do đó, attention trên $\mathcal{D}$ tạo ra một tổ hợp tuyến tính của các giá trị có trong cơ sở dữ liệu. Trên thực tế, điều này bao gồm ví dụ trên như một trường hợp đặc biệt, trong đó tất cả trừ một trọng số đều bằng không. Ta có một số trường hợp đặc biệt:
 
-* The weights $\alpha(\mathbf{q}, \mathbf{k}_i)$ are nonnegative. In this case the output of the attention mechanism is contained in the convex cone spanned by the values $\mathbf{v}_i$. 
-* The weights $\alpha(\mathbf{q}, \mathbf{k}_i)$ form a convex combination, i.e., $\sum_i \alpha(\mathbf{q}, \mathbf{k}_i) = 1$ and $\alpha(\mathbf{q}, \mathbf{k}_i) \geq 0$ for all $i$. This is the most common setting in deep learning. 
-* Exactly one of the weights $\alpha(\mathbf{q}, \mathbf{k}_i)$ is $1$, while all others are $0$. This is akin to a traditional database query. 
-* All weights are equal, i.e., $\alpha(\mathbf{q}, \mathbf{k}_i) = \frac{1}{m}$ for all $i$. This amounts to averaging across the entire database, also called average pooling in deep learning. 
+* Các trọng số $\alpha(\mathbf{q}, \mathbf{k}_i)$ không âm. Trong trường hợp này, đầu ra của cơ chế attention nằm trong nón lồi được sinh bởi các giá trị $\mathbf{v}_i$.
+* Các trọng số $\alpha(\mathbf{q}, \mathbf{k}_i)$ tạo thành một tổ hợp lồi, tức là $\sum_i \alpha(\mathbf{q}, \mathbf{k}_i) = 1$ và $\alpha(\mathbf{q}, \mathbf{k}_i) \geq 0$ với mọi $i$. Đây là thiết lập phổ biến nhất trong deep learning.
+* Chính xác một trong các trọng số $\alpha(\mathbf{q}, \mathbf{k}_i)$ bằng $1$, trong khi tất cả các trọng số khác bằng $0$. Điều này tương tự một truy vấn cơ sở dữ liệu truyền thống.
+* Mọi trọng số đều bằng nhau, tức là $\alpha(\mathbf{q}, \mathbf{k}_i) = \frac{1}{m}$ với mọi $i$. Điều này tương ứng với việc lấy trung bình trên toàn bộ cơ sở dữ liệu, còn được gọi là average pooling trong deep learning.
 
-A common strategy for ensuring that the weights sum up to $1$ is to normalize them via 
+Một chiến lược phổ biến để đảm bảo tổng các trọng số bằng $1$ là chuẩn hóa chúng thông qua
 
 $$\alpha(\mathbf{q}, \mathbf{k}_i) = \frac{\alpha(\mathbf{q}, \mathbf{k}_i)}{{\sum_j} \alpha(\mathbf{q}, \mathbf{k}_j)}.$$
 
-In particular, to ensure that the weights are also nonnegative, one can resort to exponentiation. This means that we can now pick *any* function  $a(\mathbf{q}, \mathbf{k})$ and then apply the softmax operation used for multinomial models to it via
+Đặc biệt, để bảo đảm các trọng số cũng không âm, ta có thể dùng phép lũy thừa. Điều này có nghĩa là giờ đây ta có thể chọn *bất kỳ* hàm nào $a(\mathbf{q}, \mathbf{k})$ rồi áp dụng phép toán softmax dùng cho các mô hình multinomial lên nó thông qua
 
 $$\alpha(\mathbf{q}, \mathbf{k}_i) = \frac{\exp(a(\mathbf{q}, \mathbf{k}_i))}{\sum_j \exp(a(\mathbf{q}, \mathbf{k}_j))}. $$
 :eqlabel:`eq_softmax_attention`
 
-This operation is readily available in all deep learning frameworks. It is differentiable and its gradient never vanishes, all of which are desirable properties in a model. Note though, the attention mechanism introduced above is not the only option. For instance, we can design a non-differentiable attention model that can be trained using reinforcement learning methods :cite:`Mnih.Heess.Graves.ea.2014`. As one would expect, training such a model is quite complex. Consequently the bulk of modern attention research 
-follows the framework outlined in :numref:`fig_qkv`. We thus focus our exposition on this family of differentiable mechanisms. 
+Phép toán này có sẵn trong mọi framework deep learning. Nó khả vi và gradient của nó không bao giờ triệt tiêu, tất cả đều là những tính chất mong muốn trong một mô hình. Tuy nhiên, lưu ý rằng cơ chế attention được giới thiệu ở trên không phải là lựa chọn duy nhất. Ví dụ, ta có thể thiết kế một mô hình attention không khả vi, có thể được huấn luyện bằng các phương pháp reinforcement learning :cite:`Mnih.Heess.Graves.ea.2014`. Như có thể dự đoán, việc huấn luyện một mô hình như vậy khá phức tạp. Do đó, phần lớn nghiên cứu attention hiện đại tuân theo framework được phác thảo trong :numref:`fig_qkv`. Vì vậy, chúng ta tập trung trình bày về họ cơ chế khả vi này.
 
-![The attention mechanism computes a linear combination over values $\mathbf{v}_\mathit{i}$ via attention pooling,
-where weights are derived according to the compatibility between a query $\mathbf{q}$ and keys $\mathbf{k}_\mathit{i}$.](../img/qkv.svg)
+![Cơ chế attention tính một tổ hợp tuyến tính trên các giá trị $\mathbf{v}_\mathit{i}$ thông qua attention pooling,
+trong đó các trọng số được suy ra dựa trên độ tương thích giữa một truy vấn $\mathbf{q}$ và các khóa $\mathbf{k}_\mathit{i}$.](../img/qkv.svg)
 :label:`fig_qkv`
 
-What is quite remarkable is that the actual "code" for executing on the set of keys and values, namely the query, can be quite concise, even though the space to operate on is significant. This is a desirable property for a network layer as it does not require too many parameters to learn. Just as convenient is the fact that attention can operate on arbitrarily large databases without the need to change the way the attention pooling operation is performed.
+Điều khá đáng chú ý là "mã" thực tế để thực thi trên tập khóa và giá trị, tức truy vấn, có thể rất ngắn gọn, dù không gian cần thao tác là đáng kể. Đây là một tính chất mong muốn đối với một network layer vì nó không đòi hỏi phải học quá nhiều tham số. Cũng thuận tiện không kém là attention có thể hoạt động trên các cơ sở dữ liệu lớn tùy ý mà không cần thay đổi cách thực hiện phép toán attention pooling.
 
 ```{.python .input}
 %%tab mxnet
@@ -70,11 +69,11 @@ from d2l import jax as d2l
 from jax import numpy as jnp
 ```
 
-## Visualization
+## Trực quan hóa
 
-One of the benefits of the attention mechanism is that it can be quite intuitive, particularly when the weights are nonnegative and sum to $1$. In this case we might *interpret* large weights as a way for the model to select components of relevance. While this is a good intuition, it is important to remember that it is just that, an *intuition*. Regardless, we may want to visualize its effect on the given set of keys when applying a variety of different queries. This function will come in handy later.
+Một trong những lợi ích của cơ chế attention là nó có thể khá trực quan, đặc biệt khi các trọng số không âm và có tổng bằng $1$. Trong trường hợp này, ta có thể *diễn giải* các trọng số lớn như một cách để mô hình chọn ra các thành phần liên quan. Mặc dù đây là một trực giác tốt, điều quan trọng cần nhớ là nó chỉ là một *trực giác*. Dù vậy, ta có thể muốn trực quan hóa tác động của nó lên tập khóa đã cho khi áp dụng nhiều truy vấn khác nhau. Hàm này sẽ hữu ích ở phần sau.
 
-We thus define the `show_heatmaps` function. Note that it does not take a matrix (of attention weights) as its input but rather a tensor with four axes, allowing for an array of different queries and weights. Consequently the input `matrices` has the shape (number of rows for display, number of columns for display, number of queries, number of keys). This will come in handy later on when we want to visualize the workings that are to design Transformers.
+Vì vậy, chúng ta định nghĩa hàm `show_heatmaps`. Lưu ý rằng hàm này không nhận một ma trận (các trọng số attention) làm đầu vào, mà nhận một tensor có bốn trục, cho phép chứa một mảng gồm các truy vấn và trọng số khác nhau. Do đó, đầu vào `matrices` có hình dạng (số hàng để hiển thị, số cột để hiển thị, số truy vấn, số khóa). Điều này sẽ hữu ích ở phần sau khi chúng ta muốn trực quan hóa các cơ chế dùng để thiết kế Transformers.
 
 ```{.python .input  n=17}
 %%tab all
@@ -101,8 +100,8 @@ def show_heatmaps(matrices, xlabel, ylabel, titles=None, figsize=(2.5, 2.5),
     fig.colorbar(pcm, ax=axes, shrink=0.6);
 ```
 
-As a quick sanity check let's visualize the identity matrix, representing a case 
-where the attention weight is $1$ only when the query and the key are the same.
+Để kiểm tra nhanh tính hợp lý, hãy trực quan hóa ma trận đơn vị, biểu diễn trường hợp
+trọng số attention bằng $1$ chỉ khi truy vấn và khóa giống nhau.
 
 ```{.python .input  n=20}
 %%tab all
@@ -110,33 +109,31 @@ attention_weights = d2l.reshape(d2l.eye(10), (1, 1, 10, 10))
 show_heatmaps(attention_weights, xlabel='Keys', ylabel='Queries')
 ```
 
-## Summary
+## Tóm tắt
 
-The attention mechanism allows us to aggregate data from many (key, value) pairs. So far our discussion was 
-quite abstract, simply describing a way to pool data. We have not explained yet where those mysterious queries, keys, and values might arise from. Some intuition might help here: for instance, in a regression setting, the query might correspond to the location where the regression should be carried out. The keys are the locations where past data was observed and the values are the (regression) values themselves. This is the so-called Nadaraya--Watson estimator :cite:`Nadaraya.1964,Watson.1964` that we will be studying in the next section. 
+Cơ chế attention cho phép chúng ta tổng hợp dữ liệu từ nhiều cặp (khóa, giá trị). Cho đến nay, phần thảo luận của chúng ta khá trừu tượng, chỉ mô tả một cách để pooling dữ liệu. Chúng ta vẫn chưa giải thích các truy vấn, khóa và giá trị bí ẩn đó có thể xuất phát từ đâu. Một chút trực giác có thể hữu ích ở đây: ví dụ, trong bối cảnh hồi quy, truy vấn có thể tương ứng với vị trí cần thực hiện hồi quy. Các khóa là những vị trí mà dữ liệu quá khứ được quan sát, còn các giá trị là chính các giá trị (hồi quy). Đây là cái gọi là bộ ước lượng Nadaraya--Watson :cite:`Nadaraya.1964,Watson.1964` mà chúng ta sẽ nghiên cứu trong phần tiếp theo.
 
-By design, the attention mechanism provides a *differentiable* means of control 
-by which a neural network can select elements from a set and to construct an associated weighted sum over representations. 
+Theo thiết kế, cơ chế attention cung cấp một phương thức kiểm soát *khả vi* để mạng nơ-ron có thể chọn các phần tử từ một tập hợp và xây dựng một tổng có trọng số tương ứng trên các biểu diễn.
 
-## Exercises
+## Bài tập
 
-1. Suppose that you wanted to reimplement approximate (key, query) matches as used in classical databases, which attention function would you pick? 
-1. Suppose that the attention function is given by $a(\mathbf{q}, \mathbf{k}_i) = \mathbf{q}^\top \mathbf{k}_i$ and that $\mathbf{k}_i = \mathbf{v}_i$ for $i = 1, \ldots, m$. Denote by $p(\mathbf{k}_i; \mathbf{q})$ the probability distribution over keys when using the softmax normalization in :eqref:`eq_softmax_attention`. Prove that $\nabla_{\mathbf{q}} \mathop{\textrm{Attention}}(\mathbf{q}, \mathcal{D}) = \textrm{Cov}_{p(\mathbf{k}_i; \mathbf{q})}[\mathbf{k}_i]$.
-1. Design a differentiable search engine using the attention mechanism. 
-1. Review the design of the Squeeze and Excitation Networks :cite:`Hu.Shen.Sun.2018` and interpret them through the lens of the attention mechanism. 
+1. Giả sử bạn muốn triển khai lại các phép khớp (key, query) xấp xỉ như được dùng trong các cơ sở dữ liệu cổ điển, bạn sẽ chọn hàm attention nào? 
+1. Giả sử rằng hàm attention được cho bởi $a(\mathbf{q}, \mathbf{k}_i) = \mathbf{q}^\top \mathbf{k}_i$ và $\mathbf{k}_i = \mathbf{v}_i$ với $i = 1, \ldots, m$. Ký hiệu $p(\mathbf{k}_i; \mathbf{q})$ là phân phối xác suất trên các key khi sử dụng chuẩn hóa softmax trong :eqref:`eq_softmax_attention`. Hãy chứng minh rằng $\nabla_{\mathbf{q}} \mathop{\textrm{Attention}}(\mathbf{q}, \mathcal{D}) = \textrm{Cov}_{p(\mathbf{k}_i; \mathbf{q})}[\mathbf{k}_i]$.
+1. Thiết kế một search engine khả vi bằng cơ chế attention. 
+1. Xem lại thiết kế của Squeeze and Excitation Networks :cite:`Hu.Shen.Sun.2018` và diễn giải chúng dưới góc nhìn của cơ chế attention. 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/1596)
+[Thảo luận](https://discuss.d2l.ai/t/1596)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1592)
+[Thảo luận](https://discuss.d2l.ai/t/1592)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1710)
+[Thảo luận](https://discuss.d2l.ai/t/1710)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18024)
+[Thảo luận](https://discuss.d2l.ai/t/18024)
 :end_tab:

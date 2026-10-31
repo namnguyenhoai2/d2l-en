@@ -1,22 +1,22 @@
-# Concise Implementation of Recurrent Neural Networks
+# Triển khai Ngắn gọn Mạng Nơ-ron Hồi quy
 :label:`sec_rnn-concise`
 
-Like most of our from-scratch implementations,
-:numref:`sec_rnn-scratch` was designed 
-to provide insight into how each component works.
-But when you are using RNNs every day 
-or writing production code,
-you will want to rely more on libraries
-that cut down on both implementation time 
-(by supplying library code for common models and functions)
-and computation time 
-(by optimizing the heck out of these library implementations).
-This section will show you how to implement 
-the same language model more efficiently
-using the high-level API provided 
-by your deep learning framework.
-We begin, as before, by loading 
-*The Time Machine* dataset.
+Giống như hầu hết các phần triển khai từ đầu của chúng ta,
+:numref:`sec_rnn-scratch` được thiết kế
+để giúp bạn hiểu rõ cách từng thành phần hoạt động.
+Nhưng khi bạn sử dụng RNN hằng ngày
+hoặc viết mã production,
+bạn sẽ muốn phụ thuộc nhiều hơn vào các thư viện
+giúp giảm cả thời gian triển khai
+(bằng cách cung cấp mã thư viện cho các mô hình và hàm phổ biến)
+lẫn thời gian tính toán
+(bằng cách tối ưu triệt để các phần triển khai thư viện này).
+Phần này sẽ chỉ cho bạn cách triển khai
+cùng một mô hình ngôn ngữ hiệu quả hơn
+bằng API cấp cao được cung cấp
+bởi framework deep learning của bạn.
+Như trước đây, chúng ta bắt đầu bằng việc tải
+dataset *The Time Machine*.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -52,29 +52,29 @@ from flax import linen as nn
 from jax import numpy as jnp
 ```
 
-## [**Defining the Model**]
+## [**Định nghĩa Mô hình**]
 
-We define the following class
-using the RNN implemented
-by high-level APIs.
+Chúng ta định nghĩa lớp sau
+bằng RNN được triển khai
+bởi các API cấp cao.
 
 :begin_tab:`mxnet`
-Specifically, to initialize the hidden state,
-we invoke the member method `begin_state`.
-This returns a list that contains
-an initial hidden state
-for each example in the minibatch,
-whose shape is
-(number of hidden layers, batch size, number of hidden units).
-For some models to be introduced later
-(e.g., long short-term memory),
-this list will also contain other information.
+Cụ thể, để khởi tạo hidden state,
+chúng ta gọi phương thức thành viên `begin_state`.
+Phương thức này trả về một danh sách chứa
+một hidden state ban đầu
+cho mỗi ví dụ trong minibatch,
+có shape là
+(số hidden layer, kích thước batch, số hidden unit).
+Với một số mô hình sẽ được giới thiệu sau
+(ví dụ: long short-term memory),
+danh sách này cũng sẽ chứa thông tin khác.
 :end_tab:
 
 :begin_tab:`jax`
-Flax does not provide an RNNCell for concise implementation of Vanilla RNNs
-as of today. There are more advanced variants of RNNs like LSTMs and GRUs
-which are available in the Flax `linen` API.
+Tại thời điểm hiện tại, Flax không cung cấp RNNCell để triển khai ngắn gọn Vanilla RNN.
+Có các biến thể RNN nâng cao hơn như LSTM và GRU
+được cung cấp trong API `linen` của Flax.
 :end_tab:
 
 ```{.python .input}
@@ -133,9 +133,9 @@ class RNN(nn.Module):  #@save
         raise NotImplementedError
 ```
 
-Inheriting from the `RNNLMScratch` class in :numref:`sec_rnn-scratch`, 
-the following `RNNLM` class defines a complete RNN-based language model.
-Note that we need to create a separate fully connected output layer.
+Kế thừa từ lớp `RNNLMScratch` trong :numref:`sec_rnn-scratch`, 
+lớp `RNNLM` sau đây định nghĩa một mô hình ngôn ngữ hoàn chỉnh dựa trên RNN.
+Lưu ý rằng chúng ta cần tạo một fully connected output layer riêng biệt.
 
 ```{.python .input}
 %%tab pytorch
@@ -184,12 +184,12 @@ class RNNLM(d2l.RNNLMScratch):  #@save
         return self.output_layer(rnn_outputs)
 ```
 
-## Training and Predicting
+## Huấn luyện và Dự đoán
 
-Before training the model, let's [**make a prediction 
-with a model initialized with random weights.**]
-Given that we have not trained the network, 
-it will generate nonsensical predictions.
+Trước khi huấn luyện mô hình, hãy [**đưa ra một dự đoán
+bằng mô hình được khởi tạo với trọng số ngẫu nhiên.**]
+Do chúng ta chưa huấn luyện network,
+nó sẽ tạo ra các dự đoán vô nghĩa.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -202,7 +202,7 @@ model = RNNLM(rnn, vocab_size=len(data.vocab), lr=1)
 model.predict('it has', 20, data.vocab)
 ```
 
-Next, we [**train our model, leveraging the high-level API**].
+Tiếp theo, chúng ta [**huấn luyện mô hình bằng cách tận dụng API cấp cao**].
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -214,11 +214,11 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-Compared with :numref:`sec_rnn-scratch`,
-this model achieves comparable perplexity,
-but runs faster due to the optimized implementations.
-As before, we can generate predicted tokens 
-following the specified prefix string.
+So với :numref:`sec_rnn-scratch`,
+mô hình này đạt được perplexity tương đương,
+nhưng chạy nhanh hơn nhờ các phần triển khai được tối ưu.
+Như trước đây, chúng ta có thể tạo các token dự đoán
+theo chuỗi tiền tố đã chỉ định.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -230,32 +230,32 @@ model.predict('it has', 20, data.vocab, d2l.try_gpu())
 model.predict('it has', 20, data.vocab)
 ```
 
-## Summary
+## Tóm tắt
 
-High-level APIs in deep learning frameworks provide implementations of standard RNNs.
-These libraries help you to avoid wasting time reimplementing standard models.
-Moreover,
-framework implementations are often highly optimized, 
-  leading to significant (computational) performance gains 
-  when compared with implementations from scratch.
+Các API cấp cao trong framework deep learning cung cấp các phần triển khai RNN tiêu chuẩn.
+Những thư viện này giúp bạn tránh lãng phí thời gian triển khai lại các mô hình tiêu chuẩn.
+Hơn nữa,
+các phần triển khai của framework thường được tối ưu cao,
+  đem lại mức tăng hiệu năng tính toán đáng kể
+  so với các phần triển khai từ đầu.
 
-## Exercises
+## Bài tập
 
-1. Can you make the RNN model overfit using the high-level APIs?
-1. Implement the autoregressive model of :numref:`sec_sequence` using an RNN.
+1. Bạn có thể làm cho mô hình RNN overfit bằng các API cấp cao không?
+1. Triển khai mô hình autoregressive của :numref:`sec_sequence` bằng RNN.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/335)
+[Thảo luận](https://discuss.d2l.ai/t/335)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1053)
+[Thảo luận](https://discuss.d2l.ai/t/1053)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/2211)
+[Thảo luận](https://discuss.d2l.ai/t/2211)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18015)
+[Thảo luận](https://discuss.d2l.ai/t/18015)
 :end_tab:

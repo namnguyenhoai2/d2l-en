@@ -3,39 +3,39 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow', 'jax')
 ```
 
-# Multi-Head Attention
+# Attention đa đầu
 :label:`sec_multihead-attention`
 
 
-In practice, given the same set of queries, keys, and values we may want our model to combine knowledge from
-different behaviors of the same attention mechanism,
-such as capturing dependencies of various ranges
-(e.g., shorter-range vs. longer-range) within a sequence.
-Thus, it may be beneficial to allow our attention mechanism to jointly use different representation subspaces of queries, keys, and values.
+Trong thực tế, với cùng một tập truy vấn, khóa và giá trị, chúng ta có thể muốn mô hình kết hợp kiến thức từ
+các hành vi khác nhau của cùng một cơ chế attention,
+chẳng hạn như nắm bắt các phụ thuộc ở nhiều phạm vi khác nhau
+(ví dụ: phạm vi ngắn hơn so với phạm vi dài hơn) trong một chuỗi.
+Do đó, có thể hữu ích khi cho phép cơ chế attention của chúng ta sử dụng đồng thời các không gian biểu diễn khác nhau của truy vấn, khóa và giá trị.
 
 
-To this end, instead of performing 
-a single attention pooling,
-queries, keys, and values
-can be transformed
-with $h$ independently learned linear projections.
-Then these $h$ projected queries, keys, and values
-are fed into attention pooling in parallel.
-In the end,
-$h$ attention-pooling outputs
-are concatenated and 
-transformed with another learned linear projection
-to produce the final output.
-This design
-is called *multi-head attention*,
-where each of the $h$ attention pooling outputs
-is a *head* :cite:`Vaswani.Shazeer.Parmar.ea.2017`.
-Using fully connected layers
-to perform learnable linear transformations,
+Để đạt được điều này, thay vì thực hiện 
+một phép gộp attention duy nhất,
+truy vấn, khóa và giá trị
+có thể được biến đổi
+bằng $h$ phép chiếu tuyến tính được học độc lập.
+Sau đó, $h$ truy vấn, khóa và giá trị đã được chiếu này
+được đưa vào phép gộp attention song song.
+Cuối cùng,
+$h$ đầu ra gộp attention
+được nối lại và 
+biến đổi bằng một phép chiếu tuyến tính được học khác
+để tạo ra đầu ra cuối cùng.
+Thiết kế này
+được gọi là *attention đa đầu*,
+trong đó mỗi một trong $h$ đầu ra gộp attention
+là một *đầu* :cite:`Vaswani.Shazeer.Parmar.ea.2017`.
+Sử dụng các lớp fully connected
+để thực hiện các phép biến đổi tuyến tính có thể học,
 :numref:`fig_multi-head-attention`
-describes multi-head attention.
+mô tả attention đa đầu.
 
-![Multi-head attention, where multiple heads are concatenated then linearly transformed.](../img/multi-head-attention.svg)
+![Attention đa đầu, trong đó nhiều đầu được nối lại rồi biến đổi tuyến tính.](../img/multi-head-attention.svg)
 :label:`fig_multi-head-attention`
 
 ```{.python .input}
@@ -69,54 +69,54 @@ from jax import numpy as jnp
 import jax
 ```
 
-## Model
+## Mô hình
 
-Before providing the implementation of multi-head attention,
-let's formalize this model mathematically.
-Given a query $\mathbf{q} \in \mathbb{R}^{d_q}$,
-a key $\mathbf{k} \in \mathbb{R}^{d_k}$,
-and a value $\mathbf{v} \in \mathbb{R}^{d_v}$,
-each attention head $\mathbf{h}_i$  ($i = 1, \ldots, h$)
-is computed as
+Trước khi trình bày phần triển khai attention đa đầu,
+hãy biểu diễn mô hình này một cách toán học.
+Với một truy vấn $\mathbf{q} \in \mathbb{R}^{d_q}$,
+một khóa $\mathbf{k} \in \mathbb{R}^{d_k}$,
+và một giá trị $\mathbf{v} \in \mathbb{R}^{d_v}$,
+mỗi đầu attention $\mathbf{h}_i$  ($i = 1, \ldots, h$)
+được tính như sau
 
 $$\mathbf{h}_i = f(\mathbf W_i^{(q)}\mathbf q, \mathbf W_i^{(k)}\mathbf k,\mathbf W_i^{(v)}\mathbf v) \in \mathbb R^{p_v},$$
 
-where 
+trong đó 
 $\mathbf W_i^{(q)}\in\mathbb R^{p_q\times d_q}$,
 $\mathbf W_i^{(k)}\in\mathbb R^{p_k\times d_k}$,
-and $\mathbf W_i^{(v)}\in\mathbb R^{p_v\times d_v}$
-are learnable parameters and
-$f$ is attention pooling,
-such as
-additive attention and scaled dot product attention
-in :numref:`sec_attention-scoring-functions`.
-The multi-head attention output
-is another linear transformation via 
-learnable parameters
+và $\mathbf W_i^{(v)}\in\mathbb R^{p_v\times d_v}$
+là các tham số có thể học và
+$f$ là phép gộp attention,
+chẳng hạn như
+attention cộng tính và attention tích vô hướng có tỷ lệ
+trong :numref:`sec_attention-scoring-functions`.
+Đầu ra attention đa đầu
+là một phép biến đổi tuyến tính khác thông qua 
+các tham số có thể học
 $\mathbf W_o\in\mathbb R^{p_o\times h p_v}$
-of the concatenation of $h$ heads:
+áp dụng lên phép nối của $h$ đầu:
 
 $$\mathbf W_o \begin{bmatrix}\mathbf h_1\\\vdots\\\mathbf h_h\end{bmatrix} \in \mathbb{R}^{p_o}.$$
 
-Based on this design, each head may attend
-to different parts of the input.
-More sophisticated functions 
-than the simple weighted average can be expressed.
+Dựa trên thiết kế này, mỗi đầu có thể attention
+đến các phần khác nhau của đầu vào.
+Có thể biểu diễn các hàm phức tạp hơn 
+so với trung bình có trọng số đơn giản.
 
-## Implementation
+## Triển khai
 
-In our implementation,
-we [**choose the scaled dot product attention
-for each head**] of the multi-head attention.
-To avoid significant growth of computational cost and parametrization cost,
-we set $p_q = p_k = p_v = p_o / h$.
-Note that $h$ heads can be computed in parallel
-if we set the number of outputs 
-of linear transformations
-for the query, key, and value
-to $p_q h = p_k h = p_v h = p_o$.
-In the following implementation,
-$p_o$ is specified via the argument `num_hiddens`.
+Trong phần triển khai của chúng ta,
+chúng ta [**chọn attention tích vô hướng có tỷ lệ
+cho mỗi đầu**] của attention đa đầu.
+Để tránh chi phí tính toán và chi phí tham số hóa tăng đáng kể,
+chúng ta đặt $p_q = p_k = p_v = p_o / h$.
+Lưu ý rằng $h$ đầu có thể được tính song song
+nếu chúng ta đặt số đầu ra 
+của các phép biến đổi tuyến tính
+cho truy vấn, khóa và giá trị
+là $p_q h = p_k h = p_v h = p_o$.
+Trong phần triển khai sau,
+$p_o$ được chỉ định thông qua đối số `num_hiddens`.
 
 ```{.python .input}
 %%tab mxnet
@@ -275,11 +275,11 @@ class MultiHeadAttention(nn.Module):  #@save
         return self.W_o(output_concat), attention_weights
 ```
 
-To allow for [**parallel computation of multiple heads**],
-the above `MultiHeadAttention` class uses two transposition methods as defined below.
-Specifically,
-the `transpose_output` method reverses the operation
-of the `transpose_qkv` method.
+Để cho phép [**tính toán song song nhiều đầu**],
+lớp `MultiHeadAttention` ở trên sử dụng hai phương thức chuyển vị như được định nghĩa bên dưới.
+Cụ thể,
+phương thức `transpose_output` đảo ngược thao tác
+của phương thức `transpose_qkv`.
 
 ```{.python .input}
 %%tab mxnet
@@ -377,11 +377,11 @@ def transpose_output(self, X):
     return X.reshape((X.shape[0], X.shape[1], -1))
 ```
 
-Let's [**test our implemented**] `MultiHeadAttention` class
-using a toy example where keys and values are the same.
-As a result,
-the shape of the multi-head attention output
-is (`batch_size`, `num_queries`, `num_hiddens`).
+Hãy [**kiểm thử lớp**] `MultiHeadAttention` [**mà chúng ta đã triển khai**]
+bằng một ví dụ đồ chơi, trong đó khóa và giá trị giống nhau.
+Kết quả là,
+hình dạng của đầu ra attention đa đầu
+là (`batch_size`, `num_queries`, `num_hiddens`).
 
 ```{.python .input}
 %%tab pytorch
@@ -446,31 +446,31 @@ d2l.check_shape(attention.init_with_output(d2l.get_key(), X, Y, Y, valid_lens,
                 (batch_size, num_queries, num_hiddens))
 ```
 
-## Summary
+## Tóm tắt
 
-Multi-head attention combines knowledge of the same attention pooling 
-via different representation subspaces of queries, keys, and values.
-To compute multiple heads of multi-head attention in parallel, 
-proper tensor manipulation is needed.
+Attention đa đầu kết hợp kiến thức của cùng một phép gộp attention 
+thông qua các không gian biểu diễn khác nhau của truy vấn, khóa và giá trị.
+Để tính song song nhiều đầu của attention đa đầu, 
+cần thao tác tensor phù hợp.
 
 
-## Exercises
+## Bài tập
 
-1. Visualize attention weights of multiple heads in this experiment.
-1. Suppose that we have a trained model based on multi-head attention and we want to prune less important attention heads to increase the prediction speed. How can we design experiments to measure the importance of an attention head?
+1. Trực quan hóa trọng số attention của nhiều đầu trong thí nghiệm này.
+1. Giả sử chúng ta có một mô hình đã huấn luyện dựa trên attention đa đầu và muốn cắt tỉa các đầu attention ít quan trọng hơn để tăng tốc độ dự đoán. Chúng ta có thể thiết kế thí nghiệm như thế nào để đo mức độ quan trọng của một đầu attention?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/1634)
+[Thảo luận](https://discuss.d2l.ai/t/1634)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1635)
+[Thảo luận](https://discuss.d2l.ai/t/1635)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3869)
+[Thảo luận](https://discuss.d2l.ai/t/3869)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18029)
+[Thảo luận](https://discuss.d2l.ai/t/18029)
 :end_tab:

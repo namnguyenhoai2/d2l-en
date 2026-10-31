@@ -1,33 +1,33 @@
-# Recurrent Neural Networks
+# Mạng Nơ-ron Hồi quy
 :label:`sec_rnn`
 
 
-In :numref:`sec_language-model` we described Markov models and $n$-grams for language modeling, where the conditional probability of token $x_t$ at time step $t$ only depends on the $n-1$ previous tokens.
-If we want to incorporate the possible effect of tokens earlier than time step $t-(n-1)$ on $x_t$,
-we need to increase $n$.
-However, the number of model parameters would also increase exponentially with it, as we need to store $|\mathcal{V}|^n$ numbers for a vocabulary set $\mathcal{V}$.
-Hence, rather than modeling $P(x_t \mid x_{t-1}, \ldots, x_{t-n+1})$ it is preferable to use a latent variable model,
+Trong :numref:`sec_language-model`, chúng ta đã mô tả các mô hình Markov và $n$-gram cho mô hình hóa ngôn ngữ, trong đó xác suất có điều kiện của token $x_t$ tại bước thời gian $t$ chỉ phụ thuộc vào $n-1$ token trước đó.
+Nếu muốn kết hợp ảnh hưởng có thể có của các token xuất hiện trước bước thời gian $t-(n-1)$ lên $x_t$,
+chúng ta cần tăng $n$.
+Tuy nhiên, số lượng tham số mô hình cũng sẽ tăng theo cấp số nhân, vì chúng ta cần lưu trữ $|\mathcal{V}|^n$ số cho tập từ vựng $\mathcal{V}$.
+Do đó, thay vì mô hình hóa $P(x_t \mid x_{t-1}, \ldots, x_{t-n+1})$, tốt hơn là sử dụng mô hình biến tiềm ẩn,
 
 $$P(x_t \mid x_{t-1}, \ldots, x_1) \approx P(x_t \mid h_{t-1}),$$
 
-where $h_{t-1}$ is a *hidden state*  that stores the sequence information up to time step $t-1$.
-In general,
-the hidden state at any time step $t$ could be computed based on both the current input $x_{t}$ and the previous hidden state $h_{t-1}$:
+trong đó $h_{t-1}$ là một *trạng thái ẩn* lưu trữ thông tin chuỗi cho đến bước thời gian $t-1$.
+Nói chung,
+trạng thái ẩn tại bất kỳ bước thời gian $t$ nào có thể được tính dựa trên cả đầu vào hiện tại $x_{t}$ và trạng thái ẩn trước đó $h_{t-1}$:
 
 $$h_t = f(x_{t}, h_{t-1}).$$
 :eqlabel:`eq_ht_xt`
 
-For a sufficiently powerful function $f$ in :eqref:`eq_ht_xt`, the latent variable model is not an approximation. After all, $h_t$ may simply store all the data it has observed so far.
-However, it could potentially make both computation and storage expensive.
+Với một hàm $f$ đủ mạnh trong :eqref:`eq_ht_xt`, mô hình biến tiềm ẩn không phải là một phép xấp xỉ. Xét cho cùng, $h_t$ có thể đơn giản lưu trữ toàn bộ dữ liệu mà nó đã quan sát cho đến thời điểm đó.
+Tuy nhiên, điều này có thể khiến cả việc tính toán lẫn lưu trữ trở nên tốn kém.
 
-Recall that we have discussed hidden layers with hidden units in :numref:`chap_perceptrons`.
-It is noteworthy that
-hidden layers and hidden states refer to two very different concepts.
-Hidden layers are, as explained, layers that are hidden from view on the path from input to output.
-Hidden states are technically speaking *inputs* to whatever we do at a given step,
-and they can only be computed by looking at data at previous time steps.
+Hãy nhớ rằng chúng ta đã thảo luận về các tầng ẩn với các đơn vị ẩn trong :numref:`chap_perceptrons`.
+Cần lưu ý rằng
+tầng ẩn và trạng thái ẩn đề cập đến hai khái niệm hoàn toàn khác nhau.
+Như đã giải thích, tầng ẩn là các tầng bị che khuất khỏi tầm nhìn trên đường đi từ đầu vào đến đầu ra.
+Về mặt kỹ thuật, trạng thái ẩn là *đầu vào* cho bất kỳ thao tác nào chúng ta thực hiện tại một bước nhất định,
+và chúng chỉ có thể được tính bằng cách xem dữ liệu ở các bước thời gian trước đó.
 
-*Recurrent neural networks* (RNNs) are neural networks with hidden states. Before introducing the RNN model, we first revisit the MLP model introduced in :numref:`sec_mlp`.
+*Mạng nơ-ron hồi quy* (RNN) là các mạng nơ-ron có trạng thái ẩn. Trước khi giới thiệu mô hình RNN, trước hết chúng ta sẽ xem lại mô hình MLP được giới thiệu trong :numref:`sec_mlp`.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -60,106 +60,106 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Neural Networks without Hidden States
+## Mạng Nơ-ron không có Trạng thái ẩn
 
-Let's take a look at an MLP with a single hidden layer.
-Let the hidden layer's activation function be $\phi$.
-Given a minibatch of examples $\mathbf{X} \in \mathbb{R}^{n \times d}$ with batch size $n$ and $d$ inputs, the hidden layer output $\mathbf{H} \in \mathbb{R}^{n \times h}$ is calculated as
+Hãy xem xét một MLP có một tầng ẩn duy nhất.
+Gọi hàm kích hoạt của tầng ẩn là $\phi$.
+Với một minibatch gồm các mẫu $\mathbf{X} \in \mathbb{R}^{n \times d}$ có batch size là $n$ và $d$ đầu vào, đầu ra tầng ẩn $\mathbf{H} \in \mathbb{R}^{n \times h}$ được tính như sau
 
 $$\mathbf{H} = \phi(\mathbf{X} \mathbf{W}_{\textrm{xh}} + \mathbf{b}_\textrm{h}).$$
 :eqlabel:`rnn_h_without_state`
 
-In :eqref:`rnn_h_without_state`, we have the weight parameter $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}$, the bias parameter $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$, and the number of hidden units $h$, for the hidden layer.
-So armed, we apply broadcasting (see :numref:`subsec_broadcasting`) during the summation.
-Next, the hidden layer output $\mathbf{H}$ is used as input of the output layer, which is given by
+Trong :eqref:`rnn_h_without_state`, chúng ta có tham số trọng số $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}$, tham số bias $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$, và số lượng đơn vị ẩn $h$ của tầng ẩn.
+Với các thành phần này, chúng ta áp dụng broadcasting (xem :numref:`subsec_broadcasting`) trong phép cộng.
+Tiếp theo, đầu ra tầng ẩn $\mathbf{H}$ được dùng làm đầu vào của tầng đầu ra, được cho bởi
 
 $$\mathbf{O} = \mathbf{H} \mathbf{W}_{\textrm{hq}} + \mathbf{b}_\textrm{q},$$
 
-where $\mathbf{O} \in \mathbb{R}^{n \times q}$ is the output variable, $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$ is the weight parameter, and $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$ is the bias parameter of the output layer.  If it is a classification problem, we can use $\mathrm{softmax}(\mathbf{O})$ to compute the probability distribution of the output categories.
+trong đó $\mathbf{O} \in \mathbb{R}^{n \times q}$ là biến đầu ra, $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$ là tham số trọng số, và $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$ là tham số bias của tầng đầu ra. Nếu đây là một bài toán phân loại, chúng ta có thể sử dụng $\mathrm{softmax}(\mathbf{O})$ để tính phân phối xác suất của các danh mục đầu ra.
 
-This is entirely analogous to the regression problem we solved previously in :numref:`sec_sequence`, hence we omit details.
-Suffice it to say that we can pick feature-label pairs at random and learn the parameters of our network via automatic differentiation and stochastic gradient descent.
+Điều này hoàn toàn tương tự với bài toán hồi quy mà chúng ta đã giải trước đó trong :numref:`sec_sequence`, nên chúng ta lược bỏ chi tiết.
+Chỉ cần nói rằng chúng ta có thể chọn ngẫu nhiên các cặp đặc trưng-nhãn và học các tham số của mạng thông qua vi phân tự động và stochastic gradient descent.
 
-## Recurrent Neural Networks with Hidden States
+## Mạng Nơ-ron Hồi quy với Trạng thái ẩn
 :label:`subsec_rnn_w_hidden_states`
 
-Matters are entirely different when we have hidden states. Let's look at the structure in some more detail.
+Mọi thứ hoàn toàn khác khi chúng ta có trạng thái ẩn. Hãy xem xét cấu trúc này chi tiết hơn.
 
-Assume that we have
-a minibatch of inputs
+Giả sử chúng ta có
+một minibatch đầu vào
 $\mathbf{X}_t \in \mathbb{R}^{n \times d}$
-at time step $t$.
-In other words,
-for a minibatch of $n$ sequence examples,
-each row of $\mathbf{X}_t$ corresponds to one example at time step $t$ from the sequence.
-Next,
-denote by $\mathbf{H}_t  \in \mathbb{R}^{n \times h}$ the hidden layer output of time step $t$.
-Unlike with MLP, here we save the hidden layer output $\mathbf{H}_{t-1}$ from the previous time step and introduce a new weight parameter $\mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$ to describe how to use the hidden layer output of the previous time step in the current time step. Specifically, the calculation of the hidden layer output of the current time step is determined by the input of the current time step together with the hidden layer output of the previous time step:
+tại bước thời gian $t$.
+Nói cách khác,
+với một minibatch gồm $n$ mẫu chuỗi,
+mỗi hàng của $\mathbf{X}_t$ tương ứng với một mẫu tại bước thời gian $t$ trong chuỗi.
+Tiếp theo,
+ký hiệu $\mathbf{H}_t  \in \mathbb{R}^{n \times h}$ là đầu ra tầng ẩn tại bước thời gian $t$.
+Không giống MLP, ở đây chúng ta lưu đầu ra tầng ẩn $\mathbf{H}_{t-1}$ từ bước thời gian trước và đưa vào một tham số trọng số mới $\mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$ để mô tả cách sử dụng đầu ra tầng ẩn của bước thời gian trước trong bước thời gian hiện tại. Cụ thể, việc tính đầu ra tầng ẩn của bước thời gian hiện tại được xác định bởi đầu vào của bước thời gian hiện tại cùng với đầu ra tầng ẩn của bước thời gian trước:
 
 $$\mathbf{H}_t = \phi(\mathbf{X}_t \mathbf{W}_{\textrm{xh}} + \mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}  + \mathbf{b}_\textrm{h}).$$
 :eqlabel:`rnn_h_with_state`
 
-Compared with :eqref:`rnn_h_without_state`, :eqref:`rnn_h_with_state` adds one more term $\mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}$ and thus
-instantiates :eqref:`eq_ht_xt`.
-From the relationship between hidden layer outputs $\mathbf{H}_t$ and $\mathbf{H}_{t-1}$ of adjacent time steps,
-we know that these variables captured and retained the sequence's historical information up to their current time step, just like the state or memory of the neural network's current time step. Therefore, such a hidden layer output is called a *hidden state*.
-Since the hidden state uses the same definition of the previous time step in the current time step, the computation of :eqref:`rnn_h_with_state` is *recurrent*. Hence, as we said, neural networks with hidden states
-based on recurrent computation are named
-*recurrent neural networks*.
-Layers that perform
-the computation of :eqref:`rnn_h_with_state`
-in RNNs
-are called *recurrent layers*.
+So với :eqref:`rnn_h_without_state`, :eqref:`rnn_h_with_state` bổ sung thêm một hạng tử $\mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}$ và do đó
+hiện thực hóa :eqref:`eq_ht_xt`.
+Từ mối quan hệ giữa các đầu ra tầng ẩn $\mathbf{H}_t$ và $\mathbf{H}_{t-1}$ tại các bước thời gian kề nhau,
+chúng ta biết rằng các biến này đã nắm bắt và lưu giữ thông tin lịch sử của chuỗi cho đến bước thời gian hiện tại của chúng, giống như trạng thái hoặc bộ nhớ tại bước thời gian hiện tại của mạng nơ-ron. Vì vậy, đầu ra tầng ẩn như vậy được gọi là một *trạng thái ẩn*.
+Vì trạng thái ẩn sử dụng cùng định nghĩa của bước thời gian trước trong bước thời gian hiện tại, phép tính của :eqref:`rnn_h_with_state` là *hồi quy*. Do đó, như đã nói, các mạng nơ-ron có trạng thái ẩn
+dựa trên tính toán hồi quy được gọi là
+*mạng nơ-ron hồi quy*.
+Các tầng thực hiện
+phép tính trong :eqref:`rnn_h_with_state`
+trong RNN
+được gọi là *tầng hồi quy*.
 
 
-There are many different ways for constructing RNNs.
-Those with a hidden state defined by :eqref:`rnn_h_with_state` are very common.
-For time step $t$,
-the output of the output layer is similar to the computation in the MLP:
+Có nhiều cách khác nhau để xây dựng RNN.
+Các RNN có trạng thái ẩn được định nghĩa bởi :eqref:`rnn_h_with_state` là rất phổ biến.
+Tại bước thời gian $t$,
+đầu ra của tầng đầu ra tương tự như phép tính trong MLP:
 
 $$\mathbf{O}_t = \mathbf{H}_t \mathbf{W}_{\textrm{hq}} + \mathbf{b}_\textrm{q}.$$
 
-Parameters of the RNN
-include the weights $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}, \mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$,
-and the bias $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$
-of the hidden layer,
-together with the weights $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$
-and the bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$
-of the output layer.
-It is worth mentioning that
-even at different time steps,
-RNNs always use these model parameters.
-Therefore, the parametrization cost of an RNN
-does not grow as the number of time steps increases.
+Các tham số của RNN
+bao gồm các trọng số $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}, \mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$,
+và bias $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$
+của tầng ẩn,
+cùng với các trọng số $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$
+và bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$
+của tầng đầu ra.
+Cần lưu ý rằng
+ngay cả tại các bước thời gian khác nhau,
+RNN luôn sử dụng các tham số mô hình này.
+Do đó, chi phí tham số hóa của một RNN
+không tăng khi số lượng bước thời gian tăng lên.
 
-:numref:`fig_rnn` illustrates the computational logic of an RNN at three adjacent time steps.
-At any time step $t$,
-the computation of the hidden state can be treated as:
-(i) concatenating the input $\mathbf{X}_t$ at the current time step $t$ and the hidden state $\mathbf{H}_{t-1}$ at the previous time step $t-1$;
-(ii) feeding the concatenation result into a fully connected layer with the activation function $\phi$.
-The output of such a fully connected layer is the hidden state $\mathbf{H}_t$ of the current time step $t$.
-In this case,
-the model parameters are the concatenation of $\mathbf{W}_{\textrm{xh}}$ and $\mathbf{W}_{\textrm{hh}}$, and a bias of $\mathbf{b}_\textrm{h}$, all from :eqref:`rnn_h_with_state`.
-The hidden state of the current time step $t$, $\mathbf{H}_t$, will participate in computing the hidden state $\mathbf{H}_{t+1}$ of the next time step $t+1$.
-What is more, $\mathbf{H}_t$ will also be
-fed into the fully connected output layer
-to compute the output
-$\mathbf{O}_t$ of the current time step $t$.
+:numref:`fig_rnn` minh họa logic tính toán của một RNN tại ba bước thời gian kề nhau.
+Tại bất kỳ bước thời gian $t$ nào,
+việc tính trạng thái ẩn có thể được xem là:
+(i) ghép đầu vào $\mathbf{X}_t$ tại bước thời gian hiện tại $t$ với trạng thái ẩn $\mathbf{H}_{t-1}$ tại bước thời gian trước $t-1$;
+(ii) đưa kết quả ghép vào một tầng fully connected có hàm kích hoạt $\phi$.
+Đầu ra của tầng fully connected đó là trạng thái ẩn $\mathbf{H}_t$ của bước thời gian hiện tại $t$.
+Trong trường hợp này,
+các tham số mô hình là phép ghép của $\mathbf{W}_{\textrm{xh}}$ và $\mathbf{W}_{\textrm{hh}}$, cùng một bias $\mathbf{b}_\textrm{h}$, tất cả đều từ :eqref:`rnn_h_with_state`.
+Trạng thái ẩn $\mathbf{H}_t$ của bước thời gian hiện tại $t$ sẽ tham gia vào việc tính trạng thái ẩn $\mathbf{H}_{t+1}$ của bước thời gian tiếp theo $t+1$.
+Hơn nữa, $\mathbf{H}_t$ cũng sẽ được
+đưa vào tầng đầu ra fully connected
+để tính đầu ra
+$\mathbf{O}_t$ của bước thời gian hiện tại $t$.
 
-![An RNN with a hidden state.](../img/rnn.svg)
+![Một RNN với trạng thái ẩn.](../img/rnn.svg)
 :label:`fig_rnn`
 
-We just mentioned that the calculation of $\mathbf{X}_t \mathbf{W}_{\textrm{xh}} + \mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}$ for the hidden state is equivalent to
-matrix multiplication of the
-concatenation of $\mathbf{X}_t$ and $\mathbf{H}_{t-1}$
-and the
-concatenation of $\mathbf{W}_{\textrm{xh}}$ and $\mathbf{W}_{\textrm{hh}}$.
-Though this can be proven mathematically,
-in the following we just use a simple code snippet as a demonstration.
-To begin with,
-we define matrices `X`, `W_xh`, `H`, and `W_hh`, whose shapes are (3, 1), (1, 4), (3, 4), and (4, 4), respectively.
-Multiplying `X` by `W_xh`, and `H` by `W_hh`, and then adding these two products,
-we obtain a matrix of shape (3, 4).
+Chúng ta vừa đề cập rằng phép tính $\mathbf{X}_t \mathbf{W}_{\textrm{xh}} + \mathbf{H}_{t-1} \mathbf{W}_{\textrm{hh}}$ cho trạng thái ẩn tương đương với
+phép nhân ma trận của
+phép nối $\mathbf{X}_t$ và $\mathbf{H}_{t-1}$
+và
+phép nối $\mathbf{W}_{\textrm{xh}}$ và $\mathbf{W}_{\textrm{hh}}$.
+Mặc dù điều này có thể được chứng minh về mặt toán học,
+dưới đây chúng ta chỉ sử dụng một đoạn mã đơn giản để minh họa.
+Trước hết,
+chúng ta định nghĩa các ma trận `X`, `W_xh`, `H` và `W_hh`, có các hình dạng lần lượt là (3, 1), (1, 4), (3, 4) và (4, 4).
+Nhân `X` với `W_xh`, và `H` với `W_hh`, rồi cộng hai tích này lại,
+ta thu được một ma trận có hình dạng (3, 4).
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -184,78 +184,78 @@ H, W_hh = jax.random.normal(d2l.get_key(), (3, 4)), jax.random.normal(
 d2l.matmul(X, W_xh) + d2l.matmul(H, W_hh)
 ```
 
-Now we concatenate the matrices `X` and `H`
-along columns (axis 1),
-and the matrices
-`W_xh` and `W_hh` along rows (axis 0).
-These two concatenations
-result in
-matrices of shape (3, 5)
-and of shape (5, 4), respectively.
-Multiplying these two concatenated matrices,
-we obtain the same output matrix of shape (3, 4)
-as above.
+Bây giờ chúng ta nối các ma trận `X` và `H`
+theo các cột (trục 1),
+và các ma trận
+`W_xh` và `W_hh` theo các hàng (trục 0).
+Hai phép nối này
+lần lượt tạo ra
+các ma trận có hình dạng (3, 5)
+và (5, 4).
+Nhân hai ma trận đã nối này,
+ta thu được cùng ma trận đầu ra có hình dạng (3, 4)
+như ở trên.
 
 ```{.python .input}
 %%tab all
 d2l.matmul(d2l.concat((X, H), 1), d2l.concat((W_xh, W_hh), 0))
 ```
 
-## RNN-Based Character-Level Language Models
+## Mô hình ngôn ngữ cấp ký tự dựa trên RNN
 
-Recall that for language modeling in :numref:`sec_language-model`,
-we aim to predict the next token based on
-the current and past tokens;
-thus we shift the original sequence by one token
-as the targets (labels).
-:citet:`Bengio.Ducharme.Vincent.ea.2003` first proposed
-to use a neural network for language modeling.
-In the following we illustrate how RNNs can be used to build a language model.
-Let the minibatch size be one, and the sequence of the text be "machine".
-To simplify training in subsequent sections,
-we tokenize text into characters rather than words
-and consider a *character-level language model*.
-:numref:`fig_rnn_train` demonstrates how to predict the next character based on the current and previous characters via an RNN for character-level language modeling.
+Nhắc lại rằng đối với mô hình hóa ngôn ngữ trong :numref:`sec_language-model`,
+chúng ta hướng đến việc dự đoán token tiếp theo dựa trên
+token hiện tại và các token trước đó;
+do đó, chúng ta dịch chuỗi gốc đi một token
+để làm mục tiêu (nhãn).
+:citet:`Bengio.Ducharme.Vincent.ea.2003` là những người đầu tiên đề xuất
+sử dụng mạng nơ-ron cho mô hình hóa ngôn ngữ.
+Dưới đây, chúng ta minh họa cách RNN có thể được dùng để xây dựng một mô hình ngôn ngữ.
+Giả sử kích thước minibatch là một và chuỗi văn bản là "machine".
+Để đơn giản hóa việc huấn luyện trong các phần tiếp theo,
+chúng ta token hóa văn bản thành các ký tự thay vì từ
+và xét một *mô hình ngôn ngữ cấp ký tự*.
+:numref:`fig_rnn_train` minh họa cách dự đoán ký tự tiếp theo dựa trên các ký tự hiện tại và trước đó thông qua một RNN cho mô hình hóa ngôn ngữ cấp ký tự.
 
-![A character-level language model based on the RNN. The input and target sequences are "machin" and "achine", respectively.](../img/rnn-train.svg)
+![Một mô hình ngôn ngữ cấp ký tự dựa trên RNN. Chuỗi đầu vào và chuỗi mục tiêu lần lượt là "machin" và "achine".](../img/rnn-train.svg)
 :label:`fig_rnn_train`
 
-During the training process,
-we run a softmax operation on the output from the output layer for each time step, and then use the cross-entropy loss to compute the error between the model output and the target.
-Because of the recurrent computation of the hidden state in the hidden layer, the output, $\mathbf{O}_3$,  of time step 3 in :numref:`fig_rnn_train` is determined by the text sequence "m", "a", and "c". Since the next character of the sequence in the training data is "h", the loss of time step 3 will depend on the probability distribution of the next character generated based on the feature sequence "m", "a", "c" and the target "h" of this time step.
+Trong quá trình huấn luyện,
+chúng ta chạy phép toán softmax trên đầu ra từ lớp đầu ra ở mỗi bước thời gian, rồi sử dụng hàm mất mát cross-entropy để tính sai số giữa đầu ra của mô hình và mục tiêu.
+Do phép tính lặp của trạng thái ẩn trong lớp ẩn, đầu ra $\mathbf{O}_3$ ở bước thời gian 3 trong :numref:`fig_rnn_train` được xác định bởi chuỗi văn bản "m", "a" và "c". Vì ký tự tiếp theo của chuỗi trong dữ liệu huấn luyện là "h", mất mát ở bước thời gian 3 sẽ phụ thuộc vào phân phối xác suất của ký tự tiếp theo được tạo ra dựa trên chuỗi đặc trưng "m", "a", "c" và mục tiêu "h" của bước thời gian này.
 
-In practice, each token is represented by a $d$-dimensional vector, and we use a batch size $n>1$. Therefore, the input $\mathbf X_t$ at time step $t$ will be an $n\times d$ matrix, which is identical to what we discussed in :numref:`subsec_rnn_w_hidden_states`.
+Trong thực tế, mỗi token được biểu diễn bằng một vector $d$ chiều, và chúng ta sử dụng kích thước batch $n>1$. Do đó, đầu vào $\mathbf X_t$ tại bước thời gian $t$ sẽ là một ma trận $n\times d$, giống hệt những gì chúng ta đã thảo luận trong :numref:`subsec_rnn_w_hidden_states`.
 
-In the following sections, we will implement RNNs
-for character-level language models.
-
-
-## Summary
-
-A neural network that uses recurrent computation for hidden states is called a recurrent neural network (RNN).
-The hidden state of an RNN can capture historical information of the sequence up to the current time step. With recurrent computation, the number of RNN model parameters does not grow as the number of time steps increases. As for applications, an RNN can be used to create character-level language models.
+Trong các phần tiếp theo, chúng ta sẽ triển khai RNN
+cho các mô hình ngôn ngữ cấp ký tự.
 
 
-## Exercises
+## Tóm tắt
 
-1. If we use an RNN to predict the next character in a text sequence, what is the required dimension for any output?
-1. Why can RNNs express the conditional probability of a token at some time step based on all the previous tokens in the text sequence?
-1. What happens to the gradient if you backpropagate through a long sequence?
-1. What are some of the problems associated with the language model described in this section?
+Một mạng nơ-ron sử dụng phép tính lặp cho các trạng thái ẩn được gọi là mạng nơ-ron hồi tiếp (RNN).
+Trạng thái ẩn của một RNN có thể nắm bắt thông tin lịch sử của chuỗi cho đến bước thời gian hiện tại. Với phép tính lặp, số lượng tham số của mô hình RNN không tăng khi số bước thời gian tăng lên. Về ứng dụng, RNN có thể được dùng để tạo các mô hình ngôn ngữ cấp ký tự.
+
+
+## Bài tập
+
+1. Nếu chúng ta sử dụng một RNN để dự đoán ký tự tiếp theo trong một chuỗi văn bản, mỗi đầu ra cần có số chiều là bao nhiêu?
+1. Vì sao RNN có thể biểu diễn xác suất có điều kiện của một token tại một bước thời gian nào đó dựa trên tất cả các token trước đó trong chuỗi văn bản?
+1. Điều gì xảy ra với gradient nếu bạn backpropagate qua một chuỗi dài?
+1. Một số vấn đề liên quan đến mô hình ngôn ngữ được mô tả trong phần này là gì?
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/337)
+[Thảo luận](https://discuss.d2l.ai/t/337)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1050)
+[Thảo luận](https://discuss.d2l.ai/t/1050)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1051)
+[Thảo luận](https://discuss.d2l.ai/t/1051)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/180013)
+[Thảo luận](https://discuss.d2l.ai/t/180013)
 :end_tab:

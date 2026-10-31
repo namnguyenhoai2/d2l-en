@@ -1,463 +1,462 @@
-# Large-Scale Pretraining with Transformers
+# Tiền huấn luyện quy mô lớn với Transformers
 :label:`sec_large-pretraining-transformers`
 
-So far in our image classification and machine translation experiments,
-models have been trained on datasets with input--output examples
-*from scratch* to perform specific tasks.
-For example, a Transformer was trained
-with English--French pairs (:numref:`sec_transformer`)
-so that this model can translate input English text into French.
-As a result, each model becomes a *specific expert*
-that is sensitive to even a slight shift in data distribution
+Cho đến nay, trong các thí nghiệm phân loại ảnh và dịch máy của chúng ta,
+các mô hình đã được huấn luyện trên các tập dữ liệu có ví dụ đầu vào--đầu ra
+*từ đầu* để thực hiện các tác vụ cụ thể.
+Ví dụ, một Transformer đã được huấn luyện
+với các cặp tiếng Anh--tiếng Pháp (:numref:`sec_transformer`)
+để mô hình này có thể dịch văn bản tiếng Anh đầu vào sang tiếng Pháp.
+Do đó, mỗi mô hình trở thành một *chuyên gia cụ thể*
+nhạy cảm ngay cả với những thay đổi nhỏ trong phân phối dữ liệu
 (:numref:`sec_environment-and-distribution-shift`).
-For better generalized models, or even more competent *generalists*
-that can perform multiple tasks with or without adaptation,
-*pretraining* models on large data has been increasingly common.
+Để có các mô hình tổng quát hóa tốt hơn, hoặc thậm chí các *mô hình tổng quát*
+có năng lực hơn có thể thực hiện nhiều tác vụ dù có hoặc không cần thích ứng,
+việc *tiền huấn luyện* mô hình trên dữ liệu lớn ngày càng trở nên phổ biến.
 
-Given larger data for pretraining, the Transformer architecture
-performs better with an increased model size and training compute,
-demonstrating superior *scaling* behavior.
-Specifically, performance of Transformer-based language models
-scales as a power law with the amount of model parameters,
-training tokens, and training compute :cite:`kaplan2020scaling`.
-The scalability of Transformers is also evidenced
-by the significantly boosted performance
-from larger vision Transformers trained on larger data
-(discussed in :numref:`sec_vision-transformer`).
-More recent success stories include Gato, a *generalist* model
-that can play Atari, caption images, chat, and act as a robot :cite:`reed2022generalist`. Gato is a single  Transformer that scales well when pretrained on diverse modalities,
-including text, images, joint torques, and button presses.
-Notably, all such multimodal data is serialized into a flat sequence of tokens,
-which can be processed akin to text tokens (:numref:`sec_transformer`)
-or image patches (:numref:`sec_vision-transformer`) by Transformers.
+Với dữ liệu tiền huấn luyện lớn hơn, kiến trúc Transformer
+hoạt động tốt hơn khi kích thước mô hình và năng lực tính toán huấn luyện tăng lên,
+cho thấy hành vi *mở rộng* vượt trội.
+Cụ thể, hiệu năng của các mô hình ngôn ngữ dựa trên Transformer
+mở rộng theo luật lũy thừa với số lượng tham số mô hình,
+token huấn luyện và năng lực tính toán huấn luyện :cite:`kaplan2020scaling`.
+Khả năng mở rộng của Transformers cũng được chứng minh
+bởi hiệu năng tăng đáng kể
+từ các vision Transformer lớn hơn được huấn luyện trên dữ liệu lớn hơn
+(được thảo luận trong :numref:`sec_vision-transformer`).
+Các câu chuyện thành công gần đây hơn bao gồm Gato, một mô hình *tổng quát*
+có thể chơi Atari, tạo chú thích ảnh, trò chuyện và vận hành như robot :cite:`reed2022generalist`. Gato là một Transformer duy nhất có khả năng mở rộng tốt khi được tiền huấn luyện trên các modality đa dạng,
+bao gồm văn bản, ảnh, mô-men xoắn khớp và thao tác nhấn nút.
+Đáng chú ý, toàn bộ dữ liệu đa phương thức như vậy được tuần tự hóa thành một chuỗi token phẳng,
+có thể được Transformers xử lý tương tự token văn bản (:numref:`sec_transformer`)
+hoặc các patch ảnh (:numref:`sec_vision-transformer`).
 
-Prior to the compelling success of pretraining Transformers for multimodal data,
-Transformers were extensively pretrained  with a wealth of text.
-Originally proposed for machine translation,
-the Transformer architecture in :numref:`fig_transformer`
-consists of an encoder for representing input sequences
-and a decoder for generating target sequences.
-Primarily, Transformers can be used in three different modes:
-*encoder-only*, *encoder--decoder*, and *decoder-only*.
-To conclude this chapter, we will review these three modes
-and explain the scalability in pretraining Transformers.
+Trước thành công thuyết phục của việc tiền huấn luyện Transformers cho dữ liệu đa phương thức,
+Transformers đã được tiền huấn luyện rộng rãi với lượng văn bản phong phú.
+Ban đầu được đề xuất cho dịch máy,
+kiến trúc Transformer trong :numref:`fig_transformer`
+bao gồm một encoder để biểu diễn các chuỗi đầu vào
+và một decoder để tạo các chuỗi đích.
+Chủ yếu, Transformers có thể được sử dụng theo ba chế độ khác nhau:
+*chỉ encoder*, *encoder--decoder* và *chỉ decoder*.
+Để kết thúc chương này, chúng ta sẽ xem lại ba chế độ này
+và giải thích khả năng mở rộng khi tiền huấn luyện Transformers.
 
-## Encoder-Only
+## Chỉ Encoder
 
-When only the Transformer encoder is used,
-a sequence of input tokens is converted
-into the same number of representations
-that can be further projected into output
-(e.g., classification). A Transformer encoder
-consists of  self-attention layers,
-where all input tokens attend to each other.
-For example, vision Transformers depicted in :numref:`fig_vit`
-are encoder-only, converting a sequence of input image patches into
-the representation of a special “&lt;cls&gt;” token.
-Since this representation depends on all input tokens,
-it is further projected into classification labels.
-This design was inspired by an earlier encoder-only Transformer
-pretrained on text: BERT (Bidirectional Encoder Representations from Transformers) :cite:`Devlin.Chang.Lee.ea.2018`.
+Khi chỉ sử dụng Transformer encoder,
+một chuỗi token đầu vào được chuyển đổi
+thành cùng số lượng biểu diễn
+có thể tiếp tục được chiếu sang đầu ra
+(ví dụ: phân loại). Một Transformer encoder
+bao gồm các lớp self-attention,
+trong đó mọi token đầu vào đều attention lẫn nhau.
+Ví dụ, các vision Transformer được minh họa trong :numref:`fig_vit`
+là loại chỉ encoder, chuyển một chuỗi patch ảnh đầu vào thành
+biểu diễn của một token đặc biệt “&lt;cls&gt;”.
+Vì biểu diễn này phụ thuộc vào tất cả token đầu vào,
+nó tiếp tục được chiếu sang các nhãn phân loại.
+Thiết kế này được lấy cảm hứng từ một Transformer chỉ encoder trước đó
+được tiền huấn luyện trên văn bản: BERT (Bidirectional Encoder Representations from Transformers) :cite:`Devlin.Chang.Lee.ea.2018`.
 
 
-### Pretraining BERT
+### Tiền huấn luyện BERT
 
-![Left: Pretraining BERT with masked language modeling. Prediction of the masked "love" token depends on all input tokens before and after "love". Right: Attention pattern in the Transformer encoder. Each token along the vertical axis attends to all input tokens along the horizontal axis.](../img/bert-encoder-only.svg)
+![Bên trái: Tiền huấn luyện BERT bằng mô hình hóa ngôn ngữ có che mặt nạ. Việc dự đoán token "love" bị che phụ thuộc vào tất cả token đầu vào trước và sau "love". Bên phải: Mẫu attention trong Transformer encoder. Mỗi token dọc theo trục đứng attention đến tất cả token đầu vào dọc theo trục ngang.](../img/bert-encoder-only.svg)
 :label:`fig_bert-encoder-only`
 
-BERT is pretrained on text sequences using *masked language modeling*:
-input text with randomly masked tokens is fed
-into a Transformer encoder to predict the masked tokens.
-As illustrated in :numref:`fig_bert-encoder-only`,
-an original text sequence "I", "love", "this", "red", "car"
-is prepended with the “&lt;cls&gt;” token, and the “&lt;mask&gt;” token
-randomly replaces "love"; then the cross-entropy loss between the masked token "love"
-and its prediction is to be minimized during pretraining.
-Note that there is no constraint in the attention pattern of Transformer encoders
-(right of :numref:`fig_bert-encoder-only`)
-so all tokens can attend to each other.
-Thus, prediction of "love" depends on input tokens before and after it in the sequence.
-This is why BERT is a "bidirectional encoder".
-Without need for manual labeling, large-scale text data
-from books and Wikipedia can be used for pretraining BERT.
+BERT được tiền huấn luyện trên các chuỗi văn bản bằng *mô hình hóa ngôn ngữ có che mặt nạ*:
+văn bản đầu vào với các token được che ngẫu nhiên được đưa
+vào một Transformer encoder để dự đoán các token bị che.
+Như được minh họa trong :numref:`fig_bert-encoder-only`,
+một chuỗi văn bản gốc gồm "I", "love", "this", "red", "car"
+được thêm tiền tố bằng token “&lt;cls&gt;”, và token “&lt;mask&gt;”
+thay thế ngẫu nhiên cho "love"; sau đó loss cross-entropy giữa token bị che "love"
+và dự đoán của nó được tối thiểu hóa trong quá trình tiền huấn luyện.
+Lưu ý rằng không có ràng buộc nào trong mẫu attention của Transformer encoder
+(bên phải :numref:`fig_bert-encoder-only`)
+nên tất cả token có thể attention đến nhau.
+Vì vậy, dự đoán của "love" phụ thuộc vào các token đầu vào đứng trước và sau nó trong chuỗi.
+Đây là lý do BERT là một "encoder hai chiều".
+Không cần gán nhãn thủ công, dữ liệu văn bản quy mô lớn
+từ sách và Wikipedia có thể được sử dụng để tiền huấn luyện BERT.
 
 
 ### Fine-Tuning BERT
 
-The pretrained BERT can be *fine-tuned* to downstream encoding tasks involving single text or text pairs. During fine-tuning, additional layers can be added to BERT with randomized parameters: these parameters and those pretrained BERT parameters will be *updated* to fit training data of downstream tasks.
+BERT đã tiền huấn luyện có thể được *fine-tune* cho các tác vụ encoding hạ nguồn liên quan đến một văn bản đơn lẻ hoặc cặp văn bản. Trong quá trình fine-tuning, có thể thêm các lớp bổ sung vào BERT với các tham số được khởi tạo ngẫu nhiên: các tham số này và các tham số BERT đã tiền huấn luyện sẽ được *cập nhật* để phù hợp với dữ liệu huấn luyện của các tác vụ hạ nguồn.
 
-![Fine-tuning BERT for sentiment analysis.](../img/bert-finetune-classification.svg)
+![Fine-tuning BERT cho phân tích cảm xúc.](../img/bert-finetune-classification.svg)
 :label:`fig_bert-finetune-classification`
 
-:numref:`fig_bert-finetune-classification` illustrates
-fine-tuning of BERT for sentiment analysis.
-The Transformer encoder is a pretrained BERT,
-which takes a text sequence as input
-and feeds the “&lt;cls&gt;” representation
-(global representation of the input)
-into an additional fully connected layer
-to predict the sentiment.
-During fine-tuning, the cross-entropy loss
-between the prediction and the label
-on sentiment analysis data
-is minimized via gradient-based algorithms,
-where the additional layer is trained from scratch
-while pretrained parameters of BERT are updated.
-BERT does more than sentiment analysis.
-The general language representations learned
-by the 350-million-parameter BERT
-from 250 billion training tokens
-advanced the state of the art for natural language tasks
-such as single text classification,
-text pair classification or regression,
-text tagging, and question answering.
+:numref:`fig_bert-finetune-classification` minh họa
+việc fine-tuning BERT cho phân tích cảm xúc.
+Transformer encoder là một BERT đã tiền huấn luyện,
+nhận một chuỗi văn bản làm đầu vào
+và đưa biểu diễn “&lt;cls&gt;”
+(biểu diễn toàn cục của đầu vào)
+vào một lớp fully connected bổ sung
+để dự đoán cảm xúc.
+Trong quá trình fine-tuning, loss cross-entropy
+giữa dự đoán và nhãn
+trên dữ liệu phân tích cảm xúc
+được tối thiểu hóa thông qua các thuật toán dựa trên gradient,
+trong đó lớp bổ sung được huấn luyện từ đầu
+còn các tham số đã tiền huấn luyện của BERT được cập nhật.
+BERT không chỉ thực hiện phân tích cảm xúc.
+Các biểu diễn ngôn ngữ tổng quát mà BERT với 350 triệu tham số học được
+từ 250 tỷ token huấn luyện
+đã nâng cao state of the art cho các tác vụ ngôn ngữ tự nhiên
+như phân loại văn bản đơn lẻ,
+phân loại hoặc hồi quy cặp văn bản,
+gán thẻ văn bản và trả lời câu hỏi.
 
-You may note that these downstream tasks include text pair understanding.
-BERT pretraining has another loss for predicting
-whether one sentence immediately follows the other.
-However, this loss was later found to be less useful when pretraining RoBERTa,
-a BERT variant of the same size, on 2000 billion tokens :cite:`Liu.Ott.Goyal.ea.2019`.
-Other derivatives of BERT improved model architectures or pretraining objectives,
-such as ALBERT (enforcing parameter sharing) :cite:`lan2019albert`,
-SpanBERT (representing and predicting spans of text) :cite:`joshi2020spanbert`,
-DistilBERT (lightweight via knowledge distillation) :cite:`sanh2019distilbert`,
-and ELECTRA (replaced token detection) :cite:`clark2019electra`.
-Moreover, BERT inspired Transformer pretraining in computer vision,
-such as with vision Transformers :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`,
+Bạn có thể nhận thấy rằng các tác vụ hạ nguồn này bao gồm việc hiểu cặp văn bản.
+Tiền huấn luyện BERT có thêm một loss để dự đoán
+liệu một câu có ngay sau câu kia hay không.
+Tuy nhiên, loss này về sau được phát hiện là ít hữu ích hơn khi tiền huấn luyện RoBERTa,
+một biến thể BERT có cùng kích thước, trên 2000 tỷ token :cite:`Liu.Ott.Goyal.ea.2019`.
+Các biến thể khác của BERT đã cải thiện kiến trúc mô hình hoặc mục tiêu tiền huấn luyện,
+chẳng hạn ALBERT (áp dụng chia sẻ tham số) :cite:`lan2019albert`,
+SpanBERT (biểu diễn và dự đoán các đoạn văn bản) :cite:`joshi2020spanbert`,
+DistilBERT (nhẹ hơn nhờ knowledge distillation) :cite:`sanh2019distilbert`,
+và ELECTRA (phát hiện token bị thay thế) :cite:`clark2019electra`.
+Hơn nữa, BERT đã truyền cảm hứng cho tiền huấn luyện Transformer trong thị giác máy tính,
+chẳng hạn với vision Transformers :cite:`Dosovitskiy.Beyer.Kolesnikov.ea.2021`,
 Swin Transformers :cite:`liu2021swin`,
-and MAE (masked autoencoders) :cite:`he2022masked`.
+và MAE (masked autoencoders) :cite:`he2022masked`.
 
 ## Encoder--Decoder
 
-Since a Transformer encoder converts a sequence of input tokens
-into the same number of output representations,
-the encoder-only mode cannot generate a sequence of arbitrary length as in machine translation.
-As originally proposed for machine translation,
-the Transformer architecture can be outfitted with a decoder
-that autoregressively predicts the target sequence
-of arbitrary length, token by token,
-conditional on both encoder output and decoder output:
-(i) for conditioning on encoder output, encoder--decoder cross-attention
-(multi-head attention of decoder in :numref:`fig_transformer`)
-allows target tokens to attend to *all* input tokens;
-(ii) conditioning on decoder output is achieved
-by a so-called *causal* attention
-(this name is common in the literature but is misleading
-as it has little connection to the proper study of causality)
-pattern (masked multi-head attention of decoder in :numref:`fig_transformer`),
-where any target token can only attend to *past* and *present* tokens in the target sequence.
+Vì một Transformer encoder chuyển đổi một chuỗi token đầu vào
+thành cùng số lượng biểu diễn đầu ra,
+chế độ chỉ encoder không thể tạo ra một chuỗi có độ dài tùy ý như trong dịch máy.
+Như đã được đề xuất ban đầu cho dịch máy,
+kiến trúc Transformer có thể được trang bị một decoder
+để dự đoán tự hồi quy chuỗi đích
+có độ dài tùy ý, từng token một,
+có điều kiện theo cả đầu ra encoder và đầu ra decoder:
+(i) để phụ thuộc vào đầu ra encoder, encoder--decoder cross-attention
+(multi-head attention của decoder trong :numref:`fig_transformer`)
+cho phép các token đích attention đến *tất cả* token đầu vào;
+(ii) việc phụ thuộc vào đầu ra decoder đạt được
+bằng một mẫu attention gọi là *causal*
+(tên này phổ biến trong tài liệu nhưng gây hiểu lầm
+vì nó ít liên hệ với nghiên cứu đúng nghĩa về quan hệ nhân quả)
+(masked multi-head attention của decoder trong :numref:`fig_transformer`),
+trong đó bất kỳ token đích nào chỉ có thể attention đến các token *trước đó* và *hiện tại* trong chuỗi đích.
 
-To pretrain encoder--decoder Transformers beyond human-labeled machine translation data,
-BART :cite:`lewis2019bart` and T5 :cite:`raffel2020exploring`
-are two concurrently proposed encoder--decoder Transformers
-pretrained on large-scale text corpora.
-Both attempt to reconstruct original text in their pretraining objectives,
-while the former emphasizes noising input
-(e.g., masking, deletion, permutation, and rotation)
-and the latter highlights multitask unification
-with comprehensive ablation studies.
-
-
-### Pretraining T5
+Để tiền huấn luyện các Transformer encoder--decoder vượt ra ngoài dữ liệu dịch máy được con người gán nhãn,
+BART :cite:`lewis2019bart` và T5 :cite:`raffel2020exploring`
+là hai Transformer encoder--decoder được đề xuất đồng thời
+và tiền huấn luyện trên các corpus văn bản quy mô lớn.
+Cả hai đều cố gắng tái tạo văn bản gốc trong các mục tiêu tiền huấn luyện,
+trong đó mô hình thứ nhất nhấn mạnh việc gây nhiễu đầu vào
+(ví dụ: che mặt nạ, xóa, hoán vị và xoay)
+còn mô hình thứ hai nhấn mạnh việc thống nhất đa tác vụ
+với các nghiên cứu ablation toàn diện.
 
 
-As an example of the pretrained Transformer encoder--decoder,
+### Tiền huấn luyện T5
+
+
+Là một ví dụ về Transformer encoder--decoder đã tiền huấn luyện,
 T5 (Text-to-Text Transfer Transformer)
-unifies many tasks as the same text-to-text problem:
-for any task, the input of the encoder is a task description
-(e.g., "Summarize", ":") followed by task input
-(e.g., a sequence of tokens from an article),
-and the decoder predicts the task output
-(e.g., a sequence of tokens summarizing the input article).
-To perform as text-to-text, T5 is trained
-to generate some target text conditional on input text.
+thống nhất nhiều tác vụ thành cùng một bài toán text-to-text:
+với bất kỳ tác vụ nào, đầu vào của encoder là phần mô tả tác vụ
+(ví dụ: "Summarize", ":") theo sau bởi đầu vào tác vụ
+(ví dụ: một chuỗi token từ một bài báo),
+và decoder dự đoán đầu ra tác vụ
+(ví dụ: một chuỗi token tóm tắt bài báo đầu vào).
+Để hoạt động theo dạng text-to-text, T5 được huấn luyện
+để tạo một số văn bản đích có điều kiện theo văn bản đầu vào.
 
 
-![Left: Pretraining T5 by predicting consecutive spans. The original sentence is "I", "love", "this", "red", "car", where "love" is replaced by a special “&lt;X&gt;” token, and consecutive "red", "car" are replaced by a special “&lt;Y&gt;” token. The target sequence ends with a special “&lt;Z&gt;” token. Right: Attention pattern in the Transformer encoder--decoder. In the encoder self-attention (lower square), all input tokens attend to each other; In the encoder--decoder cross-attention (upper rectangle), each target token attends to all input tokens; In the decoder self-attention (upper triangle), each target token  attends to present and past target tokens only (causal).](../img/t5-encoder-decoder.svg)
+![Bên trái: Tiền huấn luyện T5 bằng cách dự đoán các span liên tiếp. Câu gốc là "I", "love", "this", "red", "car", trong đó "love" được thay bằng token đặc biệt “&lt;X&gt;”, và "red", "car" liên tiếp được thay bằng token đặc biệt “&lt;Y&gt;”. Chuỗi đích kết thúc bằng token đặc biệt “&lt;Z&gt;”. Bên phải: Mẫu attention trong Transformer encoder--decoder. Trong encoder self-attention (hình vuông phía dưới), mọi token đầu vào attention lẫn nhau; trong encoder--decoder cross-attention (hình chữ nhật phía trên), mỗi token đích attention đến tất cả token đầu vào; trong decoder self-attention (tam giác phía trên), mỗi token đích chỉ attention đến các token đích hiện tại và trước đó (causal).](../img/t5-encoder-decoder.svg)
 :label:`fig_t5-encoder-decoder`
 
-To obtain input and output from any original text,
-T5 is pretrained to predict consecutive spans.
-Specifically, tokens from text are randomly replaced
-by special tokens where each consecutive span
-is replaced by the same special token.
-Consider the example in :numref:`fig_t5-encoder-decoder`,
-where the original text is "I", "love", "this", "red", "car".
-Tokens "love", "red", "car" are randomly replaced by special tokens.
-Since "red" and "car" are a consecutive span,
-they are replaced by the same special token.
-As a result, the input sequence is "I", "&lt;X&gt;", "this", "&lt;Y&gt;",
-and the target sequence is
+Để thu được đầu vào và đầu ra từ bất kỳ văn bản gốc nào,
+T5 được pretrain để dự đoán các span liên tiếp.
+Cụ thể, các token trong văn bản được thay thế ngẫu nhiên
+bằng các token đặc biệt, trong đó mỗi span liên tiếp
+được thay thế bằng cùng một token đặc biệt.
+Hãy xem xét ví dụ trong :numref:`fig_t5-encoder-decoder`,
+trong đó văn bản gốc là "I", "love", "this", "red", "car".
+Các token "love", "red", "car" được thay thế ngẫu nhiên bằng các token đặc biệt.
+Vì "red" và "car" là một span liên tiếp,
+chúng được thay thế bằng cùng một token đặc biệt.
+Kết quả là, chuỗi đầu vào là "I", "&lt;X&gt;", "this", "&lt;Y&gt;",
+và chuỗi đích là
 "&lt;X&gt;", "love", "&lt;Y&gt;", "red", "car", "&lt;Z&gt;",
-where "&lt;Z&gt;" is another special token marking the end.
-As shown in :numref:`fig_t5-encoder-decoder`,
-the decoder has a causal attention pattern to prevent itself
-from attending to future tokens during sequence prediction.
+trong đó "&lt;Z&gt;" là một token đặc biệt khác đánh dấu điểm kết thúc.
+Như minh họa trong :numref:`fig_t5-encoder-decoder`,
+decoder có mẫu attention nhân quả để ngăn nó
+attention đến các token trong tương lai trong khi dự đoán chuỗi.
 
-In T5, predicting consecutive span is also referred to
-as reconstructing corrupted text.
-With this objective, T5 is pretrained
-with 1000 billion tokens from the C4
-(Colossal Clean Crawled Corpus) data,
-which consists of clean English text
-from the web :cite:`raffel2020exploring`.
+Trong T5, việc dự đoán span liên tiếp cũng được gọi là
+tái tạo văn bản bị hỏng.
+Với mục tiêu này, T5 được pretrain
+với 1000 tỷ token từ dữ liệu C4
+(Colossal Clean Crawled Corpus),
+bao gồm văn bản tiếng Anh sạch
+từ web :cite:`raffel2020exploring`.
 
 ### Fine-Tuning T5
 
-Similar to BERT, T5 needs to be fine-tuned (updating T5 parameters)
-on task-specific training data to perform this task.
-Major differences from BERT fine-tuning include:
-(i) T5 input includes task descriptions;
-(ii) T5 can generate sequences
-with arbitrary length
-with its Transformer decoder;
-(iii) No additional layers are required.
+Tương tự BERT, T5 cần được fine-tune (cập nhật các tham số T5)
+trên dữ liệu huấn luyện dành riêng cho tác vụ để thực hiện tác vụ này.
+Các điểm khác biệt chính so với fine-tuning BERT bao gồm:
+(i) đầu vào của T5 bao gồm mô tả tác vụ;
+(ii) T5 có thể tạo các chuỗi
+có độ dài tùy ý
+bằng Transformer decoder của nó;
+(iii) Không cần thêm layer nào.
 
-![Fine-tuning T5 for text summarization. Both the task description and article tokens are fed into the Transformer encoder for predicting the summary.](../img/t5-finetune-summarization.svg)
+![Fine-tune T5 cho tác vụ tóm tắt văn bản. Cả phần mô tả tác vụ và các token của bài viết đều được đưa vào Transformer encoder để dự đoán bản tóm tắt.](../img/t5-finetune-summarization.svg)
 :label:`fig_t5-finetune-summarization`
 
 :numref:`fig_t5-finetune-summarization`
-explains fine-tuning T5
-using text summarization as an example.
-In this downstream task,
-the task description tokens "Summarize", ":"
-followed by the article tokens are input to the encoder.
+giải thích cách fine-tune T5
+lấy tóm tắt văn bản làm ví dụ.
+Trong tác vụ downstream này,
+các token mô tả tác vụ "Summarize", ":"
+theo sau bởi các token của bài viết được đưa vào encoder.
 
-After fine-tuning, the 11-billion-parameter T5 (T5-11B)
-achieved state-of-the-art results on multiple encoding (e.g., classification)
-and generation (e.g., summarization) benchmarks.
-Since released, T5 has been extensively used in later research.
-For example, switch Transformers are designed based on T5
-to activate a subset of the parameters
-for better computational efficiency :cite:`fedus2022switch`.
-In a text-to-image model called Imagen,
-text is input to a frozen T5 encoder (T5-XXL)
-with 4.6 billion parameters :cite:`saharia2022photorealistic`.
-The photorealistic text-to-image examples in :numref:`fig_imagen`
-suggest that the T5 encoder alone may effectively
-represent text even without fine-tuning.
+Sau khi fine-tune, T5 với 11 tỷ tham số (T5-11B)
+đạt kết quả state-of-the-art trên nhiều benchmark về encoding (ví dụ: classification)
+và generation (ví dụ: summarization).
+Kể từ khi được phát hành, T5 đã được sử dụng rộng rãi trong các nghiên cứu sau đó.
+Ví dụ, switch Transformers được thiết kế dựa trên T5
+để kích hoạt một tập con các tham số
+nhằm đạt hiệu quả tính toán tốt hơn :cite:`fedus2022switch`.
+Trong một mô hình text-to-image có tên Imagen,
+văn bản được đưa vào một T5 encoder (T5-XXL) đã được frozen
+với 4,6 tỷ tham số :cite:`saharia2022photorealistic`.
+Các ví dụ text-to-image chân thực như ảnh chụp trong :numref:`fig_imagen`
+cho thấy rằng riêng T5 encoder có thể biểu diễn hiệu quả
+văn bản ngay cả khi không fine-tune.
 
-![Text-to-image examples by the Imagen model, whose text encoder is from T5 (figures taken from :citet:`saharia2022photorealistic`).](../img/imagen.png)
+![Các ví dụ text-to-image của mô hình Imagen, có text encoder từ T5 (các hình được lấy từ :citet:`saharia2022photorealistic`).](../img/imagen.png)
 :width:`700px`
 :label:`fig_imagen`
 
 
-## Decoder-Only
+## Chỉ Decoder
 
 
-We have reviewed encoder-only and encoder--decoder Transformers.
-Alternatively, decoder-only Transformers
-remove the entire encoder and the decoder sublayer
-with the encoder--decoder cross-attention
-from the original encoder--decoder architecture
-depicted in :numref:`fig_transformer`.
-Nowadays, decoder-only Transformers have been the *de facto* architecture
-in large-scale language modeling (:numref:`sec_language-model`),
-which leverages the world's abundant unlabeled text corpora via self-supervised learning.
+Chúng ta đã xem xét các Transformer chỉ encoder và encoder--decoder.
+Ngoài ra, Transformer chỉ decoder
+loại bỏ toàn bộ encoder và sublayer decoder
+có encoder--decoder cross-attention
+khỏi kiến trúc encoder--decoder ban đầu
+được minh họa trong :numref:`fig_transformer`.
+Ngày nay, Transformer chỉ decoder đã trở thành kiến trúc *de facto*
+trong language modeling quy mô lớn (:numref:`sec_language-model`),
+tận dụng các kho văn bản không gán nhãn phong phú của thế giới thông qua self-supervised learning.
 
 
 
-### GPT and GPT-2
+### GPT và GPT-2
 
-Using language modeling as the training objective,
-the GPT (generative pre-training) model
-chooses a Transformer decoder
-as its backbone :cite:`Radford.Narasimhan.Salimans.ea.2018`.
+Sử dụng language modeling làm mục tiêu huấn luyện,
+mô hình GPT (generative pre-training)
+chọn một Transformer decoder
+làm backbone :cite:`Radford.Narasimhan.Salimans.ea.2018`.
 
-![Left: Pretraining GPT with language modeling. The target sequence is the input sequence shifted by one token. Both “&lt;bos&gt;” and “&lt;eos&gt;” are special tokens marking the beginning and end of sequences, respectively. Right: Attention pattern in the Transformer decoder. Each token along the vertical axis attends to only its past tokens along the horizontal axis (causal).](../img/gpt-decoder-only.svg)
+![Bên trái: Pretrain GPT bằng language modeling. Chuỗi đích là chuỗi đầu vào được dịch đi một token. Cả “&lt;bos&gt;” và “&lt;eos&gt;” đều là các token đặc biệt lần lượt đánh dấu điểm bắt đầu và kết thúc của chuỗi. Bên phải: Mẫu attention trong Transformer decoder. Mỗi token dọc theo trục dọc chỉ attention đến các token trước đó của nó dọc theo trục ngang (nhân quả).](../img/gpt-decoder-only.svg)
 :label:`fig_gpt-decoder-only`
 
-Following the autoregressive language model training
-as described in :numref:`subsec_partitioning-seqs`,
-:numref:`fig_gpt-decoder-only` illustrates
-GPT pretraining with a Transformer encoder,
-where the target sequence is the input sequence shifted by one token.
-Note that the attention pattern in the Transformer decoder
-enforces that each token can only attend to its past tokens
-(future tokens cannot be attended to because they have not yet been chosen).
+Theo phương pháp huấn luyện autoregressive language model
+được mô tả trong :numref:`subsec_partitioning-seqs`,
+:numref:`fig_gpt-decoder-only` minh họa
+việc pretrain GPT bằng một Transformer encoder,
+trong đó chuỗi đích là chuỗi đầu vào được dịch đi một token.
+Lưu ý rằng mẫu attention trong Transformer decoder
+buộc mỗi token chỉ có thể attention đến các token trước đó của nó
+(các token trong tương lai không thể được attention vì chúng chưa được chọn).
 
 
-GPT has 100 million parameters and needs to be
-fine-tuned for individual downstream tasks.
-A much larger Transformer-decoder language model,
-GPT-2, was introduced one year later :cite:`Radford.Wu.Child.ea.2019`.
-Compared with the original Transformer decoder in GPT, pre-normalization
-(discussed in :numref:`subsec_vit-encoder`)
-and improved initialization and weight-scaling were adopted in GPT-2.
-Pretrained on 40 GB of text, the 1.5-billion-parameter
-GPT-2 obtained the state-of-the-art results on language modeling benchmarks
-and promising results on multiple other tasks
-*without updating the parameters or architecture*.
+GPT có 100 triệu tham số và cần được
+fine-tune cho từng tác vụ downstream.
+Một language model Transformer-decoder lớn hơn nhiều,
+GPT-2, được giới thiệu một năm sau đó :cite:`Radford.Wu.Child.ea.2019`.
+So với Transformer decoder ban đầu trong GPT, pre-normalization
+(được thảo luận trong :numref:`subsec_vit-encoder`)
+cùng với việc khởi tạo và weight-scaling cải tiến đã được áp dụng trong GPT-2.
+Được pretrain trên 40 GB văn bản, GPT-2 với 1,5 tỷ tham số
+đạt kết quả state-of-the-art trên các benchmark language modeling
+và kết quả đầy hứa hẹn trên nhiều tác vụ khác
+*mà không cập nhật tham số hoặc kiến trúc*.
 
 
-### GPT-3 and Beyond
+### GPT-3 và các mô hình tiếp theo
 
-GPT-2 demonstrated potential of using the same language model
-for multiple tasks without updating the model.
-This is more computationally efficient than fine-tuning,
-which requires model updates via gradient computation.
+GPT-2 đã chứng minh tiềm năng sử dụng cùng một language model
+cho nhiều tác vụ mà không cập nhật mô hình.
+Điều này hiệu quả tính toán hơn fine-tuning,
+vốn yêu cầu cập nhật mô hình thông qua tính toán gradient.
 
 
-![Zero-shot, one-shot, few-shot in-context learning with language models (Transformer decoders). No parameter update is needed.](../img/gpt-3-xshot.svg)
+![In-context learning zero-shot, one-shot, few-shot với các language model (Transformer decoder). Không cần cập nhật tham số.](../img/gpt-3-xshot.svg)
 :label:`fig_gpt-3-xshot`
 
-Before explaining the more computationally efficient use
-of language models without parameter update,
-recall :numref:`sec_rnn-scratch` that a language model
-can be trained to generate a text sequence
-conditional on some prefix text sequence.
-Thus, a pretrained language model may generate the task output
-as a sequence *without parameter update*,
-conditional on an input sequence with the task description,
-task-specific input--output examples, and a prompt (task input).
-This learning paradigm is called *in-context learning* :cite:`brown2020language`,
-which can be further categorized
-into *zero-shot*, *one-shot*, and *few-shot*,
-when there is no, one, and a few task-specific input--output examples (:numref:`fig_gpt-3-xshot`).
+Trước khi giải thích cách sử dụng hiệu quả tính toán hơn
+của language model mà không cập nhật tham số,
+hãy nhớ lại trong :numref:`sec_rnn-scratch` rằng một language model
+có thể được huấn luyện để tạo một chuỗi văn bản
+có điều kiện theo một chuỗi văn bản tiền tố nào đó.
+Do đó, một language model đã pretrain có thể tạo đầu ra tác vụ
+dưới dạng một chuỗi *mà không cập nhật tham số*,
+có điều kiện theo một chuỗi đầu vào với mô tả tác vụ,
+các ví dụ đầu vào--đầu ra dành riêng cho tác vụ và một prompt (đầu vào tác vụ).
+Mô hình học này được gọi là *in-context learning* :cite:`brown2020language`,
+và có thể được phân loại thêm
+thành *zero-shot*, *one-shot*, và *few-shot*,
+khi không có, có một, và có một vài ví dụ đầu vào--đầu ra dành riêng cho tác vụ (:numref:`fig_gpt-3-xshot`).
 
 
-![Aggregate performance of GPT-3 for all 42 accuracy-denominated benchmarks (caption adapted and figure taken from :citet:`brown2020language`).](../img/gpt3-xshot-scaling.png)
+![Hiệu năng tổng hợp của GPT-3 trên toàn bộ 42 benchmark được đánh giá bằng accuracy (chú thích được điều chỉnh và hình được lấy từ :citet:`brown2020language`).](../img/gpt3-xshot-scaling.png)
 :width:`400px`
 :label:`fig_gpt3-xshot-scaling`
 
-These three settings were tested in GPT-3 :cite:`brown2020language`,
-whose largest version uses data and model size
-about two orders of magnitude larger than those in GPT-2.
-GPT-3 uses the same Transformer decoder architecture
-as its direct predecessor GPT-2
-except that attention patterns
-(at the right in :numref:`fig_gpt-decoder-only`)
-are sparser at alternating layers.
-Pretrained with 300 billion tokens,
-GPT-3 performs better with larger model size,
-where few-shot performance increases most rapidly (:numref:`fig_gpt3-xshot-scaling`).
+Ba thiết lập này đã được thử nghiệm trong GPT-3 :cite:`brown2020language`,
+trong đó phiên bản lớn nhất sử dụng dữ liệu và kích thước mô hình
+lớn hơn khoảng hai bậc độ lớn so với GPT-2.
+GPT-3 sử dụng cùng kiến trúc Transformer decoder
+như phiên bản tiền nhiệm trực tiếp GPT-2
+ngoại trừ việc các mẫu attention
+(ở bên phải trong :numref:`fig_gpt-decoder-only`)
+thưa hơn tại các layer xen kẽ.
+Được pretrain với 300 tỷ token,
+GPT-3 hoạt động tốt hơn khi kích thước mô hình lớn hơn,
+trong đó hiệu năng few-shot tăng nhanh nhất (:numref:`fig_gpt3-xshot-scaling`).
 
-The subsequent GPT-4 model did not fully disclose technical details in its report :cite:`openai2023gpt4`.
-By contrast with its predecessors, GPT-4
-is a large-scale, multimodal model that
-can take both text and images as input
-and generate text output.
+Mô hình GPT-4 tiếp theo đã không công bố đầy đủ các chi tiết kỹ thuật trong báo cáo của mình :cite:`openai2023gpt4`.
+Trái với các mô hình tiền nhiệm, GPT-4
+là một mô hình đa phương thức quy mô lớn
+có thể nhận cả văn bản và hình ảnh làm đầu vào
+và tạo đầu ra văn bản.
 
 
-## Scalability
+## Khả năng mở rộng
 
-:numref:`fig_gpt3-xshot-scaling` empirically demonstrates scalability
-of Transformers in the GPT-3 language model.
-For language modeling, more comprehensive empirical studies
-on the scalability of Transformers have led researchers to see promise
-in training larger Transformers with more data and compute :cite:`kaplan2020scaling`.
+:numref:`fig_gpt3-xshot-scaling` minh họa thực nghiệm khả năng mở rộng
+của Transformer trong language model GPT-3.
+Đối với language modeling, các nghiên cứu thực nghiệm toàn diện hơn
+về khả năng mở rộng của Transformer đã khiến các nhà nghiên cứu thấy được tiềm năng
+trong việc huấn luyện các Transformer lớn hơn với nhiều dữ liệu và tài nguyên tính toán hơn :cite:`kaplan2020scaling`.
 
-![Transformer language model performance improves smoothly as we increase the model size, dataset size, and amount of compute used for training. For optimal performance all three factors must be scaled up in tandem. Empirical performance has a power-law relationship with each individual factor when not bottlenecked by the other two (caption adapted and figure taken from :citet:`kaplan2020scaling`).](../img/scaling-power-law.png)
+![Hiệu năng của language model Transformer cải thiện mượt mà khi chúng ta tăng kích thước mô hình, kích thước dataset và lượng tài nguyên tính toán dùng cho huấn luyện. Để đạt hiệu năng tối ưu, cả ba yếu tố phải được mở rộng đồng thời. Hiệu năng thực nghiệm có quan hệ theo luật lũy thừa với từng yếu tố riêng lẻ khi không bị giới hạn bởi hai yếu tố còn lại (chú thích được điều chỉnh và hình được lấy từ :citet:`kaplan2020scaling`).](../img/scaling-power-law.png)
 :width:`700px`
 :label:`fig_scaling-power-law3`
 
-As shown in :numref:`fig_scaling-power-law3`,
-*power-law scaling* can be observed in the performance
-with respect to the model size (number of parameters, excluding embedding layers),
-dataset size (number of training tokens),
-and amount of training compute (PetaFLOP/s-days, excluding embedding layers).
-In general, increasing all these three factors in tandem leads to better performance.
-However, *how* to increase them in tandem
-still remains a matter of debate :cite:`hoffmann2022training`.
+Như minh họa trong :numref:`fig_scaling-power-law3`,
+có thể quan sát thấy *mở rộng theo luật lũy thừa* trong hiệu năng
+theo kích thước mô hình (số lượng tham số, không bao gồm embedding layer),
+kích thước dataset (số lượng token huấn luyện),
+và lượng tài nguyên tính toán huấn luyện (PetaFLOP/s-ngày, không bao gồm embedding layer).
+Nhìn chung, tăng đồng thời cả ba yếu tố này sẽ mang lại hiệu năng tốt hơn.
+Tuy nhiên, *cách* tăng chúng đồng thời
+vẫn còn là vấn đề gây tranh luận :cite:`hoffmann2022training`.
 
-![Transformer language model training runs (figure taken from :citet:`kaplan2020scaling`).](../img/scaling-sample-conv.png)
+![Các lần chạy huấn luyện language model Transformer (hình được lấy từ :citet:`kaplan2020scaling`).](../img/scaling-sample-conv.png)
 :width:`700px`
 :label:`fig_scaling-sample-conv`
 
-As well as increased performance, large models also enjoy better sample efficiency than small models. :numref:`fig_scaling-sample-conv` shows that large models need fewer training samples (tokens processed) to perform at the same level achieved by small models, and performance is scaled smoothly with compute.
+Bên cạnh hiệu năng tăng lên, các mô hình lớn cũng có hiệu quả mẫu tốt hơn các mô hình nhỏ. :numref:`fig_scaling-sample-conv` cho thấy các mô hình lớn cần ít mẫu huấn luyện hơn (các token được xử lý) để đạt cùng mức hiệu năng của các mô hình nhỏ, và hiệu năng được mở rộng mượt mà theo tài nguyên tính toán.
 
 
 
-![GPT-3 performance (cross-entropy validation loss) follows a power-law trend with the amount of compute used for training. The power-law behavior observed in :citet:`kaplan2020scaling` continues for an additional two orders of magnitude with only small deviations from the predicted curve. Embedding parameters are excluded from compute and parameter counts (caption adapted and figure taken from :citet:`brown2020language`).](../img/scaling-gpt3.png)
+![Hiệu năng của GPT-3 (mất mát xác thực cross-entropy) tuân theo xu hướng luật lũy thừa (power-law) theo lượng compute được sử dụng để huấn luyện. Hành vi luật lũy thừa được quan sát trong :citet:`kaplan2020scaling` tiếp tục thêm hai bậc độ lớn, chỉ có những sai lệch nhỏ so với đường cong dự đoán. Các tham số embedding được loại khỏi số lượng compute và số lượng tham số (chú thích được điều chỉnh và hình được lấy từ :citet:`brown2020language`).](../img/scaling-gpt3.png)
 :width:`250px`
 :label:`fig_scaling-gpt3`
 
 
-The empirical scaling behaviors in :citet:`kaplan2020scaling` have been tested in subsequent large Transformer models. For example, GPT-3 supported this hypothesis with two more orders of magnitude in :numref:`fig_scaling-gpt3`.
+Các hành vi mở rộng theo thực nghiệm trong :citet:`kaplan2020scaling` đã được kiểm chứng trên các mô hình Transformer lớn sau đó. Ví dụ, GPT-3 đã hỗ trợ giả thuyết này với thêm hai bậc độ lớn trong :numref:`fig_scaling-gpt3`.
 
 
 
 
 
-## Large Language Models
+## Các Mô Hình Ngôn Ngữ Lớn
 
-The scalability of Transformers in the GPT series has inspired subsequent large language models. 
-The GPT-2 Transformer decoder was used for training the 530-billion-parameter Megatron-Turing NLG :cite:`smith2022using` with 270 billion training tokens. Following the GPT-2 design, the 280-billion-parameter Gopher :cite:`rae2021scaling` pretrained with 300 billion tokens, performed competitively across diverse tasks. 
-Inheriting the same architecture and using the same compute budget of Gopher, Chinchilla :cite:`hoffmann2022training` is a substantially smaller (70 billion parameters) model that trains for much longer (1.4 trillion training tokens), outperforming Gopher on many tasks and with more emphasis on the number of tokens than on the number of parameters.
-To continue the scaling line of language modeling, 
-PaLM (Pathway Language Model) :cite:`chowdhery2022palm`, a 540-billion-parameter Transformer decoder with modified designs pretrained on 780 billion tokens, outperformed average human performance on the BIG-Bench benchmark :cite:`srivastava2022beyond`. Its later version, PaLM 2 :cite:`anil2023palm`, scaled data and model roughly 1:1 and improved multilingual and reasoning capabilities. 
-Other large language models, such as Minerva  :cite:`lewkowycz2022solving` that further trains a generalist (PaLM) and Galactica :cite:`taylor2022galactica` that is not trained on a general corpus, have shown promising quantitative and scientific reasoning capabilities.
-
-
-Open-sourced releases, such as OPT (Open Pretrained Transformers) :cite:`zhang2022opt`, BLOOM :cite:` scao2022bloom`, and FALCON :cite:`penedo2023refinedweb`,
-democratized research and use of large language models.
-Focusing on computational efficiency at inference time,
-the open-sourced Llama 1 :cite:`touvron2023llama` outperformed much larger models by training on more tokens than had been typically used. The updated Llama 2 :cite:`touvron2023llama2` further increased the pretraining corpus by 40%, leading to product models that may match the performance of competitive close-sourced models. 
+Khả năng mở rộng của Transformers trong dòng GPT đã truyền cảm hứng cho các mô hình ngôn ngữ lớn sau này. 
+Transformer decoder của GPT-2 được dùng để huấn luyện Megatron-Turing NLG :cite:`smith2022using` với 530 tỷ tham số trên 270 tỷ token huấn luyện. Theo thiết kế của GPT-2, Gopher :cite:`rae2021scaling` với 280 tỷ tham số, được pretrain bằng 300 tỷ token, đã đạt hiệu năng cạnh tranh trên nhiều tác vụ đa dạng. 
+Kế thừa cùng kiến trúc và sử dụng cùng ngân sách compute như Gopher, Chinchilla :cite:`hoffmann2022training` là một mô hình nhỏ hơn đáng kể (70 tỷ tham số) nhưng được huấn luyện lâu hơn nhiều (1,4 nghìn tỷ token huấn luyện), vượt Gopher trên nhiều tác vụ và chú trọng số lượng token hơn số lượng tham số.
+Để tiếp tục xu hướng mở rộng của mô hình hóa ngôn ngữ, 
+PaLM (Pathway Language Model) :cite:`chowdhery2022palm`, một Transformer decoder 540 tỷ tham số với các thiết kế được sửa đổi, được pretrain trên 780 tỷ token, đã vượt hiệu năng trung bình của con người trên benchmark BIG-Bench :cite:`srivastava2022beyond`. Phiên bản sau đó, PaLM 2 :cite:`anil2023palm`, đã mở rộng dữ liệu và mô hình theo tỷ lệ xấp xỉ 1:1, đồng thời cải thiện các năng lực đa ngôn ngữ và suy luận. 
+Các mô hình ngôn ngữ lớn khác, chẳng hạn như Minerva :cite:`lewkowycz2022solving` tiếp tục huấn luyện một mô hình tổng quát (PaLM), và Galactica :cite:`taylor2022galactica` không được huấn luyện trên một corpus tổng quát, đã cho thấy các năng lực đầy hứa hẹn về suy luận định lượng và khoa học.
 
 
+Các bản phát hành open-source, như OPT (Open Pretrained Transformers) :cite:`zhang2022opt`, BLOOM :cite:` scao2022bloom`, và FALCON :cite:`penedo2023refinedweb`,
+đã dân chủ hóa việc nghiên cứu và sử dụng các mô hình ngôn ngữ lớn.
+Tập trung vào hiệu quả tính toán tại thời điểm inference,
+Llama 1 :cite:`touvron2023llama` open-source đã vượt các mô hình lớn hơn nhiều nhờ huấn luyện trên số lượng token nhiều hơn mức thường được sử dụng. Llama 2 :cite:`touvron2023llama2` được cập nhật tiếp tục tăng corpus pretraining thêm 40%, dẫn đến các mô hình sản phẩm có thể sánh ngang hiệu năng của các mô hình close-source cạnh tranh. 
 
-:citet:`wei2022emergent` discussed emergent abilities of large language models that are present in larger models, but not in smaller models.
-However, simply increasing model size does not inherently make models follow human instructions better.
-:citet:`wei2021finetuned,sanh2021multitask` have found that fine-tuning large language models
-on a range of datasets described via *instructions*
-can improve zero-shot performance on held-out tasks.
-Using *reinforcement learning from human feedback*,
-:citet:`ouyang2022training` fine-tuned GPT-3
-to follow a diverse set of instructions.
-Following the resultant InstructGPT which
-aligns language models with human intent
-via fine-tuning :cite:`ouyang2022training`,
+
+
+:citet:`wei2022emergent` đã thảo luận về các năng lực mới nổi của các mô hình ngôn ngữ lớn, vốn hiện diện ở các mô hình lớn hơn nhưng không có ở các mô hình nhỏ hơn.
+Tuy nhiên, chỉ đơn giản tăng kích thước mô hình không tự động khiến mô hình tuân theo chỉ dẫn của con người tốt hơn.
+:citet:`wei2021finetuned,sanh2021multitask` nhận thấy rằng fine-tuning các mô hình ngôn ngữ lớn
+trên một loạt dataset được mô tả bằng *chỉ dẫn*
+có thể cải thiện hiệu năng zero-shot trên các tác vụ held-out.
+Sử dụng *reinforcement learning from human feedback*,
+:citet:`ouyang2022training` đã fine-tune GPT-3
+để tuân theo một tập hợp chỉ dẫn đa dạng.
+Theo InstructGPT thu được, mô hình
+căn chỉnh các mô hình ngôn ngữ với ý định của con người
+thông qua fine-tuning :cite:`ouyang2022training`,
 [ChatGPT](https://chat.openai.com/)
-can generate human-like responses (e.g., code debugging and creative writing)
-based on conversations with humans
-and can perform many natural language processing
-tasks zero-shot :cite:`qin2023chatgpt`.
-:citet:`bai2022constitutional` replaced human inputs (e.g., human-labeled data) with model outputs
-to partially automate the instruction tuning process, which is also known as *reinforcement learning from AI feedback*.
+có thể tạo ra các phản hồi giống con người (ví dụ: debug code và viết sáng tạo)
+dựa trên các cuộc hội thoại với con người
+và có thể thực hiện nhiều tác vụ xử lý ngôn ngữ tự nhiên
+theo cách zero-shot :cite:`qin2023chatgpt`.
+:citet:`bai2022constitutional` đã thay thế đầu vào của con người (ví dụ: dữ liệu do con người gán nhãn) bằng đầu ra của mô hình
+để tự động hóa một phần quy trình instruction tuning, còn được gọi là *reinforcement learning from AI feedback*.
 
 
-Large language models offer an exciting prospect
-of formulating text input to induce models to perform desired tasks via in-context learning,
-which is also known as *prompting*.
-Notably,
+Các mô hình ngôn ngữ lớn mang lại triển vọng thú vị
+về việc xây dựng đầu vào văn bản để khiến mô hình thực hiện các tác vụ mong muốn thông qua in-context learning,
+còn được gọi là *prompting*.
+Đáng chú ý,
 *chain-of-thought prompting* :cite:`wei2022chain`,
-an in-context learning method
-with few-shot "question, intermediate reasoning steps, answer" demonstrations,
-elicits the complex reasoning capabilities of
-large language models
-in order to solve mathematical, commonsense, and symbolic reasoning tasks.
-Sampling multiple reasoning paths :cite:`wang2023self`, diversifying few-shot demonstrations :cite:`zhang2023automatic`, 
-and reducing complex problems to sub-problems :cite:`zhou2023least`
-can all improve the reasoning accuracy. In fact, with simple prompts like "Let's think step by step" just before each answer,
-large language models can even perform *zero-shot*
-chain-of-thought reasoning with decent accuracy :cite:`kojima2022large`.
-Even for multimodal inputs consisting of both text and images,
-language models can perform multimodal chain-of-thought reasoning with higher accuracy than using text input only :cite:`zhang2023multicot`.
+một phương pháp in-context learning
+với các ví dụ few-shot theo dạng "câu hỏi, các bước suy luận trung gian, câu trả lời",
+khơi gợi các năng lực suy luận phức tạp của
+các mô hình ngôn ngữ lớn
+để giải quyết các tác vụ suy luận toán học, thường thức và ký hiệu.
+Lấy mẫu nhiều đường suy luận :cite:`wang2023self`, đa dạng hóa các ví dụ few-shot :cite:`zhang2023automatic`, 
+và giảm các vấn đề phức tạp thành các bài toán con :cite:`zhou2023least`
+đều có thể cải thiện độ chính xác suy luận. Thực tế, chỉ với các prompt đơn giản như "Let's think step by step" ngay trước mỗi câu trả lời,
+các mô hình ngôn ngữ lớn thậm chí có thể thực hiện suy luận chain-of-thought *zero-shot*
+với độ chính xác khá tốt :cite:`kojima2022large`.
+Ngay cả với đầu vào đa phương thức bao gồm cả văn bản và hình ảnh,
+các mô hình ngôn ngữ có thể thực hiện suy luận chain-of-thought đa phương thức với độ chính xác cao hơn so với chỉ sử dụng đầu vào văn bản :cite:`zhang2023multicot`.
 
 
 
 
-## Summary and Discussion
+## Tóm Tắt và Thảo Luận
 
-Transformers have been pretrained as encoder-only (e.g., BERT), encoder--decoder (e.g., T5), and decoder-only (e.g., GPT series). Pretrained models may be adapted to perform different tasks with model update (e.g., fine-tuning) or not (e.g., few-shot). Scalability of Transformers suggests that better performance benefits from larger models, more training data, and more training compute. Since Transformers were first designed and pretrained for text data, this section leans slightly towards natural language processing. Nonetheless, those models discussed above can be often found in more recent models across multiple modalities. For example,
-(i) Chinchilla :cite:`hoffmann2022training` was further extended to Flamingo :cite:`alayrac2022flamingo`, a visual language model for few-shot learning;
-(ii) GPT-2 :cite:`Radford.Wu.Child.ea.2019` and the vision Transformer encode text and images in CLIP (Contrastive Language-Image Pre-training) :cite:`radford2021learning`, whose image and text embeddings were later adopted in the DALL-E 2 text-to-image system :cite:`ramesh2022hierarchical`. Although there have been no systematic studies on Transformer scalability in multimodal pretraining yet, an all-Transformer text-to-image model called Parti :cite:`yu2022scaling` shows potential of scalability across modalities:
-a larger Parti is more capable of high-fidelity image generation and content-rich text understanding (:numref:`fig_parti`).
+Transformers đã được pretrain dưới dạng chỉ encoder (ví dụ: BERT), encoder--decoder (ví dụ: T5), và chỉ decoder (ví dụ: dòng GPT). Các mô hình pretrain có thể được điều chỉnh để thực hiện các tác vụ khác nhau có cập nhật mô hình (ví dụ: fine-tuning) hoặc không cần cập nhật (ví dụ: few-shot). Khả năng mở rộng của Transformers cho thấy hiệu năng tốt hơn được hưởng lợi từ các mô hình lớn hơn, nhiều dữ liệu huấn luyện hơn và nhiều compute huấn luyện hơn. Vì Transformers lần đầu được thiết kế và pretrain cho dữ liệu văn bản, phần này hơi thiên về xử lý ngôn ngữ tự nhiên. Tuy nhiên, các mô hình được thảo luận ở trên thường có thể được tìm thấy trong các mô hình gần đây hơn trên nhiều modality. Ví dụ,
+(i) Chinchilla :cite:`hoffmann2022training` sau đó được mở rộng thành Flamingo :cite:`alayrac2022flamingo`, một mô hình ngôn ngữ thị giác cho few-shot learning;
+(ii) GPT-2 :cite:`Radford.Wu.Child.ea.2019` và vision Transformer mã hóa văn bản và hình ảnh trong CLIP (Contrastive Language-Image Pre-training) :cite:`radford2021learning`, mà các embedding hình ảnh và văn bản của nó sau đó được áp dụng trong hệ thống text-to-image DALL-E 2 :cite:`ramesh2022hierarchical`. Mặc dù vẫn chưa có các nghiên cứu hệ thống về khả năng mở rộng của Transformer trong pretraining đa phương thức, một mô hình text-to-image hoàn toàn dựa trên Transformer có tên Parti :cite:`yu2022scaling` cho thấy tiềm năng mở rộng trên các modality:
+Parti lớn hơn có khả năng tạo ảnh có độ trung thực cao và hiểu văn bản giàu nội dung tốt hơn (:numref:`fig_parti`).
 
 
-![Image examples generated from the same text by the Parti model of increasing sizes (350M, 750M, 3B, 20B) (examples taken from :citet:`yu2022scaling`).](../img/parti.png)
+![Các ví dụ hình ảnh được tạo từ cùng một văn bản bởi mô hình Parti có kích thước tăng dần (350M, 750M, 3B, 20B) (các ví dụ lấy từ :citet:`yu2022scaling`).](../img/parti.png)
 :width:`700px`
 :label:`fig_parti`
 
 
 
 
-## Exercises
+## Bài Tập
 
-1. Is it possible to fine-tune T5 using a minibatch consisting of different tasks? Why or why not? How about for GPT-2?
-1. Given a powerful language model, what applications can you think of?
-1. Say that you are asked to fine-tune a language model to perform text classification by adding additional layers. Where will you add them? Why?
-1. Consider sequence-to-sequence problems (e.g., machine translation) where the input sequence is always available throughout the target sequence prediction. What could be limitations of modeling with decoder-only Transformers? Why?
+1. Có thể fine-tune T5 bằng một minibatch gồm các tác vụ khác nhau không? Vì sao có hoặc không? Còn GPT-2 thì sao?
+1. Với một mô hình ngôn ngữ mạnh, bạn có thể nghĩ đến những ứng dụng nào?
+1. Giả sử bạn được yêu cầu fine-tune một mô hình ngôn ngữ để thực hiện phân loại văn bản bằng cách thêm các layer bổ sung. Bạn sẽ thêm chúng ở đâu? Vì sao?
+1. Hãy xem xét các bài toán sequence-to-sequence (ví dụ: dịch máy), trong đó chuỗi đầu vào luôn có sẵn trong toàn bộ quá trình dự đoán chuỗi đích. Việc mô hình hóa bằng Transformers chỉ có decoder có thể gặp những hạn chế nào? Vì sao?
 
 
-[Discussions](https://discuss.d2l.ai/t/9232)
+[Thảo Luận](https://discuss.d2l.ai/t/9232)

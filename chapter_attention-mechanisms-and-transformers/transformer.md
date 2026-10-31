@@ -3,29 +3,28 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow', 'jax')
 ```
 
-# The Transformer Architecture
+# Kiến trúc Transformer
 :label:`sec_transformer`
 
 
-We have compared CNNs, RNNs, and self-attention in
+Chúng ta đã so sánh CNN, RNN và self-attention trong
 :numref:`subsec_cnn-rnn-self-attention`.
-Notably, self-attention
-enjoys both parallel computation and
-the shortest maximum path length.
-Therefore,
-it is appealing to design deep architectures
-by using self-attention.
-Unlike earlier self-attention models
-that still rely on RNNs for input representations :cite:`Cheng.Dong.Lapata.2016,Lin.Feng.Santos.ea.2017,Paulus.Xiong.Socher.2017`,
-the Transformer model
-is solely based on attention mechanisms
-without any convolutional or recurrent layer :cite:`Vaswani.Shazeer.Parmar.ea.2017`.
-Though originally proposed
-for sequence-to-sequence learning on text data,
-Transformers have been
-pervasive in a wide range of
-modern deep learning applications,
-such as in areas to do with language, vision, speech, and reinforcement learning.
+Đáng chú ý, self-attention
+vừa hỗ trợ tính toán song song vừa có
+độ dài đường đi tối đa ngắn nhất.
+Do đó,
+việc thiết kế các kiến trúc sâu
+bằng self-attention là rất hấp dẫn.
+Không giống các mô hình self-attention trước đó
+vẫn dựa vào RNN cho biểu diễn đầu vào :cite:`Cheng.Dong.Lapata.2016,Lin.Feng.Santos.ea.2017,Paulus.Xiong.Socher.2017`,
+mô hình Transformer
+chỉ dựa trên các cơ chế attention
+mà không có bất kỳ lớp convolutional hoặc recurrent nào :cite:`Vaswani.Shazeer.Parmar.ea.2017`.
+Mặc dù ban đầu được đề xuất
+cho việc học sequence-to-sequence trên dữ liệu văn bản,
+Transformer đã trở nên phổ biến
+trong rất nhiều ứng dụng deep learning hiện đại,
+chẳng hạn như trong các lĩnh vực ngôn ngữ, thị giác, giọng nói và reinforcement learning.
 
 ```{.python .input}
 %%tab mxnet
@@ -64,101 +63,99 @@ import math
 import pandas as pd
 ```
 
-## Model
+## Mô hình
 
-As an instance of the encoder--decoder
-architecture,
-the overall architecture of
-the Transformer
-is presented in :numref:`fig_transformer`.
-As we can see,
-the Transformer is composed of an encoder and a decoder.
-In contrast to
+Là một ví dụ của kiến trúc
+encoder--decoder,
+kiến trúc tổng thể của
+Transformer
+được trình bày trong :numref:`fig_transformer`.
+Như có thể thấy,
+Transformer gồm một encoder và một decoder.
+Trái với
 Bahdanau attention
-for sequence-to-sequence learning
-in :numref:`fig_s2s_attention_details`,
-the input (source) and output (target)
-sequence embeddings
-are added with positional encoding
-before being fed into
-the encoder and the decoder
-that stack modules based on self-attention.
+cho việc học sequence-to-sequence
+trong :numref:`fig_s2s_attention_details`,
+embedding của chuỗi đầu vào (nguồn) và chuỗi đầu ra (đích)
+được cộng với positional encoding
+trước khi được đưa vào
+encoder và decoder,
+là các khối xếp chồng những module dựa trên self-attention.
 
-![The Transformer architecture.](../img/transformer.svg)
+![Kiến trúc Transformer.](../img/transformer.svg)
 :width:`320px`
 :label:`fig_transformer`
 
 
-Now we provide an overview of the
-Transformer architecture in :numref:`fig_transformer`.
-At a high level,
-the Transformer encoder is a stack of multiple identical layers,
-where each layer
-has two sublayers (either is denoted as $\textrm{sublayer}$).
-The first
-is a multi-head self-attention pooling
-and the second is a positionwise feed-forward network.
-Specifically,
-in the encoder self-attention,
-queries, keys, and values are all from the
-outputs of the previous encoder layer.
-Inspired by the ResNet design of :numref:`sec_resnet`,
-a residual connection is employed
-around both sublayers.
-In the Transformer,
-for any input $\mathbf{x} \in \mathbb{R}^d$ at any position of the sequence,
-we require that $\textrm{sublayer}(\mathbf{x}) \in \mathbb{R}^d$ so that
-the residual connection $\mathbf{x} + \textrm{sublayer}(\mathbf{x}) \in \mathbb{R}^d$ is feasible.
-This addition from the residual connection is immediately
-followed by layer normalization :cite:`Ba.Kiros.Hinton.2016`.
-As a result, the Transformer encoder outputs a $d$-dimensional vector representation
-for each position of the input sequence.
+Bây giờ, chúng ta sẽ cung cấp cái nhìn tổng quan về
+kiến trúc Transformer trong :numref:`fig_transformer`.
+Ở mức độ khái quát,
+Transformer encoder là một chồng nhiều lớp giống hệt nhau,
+trong đó mỗi lớp
+có hai sublayer (mỗi sublayer được ký hiệu là $\textrm{sublayer}$).
+Sublayer thứ nhất
+là multi-head self-attention pooling
+và sublayer thứ hai là positionwise feed-forward network.
+Cụ thể,
+trong encoder self-attention,
+queries, keys và values đều đến từ
+đầu ra của lớp encoder trước đó.
+Lấy cảm hứng từ thiết kế ResNet trong :numref:`sec_resnet`,
+một residual connection được sử dụng
+xung quanh cả hai sublayer.
+Trong Transformer,
+với mọi đầu vào $\mathbf{x} \in \mathbb{R}^d$ tại bất kỳ vị trí nào trong chuỗi,
+ta yêu cầu $\textrm{sublayer}(\mathbf{x}) \in \mathbb{R}^d$ để
+residual connection $\mathbf{x} + \textrm{sublayer}(\mathbf{x}) \in \mathbb{R}^d$ khả thi.
+Phép cộng từ residual connection này ngay lập tức
+được theo sau bởi layer normalization :cite:`Ba.Kiros.Hinton.2016`.
+Do đó, Transformer encoder xuất ra biểu diễn vector $d$ chiều
+cho mỗi vị trí của chuỗi đầu vào.
 
-The Transformer decoder is also a stack of multiple identical layers
-with residual connections and layer normalizations.
-As well as the two sublayers described in
-the encoder, the decoder inserts
-a third sublayer, known as
-the encoder--decoder attention,
-between these two.
-In the encoder--decoder attention,
-queries are from the
-outputs of the decoder's self-attention sublayer,
-and the keys and values are
-from the Transformer encoder outputs.
-In the decoder self-attention,
-queries, keys, and values are all from the
-outputs of the previous decoder layer.
-However, each position in the decoder is
-allowed only to attend to all positions in the decoder
-up to that position.
-This *masked* attention
-preserves the autoregressive property,
-ensuring that the prediction only depends
-on those output tokens that have been generated.
+Transformer decoder cũng là một chồng nhiều lớp giống hệt nhau
+với residual connection và layer normalization.
+Ngoài hai sublayer được mô tả trong
+encoder, decoder chèn thêm
+một sublayer thứ ba, được gọi là
+encoder--decoder attention,
+giữa hai sublayer này.
+Trong encoder--decoder attention,
+queries đến từ
+đầu ra của sublayer self-attention của decoder,
+còn keys và values đến
+từ đầu ra của Transformer encoder.
+Trong decoder self-attention,
+queries, keys và values đều đến từ
+đầu ra của lớp decoder trước đó.
+Tuy nhiên, mỗi vị trí trong decoder
+chỉ được phép attention đến tất cả các vị trí trong decoder
+cho đến vị trí đó.
+Attention *masked* này
+duy trì tính chất autoregressive,
+đảm bảo rằng dự đoán chỉ phụ thuộc
+vào các token đầu ra đã được tạo.
 
-
-We have already described and implemented
-multi-head attention based on scaled dot products
-in :numref:`sec_multihead-attention`
-and positional encoding in :numref:`subsec_positional-encoding`.
-In the following, we will implement
-the rest of the Transformer model.
+Chúng ta đã mô tả và triển khai
+multi-head attention dựa trên scaled dot product
+trong :numref:`sec_multihead-attention`
+và positional encoding trong :numref:`subsec_positional-encoding`.
+Sau đây, chúng ta sẽ triển khai
+phần còn lại của mô hình Transformer.
 
 ## [**Positionwise Feed-Forward Networks**]
 :label:`subsec_positionwise-ffn`
 
-The positionwise feed-forward network transforms
-the representation at all the sequence positions
-using the same MLP.
-This is why we call it *positionwise*.
-In the implementation below,
-the input `X` with shape
-(batch size, number of time steps or sequence length in tokens,
-number of hidden units or feature dimension)
-will be transformed by a two-layer MLP into
-an output tensor of shape
-(batch size, number of time steps, `ffn_num_outputs`).
+Positionwise feed-forward network biến đổi
+biểu diễn tại mọi vị trí trong chuỗi
+bằng cùng một MLP.
+Đó là lý do nó được gọi là *positionwise*.
+Trong phần triển khai bên dưới,
+đầu vào `X` có shape
+(batch size, số lượng time step hoặc độ dài chuỗi tính theo token,
+số lượng hidden unit hoặc feature dimension)
+sẽ được biến đổi bởi MLP hai lớp thành
+một tensor đầu ra có shape
+(batch size, số lượng time step, `ffn_num_outputs`).
 
 ```{.python .input}
 %%tab mxnet
@@ -217,15 +214,15 @@ class PositionWiseFFN(nn.Module):  #@save
         return self.dense2(nn.relu(self.dense1(X)))
 ```
 
-The following example
-shows that [**the innermost dimension
-of a tensor changes**] to
-the number of outputs in
-the positionwise feed-forward network.
-Since the same MLP transforms
-at all the positions,
-when the inputs at all these positions are the same,
-their outputs are also identical.
+Ví dụ sau
+cho thấy [**chiều trong cùng
+của một tensor thay đổi**] thành
+số lượng đầu ra trong
+positionwise feed-forward network.
+Vì cùng một MLP biến đổi
+ở mọi vị trí,
+khi đầu vào tại tất cả các vị trí này giống nhau,
+đầu ra của chúng cũng giống hệt nhau.
 
 ```{.python .input}
 %%tab mxnet
@@ -253,35 +250,34 @@ ffn = PositionWiseFFN(4, 8)
 ffn.init_with_output(d2l.get_key(), jnp.ones((2, 3, 4)))[0][0]
 ```
 
-## Residual Connection and Layer Normalization
+## Residual Connection và Layer Normalization
 
-Now let's focus on the "add & norm" component in :numref:`fig_transformer`.
-As we described at the beginning of this section,
-this is a residual connection immediately
-followed by layer normalization.
-Both are key to effective deep architectures.
+Bây giờ, hãy tập trung vào thành phần "add & norm" trong :numref:`fig_transformer`.
+Như đã mô tả ở đầu phần này,
+đây là một residual connection ngay lập tức
+được theo sau bởi layer normalization.
+Cả hai đều là yếu tố then chốt cho các kiến trúc sâu hiệu quả.
 
-In :numref:`sec_batch_norm`,
-we explained how batch normalization
-recenters and rescales across the examples within
-a minibatch.
-As discussed in :numref:`subsec_layer-normalization-in-bn`,
-layer normalization is the same as batch normalization
-except that the former
-normalizes across the feature dimension,
-thus enjoying benefits of scale independence and batch size independence.
-Despite its pervasive applications
-in computer vision,
-batch normalization
-is usually empirically
-less effective than layer normalization
-in natural language processing
-tasks, where the inputs are often
-variable-length sequences.
+Trong :numref:`sec_batch_norm`,
+chúng ta đã giải thích cách batch normalization
+tái căn giữa và tái tỷ lệ trên các ví dụ trong
+một minibatch.
+Như đã thảo luận trong :numref:`subsec_layer-normalization-in-bn`,
+layer normalization giống batch normalization
+ngoại trừ việc phương pháp trước
+chuẩn hóa theo feature dimension,
+nhờ đó có được lợi ích độc lập với thang đo và độc lập với batch size.
+Mặc dù được ứng dụng rộng rãi
+trong computer vision,
+batch normalization thường
+kém hiệu quả hơn layer normalization về mặt thực nghiệm
+trong các tác vụ natural language processing,
+nơi đầu vào thường là
+các chuỗi có độ dài thay đổi.
 
-The following code snippet
-[**compares the normalization across different dimensions
-by layer normalization and batch normalization**].
+Đoạn mã sau
+[**so sánh việc chuẩn hóa theo các chiều khác nhau
+bằng layer normalization và batch normalization**].
 
 ```{.python .input}
 %%tab mxnet
@@ -323,9 +319,9 @@ print('layer norm:', ln.init_with_output(d2l.get_key(), X)[0],
                                            use_running_average=False)[0])
 ```
 
-Now we can implement the `AddNorm` class
-[**using a residual connection followed by layer normalization**].
-Dropout is also applied for regularization.
+Bây giờ, chúng ta có thể triển khai lớp `AddNorm`
+[**sử dụng residual connection theo sau bởi layer normalization**].
+Dropout cũng được áp dụng để regularization.
 
 ```{.python .input}
 %%tab mxnet
@@ -378,9 +374,9 @@ class AddNorm(nn.Module):  #@save
             nn.Dropout(self.dropout)(Y, deterministic=not training) + X)
 ```
 
-The residual connection requires that
-the two inputs are of the same shape
-so that [**the output tensor also has the same shape after the addition operation**].
+Residual connection yêu cầu
+hai đầu vào có cùng shape
+để [**tensor đầu ra cũng có cùng shape sau phép cộng**].
 
 ```{.python .input}
 %%tab mxnet
@@ -418,14 +414,14 @@ d2l.check_shape(output, shape)
 ## Encoder
 :label:`subsec_transformer-encoder`
 
-With all the essential components to assemble
-the Transformer encoder,
-let's start by
-implementing [**a single layer within the encoder**].
-The following `TransformerEncoderBlock` class
-contains two sublayers: multi-head self-attention and positionwise feed-forward networks,
-where a residual connection followed by layer normalization is employed
-around both sublayers.
+Sau khi có mọi thành phần thiết yếu để lắp ráp
+Transformer encoder,
+hãy bắt đầu bằng
+việc triển khai [**một lớp đơn lẻ trong encoder**].
+Lớp `TransformerEncoderBlock` sau đây
+chứa hai sublayer: multi-head self-attention và positionwise feed-forward networks,
+trong đó residual connection theo sau bởi layer normalization được sử dụng
+xung quanh cả hai sublayer.
 
 ```{.python .input}
 %%tab mxnet
@@ -507,9 +503,9 @@ class TransformerEncoderBlock(nn.Module):  #@save
         return self.addnorm2(Y, self.ffn(Y), training=training), attention_weights
 ```
 
-As we can see,
-[**no layer in the Transformer encoder
-changes the shape of its input.**]
+Như có thể thấy,
+[**không có lớp nào trong Transformer encoder
+thay đổi shape của đầu vào.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -548,13 +544,13 @@ encoder_blk = TransformerEncoderBlock(24, 48, 8, 0.5)
 d2l.check_shape(output, X.shape)
 ```
 
-In the following [**Transformer encoder**] implementation,
-we stack `num_blks` instances of the above `TransformerEncoderBlock` classes.
-Since we use the fixed positional encoding
-whose values are always between $-1$ and $1$,
-we multiply values of the learnable input embeddings
-by the square root of the embedding dimension
-to rescale before summing up the input embedding and the positional encoding.
+Trong phần triển khai [**Transformer encoder**] sau đây,
+chúng ta xếp chồng `num_blks` instance của các lớp `TransformerEncoderBlock` ở trên.
+Vì chúng ta sử dụng positional encoding cố định
+có các giá trị luôn nằm giữa $-1$ và $1$,
+chúng ta nhân các giá trị của input embedding có thể học
+với căn bậc hai của embedding dimension
+để tái tỷ lệ trước khi cộng input embedding và positional encoding.
 
 ```{.python .input}
 %%tab mxnet
@@ -679,9 +675,9 @@ class TransformerEncoder(d2l.Encoder):  #@save
         return X
 ```
 
-Below we specify hyperparameters to [**create a two-layer Transformer encoder**].
-The shape of the Transformer encoder output
-is (batch size, number of time steps, `num_hiddens`).
+Bên dưới, chúng ta chỉ định các hyperparameter để [**tạo Transformer encoder hai lớp**].
+Shape của đầu ra Transformer encoder
+là (batch size, số lượng time step, `num_hiddens`).
 
 ```{.python .input}
 %%tab mxnet
@@ -714,43 +710,43 @@ d2l.check_shape(encoder.init_with_output(d2l.get_key(),
 
 ## Decoder
 
-As shown in :numref:`fig_transformer`,
-[**the Transformer decoder
-is composed of multiple identical layers**].
-Each layer is implemented in the following
-`TransformerDecoderBlock` class,
-which contains three sublayers:
+Như minh họa trong :numref:`fig_transformer`,
+[**Transformer decoder
+bao gồm nhiều lớp giống hệt nhau**].
+Mỗi lớp được triển khai trong
+lớp `TransformerDecoderBlock` sau đây,
+chứa ba sublayer:
 decoder self-attention,
 encoder--decoder attention,
-and positionwise feed-forward networks.
-These sublayers employ
-a residual connection around them
-followed by layer normalization.
+và positionwise feed-forward networks.
+Các sublayer này sử dụng
+residual connection xung quanh chúng
+theo sau bởi layer normalization.
 
 
-As we described earlier in this section,
-in the masked multi-head decoder self-attention
-(the first sublayer),
-queries, keys, and values
-all come from the outputs of the previous decoder layer.
-When training sequence-to-sequence models,
-tokens at all the positions (time steps)
-of the output sequence
-are known.
-However,
-during prediction
-the output sequence is generated token by token;
-thus,
-at any decoder time step
-only the generated tokens
-can be used in the decoder self-attention.
-To preserve autoregression in the decoder,
-its masked self-attention
-specifies  `dec_valid_lens` so that
-any query
-only attends to
-all positions in the decoder
-up to the query position.
+Như đã mô tả trước đó trong phần này,
+trong masked multi-head decoder self-attention
+(sublayer đầu tiên),
+queries, keys và values
+đều đến từ đầu ra của lớp decoder trước đó.
+Khi huấn luyện các mô hình sequence-to-sequence,
+token ở tất cả vị trí (time step)
+của chuỗi đầu ra
+đều đã biết.
+Tuy nhiên,
+trong quá trình dự đoán,
+chuỗi đầu ra được tạo từng token một;
+do đó,
+tại bất kỳ time step nào của decoder,
+chỉ các token đã được tạo
+mới có thể được dùng trong decoder self-attention.
+Để duy trì tính autoregression trong decoder,
+masked self-attention của nó
+chỉ định `dec_valid_lens` để
+mỗi query
+chỉ attention đến
+mọi vị trí trong decoder
+cho đến vị trí của query.
 
 ```{.python .input}
 %%tab mxnet
@@ -949,11 +945,11 @@ class TransformerDecoderBlock(nn.Module):
         return self.addnorm3(Z, self.ffn(Z), training=training), state, attention_w1, attention_w2
 ```
 
-To facilitate scaled dot product operations
-in the encoder--decoder attention
-and addition operations in the residual connections,
-[**the feature dimension (`num_hiddens`) of the decoder is
-the same as that of the encoder.**]
+Để hỗ trợ các phép toán scaled dot product
+trong encoder--decoder attention
+và các phép cộng trong residual connection,
+[**feature dimension (`num_hiddens`) của decoder
+giống với feature dimension của encoder.**]
 
 ```{.python .input}
 %%tab mxnet
@@ -990,14 +986,14 @@ d2l.check_shape(decoder_blk.init_with_output(d2l.get_key(), X, state)[0][0],
                 X.shape)
 ```
 
-Now we [**construct the entire Transformer decoder**]
-composed of `num_blks` instances of `TransformerDecoderBlock`.
-In the end,
-a fully connected layer computes the prediction
-for all the `vocab_size` possible output tokens.
-Both of the decoder self-attention weights
-and the encoder--decoder attention weights
-are stored for later visualization.
+Bây giờ, chúng ta [**xây dựng toàn bộ bộ giải mã Transformer**]
+bao gồm `num_blks` thực thể của `TransformerDecoderBlock`.
+Cuối cùng,
+một lớp kết nối đầy đủ tính toán dự đoán
+cho toàn bộ `vocab_size` token đầu ra có thể có.
+Cả trọng số self-attention của bộ giải mã
+và trọng số attention encoder--decoder
+đều được lưu lại để trực quan hóa sau này.
 
 ```{.python .input}
 %%tab mxnet
@@ -1153,16 +1149,16 @@ class TransformerDecoder(nn.Module):
         return self.dense(X), state
 ```
 
-## [**Training**]
+## [**Huấn luyện**]
 
-Let's instantiate an encoder--decoder model
-by following the Transformer architecture.
-Here we specify that
-both the Transformer encoder and the Transformer decoder
-have two layers using 4-head attention.
-As in :numref:`sec_seq2seq_training`,
-we train the Transformer model
-for sequence-to-sequence learning on the English--French machine translation dataset.
+Hãy khởi tạo một mô hình encoder--decoder
+theo kiến trúc Transformer.
+Ở đây, chúng ta chỉ định rằng
+cả encoder Transformer và decoder Transformer
+đều có hai lớp sử dụng attention 4-head.
+Tương tự như trong :numref:`sec_seq2seq_training`,
+chúng ta huấn luyện mô hình Transformer
+cho việc học sequence-to-sequence trên tập dữ liệu dịch máy Anh--Pháp.
 
 ```{.python .input}
 %%tab all
@@ -1201,9 +1197,9 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-After training,
-we use the Transformer model
-to [**translate a few English sentences**] into French and compute their BLEU scores.
+Sau khi huấn luyện,
+chúng ta sử dụng mô hình Transformer
+để [**dịch một vài câu tiếng Anh**] sang tiếng Pháp và tính điểm BLEU của chúng.
 
 ```{.python .input}
 %%tab all
@@ -1225,9 +1221,9 @@ for en, fr, p in zip(engs, fras, preds):
           f'{d2l.bleu(" ".join(translation), fr, k=2):.3f}')
 ```
 
-Let's [**visualize the Transformer attention weights**] when translating the final English sentence into French.
-The shape of the encoder self-attention weights
-is (number of encoder layers, number of attention heads, `num_steps` or number of queries, `num_steps` or number of key-value pairs).
+Hãy [**trực quan hóa các trọng số attention của Transformer**] khi dịch câu tiếng Anh cuối cùng sang tiếng Pháp.
+Hình dạng của trọng số self-attention của encoder
+là (số lớp encoder, số attention head, `num_steps` hoặc số lượng query, `num_steps` hoặc số cặp key-value).
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -1252,16 +1248,16 @@ d2l.check_shape(enc_attention_weights,
                 (num_blks, num_heads, data.num_steps, data.num_steps))
 ```
 
-In the encoder self-attention,
-both queries and keys come from the same input sequence.
-Since padding tokens do not carry meaning,
-with specified valid length of the input sequence
-no query attends to positions of padding tokens.
-In the following,
-two layers of multi-head attention weights
-are presented row by row.
-Each head independently attends
-based on a separate representation subspace of queries, keys, and values.
+Trong self-attention của encoder,
+cả query và key đều đến từ cùng một chuỗi đầu vào.
+Vì các token padding không mang ý nghĩa,
+với độ dài hợp lệ được chỉ định của chuỗi đầu vào,
+không query nào attention đến các vị trí của token padding.
+Trong phần sau,
+trọng số multi-head attention của hai lớp
+được trình bày theo từng hàng.
+Mỗi head attention độc lập
+dựa trên một không gian con biểu diễn riêng biệt của query, key và value.
 
 ```{.python .input}
 %%tab mxnet, tensorflow, jax
@@ -1278,17 +1274,17 @@ d2l.show_heatmaps(
     figsize=(7, 3.5))
 ```
 
-[**To visualize the decoder self-attention weights and the encoder--decoder attention weights,
-we need more data manipulations.**]
-For example,
-we fill the masked attention weights with zero.
-Note that
-the decoder self-attention weights
-and the encoder--decoder attention weights
-both have the same queries:
-the beginning-of-sequence token followed by
-the output tokens and possibly
-end-of-sequence tokens.
+[**Để trực quan hóa trọng số self-attention của decoder và trọng số attention encoder--decoder,
+chúng ta cần thực hiện thêm các thao tác xử lý dữ liệu.**]
+Ví dụ,
+chúng ta điền giá trị không vào các trọng số attention bị che.
+Lưu ý rằng
+trọng số self-attention của decoder
+và trọng số attention encoder--decoder
+đều có cùng các query:
+token bắt đầu chuỗi, theo sau bởi
+các token đầu ra và có thể cả
+các token kết thúc chuỗi.
 
 ```{.python .input}
 %%tab mxnet
@@ -1351,8 +1347,8 @@ d2l.check_shape(dec_inter_attention_weights,
                 (num_blks, num_heads, data.num_steps, data.num_steps))
 ```
 
-Because of the autoregressive property of the decoder self-attention,
-no query attends to key--value pairs after the query position.
+Do tính chất tự hồi quy của self-attention trong decoder,
+không query nào attention đến các cặp key--value nằm sau vị trí query.
 
 ```{.python .input}
 %%tab all
@@ -1362,10 +1358,10 @@ d2l.show_heatmaps(
     titles=['Head %d' % i for i in range(1, 5)], figsize=(7, 3.5))
 ```
 
-Similar to the case in the encoder self-attention,
-via the specified valid length of the input sequence,
-[**no query from the output sequence
-attends to those padding tokens from the input sequence.**]
+Tương tự trường hợp self-attention trong encoder,
+thông qua độ dài hợp lệ được chỉ định của chuỗi đầu vào,
+[**không query nào từ chuỗi đầu ra
+attention đến các token padding từ chuỗi đầu vào đó.**]
 
 ```{.python .input}
 %%tab all
@@ -1375,48 +1371,47 @@ d2l.show_heatmaps(
     figsize=(7, 3.5))
 ```
 
-Although the Transformer architecture
-was originally proposed for sequence-to-sequence learning,
-as we will discover later in the book,
-either the Transformer encoder
-or the Transformer decoder
-is often individually used
-for different deep learning tasks.
+Mặc dù kiến trúc Transformer
+ban đầu được đề xuất cho việc học sequence-to-sequence,
+như chúng ta sẽ khám phá ở phần sau của cuốn sách,
+encoder Transformer
+hoặc decoder Transformer
+thường được sử dụng riêng lẻ
+cho các tác vụ deep learning khác nhau.
 
-## Summary
+## Tóm tắt
 
-The Transformer is an instance of the encoder--decoder architecture,
-though either the encoder or the decoder can be used individually in practice.
-In the Transformer architecture, multi-head self-attention is used
-for representing the input sequence and the output sequence,
-though the decoder has to preserve the autoregressive property via a masked version.
-Both the residual connections and the layer normalization in the Transformer
-are important for training a very deep model.
-The positionwise feed-forward network in the Transformer model
-transforms the representation at all the sequence positions using the same MLP.
+Transformer là một ví dụ của kiến trúc encoder--decoder,
+mặc dù trong thực tế, encoder hoặc decoder đều có thể được sử dụng riêng lẻ.
+Trong kiến trúc Transformer, multi-head self-attention được sử dụng
+để biểu diễn chuỗi đầu vào và chuỗi đầu ra,
+mặc dù decoder phải duy trì tính chất tự hồi quy thông qua một phiên bản có mask.
+Cả residual connection và layer normalization trong Transformer
+đều quan trọng để huấn luyện một mô hình rất sâu.
+Mạng feed-forward theo vị trí trong mô hình Transformer
+biến đổi biểu diễn tại mọi vị trí trong chuỗi bằng cùng một MLP.
 
 
-## Exercises
+## Bài tập
 
-1. Train a deeper Transformer in the experiments. How does it affect the training speed and the translation performance?
-1. Is it a good idea to replace scaled dot product attention with additive attention in the Transformer? Why?
-1. For language modeling, should we use the Transformer encoder, decoder, or both? How would you design this method?
-1. What challenges can Transformers face if input sequences are very long? Why?
-1. How would you improve the computational and memory efficiency of Transformers? Hint: you may refer to the survey paper by :citet:`Tay.Dehghani.Bahri.ea.2020`.
+1. Huấn luyện một Transformer sâu hơn trong các thí nghiệm. Điều này ảnh hưởng thế nào đến tốc độ huấn luyện và hiệu năng dịch?
+1. Có nên thay thế scaled dot product attention bằng additive attention trong Transformer không? Tại sao?
+1. Đối với language modeling, chúng ta nên sử dụng encoder Transformer, decoder Transformer, hay cả hai? Bạn sẽ thiết kế phương pháp này như thế nào?
+1. Transformer có thể gặp những thách thức nào nếu các chuỗi đầu vào rất dài? Tại sao?
+1. Bạn sẽ cải thiện hiệu quả tính toán và bộ nhớ của Transformer như thế nào? Gợi ý: bạn có thể tham khảo bài báo khảo sát của :citet:`Tay.Dehghani.Bahri.ea.2020`.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/348)
+[Thảo luận](https://discuss.d2l.ai/t/348)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1066)
+[Thảo luận](https://discuss.d2l.ai/t/1066)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3871)
+[Thảo luận](https://discuss.d2l.ai/t/3871)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18031)
+[Thảo luận](https://discuss.d2l.ai/t/18031)
 :end_tab:
-

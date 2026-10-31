@@ -1,15 +1,15 @@
-# Recurrent Neural Network Implementation from Scratch
+# Triển khai Recurrent Neural Network từ đầu
 :label:`sec_rnn-scratch`
 
-We are now ready to implement an RNN from scratch.
-In particular, we will train this RNN to function
-as a character-level language model
-(see :numref:`sec_rnn`)
-and train it on a corpus consisting of 
-the entire text of H. G. Wells' *The Time Machine*,
-following the data processing steps 
-outlined in :numref:`sec_text-sequence`.
-We start by loading the dataset.
+Bây giờ chúng ta đã sẵn sàng triển khai một RNN từ đầu.
+Cụ thể, chúng ta sẽ huấn luyện RNN này hoạt động
+như một mô hình ngôn ngữ cấp ký tự
+(xem :numref:`sec_rnn`)
+và huấn luyện nó trên một corpus bao gồm
+toàn bộ văn bản *The Time Machine* của H. G. Wells,
+theo các bước xử lý dữ liệu
+được trình bày trong :numref:`sec_text-sequence`.
+Chúng ta bắt đầu bằng cách tải tập dữ liệu.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -53,13 +53,13 @@ from jax import numpy as jnp
 import math
 ```
 
-## RNN Model
+## Mô hình RNN
 
-We begin by defining a class 
-to implement the RNN model
+Chúng ta bắt đầu bằng cách định nghĩa một lớp
+để triển khai mô hình RNN
 (:numref:`subsec_rnn_w_hidden_states`).
-Note that the number of hidden units `num_hiddens` 
-is a tunable hyperparameter.
+Lưu ý rằng số lượng đơn vị ẩn `num_hiddens`
+là một hyperparameter có thể điều chỉnh.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -103,15 +103,15 @@ class RNNScratch(nn.Module):  #@save
         self.b_h = self.param('b_h', nn.initializers.zeros, (self.num_hiddens))
 ```
 
-[**The `forward` method below defines how to compute 
-the output and hidden state at any time step,
-given the current input and the state of the model
-at the previous time step.**]
-Note that the RNN model loops through 
-the outermost dimension of `inputs`,
-updating the hidden state 
-one time step at a time.
-The model here uses a $\tanh$ activation function (:numref:`subsec_tanh`).
+[**Phương thức `forward` bên dưới định nghĩa cách tính
+đầu ra và trạng thái ẩn tại bất kỳ bước thời gian nào,
+dựa trên đầu vào hiện tại và trạng thái của mô hình
+ở bước thời gian trước đó.**]
+Lưu ý rằng mô hình RNN lặp qua
+chiều ngoài cùng của `inputs`,
+cập nhật trạng thái ẩn
+mỗi lần một bước thời gian.
+Mô hình ở đây sử dụng hàm kích hoạt $\tanh$ (:numref:`subsec_tanh`).
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -154,7 +154,7 @@ def __call__(self, inputs, state=None):
     return outputs, state
 ```
 
-We can feed a minibatch of input sequences into an RNN model as follows.
+Chúng ta có thể đưa một minibatch các chuỗi đầu vào vào mô hình RNN như sau.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -172,10 +172,10 @@ X = d2l.ones((num_steps, batch_size, num_inputs))
 (outputs, state), _ = rnn.init_with_output(d2l.get_key(), X)
 ```
 
-Let's check whether the RNN model
-produces results of the correct shapes
-to ensure that the dimensionality 
-of the hidden state remains unchanged.
+Hãy kiểm tra xem mô hình RNN
+có tạo ra kết quả với hình dạng chính xác hay không
+để đảm bảo rằng số chiều
+của trạng thái ẩn không thay đổi.
 
 ```{.python .input}
 %%tab all
@@ -193,21 +193,21 @@ check_shape(outputs[0], (batch_size, num_hiddens))
 check_shape(state, (batch_size, num_hiddens))
 ```
 
-## RNN-Based Language Model
+## Mô hình ngôn ngữ dựa trên RNN
 
-The following `RNNLMScratch` class defines 
-an RNN-based language model,
-where we pass in our RNN 
-via the `rnn` argument
-of the `__init__` method.
-When training language models, 
-the inputs and outputs are 
-from the same vocabulary. 
-Hence, they have the same dimension,
-which is equal to the vocabulary size.
-Note that we use perplexity to evaluate the model. 
-As discussed in :numref:`subsec_perplexity`, this ensures 
-that sequences of different length are comparable.
+Lớp `RNNLMScratch` sau đây định nghĩa
+một mô hình ngôn ngữ dựa trên RNN,
+trong đó chúng ta truyền RNN của mình
+thông qua đối số `rnn`
+của phương thức `__init__`.
+Khi huấn luyện mô hình ngôn ngữ,
+đầu vào và đầu ra
+đến từ cùng một vocabulary.
+Vì vậy, chúng có cùng số chiều,
+bằng với kích thước vocabulary.
+Lưu ý rằng chúng ta sử dụng perplexity để đánh giá mô hình.
+Như đã thảo luận trong :numref:`subsec_perplexity`, điều này đảm bảo
+các chuỗi có độ dài khác nhau có thể so sánh được.
 
 ```{.python .input}
 %%tab pytorch
@@ -292,34 +292,34 @@ class RNNLMScratch(d2l.Classifier):  #@save
 
 ### [**One-Hot Encoding**]
 
-Recall that each token is represented 
-by a numerical index indicating the
-position in the vocabulary of the 
-corresponding word/character/word piece.
-You might be tempted to build a neural network
-with a single input node (at each time step),
-where the index could be fed in as a scalar value.
-This works when we are dealing with numerical inputs 
-like price or temperature, where any two values
-sufficiently close together
-should be treated similarly.
-But this does not quite make sense. 
-The $45^{\textrm{th}}$ and $46^{\textrm{th}}$ words 
-in our vocabulary happen to be "their" and "said",
-whose meanings are not remotely similar.
+Hãy nhớ rằng mỗi token được biểu diễn
+bằng một chỉ số số học cho biết
+vị trí trong vocabulary của
+từ/ký tự/mảnh từ tương ứng.
+Bạn có thể bị cám dỗ xây dựng một neural network
+với một nút đầu vào duy nhất (tại mỗi bước thời gian),
+trong đó chỉ số có thể được đưa vào dưới dạng giá trị vô hướng.
+Điều này hiệu quả khi chúng ta xử lý các đầu vào số
+như giá hoặc nhiệt độ, nơi hai giá trị
+đủ gần nhau
+nên được xử lý tương tự nhau.
+Nhưng điều này không thực sự hợp lý.
+Các từ thứ $45^{\textrm{th}}$ và $46^{\textrm{th}}$
+trong vocabulary của chúng ta lần lượt là "their" và "said",
+mà ý nghĩa của chúng hoàn toàn không tương tự nhau.
 
-When dealing with such categorical data,
-the most common strategy is to represent
-each item by a *one-hot encoding*
-(recall from :numref:`subsec_classification-problem`).
-A one-hot encoding is a vector whose length
-is given by the size of the vocabulary $N$,
-where all entries are set to $0$,
-except for the entry corresponding 
-to our token, which is set to $1$.
-For example, if the vocabulary had five elements,
-then the one-hot vectors corresponding 
-to indices 0 and 2 would be the following.
+Khi xử lý dữ liệu phân loại như vậy,
+chiến lược phổ biến nhất là biểu diễn
+mỗi mục bằng một *one-hot encoding*
+(nhắc lại từ :numref:`subsec_classification-problem`).
+One-hot encoding là một vector có độ dài
+được xác định bởi kích thước vocabulary $N$,
+trong đó tất cả phần tử đều được đặt thành $0$,
+ngoại trừ phần tử tương ứng
+với token của chúng ta, được đặt thành $1$.
+Ví dụ, nếu vocabulary có năm phần tử,
+thì các vector one-hot tương ứng
+với chỉ số 0 và 2 sẽ như sau.
 
 ```{.python .input}
 %%tab mxnet
@@ -341,18 +341,18 @@ tf.one_hot(tf.constant([0, 2]), 5)
 jax.nn.one_hot(jnp.array([0, 2]), 5)
 ```
 
-(**The minibatches that we sample at each iteration
-will take the shape (batch size, number of time steps).
-Once representing each input as a one-hot vector,
-we can think of each minibatch as a three-dimensional tensor, 
-where the length along the third axis 
-is given by the vocabulary size (`len(vocab)`).**)
-We often transpose the input so that we will obtain an output 
-of shape (number of time steps, batch size, vocabulary size).
-This will allow us to loop more conveniently through the outermost dimension
-for updating hidden states of a minibatch,
-time step by time step
-(e.g., in the above `forward` method).
+(**Các minibatch mà chúng ta lấy mẫu tại mỗi iteration
+sẽ có hình dạng (batch size, number of time steps).
+Sau khi biểu diễn mỗi đầu vào dưới dạng vector one-hot,
+chúng ta có thể xem mỗi minibatch như một tensor ba chiều,
+trong đó độ dài theo trục thứ ba
+được xác định bởi kích thước vocabulary (`len(vocab)`).**)
+Chúng ta thường chuyển vị đầu vào để nhận được đầu ra
+có hình dạng (number of time steps, batch size, vocabulary size).
+Điều này sẽ cho phép chúng ta lặp thuận tiện hơn qua chiều ngoài cùng
+để cập nhật trạng thái ẩn của một minibatch,
+mỗi lần một bước thời gian
+(ví dụ, trong phương thức `forward` ở trên).
 
 ```{.python .input}
 %%tab all
@@ -369,10 +369,10 @@ def one_hot(self, X):
         return jax.nn.one_hot(X.T, self.vocab_size)
 ```
 
-### Transforming RNN Outputs
+### Biến đổi đầu ra RNN
 
-The language model uses a fully connected output layer
-to transform RNN outputs into token predictions at each time step.
+Mô hình ngôn ngữ sử dụng một output layer fully connected
+để biến đổi đầu ra RNN thành các dự đoán token tại mỗi bước thời gian.
 
 ```{.python .input}
 %%tab all
@@ -388,8 +388,8 @@ def forward(self, X, state=None):
     return self.output_layer(rnn_outputs)
 ```
 
-Let's [**check whether the forward computation
-produces outputs with the correct shape.**]
+Hãy [**kiểm tra xem phép tính forward
+có tạo ra đầu ra với hình dạng chính xác hay không.**]
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -409,129 +409,124 @@ check_shape(outputs, (batch_size, num_steps, num_inputs))
 
 ## [**Gradient Clipping**]
 
+Mặc dù bạn đã quen với việc xem neural network
+là "sâu" theo nghĩa có nhiều layer
+ngăn cách đầu vào và đầu ra
+ngay cả trong một bước thời gian duy nhất,
+độ dài của chuỗi lại đưa ra
+một khái niệm mới về độ sâu.
+Ngoài việc truyền qua network
+theo hướng từ đầu vào đến đầu ra,
+đầu vào ở bước thời gian đầu tiên
+phải đi qua một chuỗi gồm $T$ layer
+dọc theo các bước thời gian để
+ảnh hưởng đến đầu ra của mô hình
+tại bước thời gian cuối cùng.
+Xét theo chiều ngược lại, trong mỗi iteration,
+chúng ta backpropagate gradient theo thời gian,
+dẫn đến một chuỗi tích ma trận
+có độ dài $\mathcal{O}(T)$.
+Như đã đề cập trong :numref:`sec_numerical_stability`,
+điều này có thể gây ra bất ổn định số,
+khiến gradient bùng nổ hoặc biến mất,
+tùy thuộc vào đặc tính của các ma trận trọng số.
 
-While you are already used to thinking of neural networks
-as "deep" in the sense that many layers
-separate the input and output 
-even within a single time step,
-the length of the sequence introduces
-a new notion of depth.
-In addition to the passing through the network
-in the input-to-output direction,
-inputs at the first time step
-must pass through a chain of $T$ layers
-along the time steps in order 
-to influence the output of the model
-at the final time step.
-Taking the backwards view, in each iteration,
-we backpropagate gradients through time,
-resulting in a chain of matrix-products 
-of length  $\mathcal{O}(T)$.
-As mentioned in :numref:`sec_numerical_stability`, 
-this can result in numerical instability, 
-causing the gradients either to explode or vanish,
-depending on the properties of the weight matrices. 
+Xử lý gradient biến mất và bùng nổ
+là một vấn đề nền tảng khi thiết kế RNN
+và đã truyền cảm hứng cho một số tiến bộ lớn nhất
+trong các kiến trúc neural network hiện đại.
+Trong chương tiếp theo, chúng ta sẽ nói về
+các kiến trúc chuyên biệt được thiết kế
+với hy vọng giảm nhẹ vấn đề gradient biến mất.
+Tuy nhiên, ngay cả các RNN hiện đại cũng thường gặp
+gradient bùng nổ.
+Một giải pháp không thanh nhã nhưng phổ biến
+là đơn giản clip gradient,
+buộc các gradient "đã clip" thu được
+có giá trị nhỏ hơn.
 
-Dealing with vanishing and exploding gradients 
-is a fundamental problem when designing RNNs
-and has inspired some of the biggest advances
-in modern neural network architectures.
-In the next chapter, we will talk about
-specialized architectures that were designed
-in hopes of mitigating the vanishing gradient problem.
-However, even modern RNNs often suffer
-from exploding gradients.
-One inelegant but ubiquitous solution
-is to simply clip the gradients 
-forcing the resulting "clipped" gradients
-to take smaller values. 
-
-
-Generally speaking, when optimizing some objective
-by gradient descent, we iteratively update
-the parameter of interest, say a vector $\mathbf{x}$,
-but pushing it in the direction of the 
-negative gradient $\mathbf{g}$
-(in stochastic gradient descent, 
-we calculate this gradient
-on a randomly sampled minibatch).
-For example, with learning rate $\eta > 0$,
-each update takes the form 
+Nói chung, khi tối ưu một objective
+bằng gradient descent, chúng ta lặp lại việc cập nhật
+parameter cần quan tâm, chẳng hạn một vector $\mathbf{x}$,
+bằng cách đẩy nó theo hướng của
+gradient âm $\mathbf{g}$
+(trong stochastic gradient descent,
+chúng ta tính gradient này
+trên một minibatch được lấy mẫu ngẫu nhiên).
+Ví dụ, với learning rate $\eta > 0$,
+mỗi lần cập nhật có dạng
 $\mathbf{x} \gets \mathbf{x} - \eta \mathbf{g}$.
-Let's further assume that the objective function $f$
-is sufficiently smooth. 
-Formally, we say that the objective 
-is *Lipschitz continuous* with constant $L$,
-meaning that for any $\mathbf{x}$ and $\mathbf{y}$, we have
+Giả sử thêm rằng hàm objective $f$
+đủ trơn.
+Về mặt hình thức, ta nói rằng objective
+là *Lipschitz continuous* với hằng số $L$,
+nghĩa là với mọi $\mathbf{x}$ và $\mathbf{y}$, ta có
 
 $$|f(\mathbf{x}) - f(\mathbf{y})| \leq L \|\mathbf{x} - \mathbf{y}\|.$$
 
-As you can see, when we update the parameter vector by subtracting $\eta \mathbf{g}$,
-the change in the value of the objective
-depends on the learning rate,
-the norm of the gradient and $L$ as follows:
+Như bạn có thể thấy, khi chúng ta cập nhật vector parameter bằng cách trừ $\eta \mathbf{g}$,
+sự thay đổi trong giá trị của objective
+phụ thuộc vào learning rate,
+chuẩn của gradient và $L$ như sau:
 
 $$|f(\mathbf{x}) - f(\mathbf{x} - \eta\mathbf{g})| \leq L \eta\|\mathbf{g}\|.$$
 
-In other words, the objective cannot
-change by more than $L \eta \|\mathbf{g}\|$. 
-Having a small value for this upper bound 
-might be viewed as good or bad.
-On the downside, we are limiting the speed
-at which we can reduce the value of the objective.
-On the bright side, this limits by just how much
-we can go wrong in any one gradient step.
+Nói cách khác, objective không thể
+thay đổi nhiều hơn $L \eta \|\mathbf{g}\|$.
+Việc có giá trị nhỏ cho cận trên này
+có thể được xem là tốt hoặc xấu.
+Về mặt bất lợi, chúng ta đang giới hạn tốc độ
+mà tại đó có thể giảm giá trị của objective.
+Về mặt tích cực, điều này giới hạn mức độ
+chúng ta có thể sai lệch trong một bước gradient.
 
+Khi nói gradient bùng nổ,
+chúng ta muốn nói rằng $\|\mathbf{g}\|$
+trở nên quá lớn.
+Trong trường hợp xấu nhất, chúng ta có thể gây ra quá nhiều
+thiệt hại chỉ trong một bước gradient đến mức
+có thể xóa bỏ toàn bộ tiến bộ đạt được
+trong hàng nghìn iteration huấn luyện.
+Khi gradient có thể lớn đến vậy,
+việc huấn luyện neural network thường phân kỳ,
+không thể giảm giá trị của objective.
+Trong các trường hợp khác, việc huấn luyện cuối cùng hội tụ
+nhưng không ổn định do các đột biến lớn trong loss.
 
-When we say that gradients explode, 
-we mean that $\|\mathbf{g}\|$ 
-becomes excessively large.
-In this worst case, we might do so much
-damage in a single gradient step that we
-could undo all of the progress made over
-the course of thousands of training iterations.
-When gradients can be so large,
-neural network training often diverges,
-failing to reduce the value of the objective.
-At other times, training eventually converges
-but is unstable owing to massive spikes in the loss.
-
-
-One way to limit the size of $L \eta \|\mathbf{g}\|$ 
-is to shrink the learning rate $\eta$ to tiny values.
-This has the advantage that we do not bias the updates.
-But what if we only *rarely* get large gradients?
-This drastic move slows down our progress at all steps,
-just to deal with the rare exploding gradient events.
-A popular alternative is to adopt a *gradient clipping* heuristic
-projecting the gradients $\mathbf{g}$ onto a ball 
-of some given radius $\theta$ as follows:
+Một cách để giới hạn độ lớn của $L \eta \|\mathbf{g}\|$
+là giảm learning rate $\eta$ xuống các giá trị rất nhỏ.
+Cách này có ưu điểm là không làm lệch các cập nhật.
+Nhưng nếu chúng ta chỉ *hiếm khi* nhận được gradient lớn thì sao?
+Biện pháp quyết liệt này làm chậm tiến độ ở mọi bước,
+chỉ để xử lý các sự kiện gradient bùng nổ hiếm gặp.
+Một phương án thay thế phổ biến là áp dụng heuristic *gradient clipping*
+chiếu các gradient $\mathbf{g}$ lên một quả cầu
+có bán kính cho trước $\theta$ như sau:
 
 (**$$\mathbf{g} \leftarrow \min\left(1, \frac{\theta}{\|\mathbf{g}\|}\right) \mathbf{g}.$$**)
 
-This ensures that the gradient norm never exceeds $\theta$ 
-and that the updated gradient is entirely aligned 
-with the original direction of $\mathbf{g}$.
-It also has the desirable side-effect 
-of limiting the influence any given minibatch 
-(and within it any given sample) 
-can exert on the parameter vector. 
-This bestows a certain degree of robustness to the model. 
-To be clear, it is a hack. 
-Gradient clipping means that we are not always
-following the true gradient and it is hard 
-to reason analytically about the possible side effects.
-However, it is a very useful hack,
-and is widely adopted in RNN implementations
-in most deep learning frameworks.
+Điều này đảm bảo chuẩn gradient không bao giờ vượt quá $\theta$
+và gradient được cập nhật hoàn toàn cùng hướng
+với hướng ban đầu của $\mathbf{g}$.
+Nó cũng có tác dụng phụ mong muốn
+là giới hạn mức ảnh hưởng mà bất kỳ minibatch nào
+(và trong đó là bất kỳ sample nào)
+có thể tác động lên vector parameter.
+Điều này mang lại một mức độ robustness nhất định cho mô hình.
+Nói rõ hơn, đây là một hack.
+Gradient clipping có nghĩa là chúng ta không phải lúc nào cũng
+đi theo gradient thực và rất khó
+phân tích về các tác dụng phụ có thể có.
+Tuy nhiên, đây là một hack rất hữu ích,
+và được áp dụng rộng rãi trong các triển khai RNN
+của hầu hết deep learning framework.
 
-
-Below we define a method to clip gradients,
-which is invoked by the `fit_epoch` method of
-the `d2l.Trainer` class (see :numref:`sec_linear_scratch`).
-Note that when computing the gradient norm,
-we are concatenating all model parameters,
-treating them as a single giant parameter vector.
+Bên dưới, chúng ta định nghĩa một phương thức để clip gradient,
+được gọi bởi phương thức `fit_epoch` của
+lớp `d2l.Trainer` (xem :numref:`sec_linear_scratch`).
+Lưu ý rằng khi tính chuẩn gradient,
+chúng ta nối tất cả parameter của mô hình,
+coi chúng là một vector parameter khổng lồ duy nhất.
 
 ```{.python .input}
 %%tab mxnet
@@ -583,15 +578,15 @@ def clip_gradients(self, grad_clip_val, grads):
     return jax.tree_util.tree_map(clip, grads)
 ```
 
-## Training
+## Huấn luyện
 
-Using *The Time Machine* dataset (`data`),
-we train a character-level language model (`model`)
-based on the RNN (`rnn`) implemented from scratch.
-Note that we first calculate the gradients,
-then clip them, and finally 
-update the model parameters
-using the clipped gradients.
+Sử dụng bộ dữ liệu *The Time Machine* (`data`),
+chúng ta huấn luyện một mô hình ngôn ngữ ở cấp độ ký tự (`model`)
+dựa trên RNN (`rnn`) được hiện thực từ đầu.
+Lưu ý rằng trước hết chúng ta tính các gradient,
+sau đó cắt ngưỡng chúng, và cuối cùng
+cập nhật các tham số mô hình
+bằng các gradient đã được cắt ngưỡng.
 
 ```{.python .input}
 %%tab all
@@ -608,38 +603,38 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-## Decoding
+## Giải mã
 
-Once a language model has been learned,
-we can use it not only to predict the next token
-but to continue predicting each subsequent one,
-treating the previously predicted token as though
-it were the next in the input. 
-Sometimes we will just want to generate text
-as though we were starting at the beginning 
-of a document. 
-However, it is often useful to condition
-the language model on a user-supplied prefix.
-For example, if we were developing an
-autocomplete feature for a search engine
-or to assist users in writing emails,
-we would want to feed in what they 
-had written so far (the prefix), 
-and then generate a likely continuation.
+Khi một mô hình ngôn ngữ đã được học,
+chúng ta không chỉ có thể dùng nó để dự đoán token tiếp theo
+mà còn để tiếp tục dự đoán từng token kế tiếp,
+coi token đã được dự đoán trước đó như thể
+nó là token tiếp theo trong đầu vào.
+Đôi khi chúng ta chỉ muốn sinh văn bản
+như thể đang bắt đầu từ đầu
+một tài liệu.
+Tuy nhiên, thường sẽ hữu ích khi điều kiện hóa
+mô hình ngôn ngữ dựa trên một tiền tố do người dùng cung cấp.
+Ví dụ, nếu chúng ta đang phát triển một
+tính năng autocomplete cho công cụ tìm kiếm
+hoặc để hỗ trợ người dùng viết email,
+chúng ta sẽ muốn đưa vào những gì họ
+đã viết cho đến thời điểm đó (tiền tố),
+rồi sinh ra một phần tiếp nối có khả năng xảy ra.
 
 
-[**The following `predict` method
-generates a continuation, one character at a time,
-after ingesting a user-provided `prefix`**].
-When looping through the characters in `prefix`,
-we keep passing the hidden state
-to the next time step 
-but do not generate any output.
-This is called the *warm-up* period.
-After ingesting the prefix, we are now
-ready to begin emitting the subsequent characters,
-each of which will be fed back into the model 
-as the input at the next time step.
+[**Phương thức `predict` sau đây
+sinh một phần tiếp nối, từng ký tự một,
+sau khi tiếp nhận một `prefix` do người dùng cung cấp**].
+Khi lặp qua các ký tự trong `prefix`,
+chúng ta tiếp tục truyền hidden state
+sang time step tiếp theo
+nhưng không sinh bất kỳ đầu ra nào.
+Điều này được gọi là giai đoạn *warm-up*.
+Sau khi tiếp nhận tiền tố, giờ đây chúng ta
+đã sẵn sàng bắt đầu tạo ra các ký tự tiếp theo,
+mỗi ký tự trong số đó sẽ được đưa trở lại mô hình
+làm đầu vào ở time step kế tiếp.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -682,8 +677,8 @@ def predict(self, prefix, num_preds, vocab, params):
     return ''.join([vocab.idx_to_token[i] for i in outputs])
 ```
 
-In the following, we specify the prefix 
-and have it generate 20 additional characters.
+Sau đây, chúng ta chỉ định tiền tố
+và yêu cầu nó sinh thêm 20 ký tự.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -700,52 +695,52 @@ model.predict('it has', 20, data.vocab)
 model.predict('it has', 20, data.vocab, trainer.state.params)
 ```
 
-While implementing the above RNN model from scratch is instructive, it is not convenient.
-In the next section, we will see how to leverage deep learning frameworks to whip up RNNs
-using standard architectures, and to reap performance gains 
-by relying on highly optimized library functions.
+Mặc dù việc hiện thực mô hình RNN ở trên từ đầu mang tính hướng dẫn, nhưng không thuận tiện.
+Trong phần tiếp theo, chúng ta sẽ thấy cách tận dụng các framework deep learning để nhanh chóng tạo RNN
+bằng các kiến trúc chuẩn, đồng thời đạt được hiệu năng cao hơn
+nhờ dựa vào các hàm thư viện được tối ưu hóa cao.
 
 
-## Summary
+## Tóm tắt
 
-We can train RNN-based language models to generate text following the user-provided text prefix. 
-A simple RNN language model consists of input encoding, RNN modeling, and output generation.
-During training, gradient clipping can mitigate the problem of exploding gradients but does not address the problem of vanishing gradients. In the experiment, we implemented a simple RNN language model and trained it with gradient clipping on sequences of text, tokenized at the character level. By conditioning on a prefix, we can use a language model to generate likely continuations, which proves useful in many applications, e.g., autocomplete features.
+Chúng ta có thể huấn luyện các mô hình ngôn ngữ dựa trên RNN để sinh văn bản tiếp nối tiền tố văn bản do người dùng cung cấp.
+Một mô hình ngôn ngữ RNN đơn giản gồm mã hóa đầu vào, mô hình hóa RNN và sinh đầu ra.
+Trong quá trình huấn luyện, gradient clipping có thể giảm nhẹ vấn đề exploding gradients nhưng không giải quyết vấn đề vanishing gradients. Trong thí nghiệm, chúng ta đã hiện thực một mô hình ngôn ngữ RNN đơn giản và huấn luyện nó với gradient clipping trên các chuỗi văn bản được token hóa ở cấp độ ký tự. Bằng cách điều kiện hóa theo một tiền tố, chúng ta có thể dùng mô hình ngôn ngữ để sinh các phần tiếp nối có khả năng xảy ra, điều này hữu ích trong nhiều ứng dụng, ví dụ như các tính năng autocomplete.
 
 
-## Exercises
+## Bài tập
 
-1. Does the implemented language model predict the next token based on all the past tokens up to the very first token in *The Time Machine*? 
-1. Which hyperparameter controls the length of history used for prediction?
-1. Show that one-hot encoding is equivalent to picking a different embedding for each object.
-1. Adjust the hyperparameters (e.g., number of epochs, number of hidden units, number of time steps in a minibatch, and learning rate) to improve the perplexity. How low can you go while sticking with this simple architecture?
-1. Replace one-hot encoding with learnable embeddings. Does this lead to better performance?
-1. Conduct an experiment to determine how well this language model 
-   trained on *The Time Machine* works on other books by H. G. Wells,
-   e.g., *The War of the Worlds*.
-1. Conduct another experiment to evaluate the perplexity of this model
-   on books written by other authors. 
-1. Modify the prediction method so as to use sampling 
-   rather than picking the most likely next character.
-    * What happens?
-    * Bias the model towards more likely outputs, e.g., 
-    by sampling from $q(x_t \mid x_{t-1}, \ldots, x_1) \propto P(x_t \mid x_{t-1}, \ldots, x_1)^\alpha$ for $\alpha > 1$.
-1. Run the code in this section without clipping the gradient. What happens?
-1. Replace the activation function used in this section with ReLU 
-   and repeat the experiments in this section. Do we still need gradient clipping? Why?
+1. Mô hình ngôn ngữ đã hiện thực có dự đoán token tiếp theo dựa trên tất cả các token trong quá khứ, tính đến token đầu tiên trong *The Time Machine*, không?
+1. Hyperparameter nào kiểm soát độ dài lịch sử được dùng cho dự đoán?
+1. Chứng minh rằng one-hot encoding tương đương với việc chọn một embedding khác nhau cho mỗi đối tượng.
+1. Điều chỉnh các hyperparameter (ví dụ: số epoch, số hidden unit, số time step trong một minibatch và learning rate) để cải thiện perplexity. Với kiến trúc đơn giản này, bạn có thể giảm xuống mức thấp đến đâu?
+1. Thay one-hot encoding bằng các embedding có thể học được. Điều này có dẫn đến hiệu năng tốt hơn không?
+1. Tiến hành một thí nghiệm để xác định mức độ hiệu quả của mô hình ngôn ngữ này
+   khi được huấn luyện trên *The Time Machine* đối với các sách khác của H. G. Wells,
+   ví dụ, *The War of the Worlds*.
+1. Tiến hành một thí nghiệm khác để đánh giá perplexity của mô hình này
+   trên các sách được viết bởi những tác giả khác.
+1. Sửa đổi phương thức dự đoán để sử dụng sampling
+   thay vì chọn ký tự tiếp theo có xác suất cao nhất.
+    * Điều gì xảy ra?
+    * Thiên lệch mô hình về phía các đầu ra có khả năng xảy ra cao hơn, ví dụ,
+    bằng cách lấy mẫu từ $q(x_t \mid x_{t-1}, \ldots, x_1) \propto P(x_t \mid x_{t-1}, \ldots, x_1)^\alpha$ với $\alpha > 1$.
+1. Chạy mã trong phần này mà không gradient clipping. Điều gì xảy ra?
+1. Thay activation function được sử dụng trong phần này bằng ReLU
+   và lặp lại các thí nghiệm trong phần này. Chúng ta vẫn cần gradient clipping không? Tại sao?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/336)
+[Thảo luận](https://discuss.d2l.ai/t/336)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/486)
+[Thảo luận](https://discuss.d2l.ai/t/486)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1052)
+[Thảo luận](https://discuss.d2l.ai/t/1052)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18014)
+[Thảo luận](https://discuss.d2l.ai/t/18014)
 :end_tab:

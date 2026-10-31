@@ -3,28 +3,28 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow', 'jax')
 ```
 
-# Self-Attention and Positional Encoding
+# Self-Attention và Positional Encoding
 :label:`sec_self-attention-and-positional-encoding`
 
-In deep learning, we often use CNNs or RNNs to encode sequences.
-Now with attention mechanisms in mind, 
-imagine feeding a sequence of tokens 
-into an attention mechanism
-such that at every step,
-each token has its own query, keys, and values.
-Here, when computing the value of a token's representation at the next layer,
-the token can attend (via its query vector) to any other's token 
-(matching based on their key vectors).
-Using the full set of query-key compatibility scores,
-we can compute, for each token, a representation
-by building the appropriate weighted sum
-over the other tokens. 
-Because every token is attending to each other token
-(unlike the case where decoder steps attend to encoder steps),
-such architectures are typically described as *self-attention* models :cite:`Lin.Feng.Santos.ea.2017,Vaswani.Shazeer.Parmar.ea.2017`, 
-and elsewhere described as *intra-attention* model :cite:`Cheng.Dong.Lapata.2016,Parikh.Tackstrom.Das.ea.2016,Paulus.Xiong.Socher.2017`.
-In this section, we will discuss sequence encoding using self-attention,
-including using additional information for the sequence order.
+Trong deep learning, chúng ta thường sử dụng CNN hoặc RNN để mã hóa các chuỗi.
+Bây giờ, với cơ chế attention,
+hãy hình dung việc đưa một chuỗi token
+vào một cơ chế attention
+sao cho ở mỗi bước,
+mỗi token có query, key và value riêng.
+Ở đây, khi tính giá trị biểu diễn của một token tại lớp kế tiếp,
+token đó có thể attention (thông qua vector query của nó) đến bất kỳ token nào khác
+(đối sánh dựa trên các vector key của chúng).
+Bằng cách sử dụng toàn bộ tập điểm tương thích query-key,
+chúng ta có thể tính, cho mỗi token, một biểu diễn
+bằng cách xây dựng tổng có trọng số phù hợp
+trên các token khác.
+Vì mọi token đều attention đến mọi token khác
+(không giống trường hợp các bước decoder attention đến các bước encoder),
+các kiến trúc như vậy thường được mô tả là các mô hình *self-attention* :cite:`Lin.Feng.Santos.ea.2017,Vaswani.Shazeer.Parmar.ea.2017`, 
+và ở nơi khác được mô tả là mô hình *intra-attention* :cite:`Cheng.Dong.Lapata.2016,Parikh.Tackstrom.Das.ea.2016,Paulus.Xiong.Socher.2017`.
+Trong phần này, chúng ta sẽ thảo luận về việc mã hóa chuỗi bằng self-attention,
+bao gồm cả việc sử dụng thông tin bổ sung về thứ tự chuỗi.
 
 ```{.python .input}
 %%tab mxnet
@@ -60,22 +60,22 @@ import jax
 
 ## [**Self-Attention**]
 
-Given a sequence of input tokens
-$\mathbf{x}_1, \ldots, \mathbf{x}_n$ where any $\mathbf{x}_i \in \mathbb{R}^d$ ($1 \leq i \leq n$),
-its self-attention outputs
-a sequence of the same length
+Cho một chuỗi các token đầu vào
+$\mathbf{x}_1, \ldots, \mathbf{x}_n$ trong đó bất kỳ $\mathbf{x}_i \in \mathbb{R}^d$ nào ($1 \leq i \leq n$),
+đầu ra self-attention của nó là
+một chuỗi có cùng độ dài
 $\mathbf{y}_1, \ldots, \mathbf{y}_n$,
-where
+trong đó
 
 $$\mathbf{y}_i = f(\mathbf{x}_i, (\mathbf{x}_1, \mathbf{x}_1), \ldots, (\mathbf{x}_n, \mathbf{x}_n)) \in \mathbb{R}^d$$
 
-according to the definition of attention pooling in
+theo định nghĩa về attention pooling trong
 :eqref:`eq_attention_pooling`.
-Using multi-head attention,
-the following code snippet
-computes the self-attention of a tensor
-with shape (batch size, number of time steps or sequence length in tokens, $d$).
-The output tensor has the same shape.
+Sử dụng multi-head attention,
+đoạn mã sau
+tính self-attention của một tensor
+có shape (batch size, số bước thời gian hoặc độ dài chuỗi tính theo token, $d$).
+Tensor đầu ra có cùng shape.
 
 ```{.python .input}
 %%tab pytorch
@@ -132,82 +132,82 @@ d2l.check_shape(attention.init_with_output(d2l.get_key(), X, X, X, valid_lens,
                 (batch_size, num_queries, num_hiddens))
 ```
 
-## Comparing CNNs, RNNs, and Self-Attention
+## So sánh CNN, RNN và Self-Attention
 :label:`subsec_cnn-rnn-self-attention`
 
-Let's
-compare architectures for mapping
-a sequence of $n$ tokens
-to another one of equal length,
-where each input or output token is represented by
-a $d$-dimensional vector.
-Specifically,
-we will consider CNNs, RNNs, and self-attention.
-We will compare their
-computational complexity, 
-sequential operations,
-and maximum path lengths.
-Note that sequential operations prevent parallel computation,
-while a shorter path between
-any combination of sequence positions
-makes it easier to learn long-range dependencies 
-within the sequence :cite:`Hochreiter.Bengio.Frasconi.ea.2001`.
+Hãy
+so sánh các kiến trúc dùng để ánh xạ
+một chuỗi gồm $n$ token
+sang một chuỗi khác có cùng độ dài,
+trong đó mỗi token đầu vào hoặc đầu ra được biểu diễn bởi
+một vector $d$ chiều.
+Cụ thể,
+chúng ta sẽ xem xét CNN, RNN và self-attention.
+Chúng ta sẽ so sánh
+độ phức tạp tính toán, 
+các phép toán tuần tự,
+và độ dài đường đi tối đa của chúng.
+Lưu ý rằng các phép toán tuần tự ngăn cản tính toán song song,
+trong khi đường đi ngắn hơn giữa
+bất kỳ tổ hợp vị trí nào trong chuỗi
+giúp việc học các phụ thuộc dài hạn
+trong chuỗi dễ hơn :cite:`Hochreiter.Bengio.Frasconi.ea.2001`.
 
 
-![Comparing CNN (padding tokens are omitted), RNN, and self-attention architectures.](../img/cnn-rnn-self-attention.svg)
+![So sánh các kiến trúc CNN (đã lược bỏ token padding), RNN và self-attention.](../img/cnn-rnn-self-attention.svg)
 :label:`fig_cnn-rnn-self-attention`
 
 
 
-Let's regard any text sequence as a "one-dimensional image". Similarly, one-dimensional CNNs can process local features such as $n$-grams in text.
-Given a sequence of length $n$,
-consider a convolutional layer whose kernel size is $k$,
-and whose numbers of input and output channels are both $d$.
-The computational complexity of the convolutional layer is $\mathcal{O}(knd^2)$.
-As :numref:`fig_cnn-rnn-self-attention` shows,
-CNNs are hierarchical,
-so there are $\mathcal{O}(1)$ sequential operations
-and the maximum path length is $\mathcal{O}(n/k)$.
-For example, $\mathbf{x}_1$ and $\mathbf{x}_5$
-are within the receptive field of a two-layer CNN
-with kernel size 3 in :numref:`fig_cnn-rnn-self-attention`.
+Hãy xem bất kỳ chuỗi văn bản nào như một "ảnh một chiều". Tương tự, CNN một chiều có thể xử lý các đặc trưng cục bộ như $n$-gram trong văn bản.
+Cho một chuỗi có độ dài $n$,
+xét một lớp convolution có kernel size là $k$,
+và số lượng input channel lẫn output channel đều là $d$.
+Độ phức tạp tính toán của lớp convolution là $\mathcal{O}(knd^2)$.
+Như :numref:`fig_cnn-rnn-self-attention` minh họa,
+CNN có cấu trúc phân cấp,
+do đó có $\mathcal{O}(1)$ phép toán tuần tự
+và độ dài đường đi tối đa là $\mathcal{O}(n/k)$.
+Ví dụ, $\mathbf{x}_1$ và $\mathbf{x}_5$
+nằm trong receptive field của một CNN hai lớp
+với kernel size 3 trong :numref:`fig_cnn-rnn-self-attention`.
 
-When updating the hidden state of RNNs,
-multiplication of the $d \times d$ weight matrix
-and the $d$-dimensional hidden state has 
-a computational complexity of $\mathcal{O}(d^2)$.
-Since the sequence length is $n$,
-the computational complexity of the recurrent layer
-is $\mathcal{O}(nd^2)$.
-According to :numref:`fig_cnn-rnn-self-attention`,
-there are $\mathcal{O}(n)$ sequential operations
-that cannot be parallelized
-and the maximum path length is also $\mathcal{O}(n)$.
+Khi cập nhật hidden state của RNN,
+phép nhân giữa ma trận trọng số $d \times d$
+và hidden state $d$ chiều có
+độ phức tạp tính toán là $\mathcal{O}(d^2)$.
+Vì độ dài chuỗi là $n$,
+độ phức tạp tính toán của recurrent layer
+là $\mathcal{O}(nd^2)$.
+Theo :numref:`fig_cnn-rnn-self-attention`,
+có $\mathcal{O}(n)$ phép toán tuần tự
+không thể song song hóa
+và độ dài đường đi tối đa cũng là $\mathcal{O}(n)$.
 
-In self-attention,
-the queries, keys, and values 
-are all $n \times d$ matrices.
-Consider the scaled dot product attention in
+Trong self-attention,
+query, key và value
+đều là các ma trận $n \times d$.
+Xét scaled dot product attention trong
 :eqref:`eq_softmax_QK_V`,
-where an $n \times d$ matrix is multiplied by
-a $d \times n$ matrix,
-then the output $n \times n$ matrix is multiplied
-by an $n \times d$ matrix.
-As a result,
-the self-attention
-has a $\mathcal{O}(n^2d)$ computational complexity.
-As we can see from :numref:`fig_cnn-rnn-self-attention`,
-each token is directly connected
-to any other token via self-attention.
-Therefore,
-computation can be parallel with $\mathcal{O}(1)$ sequential operations
-and the maximum path length is also $\mathcal{O}(1)$.
+trong đó một ma trận $n \times d$ được nhân với
+một ma trận $d \times n$,
+sau đó ma trận đầu ra $n \times n$ được nhân
+với một ma trận $n \times d$.
+Do đó,
+self-attention
+có độ phức tạp tính toán $\mathcal{O}(n^2d)$.
+Như có thể thấy từ :numref:`fig_cnn-rnn-self-attention`,
+mỗi token được kết nối trực tiếp
+với bất kỳ token nào khác thông qua self-attention.
+Vì vậy,
+việc tính toán có thể song song với $\mathcal{O}(1)$ phép toán tuần tự
+và độ dài đường đi tối đa cũng là $\mathcal{O}(1)$.
 
-All in all,
-both CNNs and self-attention enjoy parallel computation
-and self-attention has the shortest maximum path length.
-However, the quadratic computational complexity with respect to the sequence length
-makes self-attention prohibitively slow for very long sequences.
+Tóm lại,
+cả CNN lẫn self-attention đều hỗ trợ tính toán song song
+và self-attention có độ dài đường đi tối đa ngắn nhất.
+Tuy nhiên, độ phức tạp tính toán bậc hai theo độ dài chuỗi
+khiến self-attention chậm đến mức khó khả thi đối với các chuỗi rất dài.
 
 
 
@@ -217,47 +217,47 @@ makes self-attention prohibitively slow for very long sequences.
 :label:`subsec_positional-encoding`
 
 
-Unlike RNNs, which recurrently process
-tokens of a sequence one-by-one,
-self-attention ditches
-sequential operations in favor of 
-parallel computation.
-Note that self-attention by itself
-does not preserve the order of the sequence. 
-What do we do if it really matters 
-that the model knows in which order
-the input sequence arrived?
+Không giống RNN, vốn xử lý lặp lại
+các token của một chuỗi từng token một,
+self-attention loại bỏ
+các phép toán tuần tự để ưu tiên
+tính toán song song.
+Lưu ý rằng riêng self-attention
+không bảo toàn thứ tự của chuỗi.
+Chúng ta làm gì nếu thực sự quan trọng
+rằng mô hình biết
+chuỗi đầu vào đến theo thứ tự nào?
 
-The dominant approach for preserving 
-information about the order of tokens
-is to represent this to the model 
-as an additional input associated 
-with each token. 
-These inputs are called *positional encodings*,
-and they can either be learned or fixed *a priori*.
-We now describe a simple scheme for fixed positional encodings
-based on sine and cosine functions :cite:`Vaswani.Shazeer.Parmar.ea.2017`.
+Cách tiếp cận chủ đạo để bảo toàn
+thông tin về thứ tự của các token
+là biểu diễn thông tin này cho mô hình
+dưới dạng một đầu vào bổ sung
+gắn với từng token.
+Các đầu vào này được gọi là *positional encodings*,
+và chúng có thể được học hoặc cố định *a priori*.
+Bây giờ, chúng ta mô tả một phương pháp đơn giản cho positional encoding cố định
+dựa trên các hàm sine và cosine :cite:`Vaswani.Shazeer.Parmar.ea.2017`.
 
-Suppose that the input representation 
+Giả sử biểu diễn đầu vào
 $\mathbf{X} \in \mathbb{R}^{n \times d}$ 
-contains the $d$-dimensional embeddings 
-for $n$ tokens of a sequence.
-The positional encoding outputs
+chứa các embedding $d$ chiều
+cho $n$ token của một chuỗi.
+Positional encoding xuất ra
 $\mathbf{X} + \mathbf{P}$
-using a positional embedding matrix 
-$\mathbf{P} \in \mathbb{R}^{n \times d}$ of the same shape,
-whose element on the $i^\textrm{th}$ row 
-and the $(2j)^\textrm{th}$
-or the $(2j + 1)^\textrm{th}$ column is
+bằng cách sử dụng ma trận positional embedding
+$\mathbf{P} \in \mathbb{R}^{n \times d}$ có cùng shape,
+trong đó phần tử tại hàng $i^\textrm{th}$ 
+và cột $(2j)^\textrm{th}$
+hoặc $(2j + 1)^\textrm{th}$ là
 
 $$\begin{aligned} p_{i, 2j} &= \sin\left(\frac{i}{10000^{2j/d}}\right),\\p_{i, 2j+1} &= \cos\left(\frac{i}{10000^{2j/d}}\right).\end{aligned}$$
 :eqlabel:`eq_positional-encoding-def`
 
-At first glance,
-this trigonometric function
-design looks weird.
-Before we give explanations of this design,
-let's first implement it in the following `PositionalEncoding` class.
+Thoạt nhìn,
+thiết kế hàm lượng giác này
+có vẻ kỳ lạ.
+Trước khi giải thích thiết kế này,
+trước hết hãy triển khai nó trong lớp `PositionalEncoding` sau đây.
 
 ```{.python .input}
 %%tab mxnet
@@ -343,19 +343,18 @@ class PositionalEncoding(nn.Module):  #@save
         return nn.Dropout(self.dropout)(X, deterministic=not training)
 ```
 
-In the positional embedding matrix $\mathbf{P}$,
-[**rows correspond to positions within a sequence
-and columns represent different positional encoding dimensions**].
-In the example below,
-we can see that
-the $6^{\textrm{th}}$ and the $7^{\textrm{th}}$
-columns of the positional embedding matrix 
-have a higher frequency than 
-the $8^{\textrm{th}}$ and the $9^{\textrm{th}}$
-columns.
-The offset between 
-the $6^{\textrm{th}}$ and the $7^{\textrm{th}}$ (same for the $8^{\textrm{th}}$ and the $9^{\textrm{th}}$) columns
-is due to the alternation of sine and cosine functions.
+Trong ma trận positional embedding $\mathbf{P}$,
+[**các hàng tương ứng với các vị trí trong một chuỗi
+và các cột biểu diễn các chiều positional encoding khác nhau**].
+Trong ví dụ dưới đây,
+chúng ta có thể thấy rằng
+các cột $6^{\textrm{th}}$ và $7^{\textrm{th}}$
+của ma trận positional embedding
+có tần số cao hơn
+so với các cột $8^{\textrm{th}}$ và $9^{\textrm{th}}$.
+Độ lệch giữa
+các cột $6^{\textrm{th}}$ và $7^{\textrm{th}}$ (tương tự với các cột $8^{\textrm{th}}$ và $9^{\textrm{th}}$)
+là do sự luân phiên giữa các hàm sine và cosine.
 
 ```{.python .input}
 %%tab mxnet
@@ -401,14 +400,14 @@ d2l.plot(d2l.arange(num_steps), P[0, :, 6:10].T, xlabel='Row (position)',
          figsize=(6, 2.5), legend=["Col %d" % d for d in d2l.arange(6, 10)])
 ```
 
-### Absolute Positional Information
+### Thông tin vị trí tuyệt đối
 
-To see how the monotonically decreased frequency
-along the encoding dimension relates to absolute positional information,
-let's print out [**the binary representations**] of $0, 1, \ldots, 7$.
-As we can see, the lowest bit, the second-lowest bit, 
-and the third-lowest bit alternate on every number, 
-every two numbers, and every four numbers, respectively.
+Để xem tần số giảm đơn điệu
+theo chiều encoding liên quan thế nào đến thông tin vị trí tuyệt đối,
+hãy in [**các biểu diễn nhị phân**] của $0, 1, \ldots, 7$.
+Như có thể thấy, bit thấp nhất, bit thấp thứ hai,
+và bit thấp thứ ba luân phiên sau mỗi số,
+mỗi hai số và mỗi bốn số, tương ứng.
 
 ```{.python .input}
 %%tab all
@@ -416,16 +415,16 @@ for i in range(8):
     print(f'{i} in binary is {i:>03b}')
 ```
 
-In binary representations, a higher bit 
-has a lower frequency than a lower bit.
-Similarly, as demonstrated in the heat map below,
-[**the positional encoding decreases
-frequencies along the encoding dimension**]
-by using trigonometric functions.
-Since the outputs are float numbers,
-such continuous representations
-are more space-efficient
-than binary representations.
+Trong biểu diễn nhị phân, một bit cao hơn
+có tần số thấp hơn một bit thấp hơn.
+Tương tự, như được minh họa trong heat map bên dưới,
+[**positional encoding làm giảm
+tần số theo chiều encoding**]
+bằng cách sử dụng các hàm lượng giác.
+Vì đầu ra là các số float,
+các biểu diễn liên tục như vậy
+hiệu quả về không gian hơn
+so với biểu diễn nhị phân.
 
 ```{.python .input}
 %%tab mxnet
@@ -455,28 +454,28 @@ d2l.show_heatmaps(P, xlabel='Column (encoding dimension)',
                   ylabel='Row (position)', figsize=(3.5, 4), cmap='Blues')
 ```
 
-### Relative Positional Information
+### Thông tin vị trí tương đối
 
-Besides capturing absolute positional information,
-the above positional encoding
-also allows
-a model to easily learn to attend by relative positions.
-This is because
-for any fixed position offset $\delta$,
-the positional encoding at position $i + \delta$
-can be represented by a linear projection
-of that at position $i$.
+Bên cạnh việc nắm bắt thông tin vị trí tuyệt đối,
+positional encoding ở trên
+cũng cho phép
+một mô hình dễ dàng học cách attention theo các vị trí tương đối.
+Điều này là do
+với bất kỳ độ lệch vị trí cố định $\delta$ nào,
+positional encoding tại vị trí $i + \delta$
+có thể được biểu diễn bằng một phép chiếu tuyến tính
+của positional encoding tại vị trí $i$.
 
 
-This projection can be explained
-mathematically.
-Denoting
+Phép chiếu này có thể được giải thích
+bằng toán học.
+Ký hiệu
 $\omega_j = 1/10000^{2j/d}$,
-any pair of $(p_{i, 2j}, p_{i, 2j+1})$ 
-in :eqref:`eq_positional-encoding-def`
-can 
-be linearly projected to $(p_{i+\delta, 2j}, p_{i+\delta, 2j+1})$
-for any fixed offset $\delta$:
+bất kỳ cặp $(p_{i, 2j}, p_{i, 2j+1})$ nào
+trong :eqref:`eq_positional-encoding-def`
+có thể
+được chiếu tuyến tính thành $(p_{i+\delta, 2j}, p_{i+\delta, 2j+1})$
+với bất kỳ độ lệch cố định $\delta$ nào:
 
 $$\begin{aligned}
 \begin{bmatrix} \cos(\delta \omega_j) & \sin(\delta \omega_j) \\  -\sin(\delta \omega_j) & \cos(\delta \omega_j) \\ \end{bmatrix}
@@ -487,39 +486,39 @@ $$\begin{aligned}
 \begin{bmatrix} p_{i+\delta, 2j} \\  p_{i+\delta, 2j+1} \\ \end{bmatrix},
 \end{aligned}$$
 
-where the $2\times 2$ projection matrix does not depend on any position index $i$.
+trong đó ma trận chiếu $2\times 2$ không phụ thuộc vào bất kỳ chỉ số vị trí $i$ nào.
 
-## Summary
+## Tóm tắt
 
-In self-attention, the queries, keys, and values all come from the same place.
-Both CNNs and self-attention enjoy parallel computation
-and self-attention has the shortest maximum path length.
-However, the quadratic computational complexity
-with respect to the sequence length
-makes self-attention prohibitively slow
-for very long sequences.
-To use the sequence order information, 
-we can inject absolute or relative positional information 
-by adding positional encoding to the input representations.
+Trong self-attention, các query, key và value đều đến từ cùng một nguồn.
+Cả CNN và self-attention đều hỗ trợ tính toán song song,
+và self-attention có độ dài đường đi cực đại ngắn nhất.
+Tuy nhiên, độ phức tạp tính toán bậc hai
+theo độ dài chuỗi
+khiến self-attention chậm đến mức không khả thi
+đối với các chuỗi rất dài.
+Để sử dụng thông tin về thứ tự chuỗi,
+chúng ta có thể đưa thông tin vị trí tuyệt đối hoặc tương đối vào
+bằng cách thêm positional encoding vào các biểu diễn đầu vào.
 
-## Exercises
+## Bài tập
 
-1. Suppose that we design a deep architecture to represent a sequence by stacking self-attention layers with positional encoding. What could the possible issues be?
-1. Can you design a learnable positional encoding method?
-1. Can we assign different learned embeddings according to different offsets between queries and keys that are compared in self-attention? Hint: you may refer to relative position embeddings :cite:`shaw2018self,huang2018music`.
+1. Giả sử chúng ta thiết kế một kiến trúc sâu để biểu diễn một chuỗi bằng cách xếp chồng các lớp self-attention có positional encoding. Những vấn đề có thể xảy ra là gì?
+1. Bạn có thể thiết kế một phương pháp positional encoding có thể học được không?
+1. Chúng ta có thể gán các embedding đã học khác nhau theo các offset khác nhau giữa query và key được so sánh trong self-attention không? Gợi ý: bạn có thể tham khảo relative position embeddings :cite:`shaw2018self,huang2018music`.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/1651)
+[Thảo luận](https://discuss.d2l.ai/t/1651)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1652)
+[Thảo luận](https://discuss.d2l.ai/t/1652)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3870)
+[Thảo luận](https://discuss.d2l.ai/t/3870)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18030)
+[Thảo luận](https://discuss.d2l.ai/t/18030)
 :end_tab:
