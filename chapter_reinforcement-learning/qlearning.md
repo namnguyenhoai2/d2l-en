@@ -7,71 +7,71 @@ tab.interact_select(["pytorch"])
 # Q-Learning
 :label:`sec_qlearning`
 
-In the previous section, we discussed the Value Iteration algorithm which requires accessing the complete Markov decision process (MDP), e.g., the transition and reward functions. In this section, we will look at Q-Learning :cite:`Watkins.Dayan.1992` which is an algorithm to learn the value function without necessarily knowing the MDP. This algorithm embodies the central idea behind reinforcement learning: it will enable the robot to obtain its own data.
-<!-- , instead of relying upon the expert. -->
+Trong phần trước, chúng ta đã thảo luận về thuật toán Value Iteration, vốn yêu cầu truy cập vào toàn bộ quy trình quyết định Markov (MDP), chẳng hạn như các hàm chuyển trạng thái và phần thưởng. Trong phần này, chúng ta sẽ tìm hiểu Q-Learning :cite:`Watkins.Dayan.1992`, một thuật toán học hàm giá trị mà không nhất thiết phải biết MDP. Thuật toán này thể hiện ý tưởng cốt lõi đằng sau reinforcement learning: nó cho phép robot tự thu thập dữ liệu.
+<!-- , thay vì phụ thuộc vào chuyên gia. -->
 
-## The Q-Learning Algorithm
+## Thuật toán Q-Learning
 
-Recall that value iteration for the action-value function in :ref:`sec_valueiter` corresponds to the update
+Hãy nhớ rằng value iteration cho hàm action-value trong :ref:`sec_valueiter` tương ứng với phép cập nhật
 
 $$Q_{k+1}(s, a) = r(s, a) + \gamma \sum_{s' \in \mathcal{S}} P(s' \mid s, a) \max_{a' \in \mathcal{A}} Q_k (s', a'); \ \textrm{for all } s \in \mathcal{S} \textrm{ and } a \in \mathcal{A}.$$
 
-As we discussed, implementing this algorithm requires knowing the MDP, specifically the transition function $P(s' \mid s, a)$. The key idea behind Q-Learning is to replace the summation over all $s' \in \mathcal{S}$ in the above expression by a summation over the states visited by the robot. This allows us to subvert the need to know the transition function.
+Như đã thảo luận, việc triển khai thuật toán này yêu cầu biết MDP, cụ thể là hàm chuyển trạng thái $P(s' \mid s, a)$. Ý tưởng then chốt của Q-Learning là thay tổng theo mọi $s' \in \mathcal{S}$ trong biểu thức trên bằng tổng theo các trạng thái mà robot đã đi qua. Điều này giúp loại bỏ nhu cầu phải biết hàm chuyển trạng thái.
 
-## An Optimization Problem Underlying Q-Learning
+## Bài toán tối ưu đằng sau Q-Learning
 
-Let us imagine that the robot uses a policy $\pi_e(a \mid s)$ to take actions. Just like the previous chapter, it collects a dataset of $n$ trajectories of $T$ timesteps each $\{ (s_t^i, a_t^i)_{t=0,\ldots,T-1}\}_{i=1,\ldots, n}$. Recall that value iteration is really a set of constraints that ties together the action-value $Q^*(s, a)$ of different states and actions to each other. We can implement an approximate version of value iteration using the data that the robot has collected using $\pi_e$ as
+Hãy giả sử robot sử dụng một policy $\pi_e(a \mid s)$ để thực hiện các hành động. Giống như trong chương trước, nó thu thập một dataset gồm $n$ trajectory, mỗi trajectory có $T$ timestep $\{ (s_t^i, a_t^i)_{t=0,\ldots,T-1}\}_{i=1,\ldots, n}$. Hãy nhớ rằng value iteration thực chất là một tập các ràng buộc liên kết action-value $Q^*(s, a)$ của những trạng thái và hành động khác nhau với nhau. Chúng ta có thể triển khai một phiên bản xấp xỉ của value iteration bằng dữ liệu robot đã thu thập khi sử dụng $\pi_e$ như sau:
 
 $$\hat{Q} = \min_Q \underbrace{\frac{1}{nT} \sum_{i=1}^n \sum_{t=0}^{T-1} (Q(s_t^i, a_t^i) - r(s_t^i, a_t^i) - \gamma \max_{a'} Q(s_{t+1}^i, a'))^2}_{\stackrel{\textrm{def}}{=} \ell(Q)}.$$
 :eqlabel:`q_learning_optimization_problem`
 
-Let us first observe the similarities and differences between this expression and value iteration above. If the robot's policy $\pi_e$ were equal to the optimal policy $\pi^*$, and if it collected an infinite amount of data, then this optimization problem would be identical to the optimization problem underlying value iteration. But while value iteration requires us to know $P(s' \mid s, a)$, the optimization objective does not have this term. We have not cheated: as the robot uses the policy $\pi_e$ to take an action $a_t^i$ at state $s_t^i$, the next state $s_{t+1}^i$ is a sample drawn from the transition function. So the optimization objective also has access to the transition function, but implicitly in terms of the data collected by the robot.
+Trước tiên, hãy quan sát những điểm tương đồng và khác biệt giữa biểu thức này với value iteration ở trên. Nếu policy $\pi_e$ của robot bằng policy tối ưu $\pi^*$ và nếu nó thu thập một lượng dữ liệu vô hạn, thì bài toán tối ưu này sẽ giống hệt bài toán tối ưu nằm bên dưới value iteration. Tuy nhiên, trong khi value iteration yêu cầu chúng ta biết $P(s' \mid s, a)$, hàm mục tiêu tối ưu không chứa hạng tử này. Chúng ta không gian lận: khi robot sử dụng policy $\pi_e$ để thực hiện hành động $a_t^i$ tại trạng thái $s_t^i$, trạng thái tiếp theo $s_{t+1}^i$ là một mẫu được lấy từ hàm chuyển trạng thái. Vì vậy, hàm mục tiêu tối ưu cũng có quyền truy cập vào hàm chuyển trạng thái, nhưng một cách ẩn thông qua dữ liệu robot đã thu thập.
 
-The variables of our optimization problem are $Q(s, a)$ for all $s \in \mathcal{S}$ and $a \in \mathcal{A}$. We can minimize the objective using gradient descent. For every pair $(s_t^i, a_t^i)$ in our dataset, we can write
+Các biến của bài toán tối ưu là $Q(s, a)$ với mọi $s \in \mathcal{S}$ và $a \in \mathcal{A}$. Chúng ta có thể tối thiểu hóa hàm mục tiêu bằng gradient descent. Với mỗi cặp $(s_t^i, a_t^i)$ trong dataset, ta có thể viết
 
 $$\begin{aligned}Q(s_t^i, a_t^i) &\leftarrow Q(s_t^i, a_t^i) - \alpha \nabla_{Q(s_t^i,a_t^i)} \ell(Q) \\&=(1 - \alpha) Q(s_t^i,a_t^i) - \alpha \Big( r(s_t^i, a_t^i) + \gamma \max_{a'} Q(s_{t+1}^i, a') \Big),\end{aligned}$$
 :eqlabel:`q_learning`
 
-where $\alpha$ is the learning rate. Typically in real problems, when the robot reaches the goal location, the trajectories end. The value of such a terminal state is zero because the robot does not take any further actions beyond this state. We should modify our update to handle such states as
+trong đó $\alpha$ là learning rate. Thông thường, trong các bài toán thực tế, khi robot đến vị trí mục tiêu, trajectory sẽ kết thúc. Giá trị của trạng thái terminal như vậy bằng 0 vì robot không thực hiện thêm hành động nào sau trạng thái này. Chúng ta nên điều chỉnh phép cập nhật để xử lý các trạng thái như vậy:
 
 $$Q(s_t^i, a_t^i) =(1 - \alpha) Q(s_t^i,a_t^i) - \alpha \Big( r(s_t^i, a_t^i) + \gamma (1 - \mathbb{1}_{s_{t+1}^i \textrm{ is terminal}} )\max_{a'} Q(s_{t+1}^i, a') \Big).$$
 
-where $\mathbb{1}_{s_{t+1}^i \textrm{ is terminal}}$ is an indicator variable that is one if $s_{t+1}^i$ is a terminal state and zero otherwise. The value of state-action tuples $(s, a)$ that are not a part of the dataset is set to $-\infty$. This algorithm is known as Q-Learning.
+trong đó $\mathbb{1}_{s_{t+1}^i \textrm{ is terminal}}$ là một biến chỉ báo có giá trị bằng một nếu $s_{t+1}^i$ là trạng thái terminal và bằng không trong các trường hợp khác. Giá trị của các bộ state-action $(s, a)$ không có trong dataset được đặt bằng $-\infty$. Thuật toán này được gọi là Q-Learning.
 
-Given the solution of these updates $\hat{Q}$, which is an approximation of the optimal value function $Q^*$, we can obtain the optimal deterministic policy corresponding to this value function easily using
+Với nghiệm của các phép cập nhật này là $\hat{Q}$, một giá trị xấp xỉ của hàm giá trị tối ưu $Q^*$, chúng ta có thể dễ dàng thu được policy tất định tối ưu tương ứng với hàm giá trị này bằng
 
 $$\hat{\pi}(s) = \mathrm{argmax}_{a} \hat{Q}(s, a).$$
 
-There can be situations when there are multiple deterministic policies that correspond to the same optimal value function; such ties can be broken arbitrarily because they have the same value function.
+Có thể xảy ra trường hợp nhiều policy tất định tương ứng với cùng một hàm giá trị tối ưu; các trường hợp hòa như vậy có thể được phá vỡ tùy ý vì chúng có cùng hàm giá trị.
 
-## Exploration in Q-Learning
+## Exploration trong Q-Learning
 
-The policy used by the robot to collect data $\pi_e$ is critical to ensure that Q-Learning works well. Afterall, we have replaced the expectation over $s'$ using the transition function $P(s' \mid s, a)$ using the data collected by the robot. If the policy $\pi_e$ does not reach diverse parts of the state-action space, then it is easy to imagine our estimate $\hat{Q}$ will be a poor approximation of the optimal $Q^*$. It is also important to note that in such a situation, the estimate of $Q^*$ at *all states* $s \in \mathcal{S}$ will be bad, not just the ones visited by $\pi_e$. This is because the Q-Learning objective (or value iteration) is a constraint that ties together the value of all state-action pairs. It is therefore critical to pick the correct policy $\pi_e$ to collect data.
+Policy mà robot sử dụng để thu thập dữ liệu $\pi_e$ đóng vai trò then chốt trong việc đảm bảo Q-Learning hoạt động tốt. Sau cùng, chúng ta đã thay thế kỳ vọng theo $s'$ sử dụng hàm chuyển trạng thái $P(s' \mid s, a)$ bằng dữ liệu robot đã thu thập. Nếu policy $\pi_e$ không đi đến những phần đa dạng của không gian state-action, thì dễ hình dung rằng ước lượng $\hat{Q}$ của chúng ta sẽ là một xấp xỉ kém của $Q^*$ tối ưu. Cũng cần lưu ý rằng trong tình huống này, ước lượng của $Q^*$ tại *mọi trạng thái* $s \in \mathcal{S}$ đều sẽ kém, chứ không chỉ tại những trạng thái mà $\pi_e$ đã đi qua. Điều này là do hàm mục tiêu Q-Learning (hoặc value iteration) là một ràng buộc liên kết giá trị của mọi cặp state-action. Vì vậy, việc chọn đúng policy $\pi_e$ để thu thập dữ liệu là vô cùng quan trọng.
 
-We can mitigate this concern by picking a completely random policy $\pi_e$ that samples actions uniformly randomly from $\mathcal{A}$. Such a policy would visit all states, but it will take a large number of trajectories before it does so.
+Chúng ta có thể giảm bớt vấn đề này bằng cách chọn một policy hoàn toàn ngẫu nhiên $\pi_e$, policy này lấy mẫu các hành động đồng đều ngẫu nhiên từ $\mathcal{A}$. Một policy như vậy sẽ đi qua mọi trạng thái, nhưng sẽ cần một số lượng lớn trajectory trước khi làm được điều đó.
 
-We thus arrive at the second key idea in Q-Learning, namely exploration. Typical implementations of Q-Learning tie together the current estimate of $Q$ and the policy $\pi_e$ to set
+Do đó, chúng ta đi đến ý tưởng then chốt thứ hai trong Q-Learning, đó là exploration. Các triển khai Q-Learning điển hình liên kết ước lượng hiện tại của $Q$ với policy $\pi_e$ để đặt
 
 $$\pi_e(a \mid s) = \begin{cases}\mathrm{argmax}_{a'} \hat{Q}(s, a') & \textrm{with prob. } 1-\epsilon \\ \textrm{uniform}(\mathcal{A}) & \textrm{with prob. } \epsilon,\end{cases}$$
 :eqlabel:`epsilon_greedy`
 
-where $\epsilon$ is called the "exploration parameter" and is chosen by the user. The policy $\pi_e$ is called an exploration policy. This particular $\pi_e$ is called an $\epsilon$-greedy exploration policy because it chooses the optimal action (under the current estimate $\hat{Q}$) with probability $1-\epsilon$ but explores randomly with the remainder probability $\epsilon$. We can also use the so-called softmax exploration policy
+trong đó $\epsilon$ được gọi là “tham số exploration” và do người dùng lựa chọn. Policy $\pi_e$ được gọi là exploration policy. $\pi_e$ cụ thể này được gọi là exploration policy $\epsilon$-greedy vì nó chọn hành động tối ưu (theo ước lượng hiện tại $\hat{Q}$) với xác suất $1-\epsilon$, nhưng thực hiện exploration ngẫu nhiên với xác suất còn lại là $\epsilon$. Chúng ta cũng có thể sử dụng exploration policy softmax, còn gọi là
 
 $$\pi_e(a \mid s) = \frac{e^{\hat{Q}(s, a)/T}}{\sum_{a'} e^{\hat{Q}(s, a')/T}};$$
 
-where the hyper-parameter $T$ is called temperature. A large value of $\epsilon$ in $\epsilon$-greedy policy functions similarly to a large value of temperature $T$ for the softmax policy.
+trong đó hyper-parameter $T$ được gọi là temperature. Giá trị lớn của $\epsilon$ trong policy $\epsilon$-greedy có tác dụng tương tự giá trị temperature $T$ lớn trong policy softmax.
 
-It is important to note that when we pick an exploration that depends upon the current estimate of the action-value function $\hat{Q}$, we need to resolve the optimization problem periodically. Typical implementations of Q-Learning make one mini-batch update using a few state-action pairs in the collected dataset (typically the ones collected from the previous timestep of the robot) after taking every action using $\pi_e$.
+Điều quan trọng cần lưu ý là khi chọn một exploration phụ thuộc vào ước lượng hiện tại của hàm action-value $\hat{Q}$, chúng ta cần giải lại bài toán tối ưu theo định kỳ. Các triển khai Q-Learning điển hình thực hiện một mini-batch update bằng một vài cặp state-action trong dataset đã thu thập (thường là các cặp được thu thập từ timestep trước đó của robot) sau mỗi lần thực hiện hành động bằng $\pi_e$.
 
-## The "Self-correcting" Property of Q-Learning
+## Tính chất “Tự hiệu chỉnh” của Q-Learning
 
-The dataset collected by the robot during Q-Learning grows with time. Both the exploration policy $\pi_e$ and the estimate $\hat{Q}$ evolve as the robot collects more data. This gives us a key insight into why Q-Learning works well. Consider a state $s$: if a particular action $a$ has a large value under the current estimate $\hat{Q}(s,a)$, then both the $\epsilon$-greedy and the softmax exploration policies have a larger probability of picking this action. If this action actually is *not* the ideal action, then the future states that arise from this action will have poor rewards. The next update of the Q-Learning objective will therefore reduce the value $\hat{Q}(s,a)$, which will reduce the probability of picking this action the next time the robot visits state $s$. Bad actions, e.g., ones whose value is overestimated in $\hat{Q}(s,a)$, are explored by the robot but their value is correct in the next update of the Q-Learning objective. Good actions, e.g., whose value $\hat{Q}(s, a)$ is large, are explored more often by the robot and thereby reinforced. This property can be used to show that Q-Learning can converge to the optimal policy even if it begins with a random policy $\pi_e$ :cite:`Watkins.Dayan.1992`.
+Dataset do robot thu thập trong quá trình Q-Learning tăng lên theo thời gian. Cả exploration policy $\pi_e$ và ước lượng $\hat{Q}$ đều thay đổi khi robot thu thập thêm dữ liệu. Điều này đem lại cho chúng ta một insight quan trọng về lý do Q-Learning hoạt động tốt. Xét một trạng thái $s$: nếu một hành động cụ thể $a$ có giá trị lớn theo ước lượng hiện tại $\hat{Q}(s,a)$, thì cả exploration policy $\epsilon$-greedy và softmax đều có xác suất chọn hành động này cao hơn. Nếu hành động này thực sự *không phải* là hành động lý tưởng, thì các trạng thái tương lai phát sinh từ hành động này sẽ có phần thưởng thấp. Do đó, lần cập nhật tiếp theo của hàm mục tiêu Q-Learning sẽ làm giảm giá trị $\hat{Q}(s,a)$, từ đó làm giảm xác suất chọn hành động này vào lần tiếp theo robot đến trạng thái $s$. Các hành động không tốt, chẳng hạn những hành động bị ước lượng quá cao trong $\hat{Q}(s,a)$, sẽ được robot khám phá nhưng giá trị của chúng sẽ được hiệu chỉnh trong lần cập nhật tiếp theo của hàm mục tiêu Q-Learning. Các hành động tốt, chẳng hạn những hành động có giá trị $\hat{Q}(s, a)$ lớn, sẽ được robot khám phá thường xuyên hơn và nhờ đó được củng cố. Tính chất này có thể được dùng để chứng minh rằng Q-Learning có thể hội tụ đến policy tối ưu ngay cả khi bắt đầu với một policy ngẫu nhiên $\pi_e$ :cite:`Watkins.Dayan.1992`.
 
-This ability to not only collect new data but also collect the right kind of data is the central feature of reinforcement learning algorithms, and this is what distinguishes them from supervised learning. Q-Learning, using deep neural networks (which we will see in the DQN chapeter later), is responsible for the resurgence of reinforcement learning :cite:`mnih2013playing`.
+Khả năng không chỉ thu thập dữ liệu mới mà còn thu thập đúng loại dữ liệu là đặc điểm trung tâm của các thuật toán reinforcement learning, và đây là điều phân biệt chúng với supervised learning. Q-Learning, khi sử dụng deep neural network (mà chúng ta sẽ tìm hiểu trong chương DQN sau), là yếu tố dẫn đến sự hồi sinh của reinforcement learning :cite:`mnih2013playing`.
 
-## Implementation of Q-Learning
+## Triển khai Q-Learning
 
-We now show how to implement Q-Learning on FrozenLake from [Open AI Gym](https://gym.openai.com). Note this is the same setup as we consider in :ref:`sec_valueiter` experiment.
+Bây giờ, chúng ta sẽ trình bày cách triển khai Q-Learning trên FrozenLake từ [Open AI Gym](https://gym.openai.com). Lưu ý rằng đây cũng là thiết lập mà chúng ta xem xét trong thí nghiệm :ref:`sec_valueiter`.
 
 ```{.python .input}
 %%tab all
@@ -93,9 +93,9 @@ np.random.seed(seed)
 env_info = d2l.make_env('FrozenLake-v1', seed=seed)
 ```
 
-In the FrozenLake environment, the robot moves on a $4 \times 4$ grid (these are the states) with actions that are "up" ($\uparrow$), "down" ($\rightarrow$), "left" ($\leftarrow$), and "right" ($\rightarrow$). The environment contains a number of holes (H) cells and frozen (F) cells as well as a goal cell (G), all of which are unknown to the robot. To keep the problem simple, we assume the robot has reliable actions, i.e. $P(s' \mid s, a) = 1$ for all $s \in \mathcal{S}, a \in \mathcal{A}$. If the robot reaches the goal, the trial ends and the robot receives a reward of $1$ irrespective of the action; the reward at any other state is $0$ for all actions. The objective of the robot is to learn a policy that reaches the goal location (G) from a given start location (S) (this is $s_0$) to maximize the *return*.
+Trong môi trường FrozenLake, robot di chuyển trên một lưới $4 \times 4$ (đây là các trạng thái) với các hành động là "lên" ($\uparrow$), "xuống" ($\rightarrow$), "trái" ($\leftarrow$) và "phải" ($\rightarrow$). Môi trường chứa một số ô hố (H) và ô băng (F), cũng như một ô đích (G); tất cả đều chưa được biết đối với robot. Để bài toán đơn giản, ta giả sử robot thực hiện các hành động đáng tin cậy, tức là $P(s' \mid s, a) = 1$ với mọi $s \in \mathcal{S}, a \in \mathcal{A}$. Nếu robot đến được đích, lượt thử kết thúc và robot nhận phần thưởng bằng $1$ bất kể hành động nào; phần thưởng tại mọi trạng thái khác là $0$ đối với tất cả các hành động. Mục tiêu của robot là học một policy đưa robot từ vị trí bắt đầu cho trước (S) (đây là $s_0$) đến vị trí đích (G) để tối đa hóa *return*.
 
-We first implement $\epsilon$-greedy method as follows:
+Trước tiên, ta triển khai phương pháp $\epsilon$-greedy như sau:
 
 ```{.python .input}
 %%tab all
@@ -109,7 +109,7 @@ def e_greedy(env, Q, s, epsilon):
 
 ```
 
-We are now ready to implement Q-learning:
+Bây giờ, ta đã sẵn sàng triển khai Q-learning:
 
 ```{.python .input}
 %%tab all
@@ -148,18 +148,18 @@ q_learning(env_info=env_info, gamma=gamma, num_iters=num_iters, alpha=alpha, eps
 
 ```
 
-This result shows that Q-learning can find the optimal solution for this problem roughly after 250 iterations. However, when we compare this result with the Value Iteration algorithm's result (see :ref:`subsec_valueitercode`), we can see that the Value Iteration algorithm needs way fewer iterations to find the optimal solution for this problem. This happens because the Value Iteration algorithm has access to the full MDP whereas Q-learning does not.
+Kết quả này cho thấy Q-learning có thể tìm ra nghiệm tối ưu cho bài toán này sau khoảng 250 vòng lặp. Tuy nhiên, khi so sánh kết quả này với kết quả của thuật toán Value Iteration (xem :ref:`subsec_valueitercode`), ta có thể thấy thuật toán Value Iteration cần ít vòng lặp hơn nhiều để tìm ra nghiệm tối ưu cho bài toán này. Điều này xảy ra vì thuật toán Value Iteration có quyền truy cập vào MDP đầy đủ, trong khi Q-learning thì không.
 
 
-## Summary
-Q-learning is one of the most fundamental reinforcement-learning algorithms. It has been at the epicenter of the recent success of reinforcement learning, most notably in learning to play video games :cite:`mnih2013playing`. Implementing Q-learning does not require that we know the Markov decision process (MDP), e.g., the transition and reward functions, completely.
+## Tóm tắt
+Q-learning là một trong những thuật toán học tăng cường nền tảng nhất. Nó đã đóng vai trò trung tâm trong thành công gần đây của học tăng cường, đáng chú ý nhất là trong việc học chơi trò chơi điện tử :cite:`mnih2013playing`. Việc triển khai Q-learning không yêu cầu chúng ta biết đầy đủ Markov decision process (MDP), chẳng hạn như các hàm chuyển trạng thái và phần thưởng.
 
-## Exercises
+## Bài tập
 
-1. Try increasing the grid size to $8 \times 8$. Compared with $4 \times 4$ grid, how many iterations does it take to find the optimal value function?
-1. Run the Q-learning algorithm again with $\gamma$ (i.e. "gamma" in the above code) when it equals to $0$, $0.5$, and $1$ and analyze its results.
-1. Run the Q-learning algorithm again with $\epsilon$ (i.e. "epsilon" in the above code) when it equals to $0$, $0.5$, and $1$ and analyze its results.
+1. Hãy thử tăng kích thước lưới lên $8 \times 8$. So với lưới $4 \times 4$, cần bao nhiêu vòng lặp để tìm ra hàm giá trị tối ưu?
+1. Chạy lại thuật toán Q-learning với $\gamma$ (tức là "gamma" trong đoạn code trên) lần lượt bằng $0$, $0.5$ và $1$, rồi phân tích các kết quả.
+1. Chạy lại thuật toán Q-learning với $\epsilon$ (tức là "epsilon" trong đoạn code trên) lần lượt bằng $0$, $0.5$ và $1$, rồi phân tích các kết quả.
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/12103)
+[Thảo luận](https://discuss.d2l.ai/t/12103)
 :end_tab:
