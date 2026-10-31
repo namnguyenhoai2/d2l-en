@@ -3,48 +3,48 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Weight Decay
+# Suy giảm trọng số
 :label:`sec_weight_decay`
 
-Now that we have characterized the problem of overfitting,
-we can introduce our first *regularization* technique.
-Recall that we can always mitigate overfitting
-by collecting more training data.
-However, that can be costly, time consuming,
-or entirely out of our control,
-making it impossible in the short run.
-For now, we can assume that we already have
-as much high-quality data as our resources permit
-and focus the tools at our disposal
-when the dataset is taken as a given.
+Giờ đây, sau khi đã mô tả vấn đề overfitting,
+chúng ta có thể giới thiệu kỹ thuật *regularization* đầu tiên.
+Hãy nhớ rằng chúng ta luôn có thể giảm thiểu overfitting
+bằng cách thu thập thêm dữ liệu huấn luyện.
+Tuy nhiên, việc đó có thể tốn kém, mất nhiều thời gian
+hoặc hoàn toàn nằm ngoài tầm kiểm soát của chúng ta,
+khiến điều này không thể thực hiện trong ngắn hạn.
+Hiện tại, chúng ta có thể giả định rằng mình đã có
+lượng dữ liệu chất lượng cao nhiều nhất trong phạm vi nguồn lực cho phép
+và tập trung vào các công cụ sẵn có
+khi xem dataset là một dữ kiện cố định.
 
-Recall that in our polynomial regression example
+Hãy nhớ rằng trong ví dụ hồi quy đa thức
 (:numref:`subsec_polynomial-curve-fitting`)
-we could limit our model's capacity
-by tweaking the degree
-of the fitted polynomial.
-Indeed, limiting the number of features
-is a popular technique for mitigating overfitting.
-However, simply tossing aside features
-can be too blunt an instrument.
-Sticking with the polynomial regression
-example, consider what might happen
-with high-dimensional input.
-The natural extensions of polynomials
-to multivariate data are called *monomials*,
-which are simply products of powers of variables.
-The degree of a monomial is the sum of the powers.
-For example, $x_1^2 x_2$, and $x_3 x_5^2$
-are both monomials of degree 3.
+chúng ta có thể giới hạn năng lực của model
+bằng cách điều chỉnh bậc
+của đa thức được khớp.
+Thực tế, giới hạn số lượng feature
+là một kỹ thuật phổ biến để giảm thiểu overfitting.
+Tuy nhiên, việc đơn giản loại bỏ feature
+có thể là một công cụ quá thô.
+Tiếp tục với ví dụ hồi quy đa thức,
+hãy xem điều gì có thể xảy ra
+với input có số chiều cao.
+Phần mở rộng tự nhiên của đa thức
+cho dữ liệu đa biến được gọi là *monomial*,
+vốn đơn giản là tích của các lũy thừa của các biến.
+Bậc của một monomial là tổng các số mũ.
+Ví dụ, $x_1^2 x_2$ và $x_3 x_5^2$
+đều là các monomial bậc 3.
 
-Note that the number of terms with degree $d$
-blows up rapidly as $d$ grows larger.
-Given $k$ variables, the number of monomials
-of degree $d$ is ${k - 1 + d} \choose {k - 1}$.
-Even small changes in degree, say from $2$ to $3$,
-dramatically increase the complexity of our model.
-Thus we often need a more fine-grained tool
-for adjusting function complexity.
+Lưu ý rằng số lượng số hạng có bậc $d$
+tăng vọt nhanh chóng khi $d$ lớn hơn.
+Với $k$ biến, số lượng monomial
+bậc $d$ là ${k - 1 + d} \choose {k - 1}$.
+Ngay cả những thay đổi nhỏ về bậc, chẳng hạn từ $2$ lên $3$,
+cũng làm độ phức tạp của model tăng đáng kể.
+Do đó, chúng ta thường cần một công cụ tinh chỉnh hơn
+để điều chỉnh độ phức tạp của hàm.
 
 ```{.python .input}
 %%tab mxnet
@@ -79,163 +79,161 @@ from jax import numpy as jnp
 import optax
 ```
 
-## Norms and Weight Decay
+## Chuẩn và suy giảm trọng số
 
-(**Rather than directly manipulating the number of parameters,
-*weight decay*, operates by restricting the values 
-that the parameters can take.**)
-More commonly called $\ell_2$ regularization
-outside of deep learning circles
-when optimized by minibatch stochastic gradient descent,
-weight decay might be the most widely used technique
-for regularizing parametric machine learning models.
-The technique is motivated by the basic intuition
-that among all functions $f$,
-the function $f = 0$
-(assigning the value $0$ to all inputs)
-is in some sense the *simplest*,
-and that we can measure the complexity
-of a function by the distance of its parameters from zero.
-But how precisely should we measure
-the distance between a function and zero?
-There is no single right answer.
-In fact, entire branches of mathematics,
-including parts of functional analysis
-and the theory of Banach spaces,
-are devoted to addressing such issues.
+(**Thay vì trực tiếp thao tác với số lượng tham số,
+*suy giảm trọng số* hoạt động bằng cách giới hạn các giá trị
+mà tham số có thể nhận.**)
+Bên ngoài lĩnh vực deep learning, kỹ thuật này thường được gọi là regularization $\ell_2$
+khi được tối ưu bằng stochastic gradient descent theo minibatch,
+và có thể là kỹ thuật được sử dụng rộng rãi nhất
+để regularize các model machine learning tham số.
+Kỹ thuật này dựa trên trực giác cơ bản rằng trong tất cả các hàm $f$,
+hàm $f = 0$
+(gán giá trị $0$ cho mọi input)
+theo một nghĩa nào đó là *đơn giản nhất*,
+và chúng ta có thể đo độ phức tạp
+của một hàm bằng khoảng cách từ các tham số của nó đến zero.
+Nhưng chính xác thì chúng ta nên đo
+khoảng cách giữa một hàm và zero như thế nào?
+Không có một câu trả lời duy nhất đúng.
+Trên thực tế, toàn bộ các nhánh toán học,
+bao gồm một phần của giải tích hàm
+và lý thuyết không gian Banach,
+được dành để giải quyết những vấn đề như vậy.
 
-One simple interpretation might be
-to measure the complexity of a linear function
+Một cách diễn giải đơn giản có thể là
+đo độ phức tạp của một hàm tuyến tính
 $f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x}$
-by some norm of its weight vector, e.g., $\| \mathbf{w} \|^2$.
-Recall that we introduced the $\ell_2$ norm and $\ell_1$ norm,
-which are special cases of the more general $\ell_p$ norm,
-in :numref:`subsec_lin-algebra-norms`.
-The most common method for ensuring a small weight vector
-is to add its norm as a penalty term
-to the problem of minimizing the loss.
-Thus we replace our original objective,
-*minimizing the prediction loss on the training labels*,
-with new objective,
-*minimizing the sum of the prediction loss and the penalty term*.
-Now, if our weight vector grows too large,
-our learning algorithm might focus
-on minimizing the weight norm $\| \mathbf{w} \|^2$
-rather than minimizing the training error.
-That is exactly what we want.
-To illustrate things in code,
-we revive our previous example
-from :numref:`sec_linear_regression` for linear regression.
-There, our loss was given by
+bằng một chuẩn nào đó của vector trọng số, chẳng hạn $\| \mathbf{w} \|^2$.
+Hãy nhớ rằng chúng ta đã giới thiệu chuẩn $\ell_2$ và chuẩn $\ell_1$,
+là các trường hợp đặc biệt của chuẩn $\ell_p$ tổng quát hơn,
+trong :numref:`subsec_lin-algebra-norms`.
+Phương pháp phổ biến nhất để đảm bảo vector trọng số nhỏ
+là thêm chuẩn của nó dưới dạng một hạng tử phạt
+vào bài toán cực tiểu hóa loss.
+Vì vậy, chúng ta thay mục tiêu ban đầu,
+*cực tiểu hóa loss dự đoán trên các label huấn luyện*,
+bằng mục tiêu mới,
+*cực tiểu hóa tổng của loss dự đoán và hạng tử phạt*.
+Giờ đây, nếu vector trọng số tăng quá lớn,
+thuật toán học của chúng ta có thể tập trung
+vào việc cực tiểu hóa chuẩn trọng số $\| \mathbf{w} \|^2$
+thay vì cực tiểu hóa lỗi huấn luyện.
+Đó chính xác là điều chúng ta mong muốn.
+Để minh họa bằng code,
+chúng ta sử dụng lại ví dụ trước đây
+từ :numref:`sec_linear_regression` về hồi quy tuyến tính.
+Trong đó, loss của chúng ta được cho bởi
 
 $$L(\mathbf{w}, b) = \frac{1}{n}\sum_{i=1}^n \frac{1}{2}\left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)^2.$$
 
-Recall that $\mathbf{x}^{(i)}$ are the features,
-$y^{(i)}$ is the label for any data example $i$, and $(\mathbf{w}, b)$
-are the weight and bias parameters, respectively.
-To penalize the size of the weight vector,
-we must somehow add $\| \mathbf{w} \|^2$ to the loss function,
-but how should the model trade off the
-standard loss for this new additive penalty?
-In practice, we characterize this trade-off
-via the *regularization constant* $\lambda$,
-a nonnegative hyperparameter
-that we fit using validation data:
+Hãy nhớ rằng $\mathbf{x}^{(i)}$ là các feature,
+$y^{(i)}$ là label của một ví dụ dữ liệu bất kỳ $i$, còn $(\mathbf{w}, b)$
+lần lượt là các tham số trọng số và bias.
+Để phạt kích thước của vector trọng số,
+bằng cách nào đó chúng ta phải thêm $\| \mathbf{w} \|^2$ vào hàm loss,
+nhưng model nên cân bằng loss tiêu chuẩn
+với hạng tử phạt cộng thêm mới này như thế nào?
+Trong thực tế, chúng ta mô tả sự cân bằng này
+thông qua *hằng số regularization* $\lambda$,
+một hyperparameter không âm
+được điều chỉnh bằng dữ liệu validation:
 
 $$L(\mathbf{w}, b) + \frac{\lambda}{2} \|\mathbf{w}\|^2.$$
 
 
-For $\lambda = 0$, we recover our original loss function.
-For $\lambda > 0$, we restrict the size of $\| \mathbf{w} \|$.
-We divide by $2$ by convention:
-when we take the derivative of a quadratic function,
-the $2$ and $1/2$ cancel out, ensuring that the expression
-for the update looks nice and simple.
-The astute reader might wonder why we work with the squared
-norm and not the standard norm (i.e., the Euclidean distance).
-We do this for computational convenience.
-By squaring the $\ell_2$ norm, we remove the square root,
-leaving the sum of squares of
-each component of the weight vector.
-This makes the derivative of the penalty easy to compute: 
-the sum of derivatives equals the derivative of the sum.
+Với $\lambda = 0$, chúng ta thu lại hàm loss ban đầu.
+Với $\lambda > 0$, chúng ta giới hạn kích thước của $\| \mathbf{w} \|$.
+Theo quy ước, chúng ta chia cho $2$:
+khi lấy đạo hàm của một hàm bậc hai,
+$2$ và $1/2$ triệt tiêu lẫn nhau, đảm bảo biểu thức
+cho phép cập nhật trông gọn gàng và đơn giản.
+Một độc giả tinh ý có thể thắc mắc tại sao chúng ta dùng
+chuẩn bình phương thay vì chuẩn thông thường
+(tức là khoảng cách Euclidean).
+Chúng ta làm vậy để thuận tiện cho việc tính toán.
+Bằng cách bình phương chuẩn $\ell_2$, chúng ta loại bỏ căn bậc hai,
+chỉ còn lại tổng bình phương
+của từng thành phần trong vector trọng số.
+Điều này giúp dễ dàng tính đạo hàm của hạng tử phạt:
+tổng các đạo hàm bằng đạo hàm của tổng.
 
+Hơn nữa, bạn có thể hỏi tại sao ngay từ đầu chúng ta dùng chuẩn $\ell_2$
+chứ không phải, chẳng hạn, chuẩn $\ell_1$.
+Thực tế, các lựa chọn khác cũng hợp lệ và
+phổ biến trong lĩnh vực thống kê.
+Trong khi các model tuyến tính regularize bằng $\ell_2$ tạo thành
+thuật toán *ridge regression* kinh điển,
+hồi quy tuyến tính regularize bằng $\ell_1$
+cũng là một phương pháp nền tảng tương tự trong thống kê,
+thường được gọi là *lasso regression*.
+Một lý do để dùng chuẩn $\ell_2$
+là nó áp dụng mức phạt lớn hơn
+lên các thành phần lớn của vector trọng số.
+Điều này định hướng thuật toán học của chúng ta
+về các model phân bổ trọng số đồng đều
+trên số lượng feature lớn hơn.
+Trong thực tế, điều này có thể khiến chúng bền vững hơn
+trước sai số đo lường trong một biến đơn lẻ.
+Ngược lại, các hạng tử phạt $\ell_1$ dẫn đến những model
+tập trung trọng số vào một tập feature nhỏ
+bằng cách đưa các trọng số còn lại về zero.
+Điều này cung cấp cho chúng ta một phương pháp hiệu quả để *feature selection*,
+có thể hữu ích vì những lý do khác.
+Ví dụ, nếu model của chúng ta chỉ dựa vào một vài feature,
+thì chúng ta có thể không cần thu thập, lưu trữ hoặc truyền dữ liệu
+cho các feature khác (đã bị loại bỏ).
 
-Moreover, you might ask why we work with the $\ell_2$ norm
-in the first place and not, say, the $\ell_1$ norm.
-In fact, other choices are valid and
-popular throughout statistics.
-While $\ell_2$-regularized linear models constitute
-the classic *ridge regression* algorithm,
-$\ell_1$-regularized linear regression
-is a similarly fundamental method in statistics, 
-popularly known as *lasso regression*.
-One reason to work with the $\ell_2$ norm
-is that it places an outsize penalty
-on large components of the weight vector.
-This biases our learning algorithm
-towards models that distribute weight evenly
-across a larger number of features.
-In practice, this might make them more robust
-to measurement error in a single variable.
-By contrast, $\ell_1$ penalties lead to models
-that concentrate weights on a small set of features
-by clearing the other weights to zero.
-This gives us an effective method for *feature selection*,
-which may be desirable for other reasons.
-For example, if our model only relies on a few features,
-then we may not need to collect, store, or transmit data
-for the other (dropped) features. 
-
-Using the same notation in :eqref:`eq_linreg_batch_update`,
-minibatch stochastic gradient descent updates
-for $\ell_2$-regularized regression as follows:
+Sử dụng cùng ký hiệu trong :eqref:`eq_linreg_batch_update`,
+các bước cập nhật của stochastic gradient descent theo minibatch
+cho hồi quy regularize bằng $\ell_2$ như sau:
 
 $$\begin{aligned}
 \mathbf{w} & \leftarrow \left(1- \eta\lambda \right) \mathbf{w} - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} \mathbf{x}^{(i)} \left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right).
 \end{aligned}$$
 
-As before, we update $\mathbf{w}$ based on the amount
-by which our estimate differs from the observation.
-However, we also shrink the size of $\mathbf{w}$ towards zero.
-That is why the method is sometimes called "weight decay":
-given the penalty term alone,
-our optimization algorithm *decays*
-the weight at each step of training.
-In contrast to feature selection,
-weight decay offers us a mechanism for continuously adjusting the complexity of a function.
-Smaller values of $\lambda$ correspond
-to less constrained $\mathbf{w}$,
-whereas larger values of $\lambda$
-constrain $\mathbf{w}$ more considerably.
-Whether we include a corresponding bias penalty $b^2$ 
-can vary across implementations, 
-and may vary across layers of a neural network.
-Often, we do not regularize the bias term.
-Besides,
-although $\ell_2$ regularization may not be equivalent to weight decay for other optimization algorithms,
-the idea of regularization through
-shrinking the size of weights
-still holds true.
+Như trước đây, chúng ta cập nhật $\mathbf{w}$ dựa trên mức độ
+mà tại đó ước lượng của chúng ta khác với quan sát.
+Tuy nhiên, chúng ta cũng thu nhỏ kích thước của $\mathbf{w}$ về zero.
+Đó là lý do phương pháp này đôi khi được gọi là "suy giảm trọng số":
+chỉ xét riêng hạng tử phạt,
+thuật toán tối ưu hóa của chúng ta *làm suy giảm*
+trọng số ở mỗi bước huấn luyện.
+Không giống feature selection,
+suy giảm trọng số cung cấp cho chúng ta một cơ chế điều chỉnh liên tục độ phức tạp của hàm.
+Các giá trị $\lambda$ nhỏ hơn tương ứng
+với $\mathbf{w}$ ít bị ràng buộc hơn,
+trong khi các giá trị $\lambda$ lớn hơn
+ràng buộc $\mathbf{w}$ đáng kể hơn.
+Việc có đưa hạng tử phạt bias tương ứng $b^2$ vào hay không
+có thể khác nhau giữa các implementation,
+và có thể khác nhau giữa các layer của neural network.
+Thông thường, chúng ta không regularize hạng tử bias.
+Ngoài ra,
+mặc dù regularization $\ell_2$ có thể không tương đương với suy giảm trọng số đối với các thuật toán tối ưu hóa khác,
+ý tưởng regularization thông qua
+việc thu nhỏ kích thước của trọng số
+vẫn đúng.
 
-## High-Dimensional Linear Regression
+## Hồi quy tuyến tính số chiều cao
 
-We can illustrate the benefits of weight decay 
-through a simple synthetic example.
+Chúng ta có thể minh họa lợi ích của suy giảm trọng số
+thông qua một ví dụ tổng hợp đơn giản.
 
-First, we [**generate some data as before**]:
+Trước tiên, chúng ta [**tạo một số dữ liệu như trước**]:
 
 (**$$y = 0.05 + \sum_{i = 1}^d 0.01 x_i + \epsilon \textrm{ where }
 \epsilon \sim \mathcal{N}(0, 0.01^2).$$**)
 
-In this synthetic dataset, our label is given 
-by an underlying linear function of our inputs,
-corrupted by Gaussian noise 
-with zero mean and standard deviation 0.01.
-For illustrative purposes, 
-we can make the effects of overfitting pronounced,
-by increasing the dimensionality of our problem to $d = 200$
-and working with a small training set with only 20 examples.
+Trong dataset tổng hợp này, label của chúng ta được xác định
+bởi một hàm tuyến tính nền tảng của các input,
+bị nhiễu bởi nhiễu Gaussian
+có trung bình bằng zero và độ lệch chuẩn 0.01.
+Để minh họa,
+chúng ta có thể làm cho ảnh hưởng của overfitting rõ rệt hơn
+bằng cách tăng số chiều của bài toán lên $d = 200$
+và làm việc với một tập huấn luyện nhỏ chỉ gồm 20 ví dụ.
 
 ```{.python .input}
 %%tab all
@@ -260,18 +258,18 @@ class Data(d2l.DataModule):
         return self.get_tensorloader([self.X, self.y], train, i)
 ```
 
-## Implementation from Scratch
+## Implementation từ đầu
 
-Now, let's try implementing weight decay from scratch.
-Since minibatch stochastic gradient descent
-is our optimizer,
-we just need to add the squared $\ell_2$ penalty
-to the original loss function.
+Bây giờ, hãy thử triển khai suy giảm trọng số từ đầu.
+Vì stochastic gradient descent theo minibatch
+là optimizer của chúng ta,
+chúng ta chỉ cần thêm hạng tử phạt $\ell_2$ bình phương
+vào hàm loss ban đầu.
 
-### (**Defining $\ell_2$ Norm Penalty**)
+### (**Định nghĩa hạng tử phạt chuẩn $\ell_2$**)
 
-Perhaps the most convenient way of implementing this penalty
-is to square all terms in place and sum them.
+Có lẽ cách thuận tiện nhất để triển khai hạng tử phạt này
+là bình phương tất cả các hạng tử tại chỗ rồi tính tổng.
 
 ```{.python .input}
 %%tab all
@@ -279,11 +277,11 @@ def l2_penalty(w):
     return d2l.reduce_sum(w**2) / 2
 ```
 
-### Defining the Model
+### Định nghĩa Model
 
-In the final model,
-the linear regression and the squared loss have not changed since :numref:`sec_linear_scratch`,
-so we will just define a subclass of `d2l.LinearRegressionScratch`. The only change here is that our loss now includes the penalty term.
+Trong model cuối cùng,
+hồi quy tuyến tính và squared loss không thay đổi kể từ :numref:`sec_linear_scratch`,
+vì vậy chúng ta chỉ cần định nghĩa một subclass của `d2l.LinearRegressionScratch`. Thay đổi duy nhất ở đây là loss của chúng ta hiện bao gồm hạng tử phạt.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -307,7 +305,7 @@ class WeightDecayScratch(d2l.LinearRegressionScratch):
                 self.lambd * l2_penalty(params['w']))
 ```
 
-The following code fits our model on the training set with 20 examples and evaluates it on the validation set with 100 examples.
+Đoạn code sau khớp model của chúng ta trên tập huấn luyện gồm 20 ví dụ và đánh giá nó trên tập validation gồm 100 ví dụ.
 
 ```{.python .input}
 %%tab all
@@ -325,76 +323,74 @@ def train_scratch(lambd):
               float(l2_penalty(trainer.state.params['w'])))
 ```
 
-### [**Training without Regularization**]
+### [**Huấn luyện không có Regularization**]
 
-We now run this code with `lambd = 0`,
-disabling weight decay.
-Note that we overfit badly,
-decreasing the training error but not the
-validation error---a textbook case of overfitting.
+Giờ đây, chúng ta chạy đoạn mã này với `lambd = 0`,  
+tắt weight decay.  
+Lưu ý rằng chúng ta bị overfit nghiêm trọng,  
+làm giảm lỗi huấn luyện nhưng không giảm  
+lỗi validation---một trường hợp overfitting điển hình.
 
 ```{.python .input}
 %%tab all
 train_scratch(0)
 ```
 
-### [**Using Weight Decay**]
+### [**Sử dụng Weight Decay**]
 
-Below, we run with substantial weight decay.
-Note that the training error increases
-but the validation error decreases.
-This is precisely the effect
-we expect from regularization.
+Dưới đây, chúng ta chạy với weight decay đáng kể.  
+Lưu ý rằng lỗi huấn luyện tăng lên  
+nhưng lỗi validation giảm xuống.  
+Đây chính xác là tác động  
+mà chúng ta mong đợi từ regularization.
 
 ```{.python .input}
 %%tab all
 train_scratch(3)
 ```
 
-## [**Concise Implementation**]
+## [**Triển khai ngắn gọn**]
 
-Because weight decay is ubiquitous
-in neural network optimization,
-the deep learning framework makes it especially convenient,
-integrating weight decay into the optimization algorithm itself
-for easy use in combination with any loss function.
-Moreover, this integration serves a computational benefit,
-allowing implementation tricks to add weight decay to the algorithm,
-without any additional computational overhead.
-Since the weight decay portion of the update
-depends only on the current value of each parameter,
-the optimizer must touch each parameter once anyway.
+Vì weight decay được sử dụng rộng rãi  
+trong quá trình tối ưu hóa mạng neural,  
+framework deep learning giúp việc này trở nên đặc biệt thuận tiện,  
+tích hợp weight decay trực tiếp vào thuật toán tối ưu hóa  
+để dễ dàng sử dụng cùng với mọi hàm loss.  
+Hơn nữa, việc tích hợp này mang lại lợi ích về mặt tính toán,  
+cho phép sử dụng các thủ thuật triển khai để thêm weight decay vào thuật toán  
+mà không làm phát sinh thêm chi phí tính toán.  
+Vì phần weight decay của phép cập nhật  
+chỉ phụ thuộc vào giá trị hiện tại của từng parameter,  
+optimizer trong mọi trường hợp cũng phải truy cập mỗi parameter một lần.
 
 :begin_tab:`mxnet`
-Below, we specify
-the weight decay hyperparameter directly
-through `wd` when instantiating our `Trainer`.
-By default, Gluon decays both
-weights and biases simultaneously.
-Note that the hyperparameter `wd`
-will be multiplied by `wd_mult`
-when updating model parameters.
-Thus, if we set `wd_mult` to zero,
-the bias parameter $b$ will not decay.
+Dưới đây, chúng ta chỉ định hyperparameter weight decay trực tiếp  
+thông qua `wd` khi khởi tạo `Trainer`.  
+Theo mặc định, Gluon làm suy giảm đồng thời cả  
+weights và biases.  
+Lưu ý rằng hyperparameter `wd`  
+sẽ được nhân với `wd_mult`  
+khi cập nhật các parameter của model.  
+Do đó, nếu đặt `wd_mult` bằng 0,  
+parameter bias $b$ sẽ không bị suy giảm.
 :end_tab:
 
 :begin_tab:`pytorch`
-Below, we specify
-the weight decay hyperparameter directly
-through `weight_decay` when instantiating our optimizer.
-By default, PyTorch decays both
-weights and biases simultaneously, but
-we can configure the optimizer to handle different parameters
-according to different policies.
-Here, we only set `weight_decay` for
-the weights (the `net.weight` parameters), hence the 
-bias (the `net.bias` parameter) will not decay.
+Dưới đây, chúng ta chỉ định hyperparameter weight decay trực tiếp  
+thông qua `weight_decay` khi khởi tạo optimizer.  
+Theo mặc định, PyTorch làm suy giảm đồng thời cả  
+weights và biases, nhưng  
+chúng ta có thể cấu hình optimizer để xử lý các parameter khác nhau  
+theo những chính sách khác nhau.  
+Ở đây, chúng ta chỉ đặt `weight_decay` cho  
+weights (các parameter `net.weight`), vì vậy  
+bias (parameter `net.bias`) sẽ không bị suy giảm.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Below, we create an $\ell_2$ regularizer with
-the weight decay hyperparameter `wd` and apply it to the layer's weights
-through the `kernel_regularizer` argument.
+Dưới đây, chúng ta tạo một regularizer $\ell_2$ với  
+hyperparameter weight decay `wd` và áp dụng nó cho weights của layer  
+thông qua argument `kernel_regularizer`.
 :end_tab:
 
 ```{.python .input}
@@ -453,13 +449,13 @@ class WeightDecay(d2l.LinearRegression):
                            optax.sgd(self.lr))
 ```
 
-[**The plot looks similar to that when
-we implemented weight decay from scratch**].
-However, this version runs faster
-and is easier to implement,
-benefits that will become more
-pronounced as you address larger problems
-and this work becomes more routine.
+[**Đồ thị trông tương tự như đồ thị khi  
+chúng ta tự triển khai weight decay**].  
+Tuy nhiên, phiên bản này chạy nhanh hơn  
+và dễ triển khai hơn,  
+những lợi ích này sẽ càng  
+rõ rệt hơn khi bạn xử lý các bài toán lớn hơn  
+và công việc này trở nên thường xuyên hơn.
 
 ```{.python .input}
 %%tab all
@@ -473,47 +469,47 @@ if tab.selected('pytorch', 'mxnet', 'tensorflow'):
     print('L2 norm of w:', float(l2_penalty(model.get_w_b()[0])))
 ```
 
-So far, we have touched upon one notion of
-what constitutes a simple linear function.
-However, even for simple nonlinear functions, the situation can be much more complex. To see this, the concept of [reproducing kernel Hilbert space (RKHS)](https://en.wikipedia.org/wiki/Reproducing_kernel_Hilbert_space)
-allows one to apply tools introduced
-for linear functions in a nonlinear context.
-Unfortunately, RKHS-based algorithms
-tend to scale poorly to large, high-dimensional data.
-In this book we will often adopt the common heuristic
-whereby weight decay is applied
-to all layers of a deep network.
+Cho đến nay, chúng ta đã đề cập đến một cách hiểu  
+về việc một hàm tuyến tính đơn giản là gì.  
+Tuy nhiên, ngay cả với các hàm phi tuyến đơn giản, tình huống cũng có thể phức tạp hơn nhiều. Để thấy điều này, khái niệm [không gian Hilbert kernel tái tạo (reproducing kernel Hilbert space, RKHS)](https://en.wikipedia.org/wiki/Reproducing_kernel_Hilbert_space)  
+cho phép áp dụng các công cụ được giới thiệu  
+cho các hàm tuyến tính vào bối cảnh phi tuyến.  
+Đáng tiếc là các thuật toán dựa trên RKHS  
+thường khó mở rộng khi làm việc với dữ liệu lớn, nhiều chiều.  
+Trong cuốn sách này, chúng ta thường áp dụng heuristic phổ biến  
+rằng weight decay được áp dụng  
+cho tất cả các layer của một deep network.
 
-## Summary
+## Tóm tắt
 
-Regularization is a common method for dealing with overfitting. Classical regularization techniques add a penalty term to the loss function (when training) to reduce the complexity of the learned model.
-One particular choice for keeping the model simple is using an $\ell_2$ penalty. This leads to weight decay in the update steps of the minibatch stochastic gradient descent algorithm.
-In practice, the weight decay functionality is provided in optimizers from deep learning frameworks.
-Different sets of parameters can have different update behaviors within the same training loop.
+Regularization là một phương pháp phổ biến để xử lý overfitting. Các kỹ thuật regularization cổ điển thêm một hạng tử penalty vào hàm loss (khi huấn luyện) để giảm độ phức tạp của model được học.
+Một lựa chọn cụ thể để giữ cho model đơn giản là sử dụng penalty $\ell_2$. Điều này dẫn đến weight decay trong các bước cập nhật của thuật toán stochastic gradient descent theo minibatch.
+Trong thực tế, chức năng weight decay được cung cấp trong các optimizer của framework deep learning.
+Các tập parameter khác nhau có thể có hành vi cập nhật khác nhau trong cùng một vòng lặp huấn luyện.
 
 
 
-## Exercises
+## Bài tập
 
-1. Experiment with the value of $\lambda$ in the estimation problem in this section. Plot training and validation accuracy as a function of $\lambda$. What do you observe?
-1. Use a validation set to find the optimal value of $\lambda$. Is it really the optimal value? Does this matter?
-1. What would the update equations look like if instead of $\|\mathbf{w}\|^2$ we used $\sum_i |w_i|$ as our penalty of choice ($\ell_1$ regularization)?
-1. We know that $\|\mathbf{w}\|^2 = \mathbf{w}^\top \mathbf{w}$. Can you find a similar equation for matrices (see the Frobenius norm in :numref:`subsec_lin-algebra-norms`)?
-1. Review the relationship between training error and generalization error. In addition to weight decay, increased training, and the use of a model of suitable complexity, what other ways might help us deal with overfitting?
-1. In Bayesian statistics we use the product of prior and likelihood to arrive at a posterior via $P(w \mid x) \propto P(x \mid w) P(w)$. How can you identify $P(w)$ with regularization?
+1. Thử nghiệm với giá trị của $\lambda$ trong bài toán ước lượng ở phần này. Vẽ accuracy huấn luyện và validation như một hàm của $\lambda$. Bạn quan sát thấy điều gì?
+1. Sử dụng một tập validation để tìm giá trị tối ưu của $\lambda$. Đó có thực sự là giá trị tối ưu không? Điều này có quan trọng không?
+1. Các phương trình cập nhật sẽ có dạng như thế nào nếu thay vì $\|\mathbf{w}\|^2$, chúng ta sử dụng $\sum_i |w_i|$ làm penalty được lựa chọn ($\ell_1$ regularization)?
+1. Chúng ta biết rằng $\|\mathbf{w}\|^2 = \mathbf{w}^\top \mathbf{w}$. Bạn có thể tìm một phương trình tương tự cho các ma trận không (xem chuẩn Frobenius trong :numref:`subsec_lin-algebra-norms`)?
+1. Ôn lại mối quan hệ giữa lỗi huấn luyện và lỗi tổng quát hóa. Ngoài weight decay, tăng cường huấn luyện và sử dụng một model có độ phức tạp phù hợp, những cách nào khác có thể giúp chúng ta xử lý overfitting?
+1. Trong thống kê Bayes, chúng ta sử dụng tích của prior và likelihood để đi đến posterior thông qua $P(w \mid x) \propto P(x \mid w) P(w)$. Làm thế nào bạn có thể xác định $P(w)$ bằng regularization?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/98)
+[Thảo luận](https://discuss.d2l.ai/t/98)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/99)
+[Thảo luận](https://discuss.d2l.ai/t/99)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/236)
+[Thảo luận](https://discuss.d2l.ai/t/236)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17979)
+[Thảo luận](https://discuss.d2l.ai/t/17979)
 :end_tab:

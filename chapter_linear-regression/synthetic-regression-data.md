@@ -3,19 +3,19 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Synthetic Regression Data
+# Dữ liệu hồi quy tổng hợp
 :label:`sec_synthetic-regression-data`
 
 
-Machine learning is all about extracting information from data.
-So you might wonder, what could we possibly learn from synthetic data?
-While we might not care intrinsically about the patterns 
-that we ourselves baked into an artificial data generating model,
-such datasets are nevertheless useful for didactic purposes,
-helping us to evaluate the properties of our learning 
-algorithms and to confirm that our implementations work as expected.
-For example, if we create data for which the correct parameters are known *a priori*,
-then we can check that our model can in fact recover them.
+Machine learning chủ yếu là việc trích xuất thông tin từ dữ liệu.
+Vì vậy, bạn có thể tự hỏi: chúng ta có thể học được gì từ dữ liệu tổng hợp?
+Mặc dù bản thân chúng ta có thể không quan tâm đến các mẫu
+mà chính chúng ta đã đưa vào một mô hình tạo dữ liệu nhân tạo,
+nhưng các tập dữ liệu như vậy vẫn hữu ích cho mục đích giảng dạy,
+giúp chúng ta đánh giá các thuộc tính của các
+thuật toán học và xác nhận rằng các triển khai của mình hoạt động như mong đợi.
+Ví dụ, nếu chúng ta tạo dữ liệu mà các tham số đúng đã được biết *a priori*,
+thì chúng ta có thể kiểm tra xem mô hình của mình có thực sự khôi phục được chúng hay không.
 
 ```{.python .input}
 %%tab mxnet
@@ -54,30 +54,30 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 ```
 
-## Generating the Dataset
+## Tạo tập dữ liệu
 
-For this example, we will work in low dimension
-for succinctness.
-The following code snippet generates 1000 examples
-with 2-dimensional features drawn 
-from a standard normal distribution.
-The resulting design matrix $\mathbf{X}$
-belongs to $\mathbb{R}^{1000 \times 2}$. 
-We generate each label by applying 
-a *ground truth* linear function, 
-corrupting them via additive noise $\boldsymbol{\epsilon}$, 
-drawn independently and identically for each example:
+Trong ví dụ này, để ngắn gọn,
+chúng ta sẽ làm việc trong không gian có số chiều thấp.
+Đoạn mã sau tạo ra 1000 ví dụ
+với các đặc trưng 2 chiều được lấy mẫu
+từ một phân phối chuẩn tắc.
+Ma trận thiết kế thu được $\mathbf{X}$
+thuộc $\mathbb{R}^{1000 \times 2}$. 
+Chúng ta tạo mỗi nhãn bằng cách áp dụng
+một hàm tuyến tính *đúng theo thực tế*,
+làm nhiễu chúng bằng nhiễu cộng $\boldsymbol{\epsilon}$,
+được lấy mẫu độc lập và đồng nhất cho mỗi ví dụ:
 
 (**$$\mathbf{y}= \mathbf{X} \mathbf{w} + b + \boldsymbol{\epsilon}.$$**)
 
-For convenience we assume that $\boldsymbol{\epsilon}$ is drawn 
-from a normal distribution with mean $\mu= 0$ 
-and standard deviation $\sigma = 0.01$.
-Note that for object-oriented design
-we add the code to the `__init__` method of a subclass of `d2l.DataModule` (introduced in :numref:`oo-design-data`). 
-It is good practice to allow the setting of any additional hyperparameters. 
-We accomplish this with `save_hyperparameters()`. 
-The `batch_size` will be determined later.
+Để thuận tiện, chúng ta giả sử rằng $\boldsymbol{\epsilon}$ được lấy mẫu
+từ một phân phối chuẩn có trung bình $\mu= 0$
+và độ lệch chuẩn $\sigma = 0.01$.
+Lưu ý rằng đối với thiết kế hướng đối tượng,
+chúng ta thêm mã vào phương thức `__init__` của một lớp con của `d2l.DataModule` (được giới thiệu trong :numref:`oo-design-data`). 
+Cho phép thiết lập mọi siêu tham số bổ sung là một thực hành tốt.
+Chúng ta thực hiện điều này bằng `save_hyperparameters()`. 
+`batch_size` sẽ được xác định sau.
 
 ```{.python .input}
 %%tab all
@@ -102,36 +102,36 @@ class SyntheticRegressionData(d2l.DataModule):  #@save
         self.y = d2l.matmul(self.X, d2l.reshape(w, (-1, 1))) + b + noise
 ```
 
-Below, we set the true parameters to $\mathbf{w} = [2, -3.4]^\top$ and $b = 4.2$.
-Later, we can check our estimated parameters against these *ground truth* values.
+Dưới đây, chúng ta đặt các tham số đúng thành $\mathbf{w} = [2, -3.4]^\top$ và $b = 4.2$.
+Sau đó, chúng ta có thể đối chiếu các tham số ước lượng với các giá trị *đúng theo thực tế* này.
 
 ```{.python .input}
 %%tab all
 data = SyntheticRegressionData(w=d2l.tensor([2, -3.4]), b=4.2)
 ```
 
-[**Each row in `features` consists of a vector in $\mathbb{R}^2$ and each row in `labels` is a scalar.**] Let's have a look at the first entry.
+[**Mỗi hàng trong `features` gồm một vector trong $\mathbb{R}^2$ và mỗi hàng trong `labels` là một vô hướng.**] Hãy xem phần tử đầu tiên.
 
 ```{.python .input}
 %%tab all
 print('features:', data.X[0],'\nlabel:', data.y[0])
 ```
 
-## Reading the Dataset
+## Đọc tập dữ liệu
 
-Training machine learning models often requires multiple passes over a dataset, 
-grabbing one minibatch of examples at a time. 
-This data is then used to update the model. 
-To illustrate how this works, we 
-[**implement the `get_dataloader` method,**] 
-registering it in the `SyntheticRegressionData` class via `add_to_class` (introduced in :numref:`oo-design-utilities`).
-It (**takes a batch size, a matrix of features,
-and a vector of labels, and generates minibatches of size `batch_size`.**)
-As such, each minibatch consists of a tuple of features and labels. 
-Note that we need to be mindful of whether we're in training or validation mode: 
-in the former, we will want to read the data in random order, 
-whereas for the latter, being able to read data in a pre-defined order 
-may be important for debugging purposes.
+Việc huấn luyện các mô hình machine learning thường yêu cầu lặp qua một tập dữ liệu nhiều lần,
+mỗi lần lấy một minibatch các ví dụ.
+Dữ liệu này sau đó được dùng để cập nhật mô hình.
+Để minh họa cách hoạt động này, chúng ta
+[**triển khai phương thức `get_dataloader`,**]
+đăng ký nó trong lớp `SyntheticRegressionData` thông qua `add_to_class` (được giới thiệu trong :numref:`oo-design-utilities`).
+Nó (**nhận vào kích thước batch, một ma trận các đặc trưng,
+và một vector các nhãn, rồi tạo ra các minibatch có kích thước `batch_size`.**)
+Do đó, mỗi minibatch gồm một tuple các đặc trưng và nhãn.
+Lưu ý rằng chúng ta cần cân nhắc xem đang ở chế độ huấn luyện hay validation:
+ở chế độ đầu tiên, chúng ta muốn đọc dữ liệu theo thứ tự ngẫu nhiên,
+trong khi ở chế độ thứ hai, khả năng đọc dữ liệu theo một thứ tự được xác định trước
+có thể rất quan trọng cho mục đích debug.
 
 ```{.python .input}
 %%tab all
@@ -152,9 +152,9 @@ def get_dataloader(self, train):
             yield tf.gather(self.X, j), tf.gather(self.y, j)
 ```
 
-To build some intuition, let's inspect the first minibatch of
-data. Each minibatch of features provides us with both its size and the dimensionality of input features.
-Likewise, our minibatch of labels will have a matching shape given by `batch_size`.
+Để hình thành trực giác, hãy kiểm tra minibatch dữ liệu đầu tiên.
+Mỗi minibatch các đặc trưng cung cấp cả kích thước và số chiều của các đặc trưng đầu vào.
+Tương tự, minibatch các nhãn sẽ có shape tương ứng được xác định bởi `batch_size`.
 
 ```{.python .input}
 %%tab all
@@ -162,41 +162,37 @@ X, y = next(iter(data.train_dataloader()))
 print('X shape:', X.shape, '\ny shape:', y.shape)
 ```
 
-While seemingly innocuous, the invocation 
-of `iter(data.train_dataloader())` 
-illustrates the power of Python's object-oriented design. 
-Note that we added a method to the `SyntheticRegressionData` class
-*after* creating the `data` object. 
-Nonetheless, the object benefits from 
-the *ex post facto* addition of functionality to the class.
+Mặc dù có vẻ không đáng kể, việc gọi
+`iter(data.train_dataloader())`
+minh họa sức mạnh của thiết kế hướng đối tượng trong Python.
+Lưu ý rằng chúng ta đã thêm một phương thức vào lớp `SyntheticRegressionData`
+*after* khi tạo đối tượng `data`.
+Tuy nhiên, đối tượng vẫn được hưởng lợi từ
+việc bổ sung chức năng cho lớp *ex post facto*.
 
-Throughout the iteration we obtain distinct minibatches
-until the entire dataset has been exhausted (try this).
-While the iteration implemented above is good for didactic purposes,
-it is inefficient in ways that might get us into trouble with real problems.
-For example, it requires that we load all the data in memory
-and that we perform lots of random memory access.
-The built-in iterators implemented in a deep learning framework
-are considerably more efficient and they can deal
-with sources such as data stored in files, 
-data received via a stream, 
-and data generated or processed on the fly. 
-Next let's try to implement the same method using built-in iterators.
+Trong suốt quá trình lặp, chúng ta nhận được các minibatch khác nhau
+cho đến khi toàn bộ tập dữ liệu đã được xử lý hết (hãy thử điều này).
+Mặc dù cách lặp được triển khai ở trên phù hợp cho mục đích giảng dạy,
+nó không hiệu quả theo những cách có thể gây rắc rối cho các bài toán thực tế.
+Ví dụ, cách này yêu cầu chúng ta nạp toàn bộ dữ liệu vào bộ nhớ
+và thực hiện rất nhiều truy cập bộ nhớ ngẫu nhiên.
+Các iterator dựng sẵn được triển khai trong một framework deep learning
+hiệu quả hơn đáng kể và có thể xử lý
+các nguồn như dữ liệu được lưu trong tệp,
+dữ liệu nhận được qua một stream,
+và dữ liệu được tạo hoặc xử lý ngay tại thời điểm cần.
+Tiếp theo, hãy thử triển khai cùng một phương thức bằng các iterator dựng sẵn.
 
-## Concise Implementation of the Data Loader
+## Triển khai ngắn gọn data loader
 
-Rather than writing our own iterator,
-we can [**call the existing API in a framework to load data.**]
-As before, we need a dataset with features `X` and labels `y`. 
-Beyond that, we set `batch_size` in the built-in data loader 
-and let it take care of shuffling examples  efficiently.
+Thay vì tự viết iterator,
+chúng ta có thể [**gọi API hiện có trong một framework để nạp dữ liệu.**]
+Như trước, chúng ta cần một tập dữ liệu với các đặc trưng `X` và nhãn `y`. 
+Ngoài ra, chúng ta đặt `batch_size` trong data loader dựng sẵn
+và để nó tự xử lý việc xáo trộn các ví dụ một cách hiệu quả.
 
 :begin_tab:`jax`
-JAX is all about NumPy like API with device acceleration and the functional
-transformations, so at least the current version doesn’t include data loading
-methods. With other  libraries we already have great data loaders out there,
-and JAX suggests using them instead. Here we will grab TensorFlow’s data loader,
-and modify it slightly to make it work with JAX.
+JAX tập trung vào API tương tự NumPy với khả năng tăng tốc trên thiết bị và các phép biến đổi hàm, vì vậy ít nhất trong phiên bản hiện tại, nó chưa bao gồm các phương thức nạp dữ liệu. Với các thư viện khác, chúng ta đã có những data loader rất tốt, và JAX khuyến nghị sử dụng chúng thay thế. Ở đây, chúng ta sẽ lấy data loader của TensorFlow và sửa đổi một chút để nó hoạt động với JAX.
 :end_tab:
 
 ```{.python .input}
@@ -234,7 +230,7 @@ def get_dataloader(self, train):
     return self.get_tensorloader((self.X, self.y), train, i)
 ```
 
-The new data loader behaves just like the previous one, except that it is more efficient and has some added functionality.
+Data loader mới hoạt động giống như data loader trước đó, ngoại trừ việc nó hiệu quả hơn và có thêm một số chức năng.
 
 ```{.python .input  n=4}
 %%tab all
@@ -242,61 +238,61 @@ X, y = next(iter(data.train_dataloader()))
 print('X shape:', X.shape, '\ny shape:', y.shape)
 ```
 
-For instance, the data loader provided by the framework API 
-supports the built-in `__len__` method, 
-so we can query its length, 
-i.e., the number of batches.
+Ví dụ, data loader do API của framework cung cấp
+hỗ trợ phương thức dựng sẵn `__len__`,
+vì vậy chúng ta có thể truy vấn độ dài của nó,
+tức là số lượng batch.
 
 ```{.python .input}
 %%tab all
 len(data.train_dataloader())
 ```
 
-## Summary
+## Tóm tắt
 
-Data loaders are a convenient way of abstracting out 
-the process of loading and manipulating data. 
-This way the same machine learning *algorithm* 
-is capable of processing many different types and sources of data 
-without the need for modification. 
-One of the nice things about data loaders 
-is that they can be composed. 
-For instance, we might be loading images 
-and then have a postprocessing filter 
-that crops them or modifies them in other ways. 
-As such, data loaders can be used 
-to describe an entire data processing pipeline. 
+Data loader là một cách thuận tiện để trừu tượng hóa
+quá trình nạp và thao tác với dữ liệu.
+Nhờ đó, cùng một *thuật toán* machine learning
+có khả năng xử lý nhiều loại và nguồn dữ liệu khác nhau
+mà không cần sửa đổi.
+Một trong những ưu điểm của data loader
+là chúng có thể được kết hợp.
+Ví dụ, chúng ta có thể nạp các hình ảnh
+rồi áp dụng một bộ lọc hậu xử lý
+để cắt hoặc sửa đổi chúng theo những cách khác.
+Do đó, data loader có thể được dùng
+để mô tả toàn bộ một pipeline xử lý dữ liệu.
 
-As for the model itself, the two-dimensional linear model 
-is about the simplest we might encounter. 
-It lets us test out the accuracy of regression models 
-without worrying about having insufficient amounts of data 
-or an underdetermined system of equations. 
-We will put this to good use in the next section.  
+Về bản thân mô hình, mô hình tuyến tính hai chiều
+gần như là mô hình đơn giản nhất mà chúng ta có thể gặp.
+Nó cho phép chúng ta kiểm tra độ chính xác của các mô hình hồi quy
+mà không phải lo lắng về việc có quá ít dữ liệu
+hoặc một hệ phương trình không xác định.
+Chúng ta sẽ tận dụng điều này trong phần tiếp theo.
 
 
-## Exercises
+## Bài tập
 
-1. What will happen if the number of examples cannot be divided by the batch size. How would you change this behavior by specifying a different argument by using the framework's API?
-1. Suppose that we want to generate a huge dataset, where both the size of the parameter vector `w` and the number of examples `num_examples` are large.
-    1. What happens if we cannot hold all data in memory?
-    1. How would you shuffle the data if it is held on disk? Your task is to design an *efficient* algorithm that does not require too many random reads or writes. Hint: [pseudorandom permutation generators](https://en.wikipedia.org/wiki/Pseudorandom_permutation) allow you to design a reshuffle without the need to store the permutation table explicitly :cite:`Naor.Reingold.1999`. 
-1. Implement a data generator that produces new data on the fly, every time the iterator is called. 
-1. How would you design a random data generator that generates *the same* data each time it is called?
+1. Điều gì sẽ xảy ra nếu số lượng ví dụ không thể chia hết cho kích thước batch? Làm thế nào bạn thay đổi hành vi này bằng cách chỉ định một đối số khác thông qua API của framework?
+1. Giả sử chúng ta muốn tạo một tập dữ liệu khổng lồ, trong đó cả kích thước của vector tham số `w` và số lượng ví dụ `num_examples` đều lớn.
+    1. Điều gì xảy ra nếu chúng ta không thể lưu toàn bộ dữ liệu trong bộ nhớ?
+    1. Bạn sẽ xáo trộn dữ liệu như thế nào nếu dữ liệu được lưu trên đĩa? Nhiệm vụ của bạn là thiết kế một thuật toán *hiệu quả*, không yêu cầu quá nhiều thao tác đọc hoặc ghi ngẫu nhiên. Gợi ý: Các bộ sinh hoán vị giả ngẫu nhiên [pseudorandom permutation generators](https://en.wikipedia.org/wiki/Pseudorandom_permutation) cho phép bạn thiết kế lại thứ tự mà không cần lưu trữ bảng hoán vị một cách tường minh :cite:`Naor.Reingold.1999`.
+1. Triển khai một trình sinh dữ liệu tạo ra dữ liệu mới ngay tại thời điểm cần, mỗi khi iterator được gọi.
+1. Bạn sẽ thiết kế một trình sinh dữ liệu ngẫu nhiên như thế nào để nó tạo ra *cùng một* dữ liệu mỗi lần được gọi?
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/6662)
+[Thảo luận](https://discuss.d2l.ai/t/6662)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/6663)
+[Thảo luận](https://discuss.d2l.ai/t/6663)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/6664)
+[Thảo luận](https://discuss.d2l.ai/t/6664)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17975)
+[Thảo luận](https://discuss.d2l.ai/t/17975)
 :end_tab:

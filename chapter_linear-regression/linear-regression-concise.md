@@ -3,39 +3,38 @@
 tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
 ```
 
-# Concise Implementation of Linear Regression
+# Triển khai hồi quy tuyến tính ngắn gọn
 :label:`sec_linear_concise`
 
-Deep learning has witnessed a sort of Cambrian explosion
-over the past decade.
-The sheer number of techniques, applications and algorithms by far surpasses the
-progress of previous decades. 
-This is due to a fortuitous combination of multiple factors,
-one of which is the powerful free tools
-offered by a number of open-source deep learning frameworks.
+Trong thập kỷ qua, deep learning đã chứng kiến một dạng bùng nổ kiểu Cambrian.
+Số lượng khổng lồ các kỹ thuật, ứng dụng và thuật toán đã vượt xa
+tiến bộ của những thập kỷ trước.
+Điều này là nhờ sự kết hợp tình cờ của nhiều yếu tố,
+một trong số đó là các công cụ miễn phí mạnh mẽ
+do một số framework deep learning mã nguồn mở cung cấp.
 Theano :cite:`Bergstra.Breuleux.Bastien.ea.2010`,
 DistBelief :cite:`Dean.Corrado.Monga.ea.2012`,
-and Caffe :cite:`Jia.Shelhamer.Donahue.ea.2014`
-arguably represent the
-first generation of such models 
-that found widespread adoption.
-In contrast to earlier (seminal) works like
-SN2 (Simulateur Neuristique) :cite:`Bottou.Le-Cun.1988`,
-which provided a Lisp-like programming experience,
-modern frameworks offer automatic differentiation
-and the convenience of Python.
-These frameworks allow us to automate and modularize
-the repetitive work of implementing gradient-based learning algorithms.
+và Caffe :cite:`Jia.Shelhamer.Donahue.ea.2014`
+có thể được xem là
+thế hệ đầu tiên của các mô hình như vậy
+được áp dụng rộng rãi.
+Trái ngược với những công trình nền tảng trước đây
+như SN2 (Simulateur Neuristique) :cite:`Bottou.Le-Cun.1988`,
+vốn cung cấp trải nghiệm lập trình tương tự Lisp,
+các framework hiện đại cung cấp automatic differentiation
+và sự tiện lợi của Python.
+Những framework này cho phép chúng ta tự động hóa và mô-đun hóa
+công việc lặp đi lặp lại khi triển khai các thuật toán học dựa trên gradient.
 
-In :numref:`sec_linear_scratch`, we relied only on
-(i) tensors for data storage and linear algebra;
-and (ii) automatic differentiation for calculating gradients.
-In practice, because data iterators, loss functions, optimizers,
-and neural network layers
-are so common, modern libraries implement these components for us as well.
-In this section, (**we will show you how to implement
-the linear regression model**) from :numref:`sec_linear_scratch`
-(**concisely by using high-level APIs**) of deep learning frameworks.
+Trong :numref:`sec_linear_scratch`, chúng ta chỉ dựa vào
+(i) tensor để lưu trữ dữ liệu và thực hiện đại số tuyến tính;
+và (ii) automatic differentiation để tính gradient.
+Trên thực tế, vì data iterator, hàm loss, optimizer
+và các layer của neural network
+rất phổ biến, các thư viện hiện đại cũng triển khai sẵn những thành phần này.
+Trong phần này, (**chúng tôi sẽ hướng dẫn bạn cách triển khai
+mô hình hồi quy tuyến tính**) từ :numref:`sec_linear_scratch`
+(**một cách ngắn gọn bằng cách sử dụng các API cấp cao**) của các framework deep learning.
 
 ```{.python .input}
 %%tab mxnet
@@ -69,78 +68,77 @@ from jax import numpy as jnp
 import optax
 ```
 
-## Defining the Model
+## Định nghĩa mô hình
 
-When we implemented linear regression from scratch
-in :numref:`sec_linear_scratch`,
-we defined our model parameters explicitly
-and coded up the calculations to produce output
-using basic linear algebra operations.
-You *should* know how to do this.
-But once your models get more complex,
-and once you have to do this nearly every day,
-you will be glad of the assistance.
-The situation is similar to coding up your own blog from scratch.
-Doing it once or twice is rewarding and instructive,
-but you would be a lousy web developer
-if you spent a month reinventing the wheel.
+Khi triển khai hồi quy tuyến tính từ đầu
+trong :numref:`sec_linear_scratch`,
+chúng ta định nghĩa tường minh các tham số của mô hình
+và viết mã để tạo đầu ra
+bằng các phép toán đại số tuyến tính cơ bản.
+Bạn *nên* biết cách thực hiện việc này.
+Nhưng khi mô hình của bạn trở nên phức tạp hơn,
+và khi bạn phải làm việc này gần như mỗi ngày,
+bạn sẽ thấy sự hỗ trợ đó rất hữu ích.
+Tình huống này tương tự như việc tự viết một blog từ đầu.
+Thực hiện một hoặc hai lần thì vừa bổ ích vừa mang tính hướng dẫn,
+nhưng bạn sẽ là một web developer kém
+nếu dành cả tháng để phát minh lại những thứ đã có sẵn.
 
-For standard operations,
-we can [**use a framework's predefined layers,**]
-which allow us to focus
-on the layers used to construct the model
-rather than worrying about their implementation.
-Recall the architecture of a single-layer network
-as described in :numref:`fig_single_neuron`.
-The layer is called *fully connected*,
-since each of its inputs is connected
-to each of its outputs
-by means of a matrix--vector multiplication.
+Đối với các phép toán tiêu chuẩn,
+chúng ta có thể [**sử dụng các layer được định nghĩa sẵn trong framework,**]
+nhờ đó tập trung vào các layer dùng để xây dựng mô hình
+thay vì phải lo lắng về cách triển khai chúng.
+Hãy nhớ lại kiến trúc của một mạng một layer
+được mô tả trong :numref:`fig_single_neuron`.
+Layer này được gọi là *fully connected*,
+vì mỗi đầu vào của nó được kết nối
+với từng đầu ra
+thông qua phép nhân matrix--vector.
 
 :begin_tab:`mxnet`
-In Gluon, the fully connected layer is defined in the `Dense` class.
-Since we only want to generate a single scalar output,
-we set that number to 1.
-It is worth noting that, for convenience,
-Gluon does not require us to specify
-the input shape for each layer.
-Hence we do not need to tell Gluon
-how many inputs go into this linear layer.
-When we first pass data through our model,
-e.g., when we execute `net(X)` later,
-Gluon will automatically infer the number of inputs to each layer and
-thus instantiate the correct model.
-We will describe how this works in more detail later.
+Trong Gluon, layer fully connected được định nghĩa trong class `Dense`.
+Vì chúng ta chỉ muốn tạo ra một đầu ra vô hướng duy nhất,
+nên đặt số đó bằng 1.
+Đáng chú ý là để thuận tiện,
+Gluon không yêu cầu chúng ta chỉ định
+input shape cho từng layer.
+Do đó, chúng ta không cần cho Gluon biết
+có bao nhiêu đầu vào đi vào linear layer này.
+Khi lần đầu truyền dữ liệu qua mô hình,
+chẳng hạn khi thực thi `net(X)` sau đây,
+Gluon sẽ tự động suy luận số lượng đầu vào của mỗi layer và
+do đó khởi tạo mô hình chính xác.
+Chúng ta sẽ mô tả chi tiết hơn cách thức này hoạt động ở phần sau.
 :end_tab:
 
 :begin_tab:`pytorch`
-In PyTorch, the fully connected layer is defined in `Linear` and `LazyLinear` classes (available since version 1.8.0). 
-The latter
-allows users to specify *merely*
-the output dimension,
-while the former
-additionally asks for
-how many inputs go into this layer.
-Specifying input shapes is inconvenient and may require nontrivial calculations
-(such as in convolutional layers).
-Thus, for simplicity, we will use such "lazy" layers
-whenever we can. 
+Trong PyTorch, layer fully connected được định nghĩa trong các class `Linear` và `LazyLinear` (có từ phiên bản 1.8.0).
+Class sau
+cho phép người dùng chỉ định *chỉ*
+chiều đầu ra,
+trong khi class trước
+còn yêu cầu
+số lượng đầu vào đi vào layer này.
+Việc chỉ định input shape khá bất tiện và có thể đòi hỏi các phép tính không tầm thường
+(chẳng hạn như trong các convolutional layer).
+Vì vậy, để đơn giản, chúng ta sẽ sử dụng các layer "lazy" như vậy
+bất cứ khi nào có thể.
 :end_tab:
 
 :begin_tab:`tensorflow`
-In Keras, the fully connected layer is defined in the `Dense` class.
-Since we only want to generate a single scalar output,
-we set that number to 1.
-It is worth noting that, for convenience,
-Keras does not require us to specify
-the input shape for each layer.
-We do not need to tell Keras
-how many inputs go into this linear layer.
-When we first try to pass data through our model,
-e.g., when we execute `net(X)` later,
-Keras will automatically infer
-the number of inputs to each layer.
-We will describe how this works in more detail later.
+Trong Keras, layer fully connected được định nghĩa trong class `Dense`.
+Vì chúng ta chỉ muốn tạo ra một đầu ra vô hướng duy nhất,
+nên đặt số đó bằng 1.
+Đáng chú ý là để thuận tiện,
+Keras không yêu cầu chúng ta chỉ định
+input shape cho từng layer.
+Chúng ta không cần cho Keras biết
+có bao nhiêu đầu vào đi vào linear layer này.
+Khi lần đầu thử truyền dữ liệu qua mô hình,
+chẳng hạn khi thực thi `net(X)` sau đây,
+Keras sẽ tự động suy luận
+số lượng đầu vào của mỗi layer.
+Chúng ta sẽ mô tả chi tiết hơn cách thức này hoạt động ở phần sau.
 :end_tab:
 
 ```{.python .input}
@@ -172,7 +170,7 @@ class LinearRegression(d2l.Module):  #@save
         self.net = nn.Dense(1, kernel_init=nn.initializers.normal(0.01))
 ```
 
-In the `forward` method we just invoke the built-in `__call__` method of the predefined layers to compute the outputs.
+Trong method `forward`, chúng ta chỉ cần gọi method tích hợp sẵn `__call__` của các layer được định nghĩa trước để tính đầu ra.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -188,26 +186,26 @@ def forward(self, X):
     return self.net(X)
 ```
 
-## Defining the Loss Function
+## Định nghĩa hàm loss
 
 :begin_tab:`mxnet`
-The `loss` module defines many useful loss functions.
-For speed and convenience, we forgo implementing our own
-and choose the built-in `loss.L2Loss` instead.
-Because the `loss` that it returns is
-the squared error for each example,
-we use `mean`to average the loss across over the minibatch.
+Module `loss` định nghĩa nhiều hàm loss hữu ích.
+Để tăng tốc và thuận tiện, chúng ta không tự triển khai
+mà thay vào đó chọn `loss.L2Loss` tích hợp sẵn.
+Vì `loss` mà nó trả về là
+sai số bình phương cho từng mẫu,
+chúng ta sử dụng `mean` để lấy trung bình loss trên minibatch.
 :end_tab:
 
 :begin_tab:`pytorch`
-[**The `MSELoss` class computes the mean squared error (without the $1/2$ factor in :eqref:`eq_mse`).**]
-By default, `MSELoss` returns the average loss over examples.
-It is faster (and easier to use) than implementing our own.
+[**Class `MSELoss` tính mean squared error (không có hệ số $1/2$ trong :eqref:`eq_mse`).**]
+Theo mặc định, `MSELoss` trả về loss trung bình trên các mẫu.
+Cách này nhanh hơn (và dễ sử dụng hơn) so với việc tự triển khai.
 :end_tab:
 
 :begin_tab:`tensorflow`
-The `MeanSquaredError` class computes the mean squared error (without the $1/2$ factor in :eqref:`eq_mse`).
-By default, it returns the average loss over examples.
+Class `MeanSquaredError` tính mean squared error (không có hệ số $1/2$ trong :eqref:`eq_mse`).
+Theo mặc định, nó trả về loss trung bình trên các mẫu.
 :end_tab:
 
 ```{.python .input}
@@ -233,44 +231,44 @@ def loss(self, params, X, y, state):
     return d2l.reduce_mean(optax.l2_loss(y_hat, y))
 ```
 
-## Defining the Optimization Algorithm
+## Định nghĩa thuật toán tối ưu hóa
 
 :begin_tab:`mxnet`
-Minibatch SGD is a standard tool
-for optimizing neural networks
-and thus Gluon supports it alongside a number of
-variations on this algorithm through its `Trainer` class.
-Note that Gluon's `Trainer` class stands
-for the optimization algorithm,
-while the `Trainer` class we created in :numref:`sec_oo-design`
-contains the training method,
-i.e., repeatedly call the optimizer
-to update the model parameters.
-When we instantiate `Trainer`,
-we specify the parameters to optimize over,
-obtainable from our model `net` via `net.collect_params()`,
-the optimization algorithm we wish to use (`sgd`),
-and a dictionary of hyperparameters
-required by our optimization algorithm.
+Minibatch SGD là một công cụ tiêu chuẩn
+để tối ưu hóa neural network
+và vì vậy Gluon hỗ trợ nó cùng với một số
+biến thể của thuật toán này thông qua class `Trainer`.
+Lưu ý rằng class `Trainer` của Gluon
+đại diện cho thuật toán tối ưu hóa,
+trong khi class `Trainer` mà chúng ta tạo trong :numref:`sec_oo-design`
+chứa method training,
+tức là liên tục gọi optimizer
+để cập nhật các tham số của mô hình.
+Khi khởi tạo `Trainer`,
+chúng ta chỉ định các tham số cần tối ưu,
+có thể lấy từ model `net` thông qua `net.collect_params()`,
+thuật toán tối ưu hóa mong muốn sử dụng (`sgd`),
+và một dictionary chứa các hyperparameter
+mà thuật toán tối ưu hóa yêu cầu.
 :end_tab:
 
 :begin_tab:`pytorch`
-Minibatch SGD is a standard tool
-for optimizing neural networks
-and thus PyTorch supports it alongside a number of
-variations on this algorithm in the `optim` module.
-When we (**instantiate an `SGD` instance,**)
-we specify the parameters to optimize over,
-obtainable from our model via `self.parameters()`,
-and the learning rate (`self.lr`)
-required by our optimization algorithm.
+Minibatch SGD là một công cụ tiêu chuẩn
+để tối ưu hóa neural network
+và vì vậy PyTorch hỗ trợ nó cùng với một số
+biến thể của thuật toán này trong module `optim`.
+Khi (**khởi tạo một instance của `SGD`,**)
+chúng ta chỉ định các tham số cần tối ưu,
+có thể lấy từ model thông qua `self.parameters()`,
+và learning rate (`self.lr`)
+mà thuật toán tối ưu hóa yêu cầu.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Minibatch SGD is a standard tool
-for optimizing neural networks
-and thus Keras supports it alongside a number of
-variations on this algorithm in the `optimizers` module.
+Minibatch SGD là một công cụ tiêu chuẩn
+để tối ưu hóa neural network
+và vì vậy Keras hỗ trợ nó cùng với một số
+biến thể của thuật toán này trong module `optimizers`.
 :end_tab:
 
 ```{.python .input}
@@ -290,21 +288,21 @@ def configure_optimizers(self):
 
 ## Training
 
-You might have noticed that expressing our model through
-high-level APIs of a deep learning framework
-requires fewer lines of code.
-We did not have to allocate parameters individually,
-define our loss function, or implement minibatch SGD.
-Once we start working with much more complex models,
-the advantages of the high-level API will grow considerably.
+Bạn có thể đã nhận thấy rằng việc biểu diễn mô hình bằng
+các API cấp cao của một framework deep learning
+đòi hỏi ít dòng mã hơn.
+Chúng ta không phải cấp phát từng tham số,
+định nghĩa hàm loss hoặc triển khai minibatch SGD.
+Khi bắt đầu làm việc với các mô hình phức tạp hơn nhiều,
+những ưu điểm của API cấp cao sẽ càng đáng kể.
 
-Now that we have all the basic pieces in place,
-[**the training loop itself is the same
-as the one we implemented from scratch.**]
-So we just call the `fit` method (introduced in :numref:`oo-design-training`),
-which relies on the implementation of the `fit_epoch` method
-in :numref:`sec_linear_scratch`,
-to train our model.
+Giờ đây, khi đã có đầy đủ các thành phần cơ bản,
+[**vòng lặp training thực chất giống hệt
+vòng lặp mà chúng ta đã triển khai từ đầu.**]
+Vì vậy, chúng ta chỉ cần gọi method `fit` (được giới thiệu trong :numref:`oo-design-training`),
+method này dựa trên việc triển khai method `fit_epoch`
+trong :numref:`sec_linear_scratch`,
+để training mô hình.
 
 ```{.python .input}
 %%tab all
@@ -314,17 +312,17 @@ trainer = d2l.Trainer(max_epochs=3)
 trainer.fit(model, data)
 ```
 
-Below, we
-[**compare the model parameters learned
-by training on finite data
-and the actual parameters**]
-that generated our dataset.
-To access parameters,
-we access the weights and bias
-of the layer that we need.
-As in our implementation from scratch,
-note that our estimated parameters
-are close to their true counterparts.
+Dưới đây, chúng ta
+[**so sánh các tham số của mô hình được học
+bằng cách training trên dữ liệu hữu hạn
+với các tham số thực tế**]
+đã tạo ra dataset của chúng ta.
+Để truy cập các tham số,
+chúng ta truy cập trọng số và bias
+của layer cần dùng.
+Giống như trong phần triển khai từ đầu,
+hãy lưu ý rằng các tham số ước lượng của chúng ta
+gần với các tham số thực tương ứng.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -355,89 +353,89 @@ print(f'error in estimating w: {data.w - d2l.reshape(w, data.w.shape)}')
 print(f'error in estimating b: {data.b - b}')
 ```
 
-## Summary
+## Tóm tắt
 
-This section contains the first
-implementation of a deep network (in this book)
-to tap into the conveniences afforded
-by modern deep learning frameworks,
-such as MXNet :cite:`Chen.Li.Li.ea.2015`, 
-JAX :cite:`Frostig.Johnson.Leary.2018`, 
-PyTorch :cite:`Paszke.Gross.Massa.ea.2019`, 
-and Tensorflow :cite:`Abadi.Barham.Chen.ea.2016`.
-We used framework defaults for loading data, defining a layer,
-a loss function, an optimizer and a training loop.
-Whenever the framework provides all necessary features,
-it is generally a good idea to use them,
-since the library implementations of these components
-tend to be heavily optimized for performance
-and properly tested for reliability.
-At the same time, try not to forget
-that these modules *can* be implemented directly.
-This is especially important for aspiring researchers
-who wish to live on the leading edge of model development,
-where you will be inventing new components
-that cannot possibly exist in any current library.
+Phần này chứa
+lần triển khai đầu tiên của một deep network (trong cuốn sách này)
+tận dụng những tiện ích do
+các framework deep learning hiện đại cung cấp,
+chẳng hạn như MXNet :cite:`Chen.Li.Li.ea.2015`,
+JAX :cite:`Frostig.Johnson.Leary.2018`,
+PyTorch :cite:`Paszke.Gross.Massa.ea.2019`,
+và Tensorflow :cite:`Abadi.Barham.Chen.ea.2016`.
+Chúng ta đã sử dụng các giá trị mặc định của framework để tải dữ liệu, định nghĩa một layer,
+một hàm loss, một optimizer và một vòng lặp training.
+Bất cứ khi nào framework cung cấp đầy đủ các tính năng cần thiết,
+thông thường bạn nên sử dụng chúng,
+vì các thành phần do thư viện triển khai
+thường được tối ưu hóa mạnh về hiệu năng
+và được kiểm thử kỹ lưỡng về độ tin cậy.
+Đồng thời, hãy cố gắng không quên
+rằng các module này *có thể* được triển khai trực tiếp.
+Điều này đặc biệt quan trọng đối với các nhà nghiên cứu tiềm năng
+muốn đi đầu trong việc phát triển mô hình,
+nơi bạn sẽ phát minh ra các thành phần mới
+mà không thể tồn tại trong bất kỳ thư viện hiện tại nào.
 
 :begin_tab:`mxnet`
-In Gluon, the `data` module provides tools for data processing,
-the `nn` module defines a large number of neural network layers,
-and the `loss` module defines many common loss functions.
-Moreover, the `initializer` gives access
-to many choices for parameter initialization.
-Conveniently for the user,
-dimensionality and storage are automatically inferred.
-A consequence of this lazy initialization is that
-you must not attempt to access parameters
-before they have been instantiated (and initialized).
+Trong Gluon, module `data` cung cấp các công cụ để xử lý dữ liệu,
+module `nn` định nghĩa một số lượng lớn các layer mạng neural,
+và module `loss` định nghĩa nhiều hàm loss phổ biến.
+Ngoài ra, `initializer` cho phép truy cập
+nhiều lựa chọn để khởi tạo tham số.
+Để thuận tiện cho người dùng,
+số chiều và bộ nhớ lưu trữ được tự động suy luận.
+Một hệ quả của khởi tạo trì hoãn (lazy initialization) là
+bạn không được cố truy cập các tham số
+trước khi chúng được khởi tạo (initialized).
 :end_tab:
 
 :begin_tab:`pytorch`
-In PyTorch, the `data` module provides tools for data processing,
-the `nn` module defines a large number of neural network layers and common loss functions.
-We can initialize the parameters by replacing their values
-with methods ending with `_`.
-Note that we need to specify the input dimensions of the network.
-While this is trivial for now, it can have significant knock-on effects
-when we want to design complex networks with many layers.
-Careful considerations of how to parametrize these networks
-is needed to allow portability.
+Trong PyTorch, module `data` cung cấp các công cụ để xử lý dữ liệu,
+module `nn` định nghĩa một số lượng lớn các layer mạng neural và các hàm loss phổ biến.
+Chúng ta có thể khởi tạo các tham số bằng cách thay thế giá trị của chúng
+bằng các phương thức kết thúc bằng `_`.
+Lưu ý rằng chúng ta cần chỉ định các chiều đầu vào của mạng.
+Hiện tại, việc này khá đơn giản, nhưng nó có thể gây ra những ảnh hưởng đáng kể
+khi chúng ta muốn thiết kế các mạng phức tạp với nhiều layer.
+Cần cân nhắc cẩn thận cách tham số hóa các mạng này
+để cho phép tính di động (portability).
 :end_tab:
 
 :begin_tab:`tensorflow`
-In TensorFlow, the `data` module provides tools for data processing,
-the `keras` module defines a large number of neural network layers and common loss functions.
-Moreover, the `initializers` module provides various methods for model parameter initialization.
-Dimensionality and storage for networks are automatically inferred
-(but be careful not to attempt to access parameters before they have been initialized).
+Trong TensorFlow, module `data` cung cấp các công cụ để xử lý dữ liệu,
+module `keras` định nghĩa một số lượng lớn các layer mạng neural và các hàm loss phổ biến.
+Ngoài ra, module `initializers` cung cấp nhiều phương thức khác nhau để khởi tạo tham số mô hình.
+Số chiều và bộ nhớ lưu trữ cho các mạng được tự động suy luận
+(nhưng hãy cẩn thận, không cố truy cập các tham số trước khi chúng được khởi tạo).
 :end_tab:
 
-## Exercises
+## Bài tập
 
-1. How would you need to change the learning rate if you replace the aggregate loss over the minibatch
-   with an average over the loss on the minibatch?
-1. Review the framework documentation to see which loss functions are provided. In particular,
-   replace the squared loss with Huber's robust loss function. That is, use the loss function
+1. Bạn cần thay đổi learning rate như thế nào nếu thay tổng loss trên minibatch
+   bằng giá trị trung bình của loss trên minibatch?
+1. Xem tài liệu của framework để biết những hàm loss nào được cung cấp. Cụ thể,
+   hãy thay squared loss bằng hàm robust loss của Huber. Nghĩa là, sử dụng hàm loss
    $$l(y,y') = \begin{cases}|y-y'| -\frac{\sigma}{2} & \textrm{ if } |y-y'| > \sigma \\ \frac{1}{2 \sigma} (y-y')^2 & \textrm{ otherwise}\end{cases}$$
-1. How do you access the gradient of the weights of the model?
-1. What is the effect on the solution if you change the learning rate and the number of epochs? Does it keep on improving?
-1. How does the solution change as you vary the amount of data generated?
-    1. Plot the estimation error for $\hat{\mathbf{w}} - \mathbf{w}$ and $\hat{b} - b$ as a function of the amount of data. Hint: increase the amount of data logarithmically rather than linearly, i.e., 5, 10, 20, 50, ..., 10,000 rather than 1000, 2000, ..., 10,000.
-    2. Why is the suggestion in the hint appropriate?
+1. Làm thế nào để truy cập gradient của các trọng số trong mô hình?
+1. Nghiệm thay đổi như thế nào nếu bạn thay đổi learning rate và số epoch? Nó có tiếp tục được cải thiện không?
+1. Nghiệm thay đổi như thế nào khi bạn thay đổi lượng dữ liệu được tạo ra?
+    1. Vẽ sai số ước lượng của $\hat{\mathbf{w}} - \mathbf{w}$ và $\hat{b} - b$ theo lượng dữ liệu. Gợi ý: tăng lượng dữ liệu theo logarithm thay vì tuyến tính, tức là 5, 10, 20, 50, ..., 10,000 thay vì 1000, 2000, ..., 10,000.
+    2. Tại sao đề xuất trong gợi ý lại phù hợp?
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/44)
+[Thảo luận](https://discuss.d2l.ai/t/44)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/45)
+[Thảo luận](https://discuss.d2l.ai/t/45)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/204)
+[Thảo luận](https://discuss.d2l.ai/t/204)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17977)
+[Thảo luận](https://discuss.d2l.ai/t/17977)
 :end_tab:

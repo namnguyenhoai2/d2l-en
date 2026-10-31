@@ -1,478 +1,480 @@
-# Generalization
+# Khả năng khái quát hóa
 :label:`sec_generalization_basics`
 
-Consider two college students diligently
-preparing for their final exam.
-Commonly, this preparation will consist
-of practicing and testing their abilities
-by taking exams administered in previous years.
-Nonetheless, doing well on past exams is no guarantee
-that they will excel when it matters.
-For instance, imagine a student, Extraordinary Ellie,
-whose preparation consisted entirely
-of memorizing the answers
-to previous years' exam questions.
-Even if Ellie were endowed
-with an extraordinary memory,
-and thus could perfectly recall the answer
-to any *previously seen* question,
-she might nevertheless freeze
-when faced with a new (*previously unseen*) question.
-By comparison, imagine another student,
-Inductive Irene, with comparably poor
-memorization skills,
-but a knack for picking up patterns.
-Note that if the exam truly consisted of
-recycled questions from a previous year,
-Ellie would handily outperform Irene.
-Even if Irene's inferred patterns
-yielded 90% accurate predictions,
-they could never compete with
-Ellie's 100% recall.
-However, even if the exam consisted
-entirely of fresh questions,
-Irene might maintain her 90% average.
+Hãy xem xét hai sinh viên đại học đang chăm chỉ
+chuẩn bị cho kỳ thi cuối kỳ.
+Thông thường, quá trình chuẩn bị này sẽ bao gồm
+việc luyện tập và kiểm tra năng lực
+bằng cách làm các kỳ thi được tổ chức trong những năm trước.
+Tuy nhiên, làm tốt các kỳ thi trước đây không đảm bảo
+rằng họ sẽ đạt kết quả xuất sắc khi điều đó thực sự quan trọng.
+Chẳng hạn, hãy tưởng tượng một sinh viên tên Extraordinary Ellie,
+người chỉ chuẩn bị bằng cách
+ghi nhớ đáp án
+cho các câu hỏi thi của những năm trước.
+Ngay cả khi Ellie có
+một trí nhớ phi thường,
+và do đó có thể nhớ chính xác đáp án
+cho bất kỳ câu hỏi nào *đã từng thấy trước đây*,
+cô ấy vẫn có thể bị khựng lại
+khi gặp một câu hỏi mới (*chưa từng thấy trước đây*).
+Ngược lại, hãy tưởng tượng một sinh viên khác,
+Inductive Irene, có khả năng
+ghi nhớ kém tương tự,
+nhưng lại rất giỏi nhận ra các mẫu.
+Lưu ý rằng nếu kỳ thi thực sự bao gồm
+các câu hỏi được dùng lại từ một năm trước,
+Ellie sẽ dễ dàng vượt qua Irene.
+Ngay cả khi các mẫu mà Irene suy ra
+cho dự đoán chính xác 90%,
+chúng cũng không thể cạnh tranh với
+khả năng nhớ lại 100% của Ellie.
+Tuy nhiên, ngay cả khi kỳ thi bao gồm
+hoàn toàn các câu hỏi mới,
+Irene vẫn có thể duy trì điểm trung bình 90%.
 
-As machine learning scientists,
-our goal is to discover *patterns*.
-But how can we be sure that we have
-truly discovered a *general* pattern
-and not simply memorized our data?
-Most of the time, our predictions are only useful
-if our model discovers such a pattern.
-We do not want to predict yesterday's stock prices, but tomorrow's.
-We do not need to recognize
-already diagnosed diseases
-for previously seen patients,
-but rather previously undiagnosed
-ailments in previously unseen patients.
-This problem---how to discover patterns that *generalize*---is
-the fundamental problem of machine learning,
-and arguably of all of statistics.
-We might cast this problem as just one slice
-of a far grander question
-that engulfs all of science:
-when are we ever justified
-in making the leap from particular observations
-to more general statements?
-
-
-In real life, we must fit our models
-using a finite collection of data.
-The typical scales of that data
-vary wildly across domains.
-For many important medical problems,
-we can only access a few thousand data points.
-When studying rare diseases,
-we might be lucky to access hundreds.
-By contrast, the largest public datasets
-consisting of labeled photographs,
-e.g., ImageNet :cite:`Deng.Dong.Socher.ea.2009`,
-contain millions of images.
-And some unlabeled image collections
-such as the Flickr YFC100M dataset
-can be even larger, containing
-over 100 million images :cite:`thomee2016yfcc100m`.
-However, even at this extreme scale,
-the number of available data points
-remains infinitesimally small
-compared to the space of all possible images
-at a megapixel resolution.
-Whenever we work with finite samples,
-we must keep in mind the risk
-that we might fit our training data,
-only to discover that we failed
-to discover a generalizable pattern.
-
-The phenomenon of fitting closer to our training data
-than to the underlying distribution is called *overfitting*,
-and techniques for combatting overfitting
-are often called *regularization* methods.
-While it is no substitute for a proper introduction
-to statistical learning theory (see :citet:`Vapnik98,boucheron2005theory`),
-we will give you just enough intuition to get going.
-We will revisit generalization in many chapters
-throughout the book,
-exploring both what is known about
-the principles underlying generalization
-in various models,
-and also heuristic techniques
-that have been found (empirically)
-to yield improved generalization
-on tasks of practical interest.
+Với tư cách là các nhà khoa học machine learning,
+mục tiêu của chúng ta là phát hiện *các mẫu*.
+Nhưng làm thế nào để chắc chắn rằng chúng ta
+đã thực sự phát hiện ra một *mẫu tổng quát*
+chứ không chỉ ghi nhớ dữ liệu?
+Phần lớn thời gian, các dự đoán của chúng ta chỉ hữu ích
+nếu model phát hiện ra một mẫu như vậy.
+Chúng ta không muốn dự đoán giá cổ phiếu của ngày hôm qua, mà là của ngày mai.
+Chúng ta không cần nhận diện
+các bệnh đã được chẩn đoán
+ở những bệnh nhân đã từng gặp,
+mà cần nhận diện
+các bệnh chưa được chẩn đoán
+ở những bệnh nhân chưa từng gặp.
+Bài toán này---làm thế nào để phát hiện các mẫu có *khả năng khái quát hóa*---là
+bài toán nền tảng của machine learning,
+và có thể nói là của toàn bộ lĩnh vực thống kê.
+Chúng ta có thể xem bài toán này như một lát cắt
+của một câu hỏi lớn hơn rất nhiều
+bao trùm toàn bộ khoa học:
+khi nào chúng ta thực sự có cơ sở
+để thực hiện bước nhảy từ những quan sát cụ thể
+đến các phát biểu tổng quát hơn?
 
 
+Trong đời thực, chúng ta phải fit model
+bằng một tập dữ liệu hữu hạn.
+Quy mô điển hình của dữ liệu đó
+khác nhau rất lớn giữa các lĩnh vực.
+Đối với nhiều bài toán y khoa quan trọng,
+chúng ta chỉ có thể tiếp cận vài nghìn điểm dữ liệu.
+Khi nghiên cứu các bệnh hiếm,
+chúng ta có thể may mắn tiếp cận được vài trăm điểm.
+Ngược lại, các dataset công khai lớn nhất
+bao gồm các ảnh được gán nhãn,
+ví dụ như ImageNet :cite:`Deng.Dong.Socher.ea.2009`,
+chứa hàng triệu hình ảnh.
+Và một số tập hợp ảnh chưa gán nhãn
+như dataset Flickr YFC100M
+thậm chí còn lớn hơn, chứa
+hơn 100 triệu hình ảnh :cite:`thomee2016yfcc100m`.
+Tuy nhiên, ngay cả ở quy mô cực lớn này,
+số lượng điểm dữ liệu hiện có
+vẫn nhỏ đến vô cùng
+so với không gian của mọi hình ảnh có thể có
+ở độ phân giải megapixel.
+Bất cứ khi nào làm việc với các mẫu hữu hạn,
+chúng ta phải ghi nhớ rủi ro
+rằng mình có thể fit dữ liệu training,
+nhưng rồi phát hiện ra rằng mình đã không
+khám phá được một mẫu có khả năng khái quát hóa.
 
-## Training Error and Generalization Error
+Hiện tượng fit sát với dữ liệu training hơn
+so với phân phối nền tảng được gọi là *overfitting*,
+và các kỹ thuật chống overfitting
+thường được gọi là các phương pháp *regularization*.
+Mặc dù không thể thay thế cho phần nhập môn đầy đủ
+về lý thuyết học thống kê (xem :citet:`Vapnik98,boucheron2005theory`),
+chúng tôi sẽ cung cấp vừa đủ trực giác để bạn bắt đầu.
+Chúng ta sẽ quay lại vấn đề khả năng khái quát hóa trong nhiều chương
+xuyên suốt cuốn sách,
+khám phá cả những gì đã biết về
+các nguyên lý nền tảng của khả năng khái quát hóa
+trong nhiều model khác nhau,
+cũng như các kỹ thuật heuristic
+đã được chứng minh (qua thực nghiệm)
+là giúp cải thiện khả năng khái quát hóa
+trên những tác vụ có ý nghĩa thực tiễn.
 
 
-In the standard supervised learning setting,
-we assume that the training data and the test data
-are drawn *independently* from *identical* distributions.
-This is commonly called the *IID assumption*.
-While this assumption is strong,
-it is worth noting that, absent any such assumption,
-we would be dead in the water.
-Why should we believe that training data
-sampled from distribution $P(X,Y)$
-should tell us how to make predictions on
-test data generated by a *different distribution* $Q(X,Y)$?
-Making such leaps turns out to require
-strong assumptions about how $P$ and $Q$ are related.
-Later on we will discuss some assumptions
-that allow for shifts in distribution
-but first we need to understand the IID case,
-where $P(\cdot) = Q(\cdot)$.
 
-To begin with, we need to differentiate between
-the *training error* $R_\textrm{emp}$,
-which is a *statistic*
-calculated on the training dataset,
-and the *generalization error* $R$,
-which is an *expectation* taken
-with respect to the underlying distribution.
-You can think of the generalization error as
-what you would see  if you applied your model
-to an infinite stream of additional data examples
-drawn from the same underlying data distribution.
-Formally the training error is expressed as a *sum* (with the same notation as :numref:`sec_linear_regression`):
+## Sai số Training và Sai số Khái quát hóa
+
+
+Trong bối cảnh supervised learning tiêu chuẩn,
+chúng ta giả định rằng dữ liệu training và dữ liệu test
+được lấy mẫu *độc lập* từ các phân phối *giống hệt nhau*.
+Điều này thường được gọi là *giả định IID*.
+Mặc dù đây là một giả định mạnh,
+đáng lưu ý rằng nếu không có giả định như vậy,
+chúng ta sẽ hoàn toàn không có cơ sở để tiếp tục.
+Tại sao chúng ta lại tin rằng dữ liệu training
+được lấy mẫu từ phân phối $P(X,Y)$
+có thể cho chúng ta biết cách dự đoán trên
+dữ liệu test được tạo ra bởi một *phân phối khác* $Q(X,Y)$?
+Hóa ra, việc thực hiện những bước nhảy như vậy đòi hỏi
+các giả định mạnh về mối quan hệ giữa $P$ và $Q$.
+Sau này chúng ta sẽ thảo luận về một số giả định
+cho phép phân phối thay đổi,
+nhưng trước hết chúng ta cần hiểu trường hợp IID,
+trong đó $P(\cdot) = Q(\cdot)$.
+
+Trước tiên, chúng ta cần phân biệt giữa
+*sai số training* $R_\textrm{emp}$,
+là một *thống kê*
+được tính trên dataset training,
+và *sai số khái quát hóa* $R$,
+là một *kỳ vọng* được lấy
+theo phân phối nền tảng.
+Bạn có thể hình dung sai số khái quát hóa là
+điều bạn sẽ quan sát được nếu áp dụng model
+cho một luồng vô hạn các ví dụ dữ liệu bổ sung
+được lấy mẫu từ cùng một phân phối dữ liệu nền tảng.
+Về mặt hình thức, sai số training được biểu diễn dưới dạng một *tổng* (với cùng ký hiệu như :numref:`sec_linear_regression`):
 
 $$R_\textrm{emp}[\mathbf{X}, \mathbf{y}, f] = \frac{1}{n} \sum_{i=1}^n l(\mathbf{x}^{(i)}, y^{(i)}, f(\mathbf{x}^{(i)})),$$
 
 
-while the generalization error is expressed as an integral:
+trong khi sai số khái quát hóa được biểu diễn dưới dạng một tích phân:
 
 $$R[p, f] = E_{(\mathbf{x}, y) \sim P} [l(\mathbf{x}, y, f(\mathbf{x}))] =
 \int \int l(\mathbf{x}, y, f(\mathbf{x})) p(\mathbf{x}, y) \;d\mathbf{x} dy.$$
 
-Problematically, we can never calculate
-the generalization error $R$ exactly.
-Nobody ever tells us the precise form
-of the density function $p(\mathbf{x}, y)$.
-Moreover, we cannot sample an infinite stream of data points.
-Thus, in practice, we must *estimate* the generalization error
-by applying our model to an independent test set
-constituted of a random selection of examples
-$\mathbf{X}'$ and labels $\mathbf{y}'$
-that were withheld from our training set.
-This consists of applying the same formula
-that was used for calculating the empirical training error
-but to a test set $\mathbf{X}', \mathbf{y}'$.
+Vấn đề là chúng ta không bao giờ có thể tính chính xác
+sai số khái quát hóa $R$.
+Không ai cho chúng ta biết dạng chính xác
+của hàm mật độ $p(\mathbf{x}, y)$.
+Hơn nữa, chúng ta không thể lấy mẫu một luồng vô hạn các điểm dữ liệu.
+Do đó, trong thực tế, chúng ta phải *ước lượng* sai số khái quát hóa
+bằng cách áp dụng model vào một tập test độc lập
+được tạo thành từ một lựa chọn ngẫu nhiên các ví dụ
+$\mathbf{X}'$ và nhãn $\mathbf{y}'$
+đã được giữ lại, không đưa vào tập training.
+Việc này bao gồm áp dụng cùng công thức
+đã được dùng để tính sai số training thực nghiệm
+nhưng trên một tập test $\mathbf{X}', \mathbf{y}'$.
 
 
-Crucially, when we evaluate our classifier on the test set,
-we are working with a *fixed* classifier
-(it does not depend on the sample of the test set),
-and thus estimating its error
-is simply the problem of mean estimation.
-However the same cannot be said
-for the training set.
-Note that the model we wind up with
-depends explicitly on the selection of the training set
-and thus the training error will in general
-be a biased estimate of the true error
-on the underlying population.
-The central question of generalization
-is then when should we expect our training error
-to be close to the population error
-(and thus the generalization error).
+Điều quan trọng là khi đánh giá classifier trên tập test,
+chúng ta đang làm việc với một classifier *cố định*
+(nó không phụ thuộc vào mẫu của tập test),
+và do đó việc ước lượng sai số của nó
+chỉ đơn giản là bài toán ước lượng trung bình.
+Tuy nhiên, điều tương tự không đúng
+với tập training.
+Lưu ý rằng model cuối cùng chúng ta có được
+phụ thuộc rõ ràng vào việc lựa chọn tập training
+và do đó, nhìn chung, sai số training sẽ là
+một ước lượng thiên lệch của sai số thực
+trên tổng thể nền tảng.
+Khi đó, câu hỏi trọng tâm của khả năng khái quát hóa
+là khi nào chúng ta có thể kỳ vọng sai số training
+gần với sai số trên tổng thể
+(và do đó gần với sai số khái quát hóa).
 
-### Model Complexity
+### Độ phức tạp của Model
 
-In classical theory, when we have
-simple models and abundant data,
-the training and generalization errors tend to be close.
-However, when we work with
-more complex models and/or fewer examples,
-we expect the training error to go down
-but the generalization gap to grow.
-This should not be surprising.
-Imagine a model class so expressive that
-for any dataset of $n$ examples,
-we can find a set of parameters
-that can perfectly fit arbitrary labels,
-even if randomly assigned.
-In this case, even if we fit our training data perfectly,
-how can we conclude anything about the generalization error?
-For all we know, our generalization error
-might be no better than random guessing.
+Trong lý thuyết cổ điển, khi chúng ta có
+các model đơn giản và dữ liệu dồi dào,
+sai số training và sai số khái quát hóa có xu hướng gần nhau.
+Tuy nhiên, khi làm việc với
+các model phức tạp hơn và/hoặc ít ví dụ hơn,
+chúng ta kỳ vọng sai số training giảm xuống
+nhưng khoảng cách khái quát hóa tăng lên.
+Điều này không có gì đáng ngạc nhiên.
+Hãy tưởng tượng một lớp model có tính biểu đạt cao đến mức
+với bất kỳ dataset nào gồm $n$ ví dụ,
+chúng ta đều có thể tìm được một tập tham số
+fit hoàn hảo các nhãn tùy ý,
+ngay cả khi chúng được gán ngẫu nhiên.
+Trong trường hợp này, ngay cả khi chúng ta fit hoàn hảo dữ liệu training,
+làm thế nào chúng ta có thể kết luận bất cứ điều gì về sai số khái quát hóa?
+Theo những gì chúng ta biết, sai số khái quát hóa của chúng ta
+có thể không tốt hơn việc đoán ngẫu nhiên.
 
-In general, absent any restriction on our model class,
-we cannot conclude, based on fitting the training data alone,
-that our model has discovered any generalizable pattern :cite:`vapnik1994measuring`.
-On the other hand, if our model class
-was not capable of fitting arbitrary labels,
-then it must have discovered a pattern.
-Learning-theoretic ideas about model complexity
-derived some inspiration from the ideas
-of Karl Popper, an influential philosopher of science,
-who formalized the criterion of falsifiability.
-According to Popper, a theory
-that can explain any and all observations
-is not a scientific theory at all!
-After all, what has it told us about the world
-if it has not ruled out any possibility?
-In short, what we want is a hypothesis
-that *could not* explain any observations
-we might conceivably make
-and yet nevertheless happens to be compatible
-with those observations that we *in fact* make.
+Nói chung, nếu không có bất kỳ hạn chế nào đối với lớp model,
+chúng ta không thể kết luận, chỉ dựa trên việc fit dữ liệu training,
+rằng model của mình đã phát hiện ra bất kỳ mẫu nào có khả năng khái quát hóa :cite:`vapnik1994measuring`.
+Mặt khác, nếu lớp model của chúng ta
+không có khả năng fit các nhãn tùy ý,
+thì nó hẳn đã phát hiện ra một mẫu.
+Các ý tưởng lý thuyết học về độ phức tạp của model
+được truyền cảm hứng phần nào từ các ý tưởng
+của Karl Popper, một triết gia khoa học có ảnh hưởng,
+người đã hệ thống hóa tiêu chí về khả năng bị bác bỏ.
+Theo Popper, một lý thuyết
+có thể giải thích mọi và bất kỳ quan sát nào
+thì hoàn toàn không phải là một lý thuyết khoa học!
+Sau cùng, nó đã cho chúng ta biết gì về thế giới
+nếu nó không loại trừ bất kỳ khả năng nào?
+Tóm lại, điều chúng ta muốn là một giả thuyết
+*không thể* giải thích bất kỳ quan sát nào
+mà chúng ta có thể hình dung sẽ thực hiện
+nhưng dù vậy lại tương thích
+với những quan sát mà *thực tế* chúng ta thực hiện.
 
-Now what precisely constitutes an appropriate
-notion of model complexity is a complex matter.
-Often, models with more parameters
-are able to fit a greater number
-of arbitrarily assigned labels.
-However, this is not necessarily true.
-For instance, kernel methods operate in spaces
-with infinite numbers of parameters,
-yet their complexity is controlled
-by other means :cite:`Scholkopf.Smola.2002`.
-One notion of complexity that often proves useful
-is the range of values that the parameters can take.
-Here, a model whose parameters are permitted
-to take arbitrary values
-would be more complex.
-We will revisit this idea in the next section,
-when we introduce *weight decay*,
-your first practical regularization technique.
-Notably, it can be difficult to compare
-complexity among members of substantially different model classes
-(say, decision trees vs. neural networks).
+Vậy chính xác thì điều gì tạo nên
+một khái niệm phù hợp về độ phức tạp của model
+là một vấn đề phức tạp.
+Thông thường, các model có nhiều tham số hơn
+có thể fit được số lượng lớn hơn
+các nhãn được gán tùy ý.
+Tuy nhiên, điều này không phải lúc nào cũng đúng.
+Chẳng hạn, các phương pháp kernel hoạt động trong những không gian
+có số lượng tham số vô hạn,
+nhưng độ phức tạp của chúng được kiểm soát
+bằng các phương thức khác :cite:`Scholkopf.Smola.2002`.
+Một khái niệm về độ phức tạp thường tỏ ra hữu ích
+là miền giá trị mà các tham số có thể nhận.
+Ở đây, một model có các tham số được phép
+nhận các giá trị tùy ý
+sẽ phức tạp hơn.
+Chúng ta sẽ quay lại ý tưởng này trong phần tiếp theo,
+khi giới thiệu *weight decay*,
+kỹ thuật regularization thực tiễn đầu tiên của bạn.
+Đáng chú ý là việc so sánh
+độ phức tạp giữa các thành viên thuộc các lớp model khác biệt đáng kể
+(ví dụ, decision tree so với neural network)
+có thể rất khó.
 
 
-At this point, we must stress another important point
-that we will revisit when introducing deep neural networks.
-When a model is capable of fitting arbitrary labels,
-low training error does not necessarily
-imply low generalization error.
-*However, it does not necessarily
-imply high generalization error either!*
-All we can say with confidence is that
-low training error alone is not enough
-to certify low generalization error.
-Deep neural networks turn out to be just such models:
-while they generalize well in practice,
-they are too powerful to allow us to conclude
-much on the basis of training error alone.
-In these cases we must rely more heavily
-on our holdout data to certify generalization
-after the fact.
-Error on the holdout data, i.e., validation set,
-is called the *validation error*.
+Ở thời điểm này, chúng ta phải nhấn mạnh một điểm quan trọng khác
+mà chúng ta sẽ quay lại khi giới thiệu các mạng neural sâu.
+Khi một mô hình có khả năng khớp với các nhãn tùy ý,
+sai số huấn luyện thấp không nhất thiết
+ngụ ý sai số tổng quát hóa thấp.
+*그러 Tuy nhiên, điều đó cũng không nhất thiết
+ngụ ý sai số tổng quát hóa cao!*
+Điều duy nhất chúng ta có thể khẳng định chắc chắn là
+chỉ riêng sai số huấn luyện thấp thì chưa đủ
+để chứng nhận sai số tổng quát hóa thấp.
+Các mạng neural sâu hóa ra chính là những mô hình như vậy:
+mặc dù chúng tổng quát hóa tốt trong thực tế,
+chúng quá mạnh để cho phép chúng ta kết luận
+nhiều điều chỉ dựa trên sai số huấn luyện.
+Trong những trường hợp này, chúng ta phải phụ thuộc nhiều hơn
+vào dữ liệu holdout để chứng nhận khả năng tổng quát hóa
+sau khi mô hình đã được huấn luyện.
+Sai số trên dữ liệu holdout, tức validation set,
+được gọi là *sai số validation*.
 
-## Underfitting or Overfitting?
+## Underfitting hay Overfitting?
 
-When we compare the training and validation errors,
-we want to be mindful of two common situations.
-First, we want to watch out for cases
-when our training error and validation error are both substantial
-but there is a little gap between them.
-If the model is unable to reduce the training error,
-that could mean that our model is too simple
-(i.e., insufficiently expressive)
-to capture the pattern that we are trying to model.
-Moreover, since the *generalization gap* ($R_\textrm{emp} - R$)
-between our training and generalization errors is small,
-we have reason to believe that we could get away with a more complex model.
-This phenomenon is known as *underfitting*.
+Khi so sánh sai số huấn luyện và sai số validation,
+chúng ta cần lưu ý đến hai tình huống phổ biến.
+Trước hết, chúng ta cần đề phòng những trường hợp
+mà cả sai số huấn luyện lẫn sai số validation đều đáng kể
+nhưng khoảng cách giữa chúng lại nhỏ.
+Nếu mô hình không thể giảm sai số huấn luyện,
+điều đó có thể có nghĩa là mô hình của chúng ta quá đơn giản
+(tức là không đủ khả năng biểu đạt)
+để nắm bắt mẫu hình mà chúng ta đang cố gắng mô hình hóa.
+Hơn nữa, vì *khoảng cách tổng quát hóa* ($R_\textrm{emp} - R$)
+giữa sai số huấn luyện và sai số tổng quát hóa của chúng ta là nhỏ,
+chúng ta có lý do để tin rằng mình có thể sử dụng một mô hình phức tạp hơn.
+Hiện tượng này được gọi là *underfitting*.
 
-On the other hand, as we discussed above,
-we want to watch out for the cases
-when our training error is significantly lower
-than our validation error, indicating severe *overfitting*.
-Note that overfitting is not always a bad thing.
-In deep learning especially,
-the best predictive models often perform
-far better on training data than on holdout data.
-Ultimately, we usually care about
-driving the generalization error lower,
-and only care about the gap insofar
-as it becomes an obstacle to that end.
-Note that if the training error is zero,
-then the generalization gap is precisely equal to the generalization error
-and we can make progress only by reducing the gap.
+Mặt khác, như đã thảo luận ở trên,
+chúng ta cần đề phòng những trường hợp
+khi sai số huấn luyện thấp hơn đáng kể
+so với sai số validation, cho thấy hiện tượng *overfitting* nghiêm trọng.
+Lưu ý rằng overfitting không phải lúc nào cũng là điều xấu.
+Đặc biệt trong deep learning,
+những mô hình dự đoán tốt nhất thường đạt kết quả
+tốt hơn rất nhiều trên dữ liệu huấn luyện so với dữ liệu holdout.
+Sau cùng, điều chúng ta thường quan tâm là
+giảm sai số tổng quát hóa,
+và chỉ quan tâm đến khoảng cách này trong chừng mực
+nó trở thành trở ngại cho mục tiêu đó.
+Lưu ý rằng nếu sai số huấn luyện bằng 0,
+thì khoảng cách tổng quát hóa chính xác bằng sai số tổng quát hóa
+và chúng ta chỉ có thể tiến bộ bằng cách giảm khoảng cách này.
 
-### Polynomial Curve Fitting
+### Khớp đường cong đa thức
 :label:`subsec_polynomial-curve-fitting`
 
-To illustrate some classical intuition
-about overfitting and model complexity,
-consider the following:
-given training data consisting of a single feature $x$
-and a corresponding real-valued label $y$,
-we try to find the polynomial of degree $d$
+Để minh họa một số trực giác kinh điển
+về overfitting và độ phức tạp của mô hình,
+hãy xét trường hợp sau:
+cho dữ liệu huấn luyện gồm một đặc trưng duy nhất $x$
+và nhãn thực tương ứng $y$,
+chúng ta cố gắng tìm đa thức bậc $d$
 
 $$\hat{y}= \sum_{i=0}^d x^i w_i$$
 
-for estimating the label $y$.
-This is just a linear regression problem
-where our features are given by the powers of $x$,
-the model's weights are given by $w_i$,
-and the bias is given by $w_0$ since $x^0 = 1$ for all $x$.
-Since this is just a linear regression problem,
-we can use the squared error as our loss function.
+để ước lượng nhãn $y$.
+Đây chỉ là một bài toán linear regression,
+trong đó các đặc trưng của chúng ta được cho bởi các lũy thừa của $x$,
+các trọng số của mô hình được cho bởi $w_i$,
+và bias được cho bởi $w_0$ vì $x^0 = 1$ với mọi $x$.
+Vì đây chỉ là một bài toán linear regression,
+chúng ta có thể sử dụng squared error làm hàm loss.
 
+Một hàm đa thức bậc cao phức tạp hơn
+một hàm đa thức bậc thấp,
+vì đa thức bậc cao có nhiều tham số hơn
+và phạm vi lựa chọn của hàm mô hình rộng hơn.
+Với tập dữ liệu huấn luyện cố định,
+các hàm đa thức bậc cao hơn luôn phải đạt được
+sai số huấn luyện thấp hơn (hoặc tệ nhất là bằng)
+so với các đa thức bậc thấp hơn.
+Trên thực tế, bất cứ khi nào mỗi mẫu dữ liệu
+có một giá trị $x$ riêng biệt,
+một hàm đa thức có bậc
+bằng số lượng mẫu dữ liệu
+có thể khớp hoàn hảo với tập huấn luyện.
+Chúng ta so sánh mối quan hệ giữa bậc đa thức (độ phức tạp của mô hình)
+và cả underfitting lẫn overfitting trong :numref:`fig_capacity_vs_error`.
 
-A higher-order polynomial function is more complex
-than a lower-order polynomial function,
-since the higher-order polynomial has more parameters
-and the model function's selection range is wider.
-Fixing the training dataset,
-higher-order polynomial functions should always
-achieve lower (at worst, equal) training error
-relative to lower-degree polynomials.
-In fact, whenever each data example
-has a distinct value of $x$,
-a polynomial function with degree
-equal to the number of data examples
-can fit the training set perfectly.
-We compare the relationship between polynomial degree (model complexity)
-and both underfitting and overfitting in :numref:`fig_capacity_vs_error`.
-
-![Influence of model complexity on underfitting and overfitting.](../img/capacity-vs-error.svg)
+![Ảnh hưởng của độ phức tạp mô hình đến underfitting và overfitting.](../img/capacity-vs-error.svg)
 :label:`fig_capacity_vs_error`
 
 
-### Dataset Size
+### Kích thước tập dữ liệu
 
-As the above bound already indicates,
-another big consideration
-to bear in mind is dataset size.
-Fixing our model, the fewer samples
-we have in the training dataset,
-the more likely (and more severely)
-we are to encounter overfitting.
-As we increase the amount of training data,
-the generalization error typically decreases.
-Moreover, in general, more data never hurts.
-For a fixed task and data distribution,
-model complexity should not increase
-more rapidly than the amount of data.
-Given more data, we might  attempt
-to fit a more complex model.
-Absent sufficient data, simpler models
-may be more difficult to beat.
-For many tasks, deep learning
-only outperforms linear models
-when many thousands of training examples are available.
-In part, the current success of deep learning
-owes considerably to the abundance of massive datasets
-arising from Internet companies, cheap storage,
-connected devices, and the broad digitization of the economy.
+Như giới hạn ở trên đã cho thấy,
+một yếu tố quan trọng khác
+cần ghi nhớ là kích thước tập dữ liệu.
+Với mô hình cố định, càng ít mẫu
+trong tập dữ liệu huấn luyện,
+chúng ta càng có khả năng (và càng dễ bị nghiêm trọng hơn)
+gặp phải overfitting.
+Khi tăng lượng dữ liệu huấn luyện,
+sai số tổng quát hóa thường giảm.
+Hơn nữa, nhìn chung, nhiều dữ liệu hơn không bao giờ gây hại.
+Với một tác vụ và phân phối dữ liệu cố định,
+độ phức tạp của mô hình không nên tăng
+nhanh hơn lượng dữ liệu.
+Khi có nhiều dữ liệu hơn, chúng ta có thể cố gắng
+khớp một mô hình phức tạp hơn.
+Nếu không có đủ dữ liệu, các mô hình đơn giản hơn
+có thể khó bị vượt qua hơn.
+Đối với nhiều tác vụ, deep learning
+chỉ vượt trội so với các mô hình tuyến tính
+khi có sẵn hàng nghìn mẫu huấn luyện.
+Một phần, thành công hiện tại của deep learning
+đáng kể nhờ sự dồi dào của các tập dữ liệu khổng lồ
+bắt nguồn từ các công ty Internet, lưu trữ giá rẻ,
+các thiết bị được kết nối và quá trình số hóa rộng khắp nền kinh tế.
 
-## Model Selection
+## Lựa chọn mô hình
 :label:`subsec_generalization-model-selection`
 
-Typically, we select our final model
-only after evaluating multiple models
-that differ in various ways
-(different architectures, training objectives,
-selected features, data preprocessing,
-learning rates, etc.).
-Choosing among many models is aptly
-called *model selection*.
+Thông thường, chúng ta chỉ chọn mô hình cuối cùng
+sau khi đánh giá nhiều mô hình
+khác nhau theo nhiều cách
+(các kiến trúc khác nhau, mục tiêu huấn luyện,
+các đặc trưng được chọn, tiền xử lý dữ liệu,
+learning rate, v.v.).
+Việc lựa chọn giữa nhiều mô hình được gọi một cách thích hợp là
+*lựa chọn mô hình*.
 
-In principle, we should not touch our test set
-until after we have chosen all our hyperparameters.
-Were we to use the test data in the model selection process,
-there is a risk that we might overfit the test data.
-Then we would be in serious trouble.
-If we overfit our training data,
-there is always the evaluation on test data to keep us honest.
-But if we overfit the test data, how would we ever know?
-See :citet:`ong2005learning` for an example of how
-this can lead to absurd results even for models where the complexity
-can be tightly controlled.
+Về nguyên tắc, chúng ta không nên đụng đến test set
+cho đến sau khi đã chọn xong tất cả hyperparameter.
+Nếu sử dụng dữ liệu kiểm tra trong quá trình lựa chọn mô hình,
+có nguy cơ chúng ta sẽ overfit dữ liệu kiểm tra.
+Khi đó chúng ta sẽ gặp rắc rối nghiêm trọng.
+Nếu overfit dữ liệu huấn luyện,
+chúng ta vẫn luôn có kết quả đánh giá trên dữ liệu kiểm tra để giữ cho mình khách quan.
+Nhưng nếu overfit dữ liệu kiểm tra, làm sao chúng ta có thể biết được?
+Xem :citet:`ong2005learning` để biết một ví dụ về việc
+điều này có thể dẫn đến những kết quả vô lý ngay cả với các mô hình
+mà độ phức tạp có thể được kiểm soát chặt chẽ.
 
-Thus, we should never rely on the test data for model selection.
-And yet we cannot rely solely on the training data
-for model selection either because
-we cannot estimate the generalization error
-on the very data that we use to train the model.
+Vì vậy, chúng ta không bao giờ nên dựa vào dữ liệu kiểm tra để lựa chọn mô hình.
+Tuy nhiên, chúng ta cũng không thể chỉ dựa vào dữ liệu huấn luyện
+để lựa chọn mô hình, vì
+chúng ta không thể ước lượng sai số tổng quát hóa
+trên chính dữ liệu được dùng để huấn luyện mô hình.
 
 
-In practical applications, the picture gets muddier.
-While ideally we would only touch the test data once,
-to assess the very best model or to compare
-a small number of models with each other,
-real-world test data is seldom discarded after just one use.
-We can seldom afford a new test set for each round of experiments.
-In fact, recycling benchmark data for decades
-can have a significant impact on the
-development of algorithms,
-e.g., for [image classification](https://paperswithcode.com/sota/image-classification-on-imagenet)
-and [optical character recognition](https://paperswithcode.com/sota/image-classification-on-mnist).
+Trong các ứng dụng thực tế, vấn đề trở nên phức tạp hơn.
+Mặc dù lý tưởng nhất là chúng ta chỉ chạm đến dữ liệu kiểm tra một lần,
+để đánh giá mô hình tốt nhất hoặc so sánh
+một số ít mô hình với nhau,
+dữ liệu kiểm tra trong thế giới thực hiếm khi bị loại bỏ sau một lần sử dụng.
+Chúng ta hiếm khi có đủ khả năng tạo một test set mới cho mỗi vòng thử nghiệm.
+Trên thực tế, việc tái sử dụng dữ liệu benchmark trong nhiều thập kỷ
+có thể tác động đáng kể đến
+quá trình phát triển các thuật toán,
+ví dụ như [phân loại hình ảnh](https://paperswithcode.com/sota/image-classification-on-imagenet)
+và [nhận dạng ký tự quang học](https://paperswithcode.com/sota/image-classification-on-mnist).
 
-The common practice for addressing the problem of *training on the test set*
-is to split our data three ways,
-incorporating a *validation set*
-in addition to the training and test datasets.
-The result is a murky business where the boundaries
-between validation and test data are worryingly ambiguous.
-Unless explicitly stated otherwise, in the experiments in this book
-we are really working with what should rightly be called
-training data and validation data, with no true test sets.
-Therefore, the accuracy reported in each experiment of the book is really
-the validation accuracy and not a true test set accuracy.
+Cách làm phổ biến để giải quyết vấn đề *huấn luyện trên test set*
+là chia dữ liệu thành ba phần,
+bổ sung một *validation set*
+bên cạnh tập dữ liệu huấn luyện và kiểm tra.
+Kết quả là một tình huống không rõ ràng, trong đó ranh giới
+giữa dữ liệu validation và dữ liệu kiểm tra mơ hồ một cách đáng lo ngại.
+Trừ khi được nói rõ khác đi, trong các thí nghiệm của cuốn sách này
+chúng ta thực sự đang làm việc với những gì đúng ra nên được gọi là
+dữ liệu huấn luyện và dữ liệu validation, không có test set thực sự.
+Do đó, độ chính xác được báo cáo trong mỗi thí nghiệm của cuốn sách thực chất là
+độ chính xác validation chứ không phải độ chính xác trên test set thực sự.
 
 ### Cross-Validation
 
-When training data is scarce,
-we might not even be able to afford to hold out
-enough data to constitute a proper validation set.
-One popular solution to this problem is to employ
+Khi dữ liệu huấn luyện khan hiếm,
+chúng ta thậm chí có thể không đủ khả năng giữ lại
+đủ dữ liệu để tạo thành một validation set phù hợp.
+Một giải pháp phổ biến cho vấn đề này là sử dụng
 $K$*-fold cross-validation*.
-Here, the original training data is split into $K$ non-overlapping subsets.
-Then model training and validation are executed $K$ times,
-each time training on $K-1$ subsets and validating
-on a different subset (the one not used for training in that round).
-Finally, the training and validation errors are estimated
-by averaging over the results from the $K$ experiments.
+Ở đây, dữ liệu huấn luyện ban đầu được chia thành $K$ tập con không chồng lấn.
+Sau đó, quá trình huấn luyện và validation mô hình được thực hiện $K$ lần,
+mỗi lần huấn luyện trên $K-1$ tập con và validation
+trên một tập con khác (tập con không được dùng để huấn luyện trong vòng đó).
+Cuối cùng, sai số huấn luyện và validation được ước lượng
+bằng cách lấy trung bình kết quả từ $K$ thí nghiệm.
 
 
 
-## Summary
+## Tóm tắt
 
-This section explored some of the  underpinnings
-of generalization in  machine learning.
-Some of these ideas become complicated
-and counterintuitive when we get to deeper models; here, models are capable of overfitting data badly,
-and the relevant notions of complexity
-can be both implicit and counterintuitive
-(e.g., larger architectures with more parameters
-generalizing better).
-We leave you with a few rules of thumb:
+Phần này đã tìm hiểu một số nền tảng
+của khả năng tổng quát hóa trong machine learning.
+Một số ý tưởng này trở nên phức tạp
+và phản trực giác khi chúng ta chuyển sang các mô hình sâu hơn; ở đây, các mô hình có khả năng overfit dữ liệu nghiêm trọng,
+và những khái niệm liên quan đến độ phức tạp
+có thể vừa ẩn vừa phản trực giác
+(ví dụ: các kiến trúc lớn hơn với nhiều tham số hơn
+lại tổng quát hóa tốt hơn).
+Dưới đây là một số quy tắc kinh nghiệm:
 
-1. Use validation sets (or $K$*-fold cross-validation*) for model selection;
-1. More complex models often require more data;
-1. Relevant notions of complexity include both the number of parameters and the range of values that they are allowed to take;
-1. Keeping all else equal, more data almost always leads to better generalization;
-1. This entire talk of generalization is all predicated on the IID assumption. If we relax this assumption, allowing for distributions to shift between the train and testing periods, then we cannot say anything about generalization absent a further (perhaps milder) assumption.
+1. Sử dụng validation set (hoặc $K$*-fold cross-validation*) để lựa chọn mô hình;
+1. Các mô hình phức tạp hơn thường cần nhiều dữ liệu hơn;
+1. Những khái niệm liên quan đến độ phức tạp bao gồm cả số lượng tham số và phạm vi các giá trị mà chúng được phép nhận;
+1. Khi mọi yếu tố khác không đổi, nhiều dữ liệu hơn hầu như luôn dẫn đến khả năng tổng quát hóa tốt hơn;
+1. Toàn bộ cuộc thảo luận này về khả năng tổng quát hóa đều dựa trên giả định IID. Nếu nới lỏng giả định này, cho phép các phân phối thay đổi giữa giai đoạn huấn luyện và kiểm tra, thì chúng ta không thể nói gì về khả năng tổng quát hóa nếu không có thêm một giả định (có thể là nhẹ hơn).
 
 
-## Exercises
+## Bài tập
 
-1. When can you solve the problem of polynomial regression exactly?
-1. Give at least five examples where dependent random variables make treating the problem as IID data inadvisable.
-1. Can you ever expect to see zero training error? Under which circumstances would you see zero generalization error?
-1. Why is $K$-fold cross-validation very expensive to compute?
-1. Why is the $K$-fold cross-validation error estimate biased?
-1. The VC dimension is defined as the maximum number of points that can be classified with arbitrary labels $\{\pm 1\}$ by a function of a class of functions. Why might this not be a good idea for measuring how complex the class of functions is? Hint: consider the magnitude of the functions.
-1. Your manager gives you a difficult dataset on which your current algorithm does not perform so well. How would you justify to him that you need more data? Hint: you cannot increase the data but you can decrease it.
+1. Khi nào bạn có thể giải chính xác bài toán hồi quy đa thức?
+1. Hãy đưa ra ít nhất năm ví dụ trong đó các biến ngẫu nhiên phụ thuộc khiến việc xem bài toán là dữ liệu IID trở nên không phù hợp.
+1. Bạn có bao giờ có thể kỳ vọng thấy sai số huấn luyện bằng 0 không? Trong những trường hợp nào bạn sẽ thấy sai số tổng quát hóa bằng 0?
+1. Tại sao $K$-fold cross-validation lại rất tốn kém khi tính toán?
+1. Tại sao ước lượng sai số của $K$-fold cross-validation lại bị chệch?
+1. VC dimension được định nghĩa là số điểm lớn nhất có thể được phân loại với các nhãn tùy ý $\{\pm 1\}$ bởi một hàm thuộc một lớp các hàm. Tại sao đây có thể không phải là một ý tưởng tốt để đo độ phức tạp của lớp hàm? Gợi ý: hãy xét độ lớn của các hàm.
+1. Người quản lý giao cho bạn một tập dữ liệu khó, trên đó thuật toán hiện tại của bạn hoạt động không tốt. Bạn sẽ biện minh thế nào với người đó rằng mình cần thêm dữ liệu? Gợi ý: bạn không thể tăng lượng dữ liệu nhưng có thể giảm lượng dữ liệu.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/96)
+[Thảo luận](https://discuss.d2l.ai/t/96)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/97)
+[Thảo luận](https://discuss.d2l.ai/t/97)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/234)
+[Thảo luận](https://discuss.d2l.ai/t/234)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17978)
+[Thảo luận](https://discuss.d2l.ai/t/17978)
 :end_tab:

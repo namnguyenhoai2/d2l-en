@@ -1,25 +1,24 @@
-# Linear Neural Networks for Regression
+# Mạng nơ-ron tuyến tính cho bài toán hồi quy
 :label:`chap_regression`
 
-Before we worry about making our neural networks deep,
-it will be helpful to implement some shallow ones,
-for which the inputs connect directly to the outputs.
-This will prove important for a few reasons.
-First, rather than getting distracted by complicated architectures,
-we can focus on the basics of neural network training,
-including parametrizing the output layer, handling data,
-specifying a loss function, and training the model.
-Second, this class of shallow networks happens
-to comprise the set of linear models,
-which subsumes many classical methods of statistical prediction,
-including linear and softmax regression.
-Understanding these classical tools is pivotal
-because they are widely used in many contexts
-and we will often need to use them as baselines
-when justifying the use of fancier architectures.
-This chapter will focus narrowly on linear regression
-and the next one will extend our modeling repertoire
-by developing linear neural networks for classification.
+Trước khi quan tâm đến việc xây dựng các mạng nơ-ron sâu,
+sẽ rất hữu ích nếu triển khai một số mạng nông,
+trong đó đầu vào kết nối trực tiếp với đầu ra.
+Điều này quan trọng vì một vài lý do.
+Thứ nhất, thay vì bị phân tâm bởi các kiến trúc phức tạp,
+chúng ta có thể tập trung vào những kiến thức cơ bản về huấn luyện mạng nơ-ron,
+bao gồm tham số hóa lớp đầu ra, xử lý dữ liệu,
+xác định hàm mất mát và huấn luyện mô hình.
+Thứ hai, lớp mạng nông này tình cờ bao gồm tập hợp các mô hình tuyến tính,
+vốn bao hàm nhiều phương pháp dự đoán thống kê kinh điển,
+bao gồm hồi quy tuyến tính và hồi quy softmax.
+Việc hiểu các công cụ kinh điển này có ý nghĩa then chốt
+vì chúng được sử dụng rộng rãi trong nhiều bối cảnh
+và chúng ta thường cần dùng chúng làm baseline
+khi biện minh cho việc sử dụng các kiến trúc phức tạp hơn.
+Chương này sẽ tập trung chuyên sâu vào hồi quy tuyến tính,
+còn chương tiếp theo sẽ mở rộng phạm vi mô hình hóa của chúng ta
+bằng cách phát triển các mạng nơ-ron tuyến tính cho bài toán phân loại.
 
 ```toc
 :maxdepth: 2
@@ -32,4 +31,3 @@ linear-regression-concise
 generalization
 weight-decay
 ```
-
