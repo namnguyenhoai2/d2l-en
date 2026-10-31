@@ -1,118 +1,118 @@
-# Installation
+# Cài đặt
 :label:`chap_installation`
 
-In order to get up and running,
-we will need an environment for running Python,
-the Jupyter Notebook, the relevant libraries,
-and the code needed to run the book itself.
+Để bắt đầu,
+chúng ta sẽ cần một môi trường để chạy Python,
+Jupyter Notebook, các thư viện liên quan
+và mã cần thiết để chạy chính cuốn sách.
 
-## Installing Miniconda
+## Cài đặt Miniconda
 
-Your simplest option is to install
+Lựa chọn đơn giản nhất là cài đặt
 [Miniconda](https://conda.io/en/latest/miniconda.html).
-Note that the Python 3.x version is required.
-You can skip the following steps
-if your machine already has conda installed.
+Lưu ý rằng cần sử dụng phiên bản Python 3.x.
+Bạn có thể bỏ qua các bước sau
+nếu máy của bạn đã cài đặt conda.
 
-Visit the Miniconda website and determine
-the appropriate version for your system
-based on your Python 3.x version and machine architecture.
-Suppose that your Python version is 3.9
-(our tested version).
-If you are using macOS,
-you would download the bash script
-whose name contains the strings "MacOSX",
-navigate to the download location,
-and execute the installation as follows
-(taking Intel Macs as an example):
+Truy cập trang web Miniconda và xác định
+phiên bản phù hợp với hệ thống của bạn
+dựa trên phiên bản Python 3.x và kiến trúc máy.
+Giả sử phiên bản Python của bạn là 3.9
+(phiên bản chúng tôi đã kiểm thử).
+Nếu bạn sử dụng macOS,
+bạn sẽ tải xuống tập lệnh bash
+có tên chứa chuỗi "MacOSX",
+đi đến vị trí tải xuống
+và thực hiện cài đặt như sau
+(lấy máy Mac Intel làm ví dụ):
 
 ```bash
-# The file name is subject to changes
+# Tên tệp có thể thay đổi
 sh Miniconda3-py39_4.12.0-MacOSX-x86_64.sh -b
 ```
 
 
-A Linux user
-would download the file
-whose name contains the strings "Linux"
-and execute the following at the download location:
+Người dùng Linux
+sẽ tải xuống tệp
+có tên chứa chuỗi "Linux"
+và thực hiện lệnh sau tại vị trí tải xuống:
 
 ```bash
-# The file name is subject to changes
+# Tên tệp có thể thay đổi
 sh Miniconda3-py39_4.12.0-Linux-x86_64.sh -b
 ```
 
 
-A Windows user would download and install Miniconda by following its [online instructions](https://conda.io/en/latest/miniconda.html).
-On Windows, you may search for `cmd` to open the Command Prompt (command-line interpreter) for running commands.
+Người dùng Windows sẽ tải xuống và cài đặt Miniconda theo [hướng dẫn trực tuyến](https://conda.io/en/latest/miniconda.html).
+Trên Windows, bạn có thể tìm kiếm `cmd` để mở Command Prompt (trình thông dịch dòng lệnh) dùng để chạy các lệnh.
 
-Next, initialize the shell so we can run `conda` directly.
+Tiếp theo, khởi tạo shell để chúng ta có thể chạy `conda` trực tiếp.
 
 ```bash
 ~/miniconda3/bin/conda init
 ```
 
 
-Then close and reopen your current shell.
-You should be able to create
-a new environment as follows:
+Sau đó đóng và mở lại shell hiện tại.
+Bạn sẽ có thể tạo
+một environment mới như sau:
 
 ```bash
 conda create --name d2l python=3.9 -y
 ```
 
 
-Now we can activate the `d2l` environment:
+Bây giờ chúng ta có thể kích hoạt environment `d2l`:
 
 ```bash
 conda activate d2l
 ```
 
 
-## Installing the Deep Learning Framework and the `d2l` Package
+## Cài đặt Deep Learning Framework và Package `d2l`
 
-Before installing any deep learning framework,
-please first check whether or not
-you have proper GPUs on your machine
-(the GPUs that power the display
-on a standard laptop are not relevant for our purposes).
-For example,
-if your computer has NVIDIA GPUs and has installed [CUDA](https://developer.nvidia.com/cuda-downloads),
-then you are all set.
-If your machine does not house any GPU,
-there is no need to worry just yet.
-Your CPU provides more than enough horsepower
-to get you through the first few chapters.
-Just remember that you will want to access GPUs
-before running larger models.
+Trước khi cài đặt bất kỳ deep learning framework nào,
+trước tiên hãy kiểm tra xem
+máy của bạn có GPU phù hợp hay không
+(các GPU dùng để xuất hình ảnh
+trên một laptop thông thường không liên quan đến mục đích của chúng ta).
+Ví dụ,
+nếu máy tính của bạn có GPU NVIDIA và đã cài đặt [CUDA](https://developer.nvidia.com/cuda-downloads),
+thì bạn đã sẵn sàng.
+Nếu máy của bạn không có GPU,
+hiện tại bạn chưa cần lo lắng.
+CPU của bạn cung cấp đủ năng lực tính toán
+để giúp bạn hoàn thành vài chương đầu tiên.
+Chỉ cần nhớ rằng bạn sẽ muốn sử dụng GPU
+trước khi chạy các model lớn hơn.
 
 
 :begin_tab:`mxnet`
 
-To install a GPU-enabled version of MXNet,
-we need to find out what version of CUDA you have installed.
-You can check this by running `nvcc --version`
-or `cat /usr/local/cuda/version.txt`.
-Assume that you have installed CUDA 11.2,
-then execute the following command:
+Để cài đặt phiên bản MXNet hỗ trợ GPU,
+chúng ta cần biết phiên bản CUDA đã được cài đặt.
+Bạn có thể kiểm tra bằng cách chạy `nvcc --version`
+hoặc `cat /usr/local/cuda/version.txt`.
+Giả sử bạn đã cài đặt CUDA 11.2,
+hãy thực hiện lệnh sau:
 
 ```bash
-# For macOS and Linux users
+# Dành cho người dùng macOS và Linux
 pip install mxnet-cu112==1.9.1
 
-# For Windows users
+# Dành cho người dùng Windows
 pip install mxnet-cu112==1.9.1 -f https://dist.mxnet.io/python
 ```
 
 
-You may change the last digits according to your CUDA version, e.g., `cu101` for
-CUDA 10.1 and `cu90` for CUDA 9.0.
+Bạn có thể thay đổi các chữ số cuối theo phiên bản CUDA của mình, ví dụ: `cu101` cho
+CUDA 10.1 và `cu90` cho CUDA 9.0.
 
 
-If your machine has no NVIDIA GPUs
-or CUDA,
-you can install the CPU version
-as follows:
+Nếu máy của bạn không có GPU NVIDIA
+hoặc CUDA,
+bạn có thể cài đặt phiên bản CPU
+như sau:
 
 ```bash
 pip install mxnet==1.9.1
@@ -124,7 +124,7 @@ pip install mxnet==1.9.1
 
 :begin_tab:`pytorch`
 
-You can install PyTorch (the specified versions are tested at the time of writing) with either CPU or GPU support as follows:
+Bạn có thể cài đặt PyTorch (các phiên bản được chỉ định đã được kiểm thử tại thời điểm viết tài liệu) với hỗ trợ CPU hoặc GPU như sau:
 
 ```bash
 pip install torch==2.0.0 torchvision==0.15.1
@@ -134,7 +134,7 @@ pip install torch==2.0.0 torchvision==0.15.1
 :end_tab:
 
 :begin_tab:`tensorflow`
-You can install TensorFlow with either CPU or GPU support as follows:
+Bạn có thể cài đặt TensorFlow với hỗ trợ CPU hoặc GPU như sau:
 
 ```bash
 pip install tensorflow==2.12.0 tensorflow-probability==0.20.0
@@ -144,7 +144,7 @@ pip install tensorflow==2.12.0 tensorflow-probability==0.20.0
 :end_tab:
 
 :begin_tab:`jax`
-You can install JAX and Flax with either CPU or GPU support as follows:
+Bạn có thể cài đặt JAX và Flax với hỗ trợ CPU hoặc GPU như sau:
 
 ```bash
 # GPU
@@ -152,10 +152,10 @@ pip install "jax[cuda11_pip]==0.4.13" -f https://storage.googleapis.com/jax-rele
 ```
 
 
-If your machine has no NVIDIA GPUs
-or CUDA,
-you can install the CPU version
-as follows:
+Nếu máy của bạn không có GPU NVIDIA
+hoặc CUDA,
+bạn có thể cài đặt phiên bản CPU
+như sau:
 
 ```bash
 # CPU
@@ -166,26 +166,26 @@ pip install "jax[cpu]==0.4.13" flax==0.7.0
 :end_tab:
 
 
-Our next step is to install
-the `d2l` package that we developed
-in order to encapsulate
-frequently used functions and classes
-found throughout this book:
+Bước tiếp theo là cài đặt
+package `d2l` do chúng tôi phát triển
+nhằm đóng gói
+các hàm và class thường được sử dụng
+trong toàn bộ cuốn sách:
 
 ```bash
 pip install d2l==1.0.3
 ```
 
 
-## Downloading and Running the Code
+## Tải xuống và chạy mã
 
-Next, you will want to download the notebooks
-so that you can run each of the book's code blocks.
-Simply click on the "Notebooks" tab at the top
-of any HTML page on [the D2L.ai website](https://d2l.ai/)
-to download the code and then unzip it.
-Alternatively, you can fetch the notebooks
-from the command line as follows:
+Tiếp theo, bạn sẽ muốn tải xuống các notebook
+để có thể chạy từng khối mã trong sách.
+Chỉ cần nhấp vào tab "Notebooks" ở đầu
+bất kỳ trang HTML nào trên [trang web D2L.ai](https://d2l.ai/)
+để tải xuống mã, sau đó giải nén.
+Ngoài ra, bạn có thể lấy các notebook
+từ command line như sau:
 
 :begin_tab:`mxnet`
 
@@ -236,40 +236,40 @@ cd jax
 
 :end_tab:
 
-If you do not already have `unzip` installed, first run `sudo apt-get install unzip`.
-Now we can start the Jupyter Notebook server by running:
+Nếu `unzip` chưa được cài đặt, trước tiên hãy chạy `sudo apt-get install unzip`.
+Bây giờ chúng ta có thể khởi động server Jupyter Notebook bằng cách chạy:
 
 ```bash
 jupyter notebook
 ```
 
 
-At this point, you can open http://localhost:8888
-(it may have already opened automatically) in your web browser.
-Then we can run the code for each section of the book.
-Whenever you open a new command line window,
-you will need to execute `conda activate d2l`
-to activate the runtime environment
-before running the D2L notebooks,
-or updating your packages
-(either the deep learning framework
-or the `d2l` package).
-To exit the environment,
-run `conda deactivate`.
+Tại thời điểm này, bạn có thể mở http://localhost:8888
+(trang này có thể đã tự động mở) trong trình duyệt web.
+Sau đó, chúng ta có thể chạy mã cho từng phần trong sách.
+Mỗi khi mở một cửa sổ command line mới,
+bạn sẽ cần thực thi `conda activate d2l`
+để kích hoạt runtime environment
+trước khi chạy các notebook D2L,
+hoặc cập nhật các package
+(Deep Learning Framework
+hoặc package `d2l`).
+Để thoát khỏi environment,
+hãy chạy `conda deactivate`.
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/23)
+[Thảo luận](https://discuss.d2l.ai/t/23)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/24)
+[Thảo luận](https://discuss.d2l.ai/t/24)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/436)
+[Thảo luận](https://discuss.d2l.ai/t/436)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17964)
+[Thảo luận](https://discuss.d2l.ai/t/17964)
 :end_tab:

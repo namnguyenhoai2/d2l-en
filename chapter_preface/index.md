@@ -1,345 +1,147 @@
-# Preface
+# Lời nói đầu
 
-Just a few years ago, there were no legions of deep learning scientists
-developing intelligent products and services at major companies and startups.
-When we entered the field, machine learning
-did not command headlines in daily newspapers.
-Our parents had no idea what machine learning was,
-let alone why we might prefer it to a career in medicine or law.
-Machine learning was a blue skies academic discipline
-whose industrial significance was limited
-to a narrow set of real-world applications,
-including speech recognition and computer vision.
-Moreover, many of these applications
-required so much domain knowledge
-that they were often regarded as entirely separate areas
-for which machine learning was one small component.
-At that time, neural networks---the
-predecessors of the deep learning methods
-that we focus on in this book---were
-generally regarded as outmoded.
+Chỉ vài năm trước, chưa có những đội ngũ đông đảo các nhà khoa học deep learning phát triển các sản phẩm và dịch vụ thông minh tại những công ty lớn và startup. Khi chúng tôi bước vào lĩnh vực này, machine learning chưa xuất hiện trên các trang nhất của những tờ báo hằng ngày. Cha mẹ chúng tôi không biết machine learning là gì, chứ chưa nói đến việc hiểu tại sao chúng tôi có thể thích nó hơn một nghề nghiệp trong y khoa hoặc luật. Machine learning là một ngành học thuật mang tính lý tưởng, với ý nghĩa công nghiệp chỉ giới hạn trong một tập hợp hẹp các ứng dụng thực tế, bao gồm nhận dạng giọng nói và thị giác máy tính. Hơn nữa, nhiều ứng dụng trong số này đòi hỏi quá nhiều kiến thức chuyên ngành đến mức chúng thường được xem là những lĩnh vực hoàn toàn riêng biệt, trong đó machine learning chỉ là một thành phần nhỏ. Vào thời điểm đó, neural network---những tiền thân của các phương pháp deep learning mà chúng tôi tập trung trình bày trong cuốn sách này---thường bị xem là đã lỗi thời.
 
 
-Yet in just a few years, deep learning has taken the world by surprise,
-driving rapid progress in such diverse fields
-as computer vision, natural language processing,
-automatic speech recognition, reinforcement learning,
-and biomedical informatics.
-Moreover, the success of deep learning
-in so many tasks of practical interest
-has even catalyzed developments
-in theoretical machine learning and statistics.
-With these advances in hand,
-we can now build cars that drive themselves
-with more autonomy than ever before
-(though less autonomy than some companies might have you believe),
-dialogue systems that debug code by asking clarifying questions,
-and software agents beating the best human players in the world at board games such as Go, a feat once thought to be decades away.
-Already, these tools exert ever-wider influence on industry and society,
-changing the way movies are made, diseases are diagnosed,
-and playing a growing role in basic sciences---from astrophysics, to climate modeling, to weather prediction, to biomedicine.
+Thế nhưng chỉ trong vài năm, deep learning đã khiến cả thế giới kinh ngạc, thúc đẩy những tiến bộ nhanh chóng trong các lĩnh vực đa dạng như thị giác máy tính, xử lý ngôn ngữ tự nhiên, nhận dạng giọng nói tự động, reinforcement learning và tin-sinh học. Hơn nữa, thành công của deep learning trong rất nhiều tác vụ được quan tâm trên thực tế thậm chí còn thúc đẩy những phát triển trong machine learning lý thuyết và thống kê. Với những tiến bộ này, giờ đây chúng ta có thể xây dựng những chiếc xe tự lái với mức độ tự chủ cao hơn bao giờ hết (dù vẫn kém tự chủ hơn mức một số công ty có thể khiến bạn tin), các hệ thống đối thoại có thể debug code bằng cách đặt câu hỏi làm rõ, và các software agent đánh bại những kỳ thủ con người giỏi nhất thế giới trong các trò chơi bàn cờ như cờ vây—một thành tựu từng được cho là còn cách xa hàng thập kỷ. Những công cụ này đã ngày càng có ảnh hưởng rộng hơn đến công nghiệp và xã hội, thay đổi cách làm phim, chẩn đoán bệnh, đồng thời đóng vai trò ngày càng lớn trong các ngành khoa học cơ bản—từ vật lý thiên văn, mô hình hóa khí hậu, dự báo thời tiết đến y sinh học.
 
 
 
-## About This Book
+## Về cuốn sách này
 
-This book represents our attempt to make deep learning approachable,
-teaching you the *concepts*, the *context*, and the *code*.
+Cuốn sách này là nỗ lực của chúng tôi nhằm giúp deep learning trở nên dễ tiếp cận, bằng cách dạy bạn về *các khái niệm*, *bối cảnh* và *code*.
 
-### One Medium Combining Code, Math, and HTML
+### Một phương tiện kết hợp Code, Toán học và HTML
 
-For any computing technology to reach its full impact,
-it must be well understood, well documented, and supported by
-mature, well-maintained tools.
-The key ideas should be clearly distilled,
-minimizing the onboarding time needed
-to bring new practitioners up to date.
-Mature libraries should automate common tasks,
-and exemplar code should make it easy for practitioners
-to modify, apply, and extend common applications to suit their needs.
+Để bất kỳ công nghệ máy tính nào phát huy được toàn bộ tác động, công nghệ đó phải được hiểu rõ, được ghi chép đầy đủ và được hỗ trợ bởi các công cụ trưởng thành, được duy trì tốt. Những ý tưởng cốt lõi cần được chắt lọc một cách rõ ràng, giảm thiểu thời gian onboarding cần thiết để đưa những người mới thực hành bắt kịp kiến thức. Các thư viện trưởng thành nên tự động hóa những tác vụ phổ biến, còn code mẫu nên giúp người thực hành dễ dàng sửa đổi, áp dụng và mở rộng các ứng dụng phổ biến cho phù hợp với nhu cầu của họ.
 
 
-As an example, take dynamic web applications.
-Despite a large number of companies, such as Amazon,
-developing successful database-driven web applications in the 1990s,
-the potential of this technology to aid creative entrepreneurs
-was realized to a far greater degree only in the past ten years,
-owing in part to the development of powerful, well-documented frameworks.
+Lấy các ứng dụng web động làm ví dụ. Mặc dù một số lượng lớn công ty, chẳng hạn như Amazon, đã phát triển thành công các ứng dụng web dựa trên cơ sở dữ liệu vào những năm 1990, tiềm năng của công nghệ này trong việc hỗ trợ các doanh nhân sáng tạo chỉ được nhận ra ở mức độ lớn hơn nhiều trong mười năm qua, một phần nhờ sự phát triển của các framework mạnh mẽ và được ghi chép đầy đủ.
 
 
-Testing the potential of deep learning presents unique challenges
-because any single application brings together various disciplines.
-Applying deep learning requires simultaneously understanding
-(i) the motivations for casting a problem in a particular way;
-(ii) the mathematical form of a given model;
-(iii) the optimization algorithms for fitting the models to data;
-(iv) the statistical principles that tell us
-when we should expect our models
-to generalize to unseen data
-and practical methods for certifying
-that they have, in fact, generalized;
-and (v) the engineering techniques
-required to train models efficiently,
-navigating the pitfalls of numerical computing
-and getting the most out of available hardware.
-Teaching the critical thinking skills
-required to formulate problems,
-the mathematics to solve them,
-and the software tools to implement those solutions
-all in one place presents formidable challenges.
-Our goal in this book is to present a unified resource
-to bring would-be practitioners up to speed.
+Việc khảo sát tiềm năng của deep learning đặt ra những thách thức đặc biệt, vì mỗi ứng dụng đơn lẻ đều kết hợp nhiều lĩnh vực khác nhau. Việc áp dụng deep learning đòi hỏi đồng thời phải hiểu (i) động cơ của việc biểu diễn một bài toán theo một cách cụ thể; (ii) dạng toán học của một model nhất định; (iii) các thuật toán tối ưu hóa để khớp các model với dữ liệu; (iv) các nguyên lý thống kê cho chúng ta biết khi nào có thể kỳ vọng các model của mình tổng quát hóa được sang dữ liệu chưa từng thấy, cùng những phương pháp thực tiễn để xác nhận rằng chúng thực sự đã tổng quát hóa; và (v) các kỹ thuật engineering cần thiết để train model một cách hiệu quả, vượt qua những cạm bẫy của tính toán số và tận dụng tối đa phần cứng hiện có. Việc giảng dạy các kỹ năng tư duy phản biện cần thiết để xây dựng bài toán, toán học để giải quyết chúng và các công cụ phần mềm để triển khai những lời giải đó trong cùng một nơi là một thách thức rất lớn. Mục tiêu của chúng tôi trong cuốn sách này là cung cấp một tài nguyên thống nhất để giúp những người mong muốn trở thành người thực hành bắt kịp kiến thức.
 
-When we started this book project,
-there were no resources that simultaneously
-(i) remained up to date;
-(ii) covered the breadth of modern machine learning practices
-with sufficient technical depth;
-and (iii) interleaved exposition of
-the quality one expects of a textbook
-with the clean runnable code
-that one expects of a hands-on tutorial.
-We found plenty of code examples illustrating
-how to use a given deep learning framework
-(e.g., how to do basic numerical computing with matrices in TensorFlow)
-or for implementing particular techniques
-(e.g., code snippets for LeNet, AlexNet, ResNet, etc.)
-scattered across various blog posts and GitHub repositories.
-However, these examples typically focused on
-*how* to implement a given approach,
-but left out the discussion of
-*why* certain algorithmic decisions are made.
-While some interactive resources
-have popped up sporadically
-to address a particular topic,
-e.g., the engaging blog posts
-published on the website [Distill](http://distill.pub), or personal blogs,
-they only covered selected topics in deep learning,
-and often lacked associated code.
-On the other hand, while several deep learning textbooks
-have emerged---e.g., :citet:`Goodfellow.Bengio.Courville.2016`,
-which offers a comprehensive survey
-on the basics of deep learning---these
-resources do not marry the descriptions
-to realizations of the concepts in code,
-sometimes leaving readers clueless
-as to how to implement them.
-Moreover, too many resources
-are hidden behind the paywalls
-of commercial course providers.
+Khi bắt đầu dự án viết cuốn sách này, không có tài nguyên nào đồng thời (i) luôn được cập nhật; (ii) bao quát bề rộng của các thực hành machine learning hiện đại với độ sâu kỹ thuật đầy đủ; và (iii) kết hợp phần trình bày có chất lượng mà người ta kỳ vọng ở một giáo trình với code sạch, có thể chạy được, như người ta kỳ vọng ở một tutorial thực hành. Chúng tôi tìm thấy rất nhiều ví dụ code minh họa cách sử dụng một deep learning framework nhất định (ví dụ: cách thực hiện tính toán số cơ bản với ma trận trong TensorFlow) hoặc triển khai các kỹ thuật cụ thể (ví dụ: các đoạn code cho LeNet, AlexNet, ResNet, v.v.) rải rác trên nhiều bài đăng blog và repository GitHub khác nhau. Tuy nhiên, những ví dụ này thường tập trung vào *cách* triển khai một phương pháp nhất định nhưng bỏ qua thảo luận về *lý do* đưa ra những quyết định thuật toán cụ thể. Mặc dù một số tài nguyên tương tác đã xuất hiện rải rác để đề cập đến một chủ đề cụ thể, chẳng hạn như các bài đăng blog hấp dẫn được xuất bản trên website [Distill](http://distill.pub), hoặc các blog cá nhân, chúng chỉ bao quát một số chủ đề được chọn trong deep learning và thường thiếu code đi kèm. Mặt khác, mặc dù đã xuất hiện một số giáo trình deep learning—ví dụ :citet:`Goodfellow.Bengio.Courville.2016`, cung cấp một khảo sát toàn diện về những nền tảng của deep learning—những tài nguyên này không kết hợp phần mô tả với việc hiện thực hóa các khái niệm bằng code, đôi khi khiến độc giả không biết phải triển khai chúng như thế nào. Hơn nữa, quá nhiều tài nguyên bị ẩn sau các paywall của những nhà cung cấp khóa học thương mại.
 
-We set out to create a resource that could
-(i) be freely available for everyone;
-(ii) offer sufficient technical depth
-to provide a starting point on the path
-to actually becoming an applied machine learning scientist;
-(iii) include runnable code, showing readers
-*how* to solve problems in practice;
-(iv) allow for rapid updates, both by us
-and also by the community at large;
-and (v) be complemented by a [forum](https://discuss.d2l.ai/c/5)
-for interactive discussion of technical details and to answer questions.
+Chúng tôi bắt tay xây dựng một tài nguyên có thể (i) được cung cấp miễn phí cho tất cả mọi người; (ii) có đủ độ sâu kỹ thuật để trở thành điểm khởi đầu trên con đường thực sự trở thành một nhà khoa học machine learning ứng dụng; (iii) bao gồm code có thể chạy được, cho độc giả thấy *cách* giải quyết các bài toán trong thực tế; (iv) cho phép cập nhật nhanh chóng, cả bởi chúng tôi lẫn cộng đồng nói chung; và (v) được bổ trợ bởi một [forum](https://discuss.d2l.ai/c/5) để thảo luận tương tác về các chi tiết kỹ thuật và trả lời câu hỏi.
 
-These goals were often in conflict.
-Equations, theorems, and citations
-are best managed and laid out in LaTeX.
-Code is best described in Python.
-And webpages are native in HTML and JavaScript.
-Furthermore, we want the content to be
-accessible both as executable code, as a physical book,
-as a downloadable PDF, and on the Internet as a website.
-No workflows seemed suited to these demands,
-so we decided to assemble our own (:numref:`sec_how_to_contribute`).
-We settled on GitHub to share the source
-and to facilitate community contributions;
-Jupyter notebooks for mixing code, equations and text;
-Sphinx as a rendering engine;
-and Discourse as a discussion platform.
-While our system is not perfect,
-these choices strike a compromise
-among the competing concerns.
-We believe that *Dive into Deep Learning*
-might be the first book published
-using such an integrated workflow.
+Những mục tiêu này thường mâu thuẫn với nhau. Các phương trình, định lý và trích dẫn phù hợp nhất khi được quản lý và trình bày bằng LaTeX. Code phù hợp nhất khi được mô tả bằng Python. Còn các trang web có bản chất là HTML và JavaScript. Hơn nữa, chúng tôi muốn nội dung có thể được tiếp cận dưới dạng code thực thi, sách in, PDF có thể tải xuống và website trên Internet. Dường như không có workflow nào phù hợp với những yêu cầu này, vì vậy chúng tôi quyết định tự xây dựng hệ thống của mình (:numref:`sec_how_to_contribute`). Chúng tôi chọn GitHub để chia sẻ source và tạo điều kiện cho cộng đồng đóng góp; Jupyter notebook để kết hợp code, phương trình và văn bản; Sphinx làm rendering engine; và Discourse làm nền tảng thảo luận. Mặc dù hệ thống của chúng tôi chưa hoàn hảo, những lựa chọn này tạo ra một sự thỏa hiệp giữa các mối quan tâm cạnh tranh. Chúng tôi tin rằng *Dive into Deep Learning* có thể là cuốn sách đầu tiên được xuất bản bằng một workflow tích hợp như vậy.
 
 
-### Learning by Doing
+### Học thông qua thực hành
 
-Many textbooks present concepts in succession,
-covering each in exhaustive detail.
-For example,
-the excellent textbook of
-:citet:`Bishop.2006`
-teaches each topic so thoroughly
-that getting to the chapter
-on linear regression requires
-a nontrivial amount of work.
-While experts love this book
-precisely for its thoroughness,
-for true beginners, this property limits
-its usefulness as an introductory text.
+Nhiều giáo trình trình bày các khái niệm theo trình tự, bao quát từng khái niệm với đầy đủ chi tiết. Ví dụ, giáo trình xuất sắc của :citet:`Bishop.2006` giảng dạy từng chủ đề kỹ lưỡng đến mức để đi đến chương về hồi quy tuyến tính đòi hỏi một lượng công sức đáng kể. Những chuyên gia yêu thích cuốn sách này chính vì sự đầy đủ của nó, nhưng đối với những người mới bắt đầu thực sự, đặc điểm này lại hạn chế tính hữu ích của sách như một tài liệu nhập môn.
 
-In this book, we teach most concepts *just in time*.
-In other words, you will learn concepts at the very moment
-that they are needed to accomplish some practical end.
-While we take some time at the outset to teach
-fundamental preliminaries, like linear algebra and probability,
-we want you to taste the satisfaction of training your first model
-before worrying about more esoteric concepts.
+Trong cuốn sách này, chúng tôi giảng dạy hầu hết các khái niệm *đúng lúc cần thiết*. Nói cách khác, bạn sẽ học các khái niệm ngay tại thời điểm chúng cần thiết để đạt được một mục tiêu thực tiễn nào đó. Mặc dù ngay từ đầu chúng tôi dành thời gian giảng dạy những kiến thức nền tảng như đại số tuyến tính và xác suất, chúng tôi muốn bạn được trải nghiệm niềm vui khi train model đầu tiên trước khi lo lắng về những khái niệm chuyên sâu hơn.
 
-Aside from a few preliminary notebooks that provide a crash course
-in the basic mathematical background,
-each subsequent chapter both introduces a reasonable number of new concepts
-and provides several self-contained working examples, using real datasets.
-This presented an organizational challenge.
-Some models might logically be grouped together in a single notebook.
-And some ideas might be best taught
-by executing several models in succession.
-By contrast, there is a big advantage to adhering
-to a policy of *one working example, one notebook*:
-This makes it as easy as possible for you to
-start your own research projects by leveraging our code.
-Just copy a notebook and start modifying it.
+Ngoài một vài notebook nhập môn cung cấp khóa học cấp tốc về nền tảng toán học cơ bản, mỗi chương tiếp theo vừa giới thiệu một số lượng hợp lý các khái niệm mới, vừa cung cấp nhiều ví dụ hoạt động độc lập sử dụng các dataset thực tế. Điều này tạo ra một thách thức về tổ chức. Một số model có thể được nhóm lại một cách hợp lý trong cùng một notebook. Một số ý tưởng có thể được giảng dạy tốt nhất bằng cách thực thi liên tiếp nhiều model. Ngược lại, việc tuân thủ nguyên tắc *một ví dụ hoạt động, một notebook* mang lại một lợi thế lớn: điều này giúp bạn dễ dàng nhất có thể bắt đầu các dự án nghiên cứu của riêng mình bằng cách tận dụng code của chúng tôi. Chỉ cần sao chép một notebook và bắt đầu sửa đổi nó.
 
-Throughout, we interleave the runnable code
-with background material as needed.
-In general, we err on the side of making tools
-available before explaining them fully
-(often filling in the background later).
-For instance, we might use *stochastic gradient descent*
-before explaining why it is useful
-or offering some intuition for why it works.
-This helps to give practitioners the necessary
-ammunition to solve problems quickly,
-at the expense of requiring the reader
-to trust us with some curatorial decisions.
+Trong suốt cuốn sách, chúng tôi đan xen code có thể chạy với tài liệu nền tảng khi cần thiết. Nhìn chung, chúng tôi có xu hướng cung cấp các công cụ trước khi giải thích đầy đủ về chúng (thường bổ sung phần nền tảng sau). Chẳng hạn, chúng tôi có thể sử dụng *stochastic gradient descent* trước khi giải thích tại sao nó hữu ích hoặc đưa ra trực giác về lý do nó hoạt động. Cách này giúp cung cấp cho người thực hành những công cụ cần thiết để giải quyết vấn đề nhanh chóng, đổi lại độc giả phải tin tưởng chúng tôi trong một số quyết định tuyển chọn nội dung.
 
-This book teaches deep learning concepts from scratch.
-Sometimes, we delve into fine details about models
-that would typically be hidden from users
-by modern deep learning frameworks.
-This comes up especially in the basic tutorials,
-where we want you to understand everything
-that happens in a given layer or optimizer.
-In these cases, we often present
-two versions of the example:
-one where we implement everything from scratch,
-relying only on NumPy-like functionality
-and automatic differentiation,
-and a more practical example,
-where we write succinct code
-using the high-level APIs of deep learning frameworks.
-After explaining how some component works,
-we rely on the high-level API in subsequent tutorials.
+Cuốn sách này giảng dạy các khái niệm deep learning từ đầu. Đôi khi, chúng tôi đi sâu vào các chi tiết tinh tế về những model mà các deep learning framework hiện đại thường che giấu khỏi người dùng. Điều này đặc biệt xuất hiện trong các tutorial cơ bản, nơi chúng tôi muốn bạn hiểu mọi thứ diễn ra bên trong một layer hoặc optimizer nhất định. Trong những trường hợp này, chúng tôi thường trình bày hai phiên bản của ví dụ: một phiên bản trong đó chúng tôi triển khai mọi thứ từ đầu, chỉ dựa vào chức năng giống NumPy và automatic differentiation, cùng một ví dụ thực tiễn hơn, trong đó chúng tôi viết code súc tích bằng các high-level API của deep learning framework. Sau khi giải thích cách một thành phần hoạt động, chúng tôi sử dụng high-level API trong các tutorial tiếp theo.
 
 
-### Content and Structure
+### Nội dung và cấu trúc
 
-The book can be divided into roughly three parts,
-dealing with preliminaries,
-deep learning techniques,
-and advanced topics
-focused on real systems
-and applications (:numref:`fig_book_org`).
+Cuốn sách có thể được chia thành khoảng ba phần, lần lượt đề cập đến các kiến thức nhập môn, những kỹ thuật deep learning và các chủ đề nâng cao tập trung vào những hệ thống thực tế và ứng dụng (:numref:`fig_book_org`).
 
-![Book structure.](../img/book-org.svg)
+![Cấu trúc sách.](../img/book-org.svg)
 :label:`fig_book_org`
 
 
-* **Part 1: Basics and Preliminaries**.
-:numref:`chap_introduction` is
-an introduction to deep learning.
-Then, in :numref:`chap_preliminaries`,
-we quickly bring you up to speed
-on the prerequisites required
-for hands-on deep learning,
-such as how to store and manipulate data,
-and how to apply various numerical operations
-based on elementary concepts from linear algebra,
-calculus, and probability.
-:numref:`chap_regression` and :numref:`chap_perceptrons`
-cover the most fundamental concepts and techniques in deep learning,
-including regression and classification;
-linear models; multilayer perceptrons;
-and overfitting and regularization.
+* **Phần 1: Kiến thức cơ bản và phần nhập môn**.
+:numref:`chap_introduction` là phần giới thiệu về deep learning.
+Sau đó, trong :numref:`chap_preliminaries`,
+chúng tôi nhanh chóng cung cấp cho bạn
+các kiến thức tiên quyết cần thiết
+để thực hành deep learning,
+chẳng hạn như cách lưu trữ và thao tác với dữ liệu,
+cũng như cách áp dụng nhiều phép toán số khác nhau
+dựa trên các khái niệm cơ bản của đại số tuyến tính,
+giải tích và xác suất.
+:numref:`chap_regression` và :numref:`chap_perceptrons`
+trình bày những khái niệm và kỹ thuật nền tảng nhất trong deep learning,
+bao gồm hồi quy và phân loại;
+các mô hình tuyến tính; perceptron đa lớp;
+cũng như hiện tượng overfitting và regularization.
 
-* **Part 2: Modern Deep Learning Techniques**.
-:numref:`chap_computation` describes
-the key computational components
-of deep learning systems
-and lays the groundwork
-for our subsequent implementations
-of more complex models.
-Next, :numref:`chap_cnn` and :numref:`chap_modern_cnn`
-present convolutional neural networks (CNNs),
-powerful tools that form the backbone
-of most modern computer vision systems.
-Similarly, :numref:`chap_rnn` and :numref:`chap_modern_rnn`
-introduce recurrent neural networks (RNNs),
-models that exploit sequential (e.g., temporal)
-structure in data and are commonly used
-for natural language processing
-and time series prediction.
-In :numref:`chap_attention-and-transformers`,
-we describe a relatively new class of models,
-based on so-called *attention mechanisms*,
-that has displaced RNNs as the dominant architecture
-for most natural language processing tasks.
-These sections will bring you up to speed
-on the most powerful and general tools
-that are widely used by deep learning practitioners.
+* **Phần 2: Các kỹ thuật deep learning hiện đại**.
+:numref:`chap_computation` mô tả
+các thành phần tính toán then chốt
+của những hệ thống deep learning
+và đặt nền tảng
+cho việc triển khai các mô hình phức tạp hơn
+trong các phần tiếp theo.
+Tiếp đó, :numref:`chap_cnn` và :numref:`chap_modern_cnn`
+trình bày các mạng neural tích chập (CNN),
+những công cụ mạnh mẽ tạo nên nền tảng
+cho hầu hết các hệ thống thị giác máy tính hiện đại.
+Tương tự, :numref:`chap_rnn` và :numref:`chap_modern_rnn`
+giới thiệu các mạng neural hồi quy (RNN),
+những mô hình khai thác cấu trúc tuần tự (ví dụ: theo thời gian)
+trong dữ liệu và thường được sử dụng
+cho xử lý ngôn ngữ tự nhiên
+và dự đoán chuỗi thời gian.
+Trong :numref:`chap_attention-and-transformers`,
+chúng tôi mô tả một lớp mô hình tương đối mới,
+dựa trên cái gọi là *cơ chế attention*,
+đã thay thế RNN để trở thành kiến trúc chủ đạo
+cho hầu hết các tác vụ xử lý ngôn ngữ tự nhiên.
+Các phần này sẽ giúp bạn nắm được
+những công cụ mạnh mẽ và tổng quát nhất
+được các chuyên gia deep learning sử dụng rộng rãi.
 
-* **Part 3: Scalability, Efficiency, and Applications** (available [online](https://d2l.ai)).
-In Chapter 12,
-we discuss several common optimization algorithms
-used to train deep learning models.
-Next, in Chapter 13,
-we examine several key factors
-that influence the computational performance
-of deep learning code.
-Then, in Chapter 14,
-we illustrate major applications
-of deep learning in computer vision.
-Finally, in Chapter 15 and Chapter 16,
-we demonstrate how to pretrain language representation models
-and apply them to natural language processing tasks.
+* **Phần 3: Khả năng mở rộng, hiệu quả và ứng dụng** (có sẵn [trực tuyến](https://d2l.ai)).
+Trong Chương 12,
+chúng tôi thảo luận về một số thuật toán tối ưu hóa phổ biến
+được sử dụng để huấn luyện các mô hình deep learning.
+Tiếp theo, trong Chương 13,
+chúng tôi xem xét một số yếu tố then chốt
+ảnh hưởng đến hiệu năng tính toán
+của mã deep learning.
+Sau đó, trong Chương 14,
+chúng tôi minh họa những ứng dụng chính
+của deep learning trong thị giác máy tính.
+Cuối cùng, trong Chương 15 và Chương 16,
+chúng tôi trình bày cách pretrain các mô hình biểu diễn ngôn ngữ
+và áp dụng chúng vào các tác vụ xử lý ngôn ngữ tự nhiên.
 
 
-### Code
+### Mã
 :label:`sec_code`
 
-Most sections of this book feature executable code.
-We believe that some intuitions are best developed
-via trial and error,
-tweaking the code in small ways and observing the results.
-Ideally, an elegant mathematical theory might tell us
-precisely how to tweak our code to achieve a desired result.
-However, deep learning practitioners today
-must often tread where no solid theory provides guidance.
-Despite our best attempts, formal explanations
-for the efficacy of various techniques are
-still lacking, for a variety of reasons: the mathematics to characterize these models
-can be so difficult;
-the explanation likely depends on properties
-of the data that currently lack clear definitions;
-and serious inquiry on these topics
-has only recently kicked into high gear.
-We are hopeful that as the theory of deep learning progresses,
-each future edition of this book will provide insights
-that eclipse those presently available.
+Hầu hết các phần trong sách này đều có mã có thể thực thi.
+Chúng tôi tin rằng một số trực giác được hình thành tốt nhất
+thông qua việc thử và sai,
+điều chỉnh mã theo những cách nhỏ và quan sát kết quả.
+Lý tưởng nhất là một lý thuyết toán học tao nhã có thể cho chúng ta biết
+chính xác cách điều chỉnh mã để đạt được kết quả mong muốn.
+Tuy nhiên, các chuyên gia deep learning ngày nay
+thường phải tiến vào những lĩnh vực mà chưa có lý thuyết vững chắc nào đưa ra hướng dẫn.
+Dù đã cố gắng hết sức, các lời giải thích mang tính hình thức
+về tính hiệu quả của nhiều kỹ thuật khác nhau
+vẫn còn thiếu, vì nhiều lý do: toán học dùng để đặc trưng hóa các mô hình này
+có thể cực kỳ khó;
+lời giải thích có thể phụ thuộc vào những tính chất
+của dữ liệu hiện chưa có định nghĩa rõ ràng;
+và việc nghiên cứu nghiêm túc về các chủ đề này
+chỉ mới thực sự được đẩy mạnh trong thời gian gần đây.
+Chúng tôi hy vọng rằng khi lý thuyết deep learning tiến bộ,
+mỗi ấn bản tương lai của cuốn sách này sẽ cung cấp những hiểu biết
+vượt qua những gì hiện đang có.
 
-To avoid unnecessary repetition, we capture
-some of our most frequently imported and used
-functions and classes in the `d2l` package.
-Throughout, we mark blocks of code
-(such as functions, classes,
-or collection of import statements) with `#@save`
-to indicate that they will be accessed later
-via the `d2l` package.
-We offer a detailed overview
-of these classes and functions in :numref:`sec_d2l`.
-The `d2l` package is lightweight and only requires
-the following dependencies:
+Để tránh lặp lại không cần thiết, chúng tôi tập hợp
+một số hàm và lớp được import và sử dụng thường xuyên nhất
+trong package `d2l`.
+Trong toàn bộ cuốn sách, chúng tôi đánh dấu các khối mã
+(chẳng hạn như hàm, lớp
+hoặc tập hợp các câu lệnh import) bằng `#@save`
+để cho biết rằng chúng sẽ được truy cập sau này
+thông qua package `d2l`.
+Chúng tôi cung cấp phần tổng quan chi tiết
+về các lớp và hàm này trong :numref:`sec_d2l`.
+Package `d2l` nhẹ và chỉ yêu cầu
+các dependency sau:
 
 ```{.python .input}
 #@tab all
@@ -366,75 +168,73 @@ d2l = sys.modules[__name__]
 ```
 
 :begin_tab:`mxnet`
-Most of the code in this book is based on Apache MXNet,
-an open-source framework for deep learning
-that is the preferred choice
-of AWS (Amazon Web Services),
-as well as many colleges and companies.
-All of the code in this book has passed tests
-under the newest MXNet version.
-However, due to the rapid development of deep learning,
-some code *in the print edition*
-may not work properly in future versions of MXNet.
-We plan to keep the online version up to date.
-In case you encounter any problems,
-please consult :ref:`chap_installation`
-to update your code and runtime environment.
-Below lists dependencies in our MXNet implementation.
+Hầu hết mã trong cuốn sách này dựa trên Apache MXNet,
+một framework mã nguồn mở dành cho deep learning
+được AWS (Amazon Web Services),
+cũng như nhiều trường đại học và công ty, ưu tiên lựa chọn.
+Toàn bộ mã trong cuốn sách này đã vượt qua các bài kiểm thử
+trên phiên bản MXNet mới nhất.
+Tuy nhiên, do deep learning phát triển nhanh chóng,
+một số mã *trong ấn bản in*
+có thể không hoạt động đúng trong các phiên bản MXNet tương lai.
+Chúng tôi dự định cập nhật phiên bản trực tuyến.
+Nếu gặp bất kỳ vấn đề nào,
+vui lòng tham khảo :ref:`chap_installation`
+để cập nhật mã và môi trường runtime của bạn.
+Dưới đây là các dependency trong phần triển khai MXNet của chúng tôi.
 :end_tab:
 
 :begin_tab:`pytorch`
-Most of the code in this book is based on PyTorch,
-a popular open-source framework
-that has been enthusiastically embraced
-by the deep learning research community.
-All of the code in this book has passed tests
-under the latest stable version of PyTorch.
-However, due to the rapid development of deep learning,
-some code *in the print edition*
-may not work properly in future versions of PyTorch.
-We plan to keep the online version up to date.
-In case you encounter any problems,
-please consult :ref:`chap_installation`
-to update your code and runtime environment.
-Below lists dependencies in our PyTorch implementation.
+Hầu hết mã trong cuốn sách này dựa trên PyTorch,
+một framework mã nguồn mở phổ biến
+được cộng đồng nghiên cứu deep learning nhiệt tình đón nhận.
+Toàn bộ mã trong cuốn sách này đã vượt qua các bài kiểm thử
+trên phiên bản ổn định mới nhất của PyTorch.
+Tuy nhiên, do deep learning phát triển nhanh chóng,
+một số mã *trong ấn bản in*
+có thể không hoạt động đúng trong các phiên bản PyTorch tương lai.
+Chúng tôi dự định cập nhật phiên bản trực tuyến.
+Nếu gặp bất kỳ vấn đề nào,
+vui lòng tham khảo :ref:`chap_installation`
+để cập nhật mã và môi trường runtime của bạn.
+Dưới đây là các dependency trong phần triển khai PyTorch của chúng tôi.
 :end_tab:
 
 :begin_tab:`tensorflow`
-Most of the code in this book is based on TensorFlow,
-an open-source framework for deep learning
-that is widely adopted in industry
-and popular among researchers.
-All of the code in this book has passed tests
-under the latest stable version TensorFlow.
-However, due to the rapid development of deep learning,
-some code *in the print edition*
-may not work properly in future versions of TensorFlow.
-We plan to keep the online version up to date.
-In case you encounter any problems,
-please consult :ref:`chap_installation`
-to update your code and runtime environment.
-Below lists dependencies in our TensorFlow implementation.
+Hầu hết mã trong cuốn sách này dựa trên TensorFlow,
+một framework mã nguồn mở dành cho deep learning
+được áp dụng rộng rãi trong ngành
+và phổ biến trong giới nghiên cứu.
+Toàn bộ mã trong cuốn sách này đã vượt qua các bài kiểm thử
+trên phiên bản ổn định mới nhất của TensorFlow.
+Tuy nhiên, do deep learning phát triển nhanh chóng,
+một số mã *trong ấn bản in*
+có thể không hoạt động đúng trong các phiên bản TensorFlow tương lai.
+Chúng tôi dự định cập nhật phiên bản trực tuyến.
+Nếu gặp bất kỳ vấn đề nào,
+vui lòng tham khảo :ref:`chap_installation`
+để cập nhật mã và môi trường runtime của bạn.
+Dưới đây là các dependency trong phần triển khai TensorFlow của chúng tôi.
 :end_tab:
 
 :begin_tab:`jax`
-Most of the code in this book is based on Jax,
-an open-source framework enabling composable function
-transformations such as differentiation of arbitrary
-Python and NumPy functions, as well as JIT compliation,
-vectorization and much more! It is becoming popular in
-the machine learning research space and has an
-easy-to-learn NumPy-like API. Actually, JAX tries
-to achieve 1:1 parity with NumPy, so switching your
-code could be as simple as changing a single import statement!
-However, due to the rapid development of deep learning,
-some code *in the print edition*
-may not work properly in future versions of Jax.
-We plan to keep the online version up to date.
-In case you encounter any problems,
-please consult :ref:`chap_installation`
-to update your code and runtime environment.
-Below lists dependencies in our JAX implementation.
+Hầu hết mã trong cuốn sách này dựa trên Jax,
+một framework mã nguồn mở cho phép
+biến đổi các hàm có thể kết hợp, chẳng hạn như phép vi phân
+của các hàm Python và NumPy tùy ý, cũng như biên dịch JIT,
+vectorization và nhiều khả năng khác! Framework này đang trở nên phổ biến trong
+lĩnh vực nghiên cứu machine learning và có
+API tương tự NumPy, dễ học. Trên thực tế, JAX cố gắng
+đạt được mức tương thích 1:1 với NumPy, vì vậy việc chuyển đổi
+mã của bạn có thể đơn giản như thay đổi một câu lệnh import duy nhất!
+Tuy nhiên, do deep learning phát triển nhanh chóng,
+một số mã *trong ấn bản in*
+có thể không hoạt động đúng trong các phiên bản Jax tương lai.
+Chúng tôi dự định cập nhật phiên bản trực tuyến.
+Nếu gặp bất kỳ vấn đề nào,
+vui lòng tham khảo :ref:`chap_installation`
+để cập nhật mã và môi trường runtime của bạn.
+Dưới đây là các dependency trong phần triển khai JAX của chúng tôi.
 :end_tab:
 
 ```{.python .input}
@@ -483,67 +283,66 @@ from types import FunctionType
 from typing import Any
 ```
 
-### Target Audience
+### Đối tượng độc giả
 
-This book is for students (undergraduate or graduate),
-engineers, and researchers, who seek a solid grasp
-of the practical techniques of deep learning.
-Because we explain every concept from scratch,
-no previous background in deep learning or machine learning is required.
-Fully explaining the methods of deep learning
-requires some mathematics and programming,
-but we will only assume that you enter with some basics,
-including modest amounts of linear algebra,
-calculus, probability, and Python programming.
-Just in case you have forgotten anything,
-the [online Appendix](https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/index.html) provides a refresher
-on most of the mathematics
-you will find in this book.
-Usually, we will prioritize
-intuition and ideas
-over mathematical rigor.
-If you would like to extend these foundations
-beyond the prerequisites to understand our book,
-we happily recommend some other terrific resources:
-*Linear Analysis* by :citet:`Bollobas.1999`
-covers linear algebra and functional analysis in great depth.
+Cuốn sách này dành cho sinh viên (bậc đại học hoặc sau đại học),
+kỹ sư và nhà nghiên cứu muốn nắm vững
+các kỹ thuật thực tiễn của deep learning.
+Vì chúng tôi giải thích mọi khái niệm từ đầu,
+bạn không cần có nền tảng trước đó về deep learning hoặc machine learning.
+Việc giải thích đầy đủ các phương pháp deep learning
+đòi hỏi một số kiến thức toán học và lập trình,
+nhưng chúng tôi chỉ giả định rằng bạn đã có một số kiến thức cơ bản,
+bao gồm một lượng kiến thức vừa phải về đại số tuyến tính,
+giải tích, xác suất và lập trình Python.
+Để đề phòng trường hợp bạn đã quên điều gì đó,
+[Phụ lục trực tuyến](https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/index.html) cung cấp phần ôn tập
+về hầu hết kiến thức toán học
+mà bạn sẽ gặp trong cuốn sách này.
+Thông thường, chúng tôi sẽ ưu tiên
+trực giác và ý tưởng
+hơn tính chặt chẽ về mặt toán học.
+Nếu bạn muốn mở rộng những nền tảng này
+vượt ra ngoài các kiến thức tiên quyết để hiểu cuốn sách,
+chúng tôi rất vui được giới thiệu một số tài liệu tuyệt vời khác:
+*Linear Analysis* của :citet:`Bollobas.1999`
+trình bày đại số tuyến tính và giải tích hàm một cách chuyên sâu.
 *All of Statistics* :cite:`Wasserman.2013`
-provides a marvelous introduction to statistics.
-Joe Blitzstein's [books](https://www.amazon.com/Introduction-Probability-Chapman-Statistical-Science/dp/1138369918)
-and [courses](https://projects.iq.harvard.edu/stat110/home)
-on probability and inference are pedagogical gems.
-And if you have not used Python before,
-you may want to peruse this [Python tutorial](http://learnpython.org/).
+cung cấp phần nhập môn tuyệt vời về thống kê.
+Các [cuốn sách](https://www.amazon.com/Introduction-Probability-Chapman-Statistical-Science/dp/1138369918)
+và [khóa học](https://projects.iq.harvard.edu/stat110/home) của Joe Blitzstein
+về xác suất và suy luận là những tài liệu sư phạm quý giá.
+Và nếu trước đây bạn chưa từng sử dụng Python,
+bạn có thể muốn xem qua [hướng dẫn Python](http://learnpython.org/) này.
 
 
-### Notebooks, Website, GitHub, and Forum
+### Notebook, Website, GitHub và Forum
 
-All our notebooks can be downloaded
-from the [D2L.ai website](https://d2l.ai)
-and from [GitHub](https://github.com/d2l-ai/d2l-en).
-Associated with this book we have launched a discussion forum
-at [discuss.d2l.ai](https://discuss.d2l.ai/c/5).
-Whenever you have questions on any section of the book,
-you can find a link to the associated discussion page
-at the end of each notebook.
+Bạn có thể tải xuống toàn bộ notebook của chúng tôi
+từ [website D2L.ai](https://d2l.ai)
+và từ [GitHub](https://github.com/d2l-ai/d2l-en).
+Cùng với cuốn sách này, chúng tôi đã ra mắt một forum thảo luận
+tại [discuss.d2l.ai](https://discuss.d2l.ai/c/5).
+Bất cứ khi nào có câu hỏi về bất kỳ phần nào của cuốn sách,
+bạn có thể tìm thấy liên kết đến trang thảo luận tương ứng
+ở cuối mỗi notebook.
 
 
 
-## Acknowledgments
+## Lời cảm ơn
 
-We are indebted to the hundreds of contributors for both
-the English and the Chinese drafts.
-They helped improve the content and offered valuable feedback.
-This book was originally implemented with MXNet as the primary framework.
-We thank Anirudh Dagar and Yuan Tang for adapting a majority part of earlier MXNet code into PyTorch and TensorFlow implementations, respectively.
-Since July 2021, we have redesigned and reimplemented this book in PyTorch, MXNet, and TensorFlow, choosing PyTorch as the primary framework.
-We thank Anirudh Dagar for adapting a majority part of more recent PyTorch code into JAX implementations.
-We thank Gaosheng Wu, Liujun Hu, Ge Zhang, and Jiehang Xie from Baidu for adapting a majority part of more recent PyTorch code into PaddlePaddle implementations in the Chinese draft.
-We thank Shuai Zhang for integrating the LaTeX style from the press into the PDF building.
+Chúng tôi mang ơn hàng trăm cộng tác viên đã đóng góp cho cả bản thảo tiếng Anh và tiếng Trung.
+Họ đã giúp cải thiện nội dung và đưa ra những phản hồi quý báu.
+Cuốn sách này ban đầu được xây dựng với MXNet là framework chính.
+Chúng tôi cảm ơn Anirudh Dagar và Yuan Tang đã lần lượt chuyển phần lớn mã MXNet trước đây sang các bản triển khai bằng PyTorch và TensorFlow.
+Kể từ tháng 7 năm 2021, chúng tôi đã thiết kế lại và triển khai lại cuốn sách này bằng PyTorch, MXNet và TensorFlow, đồng thời chọn PyTorch làm framework chính.
+Chúng tôi cảm ơn Anirudh Dagar đã chuyển phần lớn mã PyTorch mới hơn sang các bản triển khai bằng JAX.
+Chúng tôi cảm ơn Gaosheng Wu, Liujun Hu, Ge Zhang và Jiehang Xie từ Baidu đã chuyển phần lớn mã PyTorch mới hơn sang các bản triển khai bằng PaddlePaddle trong bản thảo tiếng Trung.
+Chúng tôi cảm ơn Shuai Zhang đã tích hợp style LaTeX từ nhà xuất bản vào quá trình xây dựng PDF.
 
-On GitHub, we thank every contributor of this English draft
-for making it better for everyone.
-Their GitHub IDs or names are (in no particular order):
+Trên GitHub, chúng tôi cảm ơn mọi cộng tác viên của bản thảo tiếng Anh này
+vì đã làm cho bản thảo trở nên tốt hơn đối với tất cả mọi người.
+GitHub ID hoặc tên của họ là (không theo thứ tự cụ thể):
 alxnorden, avinashingit, bowen0701, brettkoonce, Chaitanya Prakash Bapat,
 cryptonaut, Davide Fiocco, edgarroman, gkutiel, John Mitro, Liang Pu,
 Rahul Agarwal, Mohamed Ali Jamaoui, Michael (Stu) Stewart, Mike Müller,
@@ -584,53 +383,53 @@ Atishay Garg, Marcel Flygare, adtygan, Nik Vaessen, bolded, Louis Schlessinger, 
 atgctg, Kaixin Li, Victor Barbaros, Riccardo Musto, Elizabeth Ho, azimjonn, Guilherme Miotto, Alessandro Finamore,
 Joji Joseph, Anthony Biel, Zeming Zhao, shjustinbaek, gab-chen, nantekoto, Yutaro Nishiyama, Oren Amsalem,
 Tian-MaoMao, Amin Allahyar, Gijs van Tulder, Mikhail Berkov, iamorphen, Matthew Caseres, Andrew Walsh,
-pggPL, RohanKarthikeyan, Ryan Choi, and Likun Lei.
+pggPL, RohanKarthikeyan, Ryan Choi và Likun Lei.
 
-We thank Amazon Web Services, especially Wen-Ming Ye, George Karypis, Swami Sivasubramanian, Peter DeSantis, Adam Selipsky,
-and Andrew Jassy for their generous support in writing this book.
-Without the available time, resources, discussions with colleagues,
-and continuous encouragement, this book would not have happened.
-During the preparation of the book for publication,
-Cambridge University Press has offered excellent support.
-We thank our commissioning editor David Tranah
-for his help and professionalism.
-
-
-## Summary
-
-Deep learning has revolutionized pattern recognition,
-introducing technology that now powers a wide range of  technologies,
-in such diverse fields as computer vision,
-natural language processing,
-and automatic speech recognition.
-To successfully apply deep learning,
-you must understand how to cast a problem,
-the basic mathematics of modeling,
-the algorithms for fitting your models to data,
-and the engineering techniques to implement it all.
-This book presents a comprehensive resource,
-including prose, figures, mathematics, and code, all in one place.
+Chúng tôi cảm ơn Amazon Web Services, đặc biệt là Wen-Ming Ye, George Karypis, Swami Sivasubramanian, Peter DeSantis, Adam Selipsky
+và Andrew Jassy vì sự hỗ trợ hào phóng của họ trong quá trình viết cuốn sách này.
+Nếu không có thời gian, nguồn lực, những cuộc thảo luận với đồng nghiệp
+và sự động viên liên tục, cuốn sách này đã không thể ra đời.
+Trong quá trình chuẩn bị xuất bản cuốn sách,
+Cambridge University Press đã hỗ trợ chúng tôi rất tận tình.
+Chúng tôi cảm ơn commissioning editor David Tranah
+vì sự giúp đỡ và tính chuyên nghiệp của ông.
 
 
+## Tóm tắt
 
-## Exercises
+Deep learning đã cách mạng hóa việc nhận dạng mẫu,
+đưa vào những công nghệ hiện đang vận hành nhiều loại công nghệ,
+trong các lĩnh vực đa dạng như thị giác máy tính,
+xử lý ngôn ngữ tự nhiên
+và nhận dạng tiếng nói tự động.
+Để áp dụng deep learning thành công,
+bạn phải hiểu cách phát biểu một bài toán,
+toán học cơ bản của việc lập mô hình,
+các thuật toán để điều chỉnh mô hình theo dữ liệu
+và các kỹ thuật engineering để triển khai toàn bộ quy trình.
+Cuốn sách này cung cấp một tài liệu toàn diện,
+bao gồm văn bản, hình, toán học và code, tất cả trong cùng một nơi.
 
-1. Register an account on the discussion forum of this book [discuss.d2l.ai](https://discuss.d2l.ai/).
-1. Install Python on your computer.
-1. Follow the links at the bottom of the section to the forum, where you will be able to seek out help and discuss the book and find answers to your questions by engaging the authors and broader community.
+
+
+## Bài tập
+
+1. Đăng ký tài khoản trên diễn đàn thảo luận của cuốn sách này [discuss.d2l.ai](https://discuss.d2l.ai/).
+1. Cài đặt Python trên máy tính của bạn.
+1. Theo các liên kết ở cuối phần này đến diễn đàn, nơi bạn có thể tìm kiếm sự trợ giúp, thảo luận về cuốn sách và tìm câu trả lời cho các câu hỏi của mình bằng cách trao đổi với các tác giả và cộng đồng rộng lớn hơn.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/18)
+[Thảo luận](https://discuss.d2l.ai/t/18)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/20)
+[Thảo luận](https://discuss.d2l.ai/t/20)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/186)
+[Thảo luận](https://discuss.d2l.ai/t/186)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/17963)
+[Thảo luận](https://discuss.d2l.ai/t/17963)
 :end_tab:
