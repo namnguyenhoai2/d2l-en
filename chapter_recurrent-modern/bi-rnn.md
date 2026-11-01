@@ -1,63 +1,63 @@
-# Bidirectional Recurrent Neural Networks
+# Mạng nơ-ron hồi quy hai chiều
 :label:`sec_bi_rnn`
 
-So far, our working example of a sequence learning task has been language modeling,
-where we aim to predict the next token given all previous tokens in a sequence.
-In this scenario, we wish only to condition upon the leftward context,
-and thus the unidirectional chaining of a standard RNN seems appropriate.
-However, there are many other sequence learning tasks contexts
-where it is perfectly fine to condition the prediction at every time step
-on both the leftward and the rightward context.
-Consider, for example, part of speech detection.
-Why shouldn't we take the context in both directions into account
-when assessing the part of speech associated with a given word?
+Cho đến nay, ví dụ đang được sử dụng của chúng ta về một tác vụ học chuỗi là mô hình hóa ngôn ngữ,
+trong đó mục tiêu là dự đoán token tiếp theo dựa trên tất cả các token trước đó trong một chuỗi.
+Trong trường hợp này, chúng ta chỉ muốn điều kiện hóa dựa trên ngữ cảnh bên trái,
+vì vậy việc kết nối một chiều của RNN tiêu chuẩn có vẻ phù hợp.
+Tuy nhiên, còn nhiều ngữ cảnh tác vụ học chuỗi khác
+mà trong đó hoàn toàn có thể điều kiện hóa dự đoán tại mỗi bước thời gian
+dựa trên cả ngữ cảnh bên trái và bên phải.
+Ví dụ, hãy xem xét việc nhận diện từ loại.
+Tại sao chúng ta không nên tính đến ngữ cảnh theo cả hai hướng
+khi xác định từ loại gắn với một từ nhất định?
 
-Another common task---often useful as a pretraining exercise
-prior to fine-tuning a model on an actual task of interest---is
-to mask out random tokens in a text document and then to train
-a sequence model to predict the values of the missing tokens.
-Note that depending on what comes after the blank,
-the likely value of the missing token changes dramatically:
+Một tác vụ phổ biến khác---thường hữu ích như một bài tập pretraining
+trước khi fine-tuning một mô hình trên tác vụ thực tế cần quan tâm---
+là che ngẫu nhiên các token trong một tài liệu văn bản, sau đó huấn luyện
+một mô hình chuỗi để dự đoán giá trị của các token bị thiếu.
+Lưu ý rằng tùy thuộc vào phần nằm sau chỗ trống,
+giá trị có khả năng nhất của token bị thiếu sẽ thay đổi đáng kể:
 
 * I am `___`.
 * I am `___` hungry.
 * I am `___` hungry, and I can eat half a pig.
 
-In the first sentence "happy" seems to be a likely candidate.
-The words "not" and "very" seem plausible in the second sentence,
-but "not" seems incompatible with the third sentences.
+Trong câu đầu tiên, “happy” có vẻ là một ứng viên phù hợp.
+Các từ “not” và “very” có vẻ hợp lý trong câu thứ hai,
+nhưng “not” dường như không phù hợp với câu thứ ba.
 
 
-Fortunately, a simple technique transforms any unidirectional RNN
-into a bidirectional RNN :cite:`Schuster.Paliwal.1997`.
-We simply implement two unidirectional RNN layers
-chained together in opposite directions
-and acting on the same input (:numref:`fig_birnn`).
-For the first RNN layer,
-the first input is $\mathbf{x}_1$
-and the last input is $\mathbf{x}_T$,
-but for the second RNN layer,
-the first input is $\mathbf{x}_T$
-and the last input is $\mathbf{x}_1$.
-To produce the output of this bidirectional RNN layer,
-we simply concatenate together the corresponding outputs
-of the two underlying unidirectional RNN layers.
+May mắn thay, một kỹ thuật đơn giản có thể biến đổi bất kỳ RNN một chiều nào
+thành RNN hai chiều :cite:`Schuster.Paliwal.1997`.
+Chúng ta chỉ cần triển khai hai lớp RNN một chiều
+được nối với nhau theo các hướng ngược nhau
+và hoạt động trên cùng một đầu vào (:numref:`fig_birnn`).
+Đối với lớp RNN thứ nhất,
+đầu vào đầu tiên là $\mathbf{x}_1$
+và đầu vào cuối cùng là $\mathbf{x}_T$,
+nhưng đối với lớp RNN thứ hai,
+đầu vào đầu tiên là $\mathbf{x}_T$
+và đầu vào cuối cùng là $\mathbf{x}_1$.
+Để tạo đầu ra của lớp RNN hai chiều này,
+chúng ta chỉ cần nối các đầu ra tương ứng
+của hai lớp RNN một chiều bên dưới lại với nhau.
 
 
-![Architecture of a bidirectional RNN.](../img/birnn.svg)
+![Kiến trúc của RNN hai chiều.](../img/birnn.svg)
 :label:`fig_birnn`
 
 
-Formally for any time step $t$,
-we consider a minibatch input $\mathbf{X}_t \in \mathbb{R}^{n \times d}$
-(number of examples $=n$; number of inputs in each example $=d$)
-and let the hidden layer activation function be $\phi$.
-In the bidirectional architecture,
-the forward and backward hidden states for this time step
-are $\overrightarrow{\mathbf{H}}_t  \in \mathbb{R}^{n \times h}$
-and $\overleftarrow{\mathbf{H}}_t  \in \mathbb{R}^{n \times h}$, respectively,
-where $h$ is the number of hidden units.
-The forward and backward hidden state updates are as follows:
+Về mặt hình thức, tại bất kỳ bước thời gian $t$ nào,
+chúng ta xét một đầu vào minibatch $\mathbf{X}_t \in \mathbb{R}^{n \times d}$
+(số lượng ví dụ $=n$; số lượng đầu vào trong mỗi ví dụ $=d$)
+và gọi hàm kích hoạt của lớp ẩn là $\phi$.
+Trong kiến trúc hai chiều,
+các trạng thái ẩn tiến và lùi tại bước thời gian này lần lượt là
+$\overrightarrow{\mathbf{H}}_t  \in \mathbb{R}^{n \times h}$
+và $\overleftarrow{\mathbf{H}}_t  \in \mathbb{R}^{n \times h}$,
+trong đó $h$ là số lượng đơn vị ẩn.
+Các cập nhật trạng thái ẩn tiến và lùi như sau:
 
 
 $$
@@ -67,24 +67,25 @@ $$
 \end{aligned}
 $$
 
-where the weights $\mathbf{W}_{\textrm{xh}}^{(f)} \in \mathbb{R}^{d \times h}, \mathbf{W}_{\textrm{hh}}^{(f)} \in \mathbb{R}^{h \times h}, \mathbf{W}_{\textrm{xh}}^{(b)} \in \mathbb{R}^{d \times h}, \textrm{ and } \mathbf{W}_{\textrm{hh}}^{(b)} \in \mathbb{R}^{h \times h}$, and the biases $\mathbf{b}_\textrm{h}^{(f)} \in \mathbb{R}^{1 \times h}$ and $\mathbf{b}_\textrm{h}^{(b)} \in \mathbb{R}^{1 \times h}$ are all the model parameters.
+trong đó các trọng số $\mathbf{W}_{\textrm{xh}}^{(f)} \in \mathbb{R}^{d \times h}, \mathbf{W}_{\textrm{hh}}^{(f)} \in \mathbb{R}^{h \times h}, \mathbf{W}_{\textrm{xh}}^{(b)} \in \mathbb{R}^{d \times h}, \textrm{ and } \mathbf{W}_{\textrm{hh}}^{(b)} \in \mathbb{R}^{h \times h}$, cùng các bias $\mathbf{b}_\textrm{h}^{(f)} \in \mathbb{R}^{1 \times h}$ và $\mathbf{b}_\textrm{h}^{(b)} \in \mathbb{R}^{1 \times h}$ đều là các tham số của mô hình.
 
-Next, we concatenate the forward and backward hidden states
-$\overrightarrow{\mathbf{H}}_t$ and $\overleftarrow{\mathbf{H}}_t$
-to obtain the hidden state $\mathbf{H}_t \in \mathbb{R}^{n \times 2h}$ for feeding into the output layer.
-In deep bidirectional RNNs with multiple hidden layers,
-such information is passed on as *input* to the next bidirectional layer.
-Last, the output layer computes the output
-$\mathbf{O}_t \in \mathbb{R}^{n \times q}$ (number of outputs $=q$):
+Tiếp theo, chúng ta nối các trạng thái ẩn tiến và lùi
+$\overrightarrow{\mathbf{H}}_t$ và $\overleftarrow{\mathbf{H}}_t$
+để thu được trạng thái ẩn $\mathbf{H}_t \in \mathbb{R}^{n \times 2h}$
+đưa vào lớp đầu ra.
+Trong các RNN hai chiều sâu với nhiều lớp ẩn,
+thông tin này được truyền dưới dạng *đầu vào* cho lớp hai chiều tiếp theo.
+Cuối cùng, lớp đầu ra tính toán đầu ra
+$\mathbf{O}_t \in \mathbb{R}^{n \times q}$ (số lượng đầu ra $=q$):
 
 $$\mathbf{O}_t = \mathbf{H}_t \mathbf{W}_{\textrm{hq}} + \mathbf{b}_\textrm{q}.$$
 
-Here, the weight matrix $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{2h \times q}$
-and the bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$
-are the model parameters of the output layer.
-While technically, the two directions can have different numbers of hidden units,
-this design choice is seldom made in practice.
-We now demonstrate a simple implementation of a bidirectional RNN.
+Ở đây, ma trận trọng số $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{2h \times q}$
+và bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$
+là các tham số của lớp đầu ra.
+Mặc dù về mặt kỹ thuật, hai hướng có thể có số lượng đơn vị ẩn khác nhau,
+lựa chọn thiết kế này hiếm khi được sử dụng trong thực tế.
+Bây giờ, chúng ta sẽ trình bày một cách triển khai đơn giản của RNN hai chiều.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -118,11 +119,11 @@ from d2l import jax as d2l
 from jax import numpy as jnp
 ```
 
-## Implementation from Scratch
+## Triển khai từ đầu
 
-If we want to implement a bidirectional RNN from scratch, we can
-include two unidirectional `RNNScratch` instances
-with separate learnable parameters.
+Nếu muốn triển khai RNN hai chiều từ đầu, chúng ta có thể
+đưa vào hai instance `RNNScratch` một chiều
+với các tham số có thể học riêng biệt.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -148,9 +149,9 @@ class BiRNNScratch(d2l.Module):
         self.num_hiddens *= 2  # The output dimension will be doubled
 ```
 
-States of forward and backward RNNs
-are updated separately,
-while outputs of these two RNNs are concatenated.
+Các trạng thái của RNN tiến và lùi
+được cập nhật riêng biệt,
+trong khi đầu ra của hai RNN này được nối lại với nhau.
 
 ```{.python .input}
 %%tab all
@@ -164,19 +165,18 @@ def forward(self, inputs, Hs=None):
     return outputs, (f_H, b_H)
 ```
 
-## Concise Implementation
+## Triển khai ngắn gọn
 
 :begin_tab:`pytorch, mxnet, tensorflow`
-Using the high-level APIs,
-we can implement bidirectional RNNs more concisely.
-Here we take a GRU model as an example.
+Sử dụng các API cấp cao,
+chúng ta có thể triển khai RNN hai chiều một cách ngắn gọn hơn.
+Ở đây, chúng ta lấy một mô hình GRU làm ví dụ.
 :end_tab:
 
 :begin_tab:`jax`
-Flax API does not offer RNN layers and hence there is no
-notion of any `bidirectional` argument. One needs to manually
-reverse the inputs as shown in the scratch implementation,
-if a bidirectional layer is needed.
+Flax API không cung cấp các lớp RNN, do đó không có
+khái niệm về đối số `bidirectional`. Nếu cần một lớp hai chiều,
+ta phải đảo ngược các đầu vào theo cách thủ công như trong phần triển khai từ đầu.
 :end_tab:
 
 ```{.python .input}
@@ -192,24 +192,24 @@ class BiGRU(d2l.RNN):
         self.num_hiddens *= 2
 ```
 
-## Summary
+## Tóm tắt
 
-In bidirectional RNNs, the hidden state for each time step is simultaneously determined by the data prior to and after the current time step. Bidirectional RNNs are mostly useful for sequence encoding and the estimation of observations given bidirectional context. Bidirectional RNNs are very costly to train due to long gradient chains.
+Trong RNN hai chiều, trạng thái ẩn tại mỗi bước thời gian đồng thời được xác định bởi dữ liệu trước và sau bước thời gian hiện tại. RNN hai chiều chủ yếu hữu ích cho việc mã hóa chuỗi và ước lượng các quan sát dựa trên ngữ cảnh hai chiều. RNN hai chiều rất tốn kém khi huấn luyện do các chuỗi gradient dài.
 
-## Exercises
+## Bài tập
 
-1. If the different directions use a different number of hidden units, how will the shape of $\mathbf{H}_t$ change?
-1. Design a bidirectional RNN with multiple hidden layers.
-1. Polysemy is common in natural languages. For example, the word "bank" has different meanings in contexts “i went to the bank to deposit cash” and “i went to the bank to sit down”. How can we design a neural network model such that given a context sequence and a word, a vector representation of the word in the correct context will be returned? What type of neural architectures is preferred for handling polysemy?
+1. Nếu các hướng khác nhau sử dụng số lượng đơn vị ẩn khác nhau, hình dạng của $\mathbf{H}_t$ sẽ thay đổi như thế nào?
+1. Hãy thiết kế một RNN hai chiều với nhiều lớp ẩn.
+1. Hiện tượng đa nghĩa phổ biến trong các ngôn ngữ tự nhiên. Ví dụ, từ “bank” có các nghĩa khác nhau trong các ngữ cảnh “i went to the bank to deposit cash” và “i went to the bank to sit down”. Làm thế nào để thiết kế một mô hình mạng nơ-ron sao cho khi được cung cấp một chuỗi ngữ cảnh và một từ, mô hình trả về biểu diễn vector của từ trong đúng ngữ cảnh? Những loại kiến trúc mạng nơ-ron nào phù hợp hơn để xử lý hiện tượng đa nghĩa?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/339)
+[Thảo luận](https://discuss.d2l.ai/t/339)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1059)
+[Thảo luận](https://discuss.d2l.ai/t/1059)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18019)
+[Thảo luận](https://discuss.d2l.ai/t/18019)
 :end_tab:

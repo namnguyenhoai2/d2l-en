@@ -1,19 +1,19 @@
-# Gated Recurrent Units (GRU)
+# Các đơn vị hồi quy có cổng (GRU)
 :label:`sec_gru`
 
 
-As RNNs and particularly the LSTM architecture (:numref:`sec_lstm`)
-rapidly gained popularity during the 2010s,
-a number of researchers began to experiment 
-with simplified architectures in hopes 
-of retaining the key idea of incorporating
-an internal state and multiplicative gating mechanisms
-but with the aim of speeding up computation.
-The gated recurrent unit (GRU) :cite:`Cho.Van-Merrienboer.Bahdanau.ea.2014` 
-offered a streamlined version of the LSTM memory cell
-that often achieves comparable performance
-but with the advantage of being faster 
-to compute :cite:`Chung.Gulcehre.Cho.ea.2014`.
+Khi RNN và đặc biệt là kiến trúc LSTM (:numref:`sec_lstm`)
+nhanh chóng trở nên phổ biến trong những năm 2010,
+một số nhà nghiên cứu bắt đầu thử nghiệm
+các kiến trúc đơn giản hóa với hy vọng
+giữ lại ý tưởng cốt lõi là kết hợp
+trạng thái bên trong và các cơ chế gating nhân
+nhưng nhằm mục tiêu tăng tốc độ tính toán.
+Đơn vị hồi quy có cổng (GRU) :cite:`Cho.Van-Merrienboer.Bahdanau.ea.2014` 
+đưa ra một phiên bản tinh gọn của ô nhớ LSTM,
+thường đạt hiệu năng tương đương
+nhưng có ưu điểm là tính toán nhanh hơn
+:cite:`Chung.Gulcehre.Cho.ea.2014`.
 
 ```{.python .input  n=5}
 %load_ext d2lbook.tab
@@ -49,36 +49,36 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Reset Gate and Update Gate
+## Cổng Reset và Cổng Update
 
-Here, the LSTM's three gates are replaced by two:
-the *reset gate* and the *update gate*.
-As with LSTMs, these gates are given sigmoid activations,
-forcing their values to lie in the interval $(0, 1)$.
-Intuitively, the reset gate controls how much of the previous state 
-we might still want to remember.
-Likewise, an update gate would allow us to control 
-how much of the new state is just a copy of the old one.
-:numref:`fig_gru_1` illustrates the inputs for both
-the reset and update gates in a GRU, 
-given the input of the current time step
-and the hidden state of the previous time step.
-The outputs of the gates are given 
-by two fully connected layers
-with a sigmoid activation function.
+Ở đây, ba cổng của LSTM được thay thế bằng hai cổng:
+*cổng reset* và *cổng update*.
+Tương tự như LSTM, các cổng này sử dụng hàm kích hoạt sigmoid,
+buộc giá trị của chúng nằm trong khoảng $(0, 1)$.
+Theo trực giác, cổng reset kiểm soát mức độ
+mà chúng ta vẫn muốn ghi nhớ từ trạng thái trước đó.
+Tương tự, cổng update cho phép chúng ta kiểm soát
+mức độ trạng thái mới chỉ là bản sao của trạng thái cũ.
+:numref:`fig_gru_1` minh họa các đầu vào cho cả
+cổng reset và cổng update trong GRU,
+với đầu vào của bước thời gian hiện tại
+và trạng thái ẩn của bước thời gian trước đó.
+Đầu ra của các cổng được tạo ra
+bởi hai lớp kết nối đầy đủ
+với hàm kích hoạt sigmoid.
 
-![Computing the reset gate and the update gate in a GRU model.](../img/gru-1.svg)
+![Tính toán cổng reset và cổng update trong một mô hình GRU.](../img/gru-1.svg)
 :label:`fig_gru_1`
 
-Mathematically, for a given time step $t$,
-suppose that the input is a minibatch
+Về mặt toán học, với một bước thời gian $t$,
+giả sử đầu vào là một minibatch
 $\mathbf{X}_t \in \mathbb{R}^{n \times d}$ 
-(number of examples $=n$; number of inputs $=d$)
-and the hidden state of the previous time step 
-is $\mathbf{H}_{t-1} \in \mathbb{R}^{n \times h}$ 
-(number of hidden units $=h$). 
-Then the reset gate $\mathbf{R}_t \in \mathbb{R}^{n \times h}$ 
-and update gate $\mathbf{Z}_t \in \mathbb{R}^{n \times h}$ are computed as follows:
+(số lượng ví dụ $=n$; số lượng đầu vào $=d$)
+và trạng thái ẩn của bước thời gian trước đó
+là $\mathbf{H}_{t-1} \in \mathbb{R}^{n \times h}$ 
+(số lượng đơn vị ẩn $=h$).
+Khi đó, cổng reset $\mathbf{R}_t \in \mathbb{R}^{n \times h}$
+và cổng update $\mathbf{Z}_t \in \mathbb{R}^{n \times h}$ được tính như sau:
 
 $$
 \begin{aligned}
@@ -87,94 +87,94 @@ $$
 \end{aligned}
 $$
 
-where $\mathbf{W}_{\textrm{xr}}, \mathbf{W}_{\textrm{xz}} \in \mathbb{R}^{d \times h}$ 
-and $\mathbf{W}_{\textrm{hr}}, \mathbf{W}_{\textrm{hz}} \in \mathbb{R}^{h \times h}$ 
-are weight parameters and $\mathbf{b}_\textrm{r}, \mathbf{b}_\textrm{z} \in \mathbb{R}^{1 \times h}$ 
-are bias parameters.
+trong đó $\mathbf{W}_{\textrm{xr}}, \mathbf{W}_{\textrm{xz}} \in \mathbb{R}^{d \times h}$
+và $\mathbf{W}_{\textrm{hr}}, \mathbf{W}_{\textrm{hz}} \in \mathbb{R}^{h \times h}$
+là các tham số trọng số, còn $\mathbf{b}_\textrm{r}, \mathbf{b}_\textrm{z} \in \mathbb{R}^{1 \times h}$
+là các tham số bias.
 
 
-## Candidate Hidden State
+## Trạng thái ẩn ứng viên
 
-Next, we integrate the reset gate $\mathbf{R}_t$ 
-with the regular updating mechanism
-in :eqref:`rnn_h_with_state`,
-leading to the following
-*candidate hidden state*
-$\tilde{\mathbf{H}}_t \in \mathbb{R}^{n \times h}$ at time step $t$:
+Tiếp theo, chúng ta tích hợp cổng reset $\mathbf{R}_t$
+với cơ chế cập nhật thông thường
+trong :eqref:`rnn_h_with_state`,
+dẫn đến
+*trạng thái ẩn ứng viên*
+$\tilde{\mathbf{H}}_t \in \mathbb{R}^{n \times h}$ tại bước thời gian $t$:
 
 $$\tilde{\mathbf{H}}_t = \tanh(\mathbf{X}_t \mathbf{W}_{\textrm{xh}} + \left(\mathbf{R}_t \odot \mathbf{H}_{t-1}\right) \mathbf{W}_{\textrm{hh}} + \mathbf{b}_\textrm{h}),$$
 :eqlabel:`gru_tilde_H`
 
-where $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}$ and $\mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$
-are weight parameters,
+trong đó $\mathbf{W}_{\textrm{xh}} \in \mathbb{R}^{d \times h}$ và $\mathbf{W}_{\textrm{hh}} \in \mathbb{R}^{h \times h}$
+là các tham số trọng số,
 $\mathbf{b}_\textrm{h} \in \mathbb{R}^{1 \times h}$
-is the bias,
-and the symbol $\odot$ is the Hadamard (elementwise) product operator.
-Here we use a tanh activation function.
+là bias,
+và ký hiệu $\odot$ là toán tử tích Hadamard (theo từng phần tử).
+Ở đây, chúng ta sử dụng hàm kích hoạt tanh.
 
-The result is a *candidate*, since we still need 
-to incorporate the action of the update gate.
-Comparing with :eqref:`rnn_h_with_state`,
-the influence of the previous states
-can now be reduced with the
-elementwise multiplication of
-$\mathbf{R}_t$ and $\mathbf{H}_{t-1}$
-in :eqref:`gru_tilde_H`.
-Whenever the entries in the reset gate $\mathbf{R}_t$ are close to 1, 
-we recover a vanilla RNN such as that in :eqref:`rnn_h_with_state`.
-For all entries of the reset gate $\mathbf{R}_t$ that are close to 0, 
-the candidate hidden state is the result of an MLP with $\mathbf{X}_t$ as input. 
-Any pre-existing hidden state is thus *reset* to defaults.
+Kết quả là một *ứng viên*, vì chúng ta vẫn cần
+tích hợp tác động của cổng update.
+So sánh với :eqref:`rnn_h_with_state`,
+ảnh hưởng của các trạng thái trước đó
+giờ đây có thể được giảm bớt bằng phép nhân
+theo từng phần tử giữa
+$\mathbf{R}_t$ và $\mathbf{H}_{t-1}$
+trong :eqref:`gru_tilde_H`.
+Khi các phần tử trong cổng reset $\mathbf{R}_t$ gần bằng 1,
+chúng ta thu được một RNN thông thường như trong :eqref:`rnn_h_with_state`.
+Đối với mọi phần tử của cổng reset $\mathbf{R}_t$ gần bằng 0,
+trạng thái ẩn ứng viên là kết quả của một MLP với $\mathbf{X}_t$ làm đầu vào.
+Do đó, mọi trạng thái ẩn đã tồn tại đều được *reset* về các giá trị mặc định.
 
-:numref:`fig_gru_2` illustrates the computational flow after applying the reset gate.
+:numref:`fig_gru_2` minh họa luồng tính toán sau khi áp dụng cổng reset.
 
-![Computing the candidate hidden state in a GRU model.](../img/gru-2.svg)
+![Tính toán trạng thái ẩn ứng viên trong một mô hình GRU.](../img/gru-2.svg)
 :label:`fig_gru_2`
 
 
-## Hidden State
+## Trạng thái ẩn
 
-Finally, we need to incorporate the effect of the update gate $\mathbf{Z}_t$.
-This determines the extent to which the new hidden state $\mathbf{H}_t \in \mathbb{R}^{n \times h}$ 
-matches the old state $\mathbf{H}_{t-1}$ compared with how much 
-it resembles the new candidate state $\tilde{\mathbf{H}}_t$.
-The update gate $\mathbf{Z}_t$ can be used for this purpose, 
-simply by taking elementwise convex combinations 
-of $\mathbf{H}_{t-1}$ and $\tilde{\mathbf{H}}_t$.
-This leads to the final update equation for the GRU:
+Cuối cùng, chúng ta cần tích hợp tác động của cổng update $\mathbf{Z}_t$.
+Cổng này xác định mức độ mà trạng thái ẩn mới $\mathbf{H}_t \in \mathbb{R}^{n \times h}$ 
+giống với trạng thái cũ $\mathbf{H}_{t-1}$ so với mức độ
+nó giống với trạng thái ứng viên mới $\tilde{\mathbf{H}}_t$.
+Có thể sử dụng cổng update $\mathbf{Z}_t$ cho mục đích này
+bằng cách lấy các tổ hợp lồi theo từng phần tử
+của $\mathbf{H}_{t-1}$ và $\tilde{\mathbf{H}}_t$.
+Điều này dẫn đến phương trình cập nhật cuối cùng cho GRU:
 
 $$\mathbf{H}_t = \mathbf{Z}_t \odot \mathbf{H}_{t-1}  + (1 - \mathbf{Z}_t) \odot \tilde{\mathbf{H}}_t.$$
 
 
-Whenever the update gate $\mathbf{Z}_t$ is close to 1,
-we simply retain the old state. 
-In this case the information from $\mathbf{X}_t$ is ignored, 
-effectively skipping time step $t$ in the dependency chain. 
-By contrast, whenever $\mathbf{Z}_t$ is close to 0,
-the new latent state $\mathbf{H}_t$ approaches the candidate latent state $\tilde{\mathbf{H}}_t$. 
-:numref:`fig_gru_3` shows the computational flow after the update gate is in action.
+Khi cổng update $\mathbf{Z}_t$ gần bằng 1,
+chúng ta chỉ giữ lại trạng thái cũ.
+Trong trường hợp này, thông tin từ $\mathbf{X}_t$ bị bỏ qua,
+về cơ bản bỏ qua bước thời gian $t$ trong chuỗi phụ thuộc.
+Ngược lại, khi $\mathbf{Z}_t$ gần bằng 0,
+trạng thái tiềm ẩn mới $\mathbf{H}_t$ tiến gần đến trạng thái tiềm ẩn ứng viên $\tilde{\mathbf{H}}_t$.
+:numref:`fig_gru_3` cho thấy luồng tính toán sau khi cổng update có tác dụng.
 
-![Computing the hidden state in a GRU model.](../img/gru-3.svg)
+![Tính toán trạng thái ẩn trong một mô hình GRU.](../img/gru-3.svg)
 :label:`fig_gru_3`
 
 
-In summary, GRUs have the following two distinguishing features:
+Tóm lại, GRU có hai đặc điểm phân biệt sau:
 
-* Reset gates help capture short-term dependencies in sequences.
-* Update gates help capture long-term dependencies in sequences.
+* Cổng reset giúp nắm bắt các phụ thuộc ngắn hạn trong chuỗi.
+* Cổng update giúp nắm bắt các phụ thuộc dài hạn trong chuỗi.
 
-## Implementation from Scratch
+## Triển khai từ đầu
 
-To gain a better understanding of the GRU model, let's implement it from scratch.
+Để hiểu rõ hơn về mô hình GRU, hãy triển khai mô hình này từ đầu.
 
-### (**Initializing Model Parameters**)
+### (**Khởi tạo các tham số mô hình**)
 
-The first step is to initialize the model parameters.
-We draw the weights from a Gaussian distribution
-with standard deviation to be `sigma` and set the bias to 0. 
-The hyperparameter `num_hiddens` defines the number of hidden units.
-We instantiate all weights and biases relating to the update gate, 
-the reset gate, and the candidate hidden state.
+Bước đầu tiên là khởi tạo các tham số mô hình.
+Chúng ta lấy các trọng số từ một phân phối Gaussian
+với độ lệch chuẩn bằng `sigma` và đặt bias bằng 0.
+Siêu tham số `num_hiddens` xác định số lượng đơn vị ẩn.
+Chúng ta khởi tạo tất cả trọng số và bias liên quan đến cổng update,
+cổng reset và trạng thái ẩn ứng viên.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -225,11 +225,11 @@ class GRUScratch(d2l.Module):
         self.W_xh, self.W_hh, self.b_h = triple('h')  # Candidate hidden state
 ```
 
-### Defining the Model
+### Định nghĩa mô hình
 
-Now we are ready to [**define the GRU forward computation**].
-Its structure is the same as that of the basic RNN cell, 
-except that the update equations are more complex.
+Bây giờ chúng ta đã sẵn sàng để [**định nghĩa phép tính forward của GRU**].
+Cấu trúc của nó giống với cấu trúc của một ô RNN cơ bản,
+ngoại trừ việc các phương trình cập nhật phức tạp hơn.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -285,10 +285,10 @@ def forward(self, inputs, H=None):
     return outputs, carry
 ```
 
-### Training
+### Huấn luyện
 
-[**Training**] a language model on *The Time Machine* dataset
-works in exactly the same manner as in :numref:`sec_rnn-scratch`.
+[**Huấn luyện**] một mô hình ngôn ngữ trên tập dữ liệu *The Time Machine*
+hoàn toàn giống với cách thực hiện trong :numref:`sec_rnn-scratch`.
 
 ```{.python .input}
 %%tab all
@@ -305,10 +305,10 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-## [**Concise Implementation**]
+## [**Triển khai cô đọng**]
 
-In high-level APIs, we can directly instantiate a GRU model.
-This encapsulates all the configuration detail that we made explicit above.
+Trong các API cấp cao, chúng ta có thể khởi tạo trực tiếp một mô hình GRU.
+Điều này đóng gói mọi chi tiết cấu hình mà chúng ta đã nêu rõ ở trên.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -344,8 +344,8 @@ class GRU(d2l.RNN):
         return outputs, H
 ```
 
-The code is significantly faster in training as it uses compiled operators 
-rather than Python.
+Mã chạy nhanh hơn đáng kể trong quá trình huấn luyện vì sử dụng các toán tử đã biên dịch
+thay vì Python.
 
 ```{.python .input}
 %%tab all
@@ -361,8 +361,8 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-After training, we print out the perplexity on the training set
-and the predicted sequence following the provided prefix.
+Sau khi huấn luyện, chúng ta in ra perplexity trên tập huấn luyện
+và chuỗi được dự đoán tiếp theo prefix đã cung cấp.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -379,34 +379,34 @@ model.predict('it has', 20, data.vocab)
 model.predict('it has', 20, data.vocab, trainer.state.params)
 ```
 
-## Summary
+## Tóm tắt
 
-Compared with LSTMs, GRUs achieve similar performance but tend to be lighter computationally.
-Generally, compared with simple RNNs, gated RNNS, just like LSTMs and GRUs,
-can better capture dependencies for sequences with large time step distances.
-GRUs contain basic RNNs as their extreme case whenever the reset gate is switched on. 
-They can also skip subsequences by turning on the update gate.
+So với LSTM, GRU đạt hiệu năng tương tự nhưng thường nhẹ hơn về mặt tính toán.
+Nhìn chung, so với RNN đơn giản, các RNN có cổng, chẳng hạn như LSTM và GRU,
+có thể nắm bắt tốt hơn các phụ thuộc trong những chuỗi có khoảng cách bước thời gian lớn.
+GRU chứa RNN cơ bản như một trường hợp cực hạn khi cổng reset được bật.
+Chúng cũng có thể bỏ qua các chuỗi con bằng cách bật cổng update.
 
 
-## Exercises
+## Bài tập
 
-1. Assume that we only want to use the input at time step $t'$ to predict the output at time step $t > t'$. What are the best values for the reset and update gates for each time step?
-1. Adjust the hyperparameters and analyze their influence on running time, perplexity, and the output sequence.
-1. Compare runtime, perplexity, and the output strings for `rnn.RNN` and `rnn.GRU` implementations with each other.
-1. What happens if you implement only parts of a GRU, e.g., with only a reset gate or only an update gate?
+1. Giả sử rằng chúng ta chỉ muốn sử dụng đầu vào tại bước thời gian $t'$ để dự đoán đầu ra tại bước thời gian $t > t'$. Giá trị tốt nhất của các cổng reset và update cho mỗi bước thời gian là gì?
+1. Điều chỉnh các hyperparameter và phân tích ảnh hưởng của chúng đến thời gian chạy, perplexity và chuỗi đầu ra.
+1. So sánh runtime, perplexity và các chuỗi đầu ra của các triển khai `rnn.RNN` và `rnn.GRU` với nhau.
+1. Điều gì xảy ra nếu bạn chỉ triển khai một phần của GRU, chẳng hạn như chỉ sử dụng cổng reset hoặc chỉ sử dụng cổng update?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/342)
+[Thảo luận](https://discuss.d2l.ai/t/342)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1056)
+[Thảo luận](https://discuss.d2l.ai/t/1056)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3860)
+[Thảo luận](https://discuss.d2l.ai/t/3860)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18017)
+[Thảo luận](https://discuss.d2l.ai/t/18017)
 :end_tab:

@@ -1,4 +1,4 @@
-Dive into Deep Learning
+Đi sâu vào Deep Learning
 ========================
 
 ```eval_rst
@@ -52,4 +52,3 @@ chapter_appendix-tools-for-deep-learning/index
 
 chapter_references/zreferences
 ```
-

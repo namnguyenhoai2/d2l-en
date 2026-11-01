@@ -1,94 +1,95 @@
-# Deep Recurrent Neural Networks
+# Mạng nơ-ron hồi quy sâu
 
 :label:`sec_deep_rnn`
 
-Up until now, we have focused on defining networks 
-consisting of a sequence input, 
-a single hidden RNN layer,
-and an output layer. 
-Despite having just one hidden layer 
-between the input at any time step
-and the corresponding output,
-there is a sense in which these networks are deep.
-Inputs from the first time step can influence
-the outputs at the final time step $T$ 
-(often 100s or 1000s of steps later).
-These inputs pass through $T$ applications
-of the recurrent layer before reaching 
-the final output. 
-However, we often also wish to retain the ability
-to express complex relationships 
-between the inputs at a given time step
-and the outputs at that same time step.
-Thus we often construct RNNs that are deep
-not only in the time direction 
-but also in the input-to-output direction.
-This is precisely the notion of depth
-that we have already encountered 
-in our development of MLPs
-and deep CNNs.
+Cho đến nay, chúng ta tập trung vào việc định nghĩa các mạng
+gồm một đầu vào dạng chuỗi,
+một lớp RNN ẩn duy nhất
+và một lớp đầu ra.
+Mặc dù chỉ có một lớp ẩn
+giữa đầu vào tại mỗi bước thời gian
+và đầu ra tương ứng,
+vẫn có một nghĩa theo đó các mạng này là mạng sâu.
+Các đầu vào từ bước thời gian đầu tiên có thể ảnh hưởng
+đến các đầu ra tại bước thời gian cuối cùng $T$
+(thường là sau hàng trăm hoặc hàng nghìn bước).
+Các đầu vào này đi qua $T$ lần áp dụng
+của lớp hồi quy trước khi đến
+đầu ra cuối cùng.
+Tuy nhiên, chúng ta thường cũng muốn duy trì khả năng
+biểu diễn các mối quan hệ phức tạp
+giữa các đầu vào tại một bước thời gian nhất định
+và các đầu ra tại chính bước thời gian đó.
+Do đó, chúng ta thường xây dựng các RNN sâu
+không chỉ theo hướng thời gian
+mà còn theo hướng từ đầu vào đến đầu ra.
+Đây chính là khái niệm về độ sâu
+mà chúng ta đã gặp
+trong quá trình phát triển MLP
+và CNN sâu.
 
 
-The standard method for building this sort of deep RNN 
-is strikingly simple: we stack the RNNs on top of each other. 
-Given a sequence of length $T$, the first RNN produces 
-a sequence of outputs, also of length $T$.
-These, in turn, constitute the inputs to the next RNN layer. 
-In this short section, we illustrate this design pattern
-and present a simple example for how to code up such stacked RNNs.
-Below, in :numref:`fig_deep_rnn`, we illustrate
-a deep RNN with $L$ hidden layers.
-Each hidden state operates on a sequential input
-and produces a sequential output.
-Moreover, any RNN cell (white box in :numref:`fig_deep_rnn`) at each time step
-depends on both the same layer's 
-value at the previous time step
-and the previous layer's value 
-at the same time step. 
+Phương pháp tiêu chuẩn để xây dựng loại RNN sâu này
+cực kỳ đơn giản: chúng ta xếp chồng các RNN lên nhau.
+Với một chuỗi có độ dài $T$, RNN đầu tiên tạo ra
+một chuỗi đầu ra cũng có độ dài $T$.
+Đến lượt mình, các đầu ra này tạo thành đầu vào cho lớp RNN tiếp theo.
+Trong phần ngắn này, chúng ta minh họa mẫu thiết kế này
+và trình bày một ví dụ đơn giản về cách lập trình các RNN xếp chồng như vậy.
+Bên dưới, trong :numref:`fig_deep_rnn`, chúng ta minh họa
+một RNN sâu với $L$ lớp ẩn.
+Mỗi trạng thái ẩn hoạt động trên một đầu vào tuần tự
+và tạo ra một đầu ra tuần tự.
+Hơn nữa, bất kỳ ô RNN nào (hộp trắng trong :numref:`fig_deep_rnn`) tại mỗi bước thời gian
+đều phụ thuộc vào cả
+giá trị của cùng lớp đó
+tại bước thời gian trước
+và giá trị của lớp trước
+tại cùng bước thời gian.
 
-![Architecture of a deep RNN.](../img/deep-rnn.svg)
+![Kiến trúc của một RNN sâu.](../img/deep-rnn.svg)
 :label:`fig_deep_rnn`
 
-Formally, suppose that we have a minibatch input
-$\mathbf{X}_t \in \mathbb{R}^{n \times d}$ 
-(number of examples $=n$; number of inputs in each example $=d$) at time step $t$.
-At the same time step, 
-let the hidden state of the $l^\textrm{th}$ hidden layer ($l=1,\ldots,L$) be $\mathbf{H}_t^{(l)} \in \mathbb{R}^{n \times h}$ 
-(number of hidden units $=h$)
-and the output layer variable be 
-$\mathbf{O}_t \in \mathbb{R}^{n \times q}$ 
-(number of outputs: $q$).
-Setting $\mathbf{H}_t^{(0)} = \mathbf{X}_t$,
-the hidden state of
-the $l^\textrm{th}$ hidden layer
-that uses the activation function $\phi_l$
-is calculated as follows:
+Về mặt hình thức, giả sử chúng ta có một đầu vào minibatch
+$\mathbf{X}_t \in \mathbb{R}^{n \times d}$
+(số lượng mẫu $=n$; số lượng đầu vào trong mỗi mẫu $=d$) tại bước thời gian $t$.
+Tại cùng bước thời gian,
+gọi trạng thái ẩn của lớp ẩn thứ $l^\textrm{th}$ ($l=1,\ldots,L$) là $\mathbf{H}_t^{(l)} \in \mathbb{R}^{n \times h}$
+(số lượng nút ẩn $=h$)
+và biến của lớp đầu ra là
+$\mathbf{O}_t \in \mathbb{R}^{n \times q}$
+(số lượng đầu ra: $q$).
+Đặt $\mathbf{H}_t^{(0)} = \mathbf{X}_t$,
+trạng thái ẩn của
+lớp ẩn thứ $l^\textrm{th}$
+sử dụng hàm kích hoạt $\phi_l$
+được tính như sau:
 
 $$\mathbf{H}_t^{(l)} = \phi_l(\mathbf{H}_t^{(l-1)} \mathbf{W}_{\textrm{xh}}^{(l)} + \mathbf{H}_{t-1}^{(l)} \mathbf{W}_{\textrm{hh}}^{(l)}  + \mathbf{b}_\textrm{h}^{(l)}),$$
 :eqlabel:`eq_deep_rnn_H`
 
-where the weights $\mathbf{W}_{\textrm{xh}}^{(l)} \in \mathbb{R}^{h \times h}$ and $\mathbf{W}_{\textrm{hh}}^{(l)} \in \mathbb{R}^{h \times h}$, together with
-the bias $\mathbf{b}_\textrm{h}^{(l)} \in \mathbb{R}^{1 \times h}$, 
-are the model parameters of the $l^\textrm{th}$ hidden layer.
+trong đó các trọng số $\mathbf{W}_{\textrm{xh}}^{(l)} \in \mathbb{R}^{h \times h}$ và $\mathbf{W}_{\textrm{hh}}^{(l)} \in \mathbb{R}^{h \times h}$, cùng với
+bias $\mathbf{b}_\textrm{h}^{(l)} \in \mathbb{R}^{1 \times h}$,
+là các tham số mô hình của lớp ẩn thứ $l^\textrm{th}$.
 
-At the end, the calculation of the output layer 
-is only based on the hidden state 
-of the final $L^\textrm{th}$ hidden layer:
+Cuối cùng, phép tính của lớp đầu ra
+chỉ dựa trên trạng thái ẩn
+của lớp ẩn cuối cùng $L^\textrm{th}$:
 
 $$\mathbf{O}_t = \mathbf{H}_t^{(L)} \mathbf{W}_{\textrm{hq}} + \mathbf{b}_\textrm{q},$$
 
-where the weight $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$ 
-and the bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$ 
-are the model parameters of the output layer.
+trong đó trọng số $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{h \times q}$
+và bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$
+là các tham số mô hình của lớp đầu ra.
 
-Just as with MLPs, the number of hidden layers $L$ 
-and the number of hidden units $h$ are hyperparameters
-that we can tune.
-Common RNN layer widths ($h$) are in the range $(64, 2056)$,
-and common depths ($L$) are in the range $(1, 8)$. 
-In addition, we can easily get a deep-gated RNN
-by replacing the hidden state computation in :eqref:`eq_deep_rnn_H`
-with that from an LSTM or a GRU.
+Cũng như với MLP, số lượng lớp ẩn $L$
+và số lượng nút ẩn $h$ là các hyperparameter
+mà chúng ta có thể điều chỉnh.
+Độ rộng lớp RNN phổ biến ($h$) nằm trong khoảng $(64, 2056)$,
+và độ sâu phổ biến ($L$) nằm trong khoảng $(1, 8)$.
+Ngoài ra, chúng ta có thể dễ dàng tạo ra một RNN có cổng sâu
+bằng cách thay thế phép tính trạng thái ẩn trong :eqref:`eq_deep_rnn_H`
+bằng phép tính từ một LSTM hoặc GRU.
 
 ```{.python .input}
 %load_ext d2lbook.tab
@@ -124,11 +125,11 @@ import jax
 from jax import numpy as jnp
 ```
 
-## Implementation from Scratch
+## Tự triển khai
 
-To implement a multilayer RNN from scratch,
-we can treat each layer as an `RNNScratch` instance
-with its own learnable parameters.
+Để triển khai một RNN nhiều lớp từ đầu,
+chúng ta có thể xem mỗi lớp là một thực thể `RNNScratch`
+với các tham số có thể học riêng.
 
 ```{.python .input}
 %%tab mxnet, tensorflow
@@ -166,9 +167,9 @@ class StackedRNNScratch(d2l.Module):
                      for i in range(self.num_layers)]
 ```
 
-The multilayer forward computation
-simply performs forward computation
-layer by layer.
+Phép tính forward của mạng nhiều lớp
+chỉ đơn giản là thực hiện phép tính forward
+từng lớp một.
 
 ```{.python .input}
 %%tab all
@@ -182,9 +183,9 @@ def forward(self, inputs, Hs=None):
     return outputs, Hs
 ```
 
-As an example, we train a deep GRU model on
-*The Time Machine* dataset (same as in :numref:`sec_rnn-scratch`).
-To keep things simple we set the number of layers to 2.
+Ví dụ, chúng ta huấn luyện một mô hình GRU sâu trên
+tập dữ liệu *The Time Machine* (giống như trong :numref:`sec_rnn-scratch`).
+Để đơn giản, chúng ta đặt số lớp là 2.
 
 ```{.python .input}
 %%tab all
@@ -203,27 +204,27 @@ if tab.selected('tensorflow'):
 trainer.fit(model, data)
 ```
 
-## Concise Implementation
+## Triển khai cô đọng
 
 :begin_tab:`pytorch, mxnet, tensorflow`
-Fortunately many of the logistical details required
-to implement multiple layers of an RNN 
-are readily available in high-level APIs.
-Our concise implementation will use such built-in functionalities.
-The code generalizes the one we used previously in :numref:`sec_gru`,
-letting us specify the number of layers explicitly 
-rather than picking the default of only one layer.
+May mắn là nhiều chi tiết về tổ chức cần thiết
+để triển khai nhiều lớp của một RNN
+đã có sẵn trong các API cấp cao.
+Phần triển khai cô đọng của chúng ta sẽ sử dụng các chức năng tích hợp sẵn này.
+Mã này mở rộng mã mà chúng ta đã sử dụng trước đó trong :numref:`sec_gru`,
+cho phép chúng ta chỉ định rõ ràng số lớp
+thay vì chọn giá trị mặc định chỉ có một lớp.
 :end_tab:
 
 :begin_tab:`jax`
-Flax takes a minimalistic approach while implementing
-RNNs. Defining the number of layers in an RNN or combining it with dropout
-is not available out of the box.
-Our concise implementation will use all built-in functionalities and
-add `num_layers` and `dropout` features on top.
-The code generalizes the one we used previously in :numref:`sec_gru`,
-allowing specification of the number of layers explicitly
-rather than picking the default of a single layer.
+Flax áp dụng cách tiếp cận tối giản khi triển khai
+các RNN. Việc định nghĩa số lớp trong một RNN hoặc kết hợp RNN với dropout
+không được cung cấp sẵn.
+Phần triển khai cô đọng của chúng ta sẽ sử dụng toàn bộ chức năng tích hợp sẵn và
+bổ sung các tính năng `num_layers` và `dropout`.
+Mã này mở rộng mã mà chúng ta đã sử dụng trước đó trong :numref:`sec_gru`,
+cho phép chỉ định rõ ràng số lớp
+thay vì chọn giá trị mặc định là một lớp.
 :end_tab:
 
 ```{.python .input}
@@ -296,14 +297,14 @@ class GRU(d2l.RNN):  #@save
         return X, jnp.array(new_state)
 ```
 
-The architectural decisions such as choosing hyperparameters 
-are very similar to those of :numref:`sec_gru`.
-We pick the same number of inputs and outputs 
-as we have distinct tokens, i.e., `vocab_size`.
-The number of hidden units is still 32.
-The only difference is that we now 
-(**select a nontrivial number of hidden layers 
-by specifying the value of `num_layers`.**)
+Các quyết định về kiến trúc, chẳng hạn như lựa chọn hyperparameter,
+rất tương tự với các quyết định trong :numref:`sec_gru`.
+Chúng ta chọn cùng số lượng đầu vào và đầu ra
+vì số lượng này bằng số token khác nhau, tức là `vocab_size`.
+Số lượng nút ẩn vẫn là 32.
+Điểm khác biệt duy nhất là hiện tại chúng ta
+(**chọn một số lượng lớp ẩn đáng kể
+bằng cách chỉ định giá trị của `num_layers`.**)
 
 ```{.python .input}
 %%tab mxnet
@@ -344,37 +345,37 @@ model.predict('it has', 20, data.vocab)
 model.predict('it has', 20, data.vocab, trainer.state.params)
 ```
 
-## Summary
+## Tóm tắt
 
-In deep RNNs, the hidden state information is passed 
-to the next time step of the current layer 
-and the current time step of the next layer.
-There exist many different flavors of deep RNNs, such as LSTMs, GRUs, or vanilla RNNs. 
-Conveniently, these models are all available 
-as parts of the high-level APIs of deep learning frameworks.
-Initialization of models requires care. 
-Overall, deep RNNs require considerable amount of work 
-(such as learning rate and clipping) 
-to ensure proper convergence.
+Trong các RNN sâu, thông tin trạng thái ẩn được truyền
+đến bước thời gian tiếp theo của lớp hiện tại
+và bước thời gian hiện tại của lớp tiếp theo.
+Có nhiều biến thể khác nhau của RNN sâu, chẳng hạn như LSTM, GRU hoặc RNN cơ bản.
+Thuận tiện là tất cả các mô hình này đều có sẵn
+dưới dạng các thành phần của API cấp cao trong các framework deep learning.
+Việc khởi tạo mô hình đòi hỏi sự cẩn thận.
+Nhìn chung, RNN sâu đòi hỏi khá nhiều công sức
+(chẳng hạn như điều chỉnh learning rate và clipping)
+để bảo đảm hội tụ đúng cách.
 
-## Exercises
+## Bài tập
 
-1. Replace the GRU by an LSTM and compare the accuracy and training speed.
-1. Increase the training data to include multiple books. How low can you go on the perplexity scale?
-1. Would you want to combine sources of different authors when modeling text? Why is this a good idea? What could go wrong?
+1. Thay GRU bằng LSTM và so sánh độ chính xác cũng như tốc độ huấn luyện.
+1. Tăng dữ liệu huấn luyện để bao gồm nhiều cuốn sách. Bạn có thể giảm perplexity xuống thấp đến mức nào?
+1. Khi lập mô hình văn bản, bạn có muốn kết hợp các nguồn của những tác giả khác nhau không? Tại sao đây là một ý hay? Điều gì có thể xảy ra?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/340)
+[Thảo luận](https://discuss.d2l.ai/t/340)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1058)
+[Thảo luận](https://discuss.d2l.ai/t/1058)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3862)
+[Thảo luận](https://discuss.d2l.ai/t/3862)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18018)
+[Thảo luận](https://discuss.d2l.ai/t/18018)
 :end_tab:

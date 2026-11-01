@@ -3,41 +3,41 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow', 'jax')
 ```
 
-# The Encoder--Decoder Architecture
+# Kiến trúc Encoder--Decoder
 :label:`sec_encoder-decoder`
 
-In general sequence-to-sequence problems
-like machine translation
+Nhìn chung, trong các bài toán sequence-to-sequence
+như dịch máy
 (:numref:`sec_machine_translation`),
-inputs and outputs are of varying lengths
-that are unaligned.
-The standard approach to handling this sort of data
-is to design an *encoder--decoder* architecture (:numref:`fig_encoder_decoder`)
-consisting of two major components:
-an *encoder* that takes a variable-length sequence as input,
-and a *decoder* that acts as a conditional language model,
-taking in the encoded input
-and the leftwards context of the target sequence
-and predicting the subsequent token in the target sequence.
+đầu vào và đầu ra có độ dài khác nhau
+và không được căn chỉnh.
+Cách tiếp cận tiêu chuẩn để xử lý loại dữ liệu này
+là thiết kế một kiến trúc *encoder--decoder* (:numref:`fig_encoder_decoder`)
+gồm hai thành phần chính:
+một *encoder* nhận vào một sequence có độ dài thay đổi,
+và một *decoder* hoạt động như một language model có điều kiện,
+nhận đầu vào đã được mã hóa
+cùng với ngữ cảnh bên trái của sequence đích
+và dự đoán token tiếp theo trong sequence đích.
 
 
-![The encoder--decoder architecture.](../img/encoder-decoder.svg)
+![Kiến trúc encoder--decoder.](../img/encoder-decoder.svg)
 :label:`fig_encoder_decoder`
 
-Let's take machine translation from English to French as an example.
-Given an input sequence in English:
+Hãy lấy bài toán dịch máy từ tiếng Anh sang tiếng Pháp làm ví dụ.
+Cho một sequence đầu vào bằng tiếng Anh:
 "They", "are", "watching", ".",
-this encoder--decoder architecture
-first encodes the variable-length input into a state,
-then decodes the state
-to generate the translated sequence,
-token by token, as output:
+kiến trúc encoder--decoder này
+trước tiên mã hóa đầu vào có độ dài thay đổi thành một trạng thái,
+sau đó giải mã trạng thái đó
+để tạo ra sequence đã dịch,
+từng token một, làm đầu ra:
 "Ils", "regardent", ".".
-Since the encoder--decoder architecture
-forms the basis of different sequence-to-sequence models
-in subsequent sections,
-this section will convert this architecture
-into an interface that will be implemented later.
+Vì kiến trúc encoder--decoder
+là nền tảng của nhiều mô hình sequence-to-sequence khác nhau
+trong các phần tiếp theo,
+phần này sẽ chuyển kiến trúc đó
+thành một interface sẽ được triển khai sau.
 
 ```{.python .input}
 %%tab mxnet
@@ -65,11 +65,11 @@ from flax import linen as nn
 
 ## (**Encoder**)
 
-In the encoder interface,
-we just specify that
-the encoder takes variable-length sequences as input `X`.
-The implementation will be provided
-by any model that inherits this base `Encoder` class.
+Trong interface của encoder,
+chúng ta chỉ xác định rằng
+encoder nhận các sequence có độ dài thay đổi làm đầu vào `X`.
+Việc triển khai sẽ được cung cấp
+bởi bất kỳ model nào kế thừa lớp `Encoder` cơ sở này.
 
 ```{.python .input}
 %%tab mxnet
@@ -121,20 +121,20 @@ class Encoder(nn.Module):  #@save
 
 ## [**Decoder**]
 
-In the following decoder interface,
-we add an additional `init_state` method
-to convert the encoder output (`enc_all_outputs`)
-into the encoded state.
-Note that this step
-may require extra inputs,
-such as the valid length of the input,
-which was explained
-in :numref:`sec_machine_translation`.
-To generate a variable-length sequence token by token,
-every time the decoder may map an input
-(e.g., the generated token at the previous time step)
-and the encoded state
-into an output token at the current time step.
+Trong interface của decoder sau đây,
+chúng ta bổ sung một phương thức `init_state`
+để chuyển đổi đầu ra của encoder (`enc_all_outputs`)
+thành trạng thái đã được mã hóa.
+Lưu ý rằng bước này
+có thể yêu cầu các đầu vào bổ sung,
+chẳng hạn như độ dài hợp lệ của đầu vào,
+đã được giải thích
+trong :numref:`sec_machine_translation`.
+Để tạo một sequence có độ dài thay đổi từng token một,
+mỗi lần decoder có thể ánh xạ một đầu vào
+(ví dụ: token được tạo ở time step trước đó)
+và trạng thái đã được mã hóa
+thành một token đầu ra tại time step hiện tại.
 
 ```{.python .input}
 %%tab mxnet
@@ -196,13 +196,13 @@ class Decoder(nn.Module):  #@save
         raise NotImplementedError
 ```
 
-## [**Putting the Encoder and Decoder Together**]
+## [**Kết hợp Encoder và Decoder**]
 
-In the forward propagation,
-the output of the encoder
-is used to produce the encoded state,
-and this state will be further used
-by the decoder as one of its input.
+Trong quá trình forward propagation,
+đầu ra của encoder
+được sử dụng để tạo trạng thái đã được mã hóa,
+và trạng thái này sẽ tiếp tục được
+decoder sử dụng làm một trong các đầu vào của nó.
 
 ```{.python .input}
 %%tab mxnet, pytorch
@@ -251,29 +251,29 @@ class EncoderDecoder(d2l.Classifier):  #@save
         return self.decoder(dec_X, dec_state, training=self.training)[0]
 ```
 
-In the next section,
-we will see how to apply RNNs to design
-sequence-to-sequence models based on
-this encoder--decoder architecture.
+Trong phần tiếp theo,
+chúng ta sẽ xem cách áp dụng RNN để thiết kế
+các mô hình sequence-to-sequence dựa trên
+kiến trúc encoder--decoder này.
 
 
-## Summary
+## Tóm tắt
 
-Encoder-decoder architectures
-can handle inputs and outputs
-that both consist of variable-length sequences
-and thus are suitable for sequence-to-sequence problems
-such as machine translation.
-The encoder takes a variable-length sequence as input
-and transforms it into a state with a fixed shape.
-The decoder maps the encoded state of a fixed shape
-to a variable-length sequence.
+Các kiến trúc encoder-decoder
+có thể xử lý cả đầu vào và đầu ra
+đều gồm các sequence có độ dài thay đổi
+và vì vậy phù hợp với các bài toán sequence-to-sequence
+như dịch máy.
+Encoder nhận một sequence có độ dài thay đổi làm đầu vào
+và chuyển đổi nó thành một trạng thái có shape cố định.
+Decoder ánh xạ trạng thái đã được mã hóa có shape cố định
+thành một sequence có độ dài thay đổi.
 
 
-## Exercises
+## Bài tập
 
-1. Suppose that we use neural networks to implement the encoder--decoder architecture. Do the encoder and the decoder have to be the same type of neural network?
-1. Besides machine translation, can you think of another application where the encoder--decoder architecture can be applied?
+1. Giả sử chúng ta sử dụng neural network để triển khai kiến trúc encoder--decoder. Encoder và decoder có nhất thiết phải là cùng một loại neural network không?
+1. Ngoài dịch máy, bạn có thể nghĩ đến ứng dụng nào khác mà kiến trúc encoder--decoder có thể được áp dụng?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/341)

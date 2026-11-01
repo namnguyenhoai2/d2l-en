@@ -3,74 +3,73 @@
 tab.interact_select('mxnet', 'pytorch', 'tensorflow', 'jax')
 ```
 
-#  Sequence-to-Sequence Learning for Machine Translation
+#  Học sequence-to-sequence cho dịch máy
 :label:`sec_seq2seq`
 
-In so-called sequence-to-sequence problems such as machine translation
-(as discussed in :numref:`sec_machine_translation`),
-where inputs and outputs each consist 
-of variable-length unaligned sequences,
-we generally rely on encoder--decoder architectures
+Trong các bài toán được gọi là sequence-to-sequence, chẳng hạn như dịch máy
+(như đã thảo luận trong :numref:`sec_machine_translation`),
+trong đó đầu vào và đầu ra đều là các chuỗi không căn chỉnh có độ dài thay đổi,
+chúng ta thường dựa vào các kiến trúc encoder--decoder
 (:numref:`sec_encoder-decoder`).
-In this section,
-we will demonstrate the application 
-of an encoder--decoder architecture,
-where both the encoder and decoder 
-are implemented as RNNs,
-to the task of machine translation
+Trong phần này,
+chúng ta sẽ minh họa việc áp dụng
+một kiến trúc encoder--decoder,
+trong đó cả encoder và decoder
+đều được triển khai dưới dạng RNN,
+cho bài toán dịch máy
 :cite:`Sutskever.Vinyals.Le.2014,Cho.Van-Merrienboer.Gulcehre.ea.2014`.
 
-Here, the encoder RNN will take a variable-length sequence as input 
-and transform it into a fixed-shape hidden state.
-Later, in :numref:`chap_attention-and-transformers`,
-we will introduce attention mechanisms, 
-which allow us to access encoded inputs
-without having to compress the entire input
-into a single fixed-length representation.
+Ở đây, RNN encoder sẽ nhận một chuỗi có độ dài thay đổi làm đầu vào
+và chuyển đổi chuỗi đó thành một hidden state có hình dạng cố định.
+Sau đó, trong :numref:`chap_attention-and-transformers`,
+chúng ta sẽ giới thiệu các cơ chế attention,
+cho phép truy cập các đầu vào đã được mã hóa
+mà không cần nén toàn bộ đầu vào
+thành một biểu diễn có độ dài cố định duy nhất.
 
-Then to generate the output sequence, 
-one token at a time,
-the decoder model, 
-consisting of a separate RNN,
-will predict each successive target token
-given both the input sequence
-and the preceding tokens in the output.
-During training, the decoder will typically
-be conditioned upon the preceding tokens
-in the official "ground truth" label. 
-However, at test time, we will want to condition
-each output of the decoder on the tokens already predicted. 
-Note that if we ignore the encoder,
-the decoder in a sequence-to-sequence architecture 
-behaves just like a normal language model.
-:numref:`fig_seq2seq` illustrates
-how to use two RNNs
-for sequence-to-sequence learning
-in machine translation.
+Sau đó, để tạo chuỗi đầu ra,
+mỗi lần một token,
+mô hình decoder,
+bao gồm một RNN riêng biệt,
+sẽ dự đoán từng token đích kế tiếp
+dựa trên cả chuỗi đầu vào
+và các token đứng trước trong đầu ra.
+Trong quá trình huấn luyện, decoder thường
+được điều kiện hóa bởi các token đứng trước
+trong nhãn "ground truth" chính thức.
+Tuy nhiên, tại thời điểm kiểm thử, chúng ta muốn điều kiện hóa
+mỗi đầu ra của decoder dựa trên các token đã được dự đoán.
+Lưu ý rằng nếu bỏ qua encoder,
+decoder trong một kiến trúc sequence-to-sequence
+hoạt động giống hệt một language model thông thường.
+:numref:`fig_seq2seq` minh họa
+cách sử dụng hai RNN
+cho việc học sequence-to-sequence
+trong dịch máy.
 
 
-![Sequence-to-sequence learning with an RNN encoder and an RNN decoder.](../img/seq2seq.svg)
+![Học sequence-to-sequence với encoder RNN và decoder RNN.](../img/seq2seq.svg)
 :label:`fig_seq2seq`
 
-In :numref:`fig_seq2seq`,
-the special "&lt;eos&gt;" token
-marks the end of the sequence.
-Our model can stop making predictions
-once this token is generated.
-At the initial time step of the RNN decoder,
-there are two special design decisions to be aware of:
-First, we begin every input with a special 
-beginning-of-sequence "&lt;bos&gt;" token.
-Second, we may feed
-the final hidden state of the encoder
-into the decoder
-at every single decoding time step :cite:`Cho.Van-Merrienboer.Gulcehre.ea.2014`.
-In some other designs,
-such as that of :citet:`Sutskever.Vinyals.Le.2014`,
-the final hidden state of the RNN encoder
-is used
-to initiate the hidden state of the decoder
-only at the first decoding step.
+Trong :numref:`fig_seq2seq`,
+token đặc biệt "&lt;eos&gt;"
+đánh dấu kết thúc chuỗi.
+Mô hình của chúng ta có thể dừng dự đoán
+sau khi token này được tạo ra.
+Tại bước thời gian ban đầu của decoder RNN,
+có hai quyết định thiết kế đặc biệt cần lưu ý:
+Thứ nhất, chúng ta bắt đầu mọi đầu vào bằng một
+token đặc biệt đánh dấu bắt đầu chuỗi "&lt;bos&gt;".
+Thứ hai, chúng ta có thể đưa
+hidden state cuối cùng của encoder
+vào decoder
+tại mọi bước thời gian giải mã :cite:`Cho.Van-Merrienboer.Gulcehre.ea.2014`.
+Trong một số thiết kế khác,
+chẳng hạn như thiết kế của :citet:`Sutskever.Vinyals.Le.2014`,
+hidden state cuối cùng của RNN encoder
+chỉ được sử dụng
+để khởi tạo hidden state của decoder
+tại bước giải mã đầu tiên.
 
 ```{.python .input}
 %%tab mxnet
@@ -114,96 +113,95 @@ import optax
 
 ## Teacher Forcing
 
-While running the encoder on the input sequence
-is relatively straightforward,
-handling the input and output 
-of the decoder requires more care. 
-The most common approach is sometimes called *teacher forcing*.
-Here, the original target sequence (token labels)
-is fed into the decoder as input.
-More concretely,
-the special beginning-of-sequence token
-and the original target sequence,
-excluding the final token,
-are concatenated as input to the decoder,
-while the decoder output (labels for training) is
-the original target sequence,
-shifted by one token:
+Mặc dù việc chạy encoder trên chuỗi đầu vào
+tương đối đơn giản,
+việc xử lý đầu vào và đầu ra
+của decoder đòi hỏi sự cẩn thận hơn.
+Cách tiếp cận phổ biến nhất đôi khi được gọi là *teacher forcing*.
+Ở đây, chuỗi đích ban đầu (các nhãn token)
+được đưa vào decoder làm đầu vào.
+Cụ thể hơn,
+token đặc biệt đánh dấu bắt đầu chuỗi
+và chuỗi đích ban đầu,
+không bao gồm token cuối cùng,
+được nối với nhau để làm đầu vào cho decoder,
+trong khi đầu ra của decoder (các nhãn dùng để huấn luyện) là
+chuỗi đích ban đầu,
+được dịch đi một token:
 "&lt;bos&gt;", "Ils", "regardent", "." $\rightarrow$
 "Ils", "regardent", ".", "&lt;eos&gt;" (:numref:`fig_seq2seq`).
 
-Our implementation in
+Cài đặt của chúng ta trong
 :numref:`subsec_loading-seq-fixed-len`
-prepared training data for teacher forcing,
-where shifting tokens for self-supervised learning
-is similar to the training of language models in
+đã chuẩn bị dữ liệu huấn luyện cho teacher forcing,
+trong đó việc dịch các token để học tự giám sát
+tương tự như quá trình huấn luyện language model trong
 :numref:`sec_language-model`.
-An alternative approach is
-to feed the *predicted* token
-from the previous time step
-as the current input to the decoder.
+Một cách tiếp cận khác là
+đưa token *được dự đoán*
+từ bước thời gian trước
+làm đầu vào hiện tại cho decoder.
 
 
-In the following, we explain the design 
-depicted in :numref:`fig_seq2seq`
-in greater detail.
-We will train this model for machine translation
-on the English--French dataset as introduced in
+Sau đây, chúng ta giải thích chi tiết hơn
+thiết kế được mô tả trong :numref:`fig_seq2seq`.
+Chúng ta sẽ huấn luyện mô hình này cho bài toán dịch máy
+trên tập dữ liệu Anh--Pháp được giới thiệu trong
 :numref:`sec_machine_translation`.
 
 ## Encoder
 
-Recall that the encoder transforms an input sequence of variable length
-into a fixed-shape *context variable* $\mathbf{c}$ (see :numref:`fig_seq2seq`).
+Hãy nhớ rằng encoder chuyển đổi một chuỗi đầu vào có độ dài thay đổi
+thành một *biến ngữ cảnh* có hình dạng cố định $\mathbf{c}$ (xem :numref:`fig_seq2seq`).
 
 
-Consider a single sequence example (batch size 1).
-Suppose the input sequence is $x_1, \ldots, x_T$, 
-such that $x_t$ is the $t^{\textrm{th}}$ token.
-At time step $t$, the RNN transforms
-the input feature vector $\mathbf{x}_t$ for $x_t$
-and the hidden state $\mathbf{h} _{t-1}$ 
-from the previous time step 
-into the current hidden state $\mathbf{h}_t$.
-We can use a function $f$ to express 
-the transformation of the RNN's recurrent layer:
+Xét một ví dụ chuỗi đơn (batch size bằng 1).
+Giả sử chuỗi đầu vào là $x_1, \ldots, x_T$,
+trong đó $x_t$ là token thứ $t^{\textrm{th}}$.
+Tại bước thời gian $t$, RNN chuyển đổi
+vector đặc trưng đầu vào $\mathbf{x}_t$ của $x_t$
+và hidden state $\mathbf{h} _{t-1}$
+từ bước thời gian trước
+thành hidden state hiện tại $\mathbf{h}_t$.
+Chúng ta có thể sử dụng một hàm $f$ để biểu diễn
+phép biến đổi của recurrent layer trong RNN:
 
 $$\mathbf{h}_t = f(\mathbf{x}_t, \mathbf{h}_{t-1}). $$
 
-In general, the encoder transforms 
-the hidden states at all time steps
-into a context variable through a customized function $q$:
+Nói chung, encoder chuyển đổi
+các hidden state tại mọi bước thời gian
+thành một biến ngữ cảnh thông qua một hàm tùy chỉnh $q$:
 
 $$\mathbf{c} =  q(\mathbf{h}_1, \ldots, \mathbf{h}_T).$$
 
-For example, in :numref:`fig_seq2seq`,
-the context variable is just the hidden state $\mathbf{h}_T$
-corresponding to the encoder RNN's representation
-after processing the final token of the input sequence.
+Ví dụ, trong :numref:`fig_seq2seq`,
+biến ngữ cảnh chính là hidden state $\mathbf{h}_T$
+tương ứng với biểu diễn của RNN encoder
+sau khi xử lý token cuối cùng của chuỗi đầu vào.
 
-In this example, we have used a unidirectional RNN
-to design the encoder,
-where the hidden state only depends on the input subsequence 
-at and before the time step of the hidden state.
-We can also construct encoders using bidirectional RNNs.
-In this case, a hidden state depends on the subsequence before and after the time step 
-(including the input at the current time step), 
-which encodes the information of the entire sequence.
+Trong ví dụ này, chúng ta đã sử dụng một RNN một chiều
+để thiết kế encoder,
+trong đó hidden state chỉ phụ thuộc vào chuỗi con đầu vào
+tại và trước bước thời gian của hidden state.
+Chúng ta cũng có thể xây dựng encoder bằng RNN hai chiều.
+Trong trường hợp này, một hidden state phụ thuộc vào chuỗi con trước và sau bước thời gian
+(bao gồm cả đầu vào tại bước thời gian hiện tại),
+nhờ đó mã hóa thông tin của toàn bộ chuỗi.
 
 
-Now let's [**implement the RNN encoder**].
-Note that we use an *embedding layer*
-to obtain the feature vector for each token in the input sequence.
-The weight of an embedding layer is a matrix,
-where the number of rows corresponds to 
-the size of the input vocabulary (`vocab_size`)
-and number of columns corresponds to 
-the feature vector's dimension (`embed_size`).
-For any input token index $i$,
-the embedding layer fetches the $i^{\textrm{th}}$ row 
-(starting from 0) of the weight matrix
-to return its feature vector.
-Here we implement the encoder with a multilayer GRU.
+Bây giờ, hãy [**triển khai RNN encoder**].
+Lưu ý rằng chúng ta sử dụng một *embedding layer*
+để thu được vector đặc trưng cho mỗi token trong chuỗi đầu vào.
+Trọng số của một embedding layer là một ma trận,
+trong đó số hàng tương ứng với
+kích thước của vocabulary đầu vào (`vocab_size`)
+và số cột tương ứng với
+số chiều của vector đặc trưng (`embed_size`).
+Với mọi chỉ số token đầu vào $i$,
+embedding layer lấy hàng thứ $i^{\textrm{th}}$ (bắt đầu từ 0)
+của ma trận trọng số
+để trả về vector đặc trưng của token đó.
+Ở đây, chúng ta triển khai encoder bằng một GRU nhiều layer.
 
 ```{.python .input}
 %%tab mxnet
@@ -303,17 +301,17 @@ class Seq2SeqEncoder(d2l.Encoder):  #@save
         return outputs, state
 ```
 
-Let's use a concrete example
-to [**illustrate the above encoder implementation.**]
-Below, we instantiate a two-layer GRU encoder
-whose number of hidden units is 16.
-Given a minibatch of sequence inputs `X`
-(batch size $=4$; number of time steps $=9$),
-the hidden states of the final layer
-at all the time steps
-(`enc_outputs` returned by the encoder's recurrent layers)
-are a tensor of shape
-(number of time steps, batch size, number of hidden units).
+Hãy sử dụng một ví dụ cụ thể
+để [**minh họa cách triển khai encoder ở trên.**]
+Dưới đây, chúng ta khởi tạo một encoder GRU hai layer
+có số hidden unit là 16.
+Với một minibatch gồm các đầu vào chuỗi `X`
+(batch size $=4$; số bước thời gian $=9$),
+các hidden state của layer cuối cùng
+tại mọi bước thời gian
+(`enc_outputs` được trả về bởi các recurrent layer của encoder)
+là một tensor có hình dạng
+(số bước thời gian, batch size, số hidden unit).
 
 ```{.python .input}
 %%tab all
@@ -329,10 +327,10 @@ if tab.selected('jax'):
 d2l.check_shape(enc_outputs, (num_steps, batch_size, num_hiddens))
 ```
 
-Since we are using a GRU here,
-the shape of the multilayer hidden states
-at the final time step is
-(number of hidden layers, batch size, number of hidden units).
+Vì ở đây chúng ta sử dụng GRU,
+hình dạng của các hidden state nhiều layer
+tại bước thời gian cuối cùng là
+(số hidden layer, batch size, số hidden unit).
 
 ```{.python .input}
 %%tab all
@@ -346,48 +344,49 @@ if tab.selected('tensorflow'):
 ## [**Decoder**]
 :label:`sec_seq2seq_decoder`
 
-Given a target output sequence $y_1, y_2, \ldots, y_{T'}$
-for each time step $t'$
-(we use $t^\prime$ to differentiate from the input sequence time steps),
-the decoder assigns a predicted probability
-to each possible token occurring at step $y_{t'+1}$
-conditioned upon the previous tokens in the target
-$y_1, \ldots, y_{t'}$ 
-and the context variable 
-$\mathbf{c}$, i.e., $P(y_{t'+1} \mid y_1, \ldots, y_{t'}, \mathbf{c})$.
+Với một chuỗi đầu ra đích $y_1, y_2, \ldots, y_{T'}$
+tại mỗi bước thời gian $t'$
+(chúng ta sử dụng $t^\prime$ để phân biệt với các bước thời gian của chuỗi đầu vào),
+decoder gán một xác suất dự đoán
+cho mỗi token có thể xuất hiện tại bước $y_{t'+1}$
+dựa trên các token trước đó trong đích
+$y_1, \ldots, y_{t'}$
+và biến ngữ cảnh
+$\mathbf{c}$, tức là $P(y_{t'+1} \mid y_1, \ldots, y_{t'}, \mathbf{c})$.
 
-To predict the subsequent token $t^\prime+1$ in the target sequence,
-the RNN decoder takes the previous step's target token $y_{t^\prime}$,
-the hidden RNN state from the previous time step $\mathbf{s}_{t^\prime-1}$,
-and the context variable $\mathbf{c}$ as its input,
-and transforms them into the hidden state 
-$\mathbf{s}_{t^\prime}$ at the current time step.
-We can use a function $g$ to express 
-the transformation of the decoder's hidden layer:
+Để dự đoán token tiếp theo $t^\prime+1$ trong chuỗi đích,
+RNN decoder nhận token đích của bước trước $y_{t^\prime}$,
+hidden state của RNN từ bước thời gian trước $\mathbf{s}_{t^\prime-1}$,
+và biến ngữ cảnh $\mathbf{c}$ làm đầu vào,
+sau đó chuyển đổi chúng thành hidden state
+$\mathbf{s}_{t^\prime}$ tại bước thời gian hiện tại.
+Chúng ta có thể sử dụng một hàm $g$ để biểu diễn
+phép biến đổi của hidden layer trong decoder:
 
 $$\mathbf{s}_{t^\prime} = g(y_{t^\prime-1}, \mathbf{c}, \mathbf{s}_{t^\prime-1}).$$
 :eqlabel:`eq_seq2seq_s_t`
 
-After obtaining the hidden state of the decoder,
-we can use an output layer and the softmax operation 
-to compute the predictive distribution
-$p(y_{t^{\prime}+1} \mid y_1, \ldots, y_{t^\prime}, \mathbf{c})$ 
-over the subsequent output token ${t^\prime+1}$.
+Sau khi thu được hidden state của decoder,
+chúng ta có thể sử dụng một output layer và phép toán softmax
+để tính phân phối dự đoán
+$p(y_{t^{\prime}+1} \mid y_1, \ldots, y_{t^\prime}, \mathbf{c})$
+trên token đầu ra tiếp theo ${t^\prime+1}$.
 
-Following :numref:`fig_seq2seq`,
-when implementing the decoder as follows,
-we directly use the hidden state at the final time step
-of the encoder
-to initialize the hidden state of the decoder.
-This requires that the RNN encoder and the RNN decoder 
-have the same number of layers and hidden units.
-To further incorporate the encoded input sequence information,
-the context variable is concatenated
-with the decoder input at all the time steps.
-To predict the probability distribution of the output token,
-we use a fully connected layer
-to transform the hidden state 
-at the final layer of the RNN decoder.
+Theo :numref:`fig_seq2seq`,
+khi triển khai decoder như sau,
+chúng ta trực tiếp sử dụng hidden state tại bước thời gian cuối cùng
+của encoder
+để khởi tạo hidden state của decoder.
+Điều này yêu cầu
+RNN encoder và RNN decoder
+có cùng số layer và hidden unit.
+Để đưa thêm thông tin của chuỗi đầu vào đã mã hóa,
+biến ngữ cảnh được nối
+với đầu vào của decoder tại mọi bước thời gian.
+Để dự đoán phân phối xác suất của token đầu ra,
+chúng ta sử dụng một fully connected layer
+để chuyển đổi hidden state
+tại layer cuối cùng của RNN decoder.
 
 ```{.python .input}
 %%tab mxnet
@@ -525,10 +524,10 @@ class Seq2SeqDecoder(d2l.Decoder):
         return outputs, [enc_output, hidden_state]
 ```
 
-To [**illustrate the implemented decoder**],
-below we instantiate it with the same hyperparameters from the aforementioned encoder.
-As we can see, the output shape of the decoder becomes (batch size, number of time steps, vocabulary size),
-where the final dimension of the tensor stores the predicted token distribution.
+Để [**minh họa decoder đã triển khai**],
+dưới đây chúng ta khởi tạo decoder với cùng các hyperparameter như encoder nói trên.
+Như có thể thấy, hình dạng đầu ra của decoder trở thành (batch size, số bước thời gian, kích thước vocabulary),
+trong đó chiều cuối cùng của tensor lưu phân phối token được dự đoán.
 
 ```{.python .input}
 %%tab all
@@ -550,18 +549,18 @@ if tab.selected('tensorflow'):
     d2l.check_shape(state[1][0], (batch_size, num_hiddens))
 ```
 
-The layers in the above RNN encoder--decoder model 
-are summarized in :numref:`fig_seq2seq_details`.
+Các layer trong mô hình RNN encoder--decoder ở trên
+được tóm tắt trong :numref:`fig_seq2seq_details`.
 
-![Layers in an RNN encoder--decoder model.](../img/seq2seq-details.svg)
+![Các lớp trong mô hình encoder--decoder RNN.](../img/seq2seq-details.svg)
 :label:`fig_seq2seq_details`
 
 
 
-## Encoder--Decoder for Sequence-to-Sequence Learning
+## Encoder--Decoder cho việc học Sequence-to-Sequence
 
 
-Putting it all together in code yields the following:
+Kết hợp tất cả lại trong code sẽ cho kết quả như sau:
 
 ```{.python .input}
 %%tab pytorch, tensorflow, mxnet
@@ -604,27 +603,27 @@ class Seq2Seq(d2l.EncoderDecoder):  #@save
         return optax.adam(learning_rate=self.lr)
 ```
 
-## Loss Function with Masking
+## Hàm mất mát với Masking
 
-At each time step, the decoder predicts 
-a probability distribution for the output tokens.
-As with language modeling, 
-we can apply softmax 
-to obtain the distribution
-and calculate the cross-entropy loss for optimization.
-Recall from :numref:`sec_machine_translation`
-that the special padding tokens
-are appended to the end of sequences
-and so sequences of varying lengths
-can be efficiently loaded
-in minibatches of the same shape.
-However, prediction of padding tokens
-should be excluded from loss calculations.
-To this end, we can 
-[**mask irrelevant entries with zero values**]
-so that multiplication 
-of any irrelevant prediction
-with zero equates to zero.
+Ở mỗi bước thời gian, decoder dự đoán 
+một phân phối xác suất cho các token đầu ra.
+Tương tự như trong language modeling, 
+chúng ta có thể áp dụng softmax 
+để thu được phân phối
+và tính toán cross-entropy loss để tối ưu hóa.
+Hãy nhớ lại từ :numref:`sec_machine_translation`
+rằng các token padding đặc biệt
+được thêm vào cuối các sequence
+và do đó các sequence có độ dài khác nhau
+có thể được tải hiệu quả
+theo các minibatch có cùng shape.
+Tuy nhiên, việc dự đoán các token padding
+nên được loại trừ khỏi phép tính loss.
+Để thực hiện điều này, chúng ta có thể 
+[**mask các phần tử không liên quan bằng giá trị zero**]
+để phép nhân 
+của bất kỳ dự đoán không liên quan nào
+với zero sẽ cho kết quả bằng zero.
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -653,8 +652,8 @@ def loss(self, params, X, Y, state, averaged=False):
 ## [**Training**]
 :label:`sec_seq2seq_training`
 
-Now we can [**create and train an RNN encoder--decoder model**]
-for sequence-to-sequence learning on the machine translation dataset.
+Bây giờ chúng ta có thể [**tạo và training một mô hình encoder--decoder RNN**]
+cho việc học sequence-to-sequence trên dataset machine translation.
 
 ```{.python .input}
 %%tab all
@@ -687,28 +686,28 @@ trainer.fit(model, data)
 
 ## [**Prediction**]
 
-To predict the output sequence
-at each step, 
-the predicted token from the previous
-time step is fed into the decoder as an input.
-One simple strategy is to sample whichever token
-that has been assigned by the decoder the highest probability
-when predicting at each step.
-As in training, at the initial time step
-the beginning-of-sequence ("&lt;bos&gt;") token
-is fed into the decoder.
-This prediction process
-is illustrated in :numref:`fig_seq2seq_predict`.
-When the end-of-sequence ("&lt;eos&gt;") token is predicted,
-the prediction of the output sequence is complete.
+Để dự đoán sequence đầu ra
+ở mỗi bước, 
+token được dự đoán ở
+bước thời gian trước đó được đưa vào decoder làm input.
+Một chiến lược đơn giản là lấy mẫu token
+được decoder gán xác suất cao nhất
+khi dự đoán ở mỗi bước.
+Giống như trong quá trình training, ở bước thời gian ban đầu
+token bắt đầu sequence ("&lt;bos&gt;") 
+được đưa vào decoder.
+Quá trình dự đoán này
+được minh họa trong :numref:`fig_seq2seq_predict`.
+Khi token kết thúc sequence ("&lt;eos&gt;") được dự đoán,
+việc dự đoán sequence đầu ra hoàn tất.
 
 
-![Predicting the output sequence token by token using an RNN encoder--decoder.](../img/seq2seq-predict.svg)
+![Dự đoán sequence đầu ra từng token một bằng encoder--decoder RNN.](../img/seq2seq-predict.svg)
 :label:`fig_seq2seq_predict`
 
-In the next section, we will introduce 
-more sophisticated strategies 
-based on beam search (:numref:`sec_beam-search`).
+Trong phần tiếp theo, chúng ta sẽ giới thiệu 
+các chiến lược phức tạp hơn 
+dựa trên beam search (:numref:`sec_beam-search`).
 
 ```{.python .input}
 %%tab pytorch, mxnet, tensorflow
@@ -770,61 +769,61 @@ def predict_step(self, params, batch, num_steps,
                                         enc_attention_weights)
 ```
 
-## Evaluation of Predicted Sequences
+## Đánh giá các Sequence được dự đoán
 
-We can evaluate a predicted sequence
-by comparing it with the
-target sequence (the ground truth).
-But what precisely is the appropriate measure 
-for comparing similarity between two sequences?
+Chúng ta có thể đánh giá một sequence được dự đoán
+bằng cách so sánh nó với
+sequence mục tiêu (ground truth).
+Nhưng chính xác thì thước đo phù hợp 
+để so sánh độ tương đồng giữa hai sequence là gì?
 
 
 Bilingual Evaluation Understudy (BLEU),
-though originally proposed for evaluating
-machine translation results :cite:`Papineni.Roukos.Ward.ea.2002`,
-has been extensively used in measuring
-the quality of output sequences for different applications.
-In principle, for any $n$-gram (:numref:`subsec_markov-models-and-n-grams`) in the predicted sequence,
-BLEU evaluates whether this $n$-gram appears
-in the target sequence.
+mặc dù ban đầu được đề xuất để đánh giá kết quả
+machine translation :cite:`Papineni.Roukos.Ward.ea.2002`,
+đã được sử dụng rộng rãi để đo lường
+chất lượng của các sequence đầu ra cho nhiều ứng dụng khác nhau.
+Về nguyên tắc, với mọi $n$-gram (:numref:`subsec_markov-models-and-n-grams`) trong sequence được dự đoán,
+BLEU đánh giá xem $n$-gram này có xuất hiện
+trong sequence mục tiêu hay không.
 
-Denote by $p_n$ the precision of an $n$-gram,
-defined as the ratio 
-of the number of matched $n$-grams in
-the predicted and target sequences
-to the number of $n$-grams in the predicted sequence.
-To explain, given a target sequence $A$, $B$, $C$, $D$, $E$, $F$,
-and a predicted sequence $A$, $B$, $B$, $C$, $D$,
-we have $p_1 = 4/5$,  $p_2 = 3/4$, $p_3 = 1/3$, and $p_4 = 0$.
-Now let $\textrm{len}_{\textrm{label}}$ and $\textrm{len}_{\textrm{pred}}$
-be the numbers of tokens in the target sequence 
-and the predicted sequence, respectively.
-Then, BLEU is defined as
+Ký hiệu $p_n$ là precision của một $n$-gram,
+được định nghĩa là tỷ lệ 
+giữa số $n$-gram khớp nhau trong
+sequence được dự đoán và sequence mục tiêu
+với số $n$-gram trong sequence được dự đoán.
+Cụ thể, với sequence mục tiêu $A$, $B$, $C$, $D$, $E$, $F$,
+và sequence được dự đoán $A$, $B$, $B$, $C$, $D$,
+ta có $p_1 = 4/5$,  $p_2 = 3/4$, $p_3 = 1/3$, và $p_4 = 0$.
+Bây giờ, gọi $\textrm{len}_{\textrm{label}}$ và $\textrm{len}_{\textrm{pred}}$
+lần lượt là số token trong sequence mục tiêu 
+và sequence được dự đoán.
+Khi đó, BLEU được định nghĩa như sau
 
 $$ \exp\left(\min\left(0, 1 - \frac{\textrm{len}_{\textrm{label}}}{\textrm{len}_{\textrm{pred}}}\right)\right) \prod_{n=1}^k p_n^{1/2^n},$$
 :eqlabel:`eq_bleu`
 
-where $k$ is the longest $n$-gram for matching.
+trong đó $k$ là $n$-gram dài nhất được dùng để matching.
 
-Based on the definition of BLEU in :eqref:`eq_bleu`,
-whenever the predicted sequence is the same as the target sequence, BLEU is 1.
-Moreover,
-since matching longer $n$-grams is more difficult,
-BLEU assigns a greater weight
-when a longer $n$-gram has high precision.
-Specifically, when $p_n$ is fixed,
-$p_n^{1/2^n}$ increases as $n$ grows (the original paper uses $p_n^{1/n}$).
-Furthermore,
-since
-predicting shorter sequences
-tends to yield a higher $p_n$ value,
-the coefficient before the multiplication term in :eqref:`eq_bleu`
-penalizes shorter predicted sequences.
-For example, when $k=2$,
-given the target sequence $A$, $B$, $C$, $D$, $E$, $F$ and the predicted sequence $A$, $B$,
-although $p_1 = p_2 = 1$, the penalty factor $\exp(1-6/2) \approx 0.14$ lowers the BLEU.
+Dựa trên định nghĩa BLEU trong :eqref:`eq_bleu`,
+bất cứ khi nào sequence được dự đoán giống với sequence mục tiêu, BLEU bằng 1.
+Ngoài ra,
+vì việc matching các $n$-gram dài hơn khó hơn,
+BLEU gán trọng số lớn hơn
+khi một $n$-gram dài hơn có precision cao.
+Cụ thể, khi $p_n$ cố định,
+$p_n^{1/2^n}$ tăng khi $n$ tăng (bài báo gốc sử dụng $p_n^{1/n}$).
+Hơn nữa,
+vì
+việc dự đoán các sequence ngắn hơn
+thường cho giá trị $p_n$ cao hơn,
+hệ số đứng trước số hạng tích trong :eqref:`eq_bleu`
+sẽ phạt các sequence được dự đoán ngắn hơn.
+Ví dụ, khi $k=2$,
+với sequence mục tiêu $A$, $B$, $C$, $D$, $E$, $F$ và sequence được dự đoán $A$, $B$,
+mặc dù $p_1 = p_2 = 1$, hệ số phạt $\exp(1-6/2) \approx 0.14$ làm giảm BLEU.
 
-We [**implement the BLEU measure**] as follows.
+Chúng ta [**implement thước đo BLEU**] như sau.
 
 ```{.python .input}
 %%tab all
@@ -845,10 +844,10 @@ def bleu(pred_seq, label_seq, k):  #@save
     return score
 ```
 
-In the end,
-we use the trained RNN encoder--decoder
-to [**translate a few English sentences into French**]
-and compute the BLEU of the results.
+Cuối cùng,
+chúng ta sử dụng encoder--decoder RNN đã được training
+để [**dịch một vài câu tiếng Anh sang tiếng Pháp**]
+và tính BLEU của các kết quả.
 
 ```{.python .input}
 %%tab all
@@ -870,38 +869,37 @@ for en, fr, p in zip(engs, fras, preds):
           f'{bleu(" ".join(translation), fr, k=2):.3f}')
 ```
 
-## Summary
+## Tóm tắt
 
-Following the design of the encoder--decoder architecture, we can use two RNNs to design a model for sequence-to-sequence learning.
-In encoder--decoder training, the teacher forcing approach feeds original output sequences (in contrast to predictions) into the decoder.
-When implementing the encoder and the decoder, we can use multilayer RNNs.
-We can use masks to filter out irrelevant computations, such as when calculating the loss.
-For evaluating output sequences,
-BLEU is a popular measure that matches $n$-grams between the predicted sequence and the target sequence.
+Theo thiết kế của kiến trúc encoder--decoder, chúng ta có thể sử dụng hai RNN để thiết kế một mô hình cho việc học sequence-to-sequence.
+Trong quá trình training encoder--decoder, phương pháp teacher forcing đưa các sequence đầu ra ban đầu (thay vì các dự đoán) vào decoder.
+Khi triển khai encoder và decoder, chúng ta có thể sử dụng các RNN nhiều lớp.
+Chúng ta có thể sử dụng mask để lọc các phép tính không liên quan, chẳng hạn như khi tính loss.
+Để đánh giá các sequence đầu ra,
+BLEU là một thước đo phổ biến, dùng để matching các $n$-gram giữa sequence được dự đoán và sequence mục tiêu.
 
 
-## Exercises
+## Bài tập
 
-1. Can you adjust the hyperparameters to improve the translation results?
-1. Rerun the experiment without using masks in the loss calculation. What results do you observe? Why?
-1. If the encoder and the decoder differ in the number of layers or the number of hidden units, how can we initialize the hidden state of the decoder?
-1. In training, replace teacher forcing with feeding the prediction at the previous time step into the decoder. How does this influence the performance?
-1. Rerun the experiment by replacing GRU with LSTM.
-1. Are there any other ways to design the output layer of the decoder?
+1. Bạn có thể điều chỉnh các hyperparameter để cải thiện kết quả dịch không?
+1. Chạy lại experiment mà không sử dụng mask trong phép tính loss. Bạn quan sát được kết quả gì? Tại sao?
+1. Nếu encoder và decoder khác nhau về số lớp hoặc số hidden unit, làm thế nào chúng ta có thể khởi tạo hidden state của decoder?
+1. Trong quá trình training, hãy thay teacher forcing bằng việc đưa dự đoán ở bước thời gian trước đó vào decoder. Điều này ảnh hưởng thế nào đến performance?
+1. Chạy lại experiment bằng cách thay GRU bằng LSTM.
+1. Có cách nào khác để thiết kế output layer của decoder không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/345)
+[Thảo luận](https://discuss.d2l.ai/t/345)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1062)
+[Thảo luận](https://discuss.d2l.ai/t/1062)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/3865)
+[Thảo luận](https://discuss.d2l.ai/t/3865)
 :end_tab:
 
 :begin_tab:`jax`
-[Discussions](https://discuss.d2l.ai/t/18022)
+[Thảo luận](https://discuss.d2l.ai/t/18022)
 :end_tab:
-
