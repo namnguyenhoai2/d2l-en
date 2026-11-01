@@ -4,73 +4,72 @@ tab.interact_select(["pytorch"])
 #required_libs("syne-tune[gpsearchers]==0.3.2")
 ```
 
-# Asynchronous Successive Halving
+# Successive Halving bất đồng bộ
 
 :label:`sec_sh_async`
 
-As we have seen in :numref:`sec_rs_async`, we can accelerate HPO by
-distributing the evaluation of hyperparameter configurations across either
-multiple instances or multiples CPUs / GPUs on a single instance. However,
-compared to random search, it is not straightforward to run
-successive halving (SH) asynchronously in a distributed setting. Before we can
-decide which configuration to run next, we first have to collect all
-observations at the current rung level. This requires to
-synchronize workers at each rung level. For example, for the lowest rung level
-$r_{\mathrm{min}}$, we first have to evaluate all $N = \eta^K$ configurations, before we
-can promote the $\frac{1}{\eta}$ of them to the next rung level.
+Như đã thấy trong :numref:`sec_rs_async`, chúng ta có thể tăng tốc HPO bằng cách
+phân phối việc đánh giá các cấu hình hyperparameter trên nhiều instance hoặc
+nhiều CPU / GPU trên một instance duy nhất. Tuy nhiên, so với random search,
+việc chạy successive halving (SH) bất đồng bộ trong môi trường phân tán không
+đơn giản. Trước khi quyết định cấu hình nào sẽ chạy tiếp theo, trước hết chúng ta
+phải thu thập tất cả các quan sát ở mức rung hiện tại. Điều này yêu cầu
+đồng bộ hóa các worker ở mỗi mức rung. Ví dụ, đối với mức rung thấp nhất
+$r_{\mathrm{min}}$, trước hết chúng ta phải đánh giá tất cả $N = \eta^K$ cấu hình, rồi mới có thể
+đưa $\frac{1}{\eta}$ cấu hình trong số đó lên mức rung tiếp theo.
 
-In any distributed system, synchronization typically implies idle time for workers.
-First, we often observe high variations in training time across hyperparameter
-configurations. For example, assuming the number of filters per layer is a
-hyperparameter, then networks with less filters finish training faster than
-networks with more filters, which implies idle worker time due to stragglers.
-Moreover, the number of slots in a rung level is not always a multiple of the number
-of workers, in which case some workers may even sit idle for a full batch.
+Trong mọi hệ thống phân tán, việc đồng bộ hóa thường khiến các worker phải chờ.
+Trước hết, chúng ta thường quan sát thấy thời gian training giữa các cấu hình
+hyperparameter khác nhau đáng kể. Ví dụ, giả sử số lượng filter trên mỗi layer là
+một hyperparameter, khi đó các network có ít filter hơn sẽ hoàn tất training nhanh
+hơn các network có nhiều filter hơn, dẫn đến thời gian worker nhàn rỗi do các worker
+chậm (straggler). Ngoài ra, số lượng slot ở một mức rung không phải lúc nào cũng
+là bội số của số worker; trong trường hợp đó, một số worker thậm chí có thể
+nhàn rỗi trong cả một batch.
 
-Figure :numref:`synchronous_sh` shows the scheduling of synchronous SH with $\eta=2$
-for four different trials with two workers. We start with evaluating Trial-0 and
-Trial-1 for one epoch and immediately continue with the next two trials once they
-are finished. We first have to wait until Trial-2 finishes, which takes
-substantially more time than the other trials, before we can promote the best two
-trials, i.e., Trial-0 and Trial-3 to the next rung level. This causes idle time for
-Worker-1. Then, we continue with Rung 1. Also, here Trial-3 takes longer than Trial-0,
-which leads to an additional ideling time of Worker-0. Once, we reach Rung-2, only
-the best trial, Trial-0, remains which occupies only one worker. To avoid that
-Worker-1 idles during that time, most implementaitons of SH continue already with
-the next round, and start evaluating new trials (e.g Trial-4) on the first rung.
+Hình :numref:`synchronous_sh` minh họa việc lập lịch SH đồng bộ với $\eta=2$
+cho bốn trial khác nhau trên hai worker. Chúng ta bắt đầu bằng việc đánh giá Trial-0 và
+Trial-1 trong một epoch, rồi ngay lập tức tiếp tục với hai trial tiếp theo khi chúng
+hoàn tất. Trước hết, chúng ta phải đợi Trial-2 hoàn tất; trial này mất nhiều thời gian
+hơn đáng kể so với các trial khác, trước khi có thể đưa hai trial tốt nhất, tức là
+Trial-0 và Trial-3, lên mức rung tiếp theo. Điều này khiến Worker-1 nhàn rỗi. Sau đó,
+chúng ta tiếp tục với Rung 1. Ở đây, Trial-3 cũng mất nhiều thời gian hơn Trial-0,
+dẫn đến thêm thời gian nhàn rỗi của Worker-0. Khi đạt đến Rung-2, chỉ còn trial tốt
+nhất là Trial-0, và trial này chỉ chiếm một worker. Để tránh việc Worker-1 nhàn rỗi
+trong thời gian đó, hầu hết các implementation của SH đã tiếp tục vòng tiếp theo
+và bắt đầu đánh giá các trial mới (ví dụ Trial-4) ở rung đầu tiên.
 
-![Synchronous successive halving with two workers.](../img/sync_sh.svg)
+![Successive halving đồng bộ với hai worker.](../img/sync_sh.svg)
 :label:`synchronous_sh`
 
-Asynchronous successive halving (ASHA) :cite:`li-arxiv18` adapts SH to the asynchronous
-parallel scenario. The main idea of ASHA is to promote configurations to the next rung
-level as soon as we collected at least $\eta$ observations on the current rung level.
-This decision rule may lead to suboptimal promotions: configurations can be promoted to the
-next rung level, which in hindsight do not compare favourably against most others
-at the same rung level. On the other hand, we get rid of all synchronization points
-this way. In practice, such suboptimal initial promotions have only a modest impact on
-performance, not only because the ranking of hyperparameter configurations is often
-fairly consistent across rung levels, but also because rungs grow over time and
-reflect the distribution of metric values at this level better and better. If a
-worker is free, but no configuration can be promoted, we start a new configuration
-with $r = r_{\mathrm{min}}$, i.e the first rung level.
+Successive halving bất đồng bộ (ASHA) :cite:`li-arxiv18` điều chỉnh SH cho
+kịch bản parallel bất đồng bộ. Ý tưởng chính của ASHA là đưa các cấu hình lên mức
+rung tiếp theo ngay khi chúng ta thu thập được ít nhất $\eta$ quan sát ở mức rung
+hiện tại. Quy tắc quyết định này có thể dẫn đến các lần promotion chưa tối ưu:
+các cấu hình có thể được đưa lên mức rung tiếp theo dù xét lại sau đó, chúng không
+có kết quả tốt bằng phần lớn các cấu hình khác ở cùng mức rung. Mặt khác, bằng cách
+này chúng ta loại bỏ hoàn toàn mọi điểm đồng bộ hóa. Trong thực tế, những lần promotion
+ban đầu chưa tối ưu như vậy chỉ ảnh hưởng vừa phải đến hiệu năng, không chỉ vì thứ
+hạng của các cấu hình hyperparameter thường khá nhất quán giữa các mức rung, mà còn
+vì các rung tăng dần theo thời gian và ngày càng phản ánh tốt hơn phân phối các giá trị
+metric ở mức đó. Nếu một worker rảnh nhưng không có cấu hình nào có thể được promotion,
+chúng ta bắt đầu một cấu hình mới với $r = r_{\mathrm{min}}$, tức là mức rung đầu tiên.
 
-:numref:`asha` shows the scheduling of the same configurations for ASHA. Once Trial-1
-finishes, we collect the results of two trials (i.e Trial-0 and Trial-1) and
-immediately promote the better of them (Trial-0) to the next rung level. After Trial-0
-finishes on rung 1, there are too few trials there in order to support a further
-promotion. Hence, we continue with rung 0 and evaluate Trial-3. Once Trial-3 finishes,
-Trial-2 is still pending. At this point we have 3 trials evaluated on rung 0 and one
-trial evaluated already on rung 1. Since Trial-3 performs worse than Trial-0 at rung 0,
-and $\eta=2$, we cannot promote any new trial yet, and Worker-1 starts Trial-4 from
-scratch instead. However, once Trial-2 finishes and
-scores worse than Trial-3, the latter is promoted towards rung 1. Afterwards, we
-collected 2 evaluations on rung 1, which means we can now promote Trial-0 towards
-rung 2. At the same time, Worker-1 continues with evaluating new trials (i.e.,
-Trial-5) on rung 0.
+:numref:`asha` minh họa việc lập lịch cho cùng các cấu hình bằng ASHA. Khi Trial-1
+hoàn tất, chúng ta thu thập kết quả của hai trial (tức Trial-0 và Trial-1) và
+ngay lập tức đưa trial tốt hơn trong số đó (Trial-0) lên mức rung tiếp theo. Sau khi
+Trial-0 hoàn tất ở rung 1, có quá ít trial ở đó để thực hiện promotion tiếp theo.
+Do đó, chúng ta tiếp tục với rung 0 và đánh giá Trial-3. Khi Trial-3 hoàn tất,
+Trial-2 vẫn đang chờ. Tại thời điểm này, chúng ta đã đánh giá 3 trial ở rung 0 và
+một trial ở rung 1. Vì Trial-3 có kết quả kém hơn Trial-0 ở rung 0, đồng thời
+$\eta=2$, chúng ta chưa thể promotion thêm trial nào, nên Worker-1 bắt đầu Trial-4
+từ đầu. Tuy nhiên, khi Trial-2 hoàn tất và có điểm thấp hơn Trial-3, Trial-3 được
+đưa lên rung 1. Sau đó, chúng ta đã thu thập 2 kết quả đánh giá ở rung 1, nghĩa là
+bây giờ có thể đưa Trial-0 lên rung 2. Đồng thời, Worker-1 tiếp tục đánh giá các
+trial mới (tức Trial-5) ở rung 0.
 
 
-![Asynchronous successive halving (ASHA) with two workers.](../img/asha.svg)
+![Successive halving bất đồng bộ (ASHA) với hai worker.](../img/asha.svg)
 :label:`asha`
 
 ```{.python .input}
@@ -85,9 +84,9 @@ from syne_tune import Tuner, StoppingCriterion
 from syne_tune.experiments import load_experiment
 ```
 
-## Objective Function
+## Hàm mục tiêu
 
-We will use *Syne Tune* with the same objective function as in
+Chúng ta sẽ sử dụng *Syne Tune* với cùng hàm mục tiêu như trong
 :numref:`sec_rs_async`.
 
 ```{.python .input  n=54}
@@ -110,7 +109,7 @@ def hpo_objective_lenet_synetune(learning_rate, batch_size, max_epochs):
         report(epoch=epoch, validation_error=float(validation_error))
 ```
 
-We will also use the same configuration space as before:
+Chúng ta cũng sẽ sử dụng cùng không gian cấu hình như trước:
 
 ```{.python .input  n=55}
 min_number_of_epochs = 2
@@ -128,19 +127,19 @@ initial_config = {
 }
 ```
 
-## Asynchronous Scheduler
+## Scheduler bất đồng bộ
 
-First, we define the number of workers that evaluate trials concurrently. We
-also need to specify how long we want to run random search, by defining an
-upper limit on the total wall-clock time.
+Trước tiên, chúng ta xác định số lượng worker đánh giá các trial đồng thời. Chúng ta
+cũng cần chỉ định thời gian muốn chạy random search bằng cách đặt giới hạn trên
+cho tổng thời gian theo đồng hồ thực.
 
 ```{.python .input  n=56}
 n_workers = 2  # Needs to be <= the number of available GPUs
 max_wallclock_time = 12 * 60  # 12 minutes
 ```
 
-The code for running ASHA is a simple variation of what we did for asynchronous
-random search.
+Code để chạy ASHA là một biến thể đơn giản của phần chúng ta đã thực hiện cho
+random search bất đồng bộ.
 
 ```{.python .input  n=56}
 mode = "min"
@@ -159,11 +158,11 @@ scheduler = ASHA(
 )
 ```
 
-Here, `metric` and `resource_attr` specify the key names used with the `report`
-callback, and `max_resource_attr` denotes which input to the objective function
-corresponds to $r_{\mathrm{max}}$. Moreover, `grace_period` provides $r_{\mathrm{min}}$, and
-`reduction_factor` is $\eta$. We can run Syne Tune as before (this will
-take about 12 minutes):
+Ở đây, `metric` và `resource_attr` chỉ định tên các key được sử dụng với
+callback `report`, còn `max_resource_attr` cho biết input nào của hàm mục tiêu
+tương ứng với $r_{\mathrm{max}}$. Ngoài ra, `grace_period` cung cấp $r_{\mathrm{min}}$, và
+`reduction_factor` là $\eta$. Chúng ta có thể chạy Syne Tune như trước (quá trình này sẽ
+mất khoảng 12 phút):
 
 ```{.python .input  n=57}
 trial_backend = PythonBackend(
@@ -182,15 +181,15 @@ tuner = Tuner(
 tuner.run()
 ```
 
-Note that we are running a variant of ASHA where underperforming trials are
-stopped early. This is different to our implementation in
-:numref:`sec_mf_hpo_sh`, where each training job is started with a fixed
-`max_epochs`. In the latter case, a well-performing trial which reaches the
-full 10 epochs, first needs to train 1, then 2, then 4, then 8 epochs, each
-time starting from scratch. This type of pause-and-resume scheduling can be
-implemented efficiently by checkpointing the training state after each epoch,
-but we avoid this extra complexity here. After the experiment has finished,
-we can retrieve and plot results.
+Lưu ý rằng chúng ta đang chạy một biến thể của ASHA, trong đó các trial có hiệu năng
+kém sẽ bị dừng sớm. Điều này khác với implementation của chúng ta trong
+:numref:`sec_mf_hpo_sh`, nơi mỗi training job được bắt đầu với một
+`max_epochs` cố định. Trong trường hợp sau, một trial có hiệu năng tốt và đạt đủ
+10 epoch trước hết phải training 1, rồi 2, rồi 4, rồi 8 epoch, mỗi lần đều bắt đầu
+từ đầu. Kiểu lập lịch pause-and-resume này có thể được triển khai hiệu quả bằng cách
+checkpoint trạng thái training sau mỗi epoch, nhưng ở đây chúng ta tránh sự phức tạp
+bổ sung đó. Sau khi experiment hoàn tất, chúng ta có thể truy xuất và vẽ biểu đồ
+các kết quả.
 
 ```{.python .input  n=59}
 d2l.set_figsize()
@@ -198,15 +197,16 @@ e = load_experiment(tuner.name)
 e.plot()
 ```
 
-## Visualize the Optimization Process
+## Trực quan hóa quá trình tối ưu hóa
 
-Once more, we visualize the learning curves of every trial (each color in the plot represents a trial). Compare this to
-asynchronous random search in :numref:`sec_rs_async`. As we have seen for
-successive halving in :numref:`sec_mf_hpo`, most of the trials are stopped
-at 1 or 2 epochs ($r_{\mathrm{min}}$ or $\eta * r_{\mathrm{min}}$). However, trials do not stop
-at the same point, because they require different amount of time per epoch. If
-we ran standard successive halving instead of ASHA, we would need to synchronize
-our workers, before we can promote configurations to the next rung level.
+Một lần nữa, chúng ta trực quan hóa learning curve của mọi trial (mỗi màu trong biểu đồ
+đại diện cho một trial). Hãy so sánh với random search bất đồng bộ trong
+:numref:`sec_rs_async`. Như đã thấy với successive halving trong
+:numref:`sec_mf_hpo`, phần lớn các trial bị dừng ở 1 hoặc 2 epoch
+($r_{\mathrm{min}}$ hoặc $\eta * r_{\mathrm{min}}$). Tuy nhiên, các trial không dừng
+tại cùng một thời điểm, vì chúng cần lượng thời gian khác nhau cho mỗi epoch. Nếu
+chạy successive halving tiêu chuẩn thay vì ASHA, chúng ta sẽ cần đồng bộ hóa
+các worker trước khi có thể đưa các cấu hình lên mức rung tiếp theo.
 
 ```{.python .input  n=60}
 d2l.set_figsize([6, 2.5])
@@ -222,16 +222,16 @@ d2l.plt.xlabel("wall-clock time")
 d2l.plt.ylabel("objective function")
 ```
 
-## Summary
+## Tóm tắt
 
-Compared to random search, successive halving is not quite as trivial to run in
-an asynchronous distributed setting. To avoid synchronisation points, we promote
-configurations as quickly as possible to the next rung level, even if this means
-promoting some wrong ones. In practice, this usually does not hurt much, and the
-gains of asynchronous versus synchronous scheduling are usually much higher
-than the loss of the suboptimal decision making.
+So với random search, successive halving không hoàn toàn đơn giản khi chạy trong
+môi trường phân tán bất đồng bộ. Để tránh các điểm đồng bộ hóa, chúng ta promotion
+các cấu hình lên mức rung tiếp theo nhanh nhất có thể, ngay cả khi điều đó đồng nghĩa
+với việc promotion nhầm một số cấu hình. Trong thực tế, điều này thường không gây
+ảnh hưởng lớn, và lợi ích của việc lập lịch bất đồng bộ so với đồng bộ thường cao hơn
+nhiều so với tổn thất do các quyết định chưa tối ưu.
 
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/12101)
+[Thảo luận](https://discuss.d2l.ai/t/12101)
 :end_tab:

@@ -1,48 +1,48 @@
 # Maximum Likelihood
 :label:`sec_maximum_likelihood`
 
-One of the most commonly encountered way of thinking in machine learning is the maximum likelihood point of view.  This is the concept that when working with a probabilistic model with unknown parameters, the parameters which make the data have the highest probability are the most likely ones.
+Một trong những cách tư duy thường gặp nhất trong machine learning là quan điểm maximum likelihood. Đây là khái niệm cho rằng khi làm việc với một mô hình xác suất có các tham số chưa biết, những tham số khiến dữ liệu có xác suất cao nhất là những tham số có khả năng đúng nhất.
 
-## The Maximum Likelihood Principle
+## Nguyên lý Maximum Likelihood
 
-This has a Bayesian interpretation which can be helpful to think about.  Suppose that we have a model with parameters $\boldsymbol{\theta}$ and a collection of data examples $X$.  For concreteness, we can imagine that $\boldsymbol{\theta}$ is a single value representing the probability that a coin comes up heads when flipped, and $X$ is a sequence of independent coin flips.  We will look at this example in depth later.
+Điều này có một cách diễn giải theo Bayesian, có thể hữu ích để suy nghĩ về vấn đề. Giả sử chúng ta có một mô hình với các tham số $\boldsymbol{\theta}$ và một tập hợp các ví dụ dữ liệu $X$. Cụ thể hơn, ta có thể hình dung $\boldsymbol{\theta}$ là một giá trị duy nhất biểu diễn xác suất đồng xu cho mặt ngửa khi được tung, còn $X$ là một chuỗi các lần tung đồng xu độc lập. Chúng ta sẽ xem xét sâu ví dụ này ở phần sau.
 
-If we want to find the most likely value for the parameters of our model, that means we want to find
+Nếu muốn tìm giá trị có khả năng đúng nhất của các tham số trong mô hình, điều đó có nghĩa là chúng ta muốn tìm
 
 $$\mathop{\mathrm{argmax}} P(\boldsymbol{\theta}\mid X).$$
 :eqlabel:`eq_max_like`
 
-By Bayes' rule, this is the same thing as
+Theo quy tắc Bayes, biểu thức này tương đương với
 
 $$
 \mathop{\mathrm{argmax}} \frac{P(X \mid \boldsymbol{\theta})P(\boldsymbol{\theta})}{P(X)}.
 $$
 
-The expression $P(X)$, a parameter agnostic probability of generating the data, does not depend on $\boldsymbol{\theta}$ at all, and so can be dropped without changing the best choice of $\boldsymbol{\theta}$.  Similarly, we may now posit that we have no prior assumption on which set of parameters are better than any others, so we may declare that $P(\boldsymbol{\theta})$ does not depend on theta either!  This, for instance, makes sense in our coin flipping example where the probability it comes up heads could be any value in $[0,1]$ without any prior belief it is fair or not (often referred to as an *uninformative prior*).  Thus we see that our application of Bayes' rule shows that our best choice of $\boldsymbol{\theta}$ is the maximum likelihood estimate for $\boldsymbol{\theta}$:
+Biểu thức $P(X)$, là xác suất tạo ra dữ liệu không phụ thuộc vào tham số, hoàn toàn không phụ thuộc vào $\boldsymbol{\theta}$, vì vậy có thể bỏ qua mà không làm thay đổi lựa chọn tốt nhất của $\boldsymbol{\theta}$. Tương tự, giờ đây ta có thể giả định rằng không có tiên nghiệm nào cho rằng một tập tham số tốt hơn các tập khác, do đó có thể khẳng định rằng $P(\boldsymbol{\theta})$ cũng không phụ thuộc vào theta! Chẳng hạn, điều này hợp lý trong ví dụ tung đồng xu, vì xác suất đồng xu cho mặt ngửa có thể là bất kỳ giá trị nào trong $[0,1]$ mà không có niềm tin tiên nghiệm nào về việc đồng xu có cân bằng hay không (thường được gọi là *tiên nghiệm không mang thông tin*). Vì vậy, ta thấy rằng việc áp dụng quy tắc Bayes cho thấy lựa chọn tốt nhất của $\boldsymbol{\theta}$ là ước lượng maximum likelihood cho $\boldsymbol{\theta}$:
 
 $$
 \hat{\boldsymbol{\theta}} = \mathop{\mathrm{argmax}} _ {\boldsymbol{\theta}} P(X \mid \boldsymbol{\theta}).
 $$
 
-As a matter of common terminology, the probability of the data given the parameters ($P(X \mid \boldsymbol{\theta})$) is referred to as the *likelihood*.
+Theo thuật ngữ thông dụng, xác suất của dữ liệu khi biết các tham số ($P(X \mid \boldsymbol{\theta})$) được gọi là *likelihood*.
 
-### A Concrete Example
+### Một ví dụ cụ thể
 
-Let's see how this works in a concrete example.  Suppose that we have a single parameter $\theta$ representing the probability that a coin flip is heads.  Then the probability of getting a tails is $1-\theta$, and so if our observed data $X$ is a sequence with $n_H$ heads and $n_T$ tails, we can use the fact that independent probabilities multiply to see that 
+Hãy xem cách thức này hoạt động trong một ví dụ cụ thể. Giả sử chúng ta có một tham số duy nhất $\theta$ biểu diễn xác suất một lần tung đồng xu cho mặt ngửa. Khi đó, xác suất cho mặt sấp là $1-\theta$, và nếu dữ liệu quan sát được $X$ là một chuỗi gồm $n_H$ lần ngửa và $n_T$ lần sấp, ta có thể sử dụng thực tế rằng các xác suất độc lập được nhân với nhau để thấy rằng
 
 $$
 P(X \mid \theta) = \theta^{n_H}(1-\theta)^{n_T}.
 $$
 
-If we flip $13$ coins and get the sequence "HHHTHTTHHHHHT", which has $n_H = 9$ and $n_T = 4$, we see that this is
+Nếu tung $13$ lần và nhận được chuỗi "HHHTHTTHHHHHT", trong đó có $n_H = 9$ lần ngửa và $n_T = 4$ lần sấp, ta thấy rằng
 
 $$
 P(X \mid \theta) = \theta^9(1-\theta)^4.
 $$
 
-One nice thing about this example will be that we know the answer going in.  Indeed, if we said verbally, "I flipped 13 coins, and 9 came up heads, what is our best guess for the probability that the coin comes us heads?, " everyone would correctly guess $9/13$.  What this maximum likelihood method will give us is a way to get that number from first principals in a way that will generalize to vastly more complex situations.
+Một điểm thuận lợi của ví dụ này là chúng ta biết trước đáp án. Quả thực, nếu nói bằng lời rằng: “Tôi tung đồng xu 13 lần và có 9 lần ra mặt ngửa, vậy phỏng đoán tốt nhất của chúng ta về xác suất đồng xu cho mặt ngửa là bao nhiêu?”, mọi người đều sẽ đoán đúng là $9/13$. Phương pháp maximum likelihood này cho chúng ta một cách để suy ra con số đó từ những nguyên lý đầu tiên, theo một cách có thể tổng quát hóa cho những tình huống phức tạp hơn rất nhiều.
 
-For our example, the plot of $P(X \mid \theta)$ is as follows:
+Với ví dụ của chúng ta, đồ thị của $P(X \mid \theta)$ như sau:
 
 ```{.python .input}
 #@tab mxnet
@@ -81,7 +81,7 @@ p = theta**9 * (1 - theta)**4.
 d2l.plot(theta, p, 'theta', 'likelihood')
 ```
 
-This has its maximum value somewhere near our expected $9/13 \approx 0.7\ldots$.  To see if it is exactly there, we can turn to calculus.  Notice that at the maximum, the gradient of the function is flat.  Thus, we could find the maximum likelihood estimate :eqref:`eq_max_like` by finding the values of $\theta$ where the derivative is zero, and finding the one that gives the highest probability.  We compute:
+Giá trị của nó đạt cực đại ở một điểm gần với giá trị kỳ vọng $9/13 \approx 0.7\ldots$. Để xem điểm đó có chính xác hay không, chúng ta có thể dùng phép tính vi tích phân. Lưu ý rằng tại điểm cực đại, gradient của hàm là phẳng. Vì vậy, ta có thể tìm ước lượng maximum likelihood :eqref:`eq_max_like` bằng cách tìm các giá trị của $\theta$ tại đó đạo hàm bằng 0, rồi chọn giá trị cho xác suất cao nhất. Ta tính được:
 
 $$
 \begin{aligned}
@@ -92,37 +92,37 @@ $$
 \end{aligned}
 $$
 
-This has three solutions: $0$, $1$ and $9/13$.  The first two are clearly minima, not maxima as they assign probability $0$ to our sequence.  The final value does *not* assign zero probability to our sequence, and thus must be the maximum likelihood estimate $\hat \theta = 9/13$.
+Phương trình này có ba nghiệm: $0$, $1$ và $9/13$. Hai nghiệm đầu rõ ràng là các điểm cực tiểu chứ không phải cực đại, vì chúng gán xác suất bằng $0$ cho chuỗi của chúng ta. Giá trị cuối cùng *không* gán xác suất bằng 0 cho chuỗi, do đó phải là ước lượng maximum likelihood $\hat \theta = 9/13$.
 
-## Numerical Optimization and the Negative Log-Likelihood
+## Tối ưu hóa số và Negative Log-Likelihood
 
-The previous example is nice, but what if we have billions of parameters and data examples?
+Ví dụ trước khá đơn giản, nhưng nếu chúng ta có hàng tỷ tham số và ví dụ dữ liệu thì sao?
 
-First, notice that if we make the assumption that all the data examples are independent, we can no longer practically consider the likelihood itself as it is a product of many probabilities.  Indeed, each probability is in $[0,1]$, say typically of value about $1/2$, and the product of $(1/2)^{1000000000}$ is far below machine precision.  We cannot work with that directly.  
+Trước hết, hãy lưu ý rằng nếu giả định tất cả các ví dụ dữ liệu là độc lập, chúng ta không còn có thể thực tế xem xét trực tiếp likelihood, vì nó là tích của rất nhiều xác suất. Quả thực, mỗi xác suất đều nằm trong $[0,1]$, thường có giá trị khoảng $1/2$, và tích $(1/2)^{1000000000}$ nhỏ hơn rất nhiều so với độ chính xác của máy. Chúng ta không thể làm việc trực tiếp với giá trị đó.
 
-However, recall that the logarithm turns products to sums, in which case 
+Tuy nhiên, hãy nhớ rằng logarithm biến tích thành tổng, khi đó
 
 $$
 \log((1/2)^{1000000000}) = 1000000000\cdot\log(1/2) \approx -301029995.6\ldots
 $$
 
-This number fits perfectly within even a single precision $32$-bit float.  Thus, we should consider the *log-likelihood*, which is
+Con số này hoàn toàn nằm trong phạm vi biểu diễn, ngay cả với một số thực 32-bit độ chính xác đơn. Vì vậy, chúng ta nên xét *log-likelihood*, được định nghĩa là
 
 $$
 \log(P(X \mid \boldsymbol{\theta})).
 $$
 
-Since the function $x \mapsto \log(x)$ is increasing, maximizing the likelihood is the same thing as maximizing the log-likelihood.  Indeed in :numref:`sec_naive_bayes` we will see this reasoning applied when working with the specific example of the naive Bayes classifier.
+Vì hàm $x \mapsto \log(x)$ là hàm tăng, việc cực đại hóa likelihood tương đương với việc cực đại hóa log-likelihood. Quả thực, trong :numref:`sec_naive_bayes`, chúng ta sẽ thấy lập luận này được áp dụng khi làm việc với ví dụ cụ thể về bộ phân loại naive Bayes.
 
-We often work with loss functions, where we wish to minimize the loss.  We may turn maximum likelihood into the minimization of a loss by taking $-\log(P(X \mid \boldsymbol{\theta}))$, which is the *negative log-likelihood*.
+Chúng ta thường làm việc với các hàm mất mát, trong đó mục tiêu là tối thiểu hóa mất mát. Ta có thể chuyển maximum likelihood thành bài toán tối thiểu hóa một hàm mất mát bằng cách lấy $-\log(P(X \mid \boldsymbol{\theta}))$, được gọi là *negative log-likelihood*.
 
-To illustrate this, consider the coin flipping problem from before, and pretend that we do not know the closed form solution.  We may compute that
+Để minh họa, hãy xét lại bài toán tung đồng xu ở trên và giả vờ rằng chúng ta không biết nghiệm dạng đóng. Ta có thể tính được
 
 $$
 -\log(P(X \mid \boldsymbol{\theta})) = -\log(\theta^{n_H}(1-\theta)^{n_T}) = -(n_H\log(\theta) + n_T\log(1-\theta)).
 $$
 
-This can be written into code, and freely optimized even for billions of coin flips.
+Biểu thức này có thể được viết thành code và tối ưu hóa dễ dàng, ngay cả khi có hàng tỷ lần tung đồng xu.
 
 ```{.python .input}
 #@tab mxnet
@@ -188,17 +188,15 @@ for iter in range(100):
 theta, n_H / (n_H + n_T)
 ```
 
-Numerical convenience is not the only reason why people like to use negative log-likelihoods. There are several other reasons why it is preferable.
+Sự thuận tiện về mặt số học không phải là lý do duy nhất khiến mọi người thích sử dụng negative log-likelihood. Có một số lý do khác khiến nó được ưu tiên.
 
-
-
-The second reason we consider the log-likelihood is the simplified application of calculus rules. As discussed above, due to independence assumptions, most probabilities we encounter in machine learning are products of individual probabilities.
+Lý do thứ hai để xét log-likelihood là việc áp dụng các quy tắc giải tích trở nên đơn giản hơn. Như đã thảo luận ở trên, do các giả định về tính độc lập, hầu hết các xác suất chúng ta gặp trong machine learning đều là tích của các xác suất riêng lẻ.
 
 $$
 P(X\mid\boldsymbol{\theta}) = p(x_1\mid\boldsymbol{\theta})\cdot p(x_2\mid\boldsymbol{\theta})\cdots p(x_n\mid\boldsymbol{\theta}).
 $$
 
-This means that if we directly apply the product rule to compute a derivative we get
+Điều này có nghĩa là nếu áp dụng trực tiếp quy tắc đạo hàm của tích để tính đạo hàm, ta nhận được
 
 $$
 \begin{aligned}
@@ -209,43 +207,43 @@ $$
 \end{aligned}
 $$
 
-This requires $n(n-1)$ multiplications, along with $(n-1)$ additions, so it is proportional to quadratic time in the inputs!  Sufficient cleverness in grouping terms will reduce this to linear time, but it requires some thought.  For the negative log-likelihood we have instead
+Việc này cần $n(n-1)$ phép nhân cùng với $(n-1)$ phép cộng, nên có độ phức tạp thời gian bậc hai theo đầu vào! Việc nhóm các hạng tử một cách đủ khéo léo sẽ giảm độ phức tạp này xuống thời gian tuyến tính, nhưng cần phải suy nghĩ thêm. Với negative log-likelihood, thay vào đó ta có
 
 $$
 -\log\left(P(X\mid\boldsymbol{\theta})\right) = -\log(P(x_1\mid\boldsymbol{\theta})) - \log(P(x_2\mid\boldsymbol{\theta})) \cdots - \log(P(x_n\mid\boldsymbol{\theta})),
 $$
 
-which then gives
+từ đó suy ra
 
 $$
 - \frac{\partial}{\partial \boldsymbol{\theta}} \log\left(P(X\mid\boldsymbol{\theta})\right) = \frac{1}{P(x_1\mid\boldsymbol{\theta})}\left(\frac{\partial}{\partial \boldsymbol{\theta}}P(x_1\mid\boldsymbol{\theta})\right) + \cdots + \frac{1}{P(x_n\mid\boldsymbol{\theta})}\left(\frac{\partial}{\partial \boldsymbol{\theta}}P(x_n\mid\boldsymbol{\theta})\right).
 $$
 
-This requires only $n$ divides and $n-1$ sums, and thus is linear time in the inputs.
+Việc này chỉ cần $n$ phép chia và $n-1$ phép cộng, do đó có độ phức tạp thời gian tuyến tính theo đầu vào.
 
-The third and final reason to consider the negative log-likelihood is the relationship to information theory, which we will discuss in detail in :numref:`sec_information_theory`.  This is a rigorous mathematical theory which gives a way to measure the degree of information or randomness in a random variable.  The key object of study in that field is the entropy which is 
+Lý do thứ ba và cũng là lý do cuối cùng để xét negative log-likelihood là mối liên hệ của nó với lý thuyết thông tin, nội dung sẽ được thảo luận chi tiết trong :numref:`sec_information_theory`. Đây là một lý thuyết toán học chặt chẽ, cung cấp cách đo lường mức độ thông tin hoặc tính ngẫu nhiên trong một biến ngẫu nhiên. Đối tượng nghiên cứu cốt lõi của lĩnh vực này là entropy, được định nghĩa là
 
 $$
 H(p) = -\sum_{i} p_i \log_2(p_i),
 $$
 
-which measures the randomness of a source. Notice that this is nothing more than the average $-\log$ probability, and thus if we take our negative log-likelihood and divide by the number of data examples, we get a relative of entropy known as cross-entropy.  This theoretical interpretation alone would be sufficiently compelling to motivate reporting the average negative log-likelihood over the dataset as a way of measuring model performance.
+đại lượng đo tính ngẫu nhiên của một nguồn. Lưu ý rằng đây không gì khác hơn là xác suất $-\log$ trung bình, và do đó nếu lấy negative log-likelihood rồi chia cho số lượng ví dụ dữ liệu, ta nhận được một biến thể của entropy có tên là cross-entropy. Chỉ riêng cách diễn giải lý thuyết này cũng đã đủ thuyết phục để báo cáo negative log-likelihood trung bình trên tập dữ liệu như một cách đo hiệu năng của mô hình.
 
-## Maximum Likelihood for Continuous Variables
+## Maximum Likelihood cho các biến liên tục
 
-Everything that we have done so far assumes we are working with discrete random variables, but what if we want to work with continuous ones?
+Mọi thứ chúng ta đã thực hiện cho đến nay đều giả định rằng ta đang làm việc với các biến ngẫu nhiên rời rạc, nhưng nếu muốn làm việc với các biến ngẫu nhiên liên tục thì sao?
 
-The short summary is that nothing at all changes, except we replace all the instances of the probability with the probability density.  Recalling that we write densities with lower case $p$, this means that for example we now say
+Tóm lại, hoàn toàn không có gì thay đổi, ngoại trừ việc ta thay mọi trường hợp của xác suất bằng mật độ xác suất. Nhắc lại rằng ta viết các mật độ bằng chữ $p$ thường, điều này có nghĩa là, chẳng hạn, bây giờ ta viết
 
 $$
 -\log\left(p(X\mid\boldsymbol{\theta})\right) = -\log(p(x_1\mid\boldsymbol{\theta})) - \log(p(x_2\mid\boldsymbol{\theta})) \cdots - \log(p(x_n\mid\boldsymbol{\theta})) = -\sum_i \log(p(x_i \mid \theta)).
 $$
 
-The question becomes, "Why is this OK?"  After all, the reason we introduced densities was because probabilities of getting specific outcomes themselves was zero, and thus is not the probability of generating our data for any set of parameters zero?
+Câu hỏi đặt ra là: “Tại sao điều này lại đúng?” Xét cho cùng, lý do chúng ta đưa vào các mật độ là vì xác suất nhận được những kết quả cụ thể tự nó bằng không; vậy chẳng phải xác suất sinh ra dữ liệu của chúng ta sẽ bằng không với mọi tập tham số hay sao?
 
-Indeed, this is the case, and understanding why we can shift to densities is an exercise in tracing what happens to the epsilons.
+Đúng là như vậy, và việc hiểu tại sao ta có thể chuyển sang dùng mật độ là một bài tập theo dõi điều gì xảy ra với các epsilon.
 
-Let's first re-define our goal.  Suppose that for continuous random variables we no longer want to compute the probability of getting exactly the right value, but instead matching to within some range $\epsilon$.  For simplicity, we assume our data is repeated observations $x_1, \ldots, x_N$ of identically distributed random variables $X_1, \ldots, X_N$.  As we have seen previously, this can be written as
+Trước hết, hãy định nghĩa lại mục tiêu của chúng ta. Giả sử rằng đối với các biến ngẫu nhiên liên tục, ta không còn muốn tính xác suất nhận được chính xác giá trị cần tìm, mà thay vào đó là xác suất khớp trong một khoảng $\epsilon$. Để đơn giản, ta giả sử dữ liệu của mình là các quan sát lặp lại $x_1, \ldots, x_N$ của các biến ngẫu nhiên phân phối đồng nhất $X_1, \ldots, X_N$. Như đã thấy trước đây, điều này có thể được viết là
 
 $$
 \begin{aligned}
@@ -254,7 +252,7 @@ $$
 \end{aligned}
 $$
 
-Thus, if we take negative logarithms of this we obtain
+Do đó, nếu lấy logarithm âm của biểu thức này, ta thu được
 
 $$
 \begin{aligned}
@@ -263,22 +261,22 @@ $$
 \end{aligned}
 $$
 
-If we examine this expression, the only place that the $\epsilon$ occurs is in the additive constant $-N\log(\epsilon)$.  This does not depend on the parameters $\boldsymbol{\theta}$ at all, so the optimal choice of $\boldsymbol{\theta}$ does not depend on our choice of $\epsilon$!  If we demand four digits or four-hundred, the best choice of $\boldsymbol{\theta}$ remains the same, thus we may freely drop the epsilon to see that what we want to optimize is
+Nếu xem xét biểu thức này, ta thấy $\epsilon$ chỉ xuất hiện trong hằng số cộng $-N\log(\epsilon)$. Hằng số này hoàn toàn không phụ thuộc vào các tham số $\boldsymbol{\theta}$, vì vậy lựa chọn tối ưu của $\boldsymbol{\theta}$ không phụ thuộc vào lựa chọn $\epsilon$ của chúng ta! Dù ta yêu cầu bốn chữ số hay bốn trăm chữ số, lựa chọn tốt nhất của $\boldsymbol{\theta}$ vẫn không thay đổi. Do đó, ta có thể tự do bỏ epsilon để thấy rằng đại lượng cần tối ưu là
 
 $$
 - \sum_{i} \log(p(x_i\mid\boldsymbol{\theta})).
 $$
 
-Thus, we see that the maximum likelihood point of view can operate with continuous random variables as easily as with discrete ones by replacing the probabilities with probability densities.
+Như vậy, ta thấy rằng quan điểm maximum likelihood có thể áp dụng cho các biến ngẫu nhiên liên tục dễ dàng như cho các biến rời rạc, bằng cách thay các xác suất bằng các mật độ xác suất.
 
-## Summary
-* The maximum likelihood principle tells us that the best fit model for a given dataset is the one that generates the data with the highest probability.
-* Often people work with the negative log-likelihood instead for a variety of reasons: numerical stability, conversion of products to sums (and the resulting simplification of gradient computations), and theoretical ties to information theory.
-* While simplest to motivate in the discrete setting, it may be freely generalized to the continuous setting as well by maximizing the probability density assigned to the datapoints.
+## Tóm tắt
+* Nguyên lý maximum likelihood cho biết mô hình khớp tốt nhất với một tập dữ liệu cho trước là mô hình sinh ra dữ liệu với xác suất cao nhất.
+* Thay vào đó, mọi người thường làm việc với negative log-likelihood vì nhiều lý do: tính ổn định số, chuyển tích thành tổng (và nhờ đó đơn giản hóa việc tính gradient), cũng như mối liên hệ về mặt lý thuyết với lý thuyết thông tin.
+* Mặc dù dễ được giải thích nhất trong bối cảnh rời rạc, nguyên lý này cũng có thể được mở rộng tự do sang bối cảnh liên tục bằng cách cực đại hóa mật độ xác suất được gán cho các điểm dữ liệu.
 
-## Exercises
-1. Suppose that you know that a non-negative random variable has density $\alpha e^{-\alpha x}$ for some value $\alpha>0$.  You obtain a single observation from the random variable which is the number $3$.  What is the maximum likelihood estimate for $\alpha$?
-2. Suppose that you have a dataset of samples $\{x_i\}_{i=1}^N$ drawn from a Gaussian with unknown mean, but variance $1$.  What is the maximum likelihood estimate for the mean?
+## Bài tập
+1. Giả sử bạn biết rằng một biến ngẫu nhiên không âm có mật độ $\alpha e^{-\alpha x}$ với một giá trị $\alpha>0$. Bạn thu được một quan sát duy nhất từ biến ngẫu nhiên này, có giá trị là $3$. Ước lượng maximum likelihood của $\alpha$ là bao nhiêu?
+2. Giả sử bạn có một tập dữ liệu gồm các mẫu $\{x_i\}_{i=1}^N$ được lấy từ một Gaussian có giá trị trung bình chưa biết nhưng phương sai bằng $1$. Ước lượng maximum likelihood của giá trị trung bình là bao nhiêu?
 
 
 :begin_tab:`mxnet`

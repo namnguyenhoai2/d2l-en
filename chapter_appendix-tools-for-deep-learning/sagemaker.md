@@ -1,126 +1,126 @@
-# Using Amazon SageMaker
+# Sử dụng Amazon SageMaker
 :label:`sec_sagemaker`
 
-Deep learning applications
-may demand so much computational resource
-that easily goes beyond
-what your local machine can offer.
-Cloud computing services
-allow you to 
-run GPU-intensive code of this book
-more easily
-using more powerful computers.
-This section will introduce 
-how to use Amazon SageMaker
-to run the code of this book.
+Các ứng dụng deep learning
+có thể yêu cầu nhiều tài nguyên tính toán đến mức
+dễ dàng vượt quá
+khả năng cung cấp của máy cục bộ.
+Các dịch vụ điện toán đám mây
+cho phép bạn
+chạy mã yêu cầu nhiều GPU trong cuốn sách này
+dễ dàng hơn
+bằng cách sử dụng các máy tính mạnh hơn.
+Phần này sẽ giới thiệu
+cách sử dụng Amazon SageMaker
+để chạy mã của cuốn sách này.
 
-## Signing Up
+## Đăng ký
 
-First, we need to sign up an account at https://aws.amazon.com/.
-For additional security,
-using two-factor authentication 
-is encouraged.
-It is also a good idea to
-set up detailed billing and spending alerts to
-avoid any surprise,
-e.g., 
-when forgetting to stop running instances.
-After logging into your AWS account, 
-go to your [console](http://console.aws.amazon.com/) and search for "Amazon SageMaker" (see :numref:`fig_sagemaker`), 
-then click it to open the SageMaker panel.
+Trước tiên, chúng ta cần đăng ký tài khoản tại https://aws.amazon.com/.
+Để tăng cường bảo mật,
+bạn nên sử dụng xác thực hai yếu tố.
+Bạn cũng nên
+thiết lập các cảnh báo chi tiết về việc lập hóa đơn và chi tiêu để
+tránh các khoản phí bất ngờ,
+ví dụ như
+khi quên dừng các instance đang chạy.
+Sau khi đăng nhập vào tài khoản AWS,
+hãy truy cập [console](http://console.aws.amazon.com/) của bạn và tìm kiếm "Amazon SageMaker" (xem :numref:`fig_sagemaker`),
+sau đó nhấp vào mục này để mở bảng điều khiển SageMaker.
 
-![Search for and open the SageMaker panel.](../img/sagemaker.png)
+![Tìm kiếm và mở bảng điều khiển SageMaker.](../img/sagemaker.png)
 :width:`300px`
 :label:`fig_sagemaker`
 
-## Creating a SageMaker Instance
+## Tạo một SageMaker Instance
 
-Next, let's create a notebook instance as described in :numref:`fig_sagemaker-create`.
+Tiếp theo, hãy tạo một notebook instance như mô tả trong :numref:`fig_sagemaker-create`.
 
-![Create a SageMaker instance.](../img/sagemaker-create.png)
+![Tạo một SageMaker instance.](../img/sagemaker-create.png)
 :width:`400px`
 :label:`fig_sagemaker-create`
 
-SageMaker provides multiple [instance types](https://aws.amazon.com/sagemaker/pricing/instance-types/) with varying computational power and prices.
-When creating a notebook instance,
-we can specify its name and type.
-In :numref:`fig_sagemaker-create-2`, we choose `ml.p3.2xlarge`: with one Tesla V100 GPU and an 8-core CPU, this instance is powerful enough for most of the book.
+SageMaker cung cấp nhiều [loại instance](https://aws.amazon.com/sagemaker/pricing/instance-types/) với năng lực tính toán và mức giá khác nhau.
+Khi tạo một notebook instance,
+chúng ta có thể chỉ định tên và loại của instance.
+Trong :numref:`fig_sagemaker-create-2`, chúng ta chọn `ml.p3.2xlarge`: với một GPU Tesla V100 và CPU 8 lõi, instance này đủ mạnh cho hầu hết nội dung trong cuốn sách.
 
-![Choose the instance type.](../img/sagemaker-create-2.png)
+![Chọn loại instance.](../img/sagemaker-create-2.png)
 :width:`400px`
 :label:`fig_sagemaker-create-2`
 
 :begin_tab:`mxnet`
-The entire book in the ipynb format for running with SageMaker is available at https://github.com/d2l-ai/d2l-en-sagemaker. We can specify this GitHub repository URL (:numref:`fig_sagemaker-create-3`) to allow SageMaker to clone it when creating the instance.
+Toàn bộ cuốn sách ở định dạng ipynb để chạy với SageMaker có tại https://github.com/d2l-ai/d2l-en-sagemaker. Chúng ta có thể chỉ định URL của repository GitHub này (:numref:`fig_sagemaker-create-3`) để cho phép SageMaker clone repository khi tạo instance.
 :end_tab:
 
 :begin_tab:`pytorch`
-The entire book in the ipynb format for running with SageMaker is available at https://github.com/d2l-ai/d2l-pytorch-sagemaker. We can specify this GitHub repository URL (:numref:`fig_sagemaker-create-3`) to allow SageMaker to clone it when creating the instance.
+Toàn bộ cuốn sách ở định dạng ipynb để chạy với SageMaker có tại https://github.com/d2l-ai/d2l-pytorch-sagemaker. Chúng ta có thể chỉ định URL của repository GitHub này (:numref:`fig_sagemaker-create-3`) để cho phép SageMaker clone repository khi tạo instance.
 :end_tab:
 
 :begin_tab:`tensorflow`
-The entire book in the ipynb format for running with SageMaker is available at https://github.com/d2l-ai/d2l-tensorflow-sagemaker. We can specify this GitHub repository URL (:numref:`fig_sagemaker-create-3`) to allow SageMaker to clone it when creating the instance.
+Toàn bộ cuốn sách ở định dạng ipynb để chạy với SageMaker có tại https://github.com/d2l-ai/d2l-tensorflow-sagemaker. Chúng ta có thể chỉ định URL của repository GitHub này (:numref:`fig_sagemaker-create-3`) để cho phép SageMaker clone repository khi tạo instance.
 :end_tab:
 
-![Specify the GitHub repository.](../img/sagemaker-create-3.png)
+![Chỉ định repository GitHub.](../img/sagemaker-create-3.png)
 :width:`400px`
 :label:`fig_sagemaker-create-3`
 
-## Running and Stopping an Instance
+## Chạy và dừng một Instance
 
-Creating an instance
-may take a few minutes.
-When it is ready,
-click on the "Open Jupyter" link next to it (:numref:`fig_sagemaker-open`) so you can
-edit and run all the Jupyter notebooks
-of this book on this instance
-(similar to steps in :numref:`sec_jupyter`).
+Việc tạo instance
+có thể mất vài phút.
+Khi instance sẵn sàng,
+hãy nhấp vào liên kết "Open Jupyter" bên cạnh instance đó (:numref:`fig_sagemaker-open`) để bạn có thể
+chỉnh sửa và chạy tất cả notebook Jupyter
+của cuốn sách này trên instance đó
+(tương tự các bước trong :numref:`sec_jupyter`).
 
-![Open Jupyter on the created SageMaker instance.](../img/sagemaker-open.png)
+![Mở Jupyter trên SageMaker instance đã tạo.](../img/sagemaker-open.png)
 :width:`400px`
 :label:`fig_sagemaker-open`
 
 
-After finishing your work,
-do not forget to stop the instance to avoid 
-being charged further (:numref:`fig_sagemaker-stop`).
+Sau khi hoàn tất công việc,
+đừng quên dừng instance để tránh
+tiếp tục bị tính phí (:numref:`fig_sagemaker-stop`).
 
-![Stop a SageMaker instance.](../img/sagemaker-stop.png)
+![Dừng một SageMaker instance.](../img/sagemaker-stop.png)
 :width:`300px`
 :label:`fig_sagemaker-stop`
 
-## Updating Notebooks
+## Cập nhật Notebook
 
 :begin_tab:`mxnet`
-Notebooks of this open-source book will be regularly updated in the [d2l-ai/d2l-en-sagemaker](https://github.com/d2l-ai/d2l-en-sagemaker) repository
-on GitHub.
-To update to the latest version,
-you may open a terminal on the SageMaker instance (:numref:`fig_sagemaker-terminal`).
+Các notebook của cuốn sách mã nguồn mở này sẽ được cập nhật thường xuyên trong repository [d2l-ai/d2l-en-sagemaker](https://github.com/d2l-ai/d2l-en-sagemaker)
+trên GitHub.
+Để cập nhật lên phiên bản mới nhất,
+bạn có thể mở một terminal trên SageMaker instance (:numref:`fig_sagemaker-terminal`).
 :end_tab:
 
 :begin_tab:`pytorch`
-Notebooks of this open-source book will be regularly updated in the [d2l-ai/d2l-pytorch-sagemaker](https://github.com/d2l-ai/d2l-pytorch-sagemaker) repository
-on GitHub.
-To update to the latest version,
-you may open a terminal on the SageMaker instance (:numref:`fig_sagemaker-terminal`).
+Các notebook của cuốn sách mã nguồn mở này sẽ được cập nhật thường xuyên trong repository [d2l-ai/d2l-pytorch-sagemaker](https://github.com/d2l-ai/d2l-pytorch-sagemaker)
+trên GitHub.
+Để cập nhật lên phiên bản mới nhất,
+bạn có thể mở một terminal trên SageMaker instance (:numref:`fig_sagemaker-terminal`).
 :end_tab:
 
 
 :begin_tab:`tensorflow`
-Notebooks of this open-source book will be regularly updated in the [d2l-ai/d2l-tensorflow-sagemaker](https://github.com/d2l-ai/d2l-tensorflow-sagemaker) repository
-on GitHub.
-To update to the latest version,
-you may open a terminal on the SageMaker instance (:numref:`fig_sagemaker-terminal`).
+Các notebook của cuốn sách mã nguồn mở này sẽ được cập nhật thường xuyên trong repository [d2l-ai/d2l-tensorflow-sagemaker](https://github.com/d2l-ai/d2l-tensorflow-sagemaker)
+trên GitHub.
+Để cập nhật lên phiên bản mới nhất,
+bạn có thể mở một terminal trên SageMaker instance (:numref:`fig_sagemaker-terminal`).
 :end_tab:
 
 
-![Open a terminal on the SageMaker instance.](../img/sagemaker-terminal.png)
+![Mở một terminal trên SageMaker instance.](../img/sagemaker-terminal.png)
 :width:`300px`
 :label:`fig_sagemaker-terminal`
 
-You may wish to commit your local changes before pulling updates from the remote repository. 
-Otherwise, simply discard all your local changes
-with the following commands in the terminal:
+Bạn có thể muốn commit các thay đổi cục bộ trước khi pull các bản cập nhật từ repository từ xa.
+Nếu không,
+chỉ cần loại bỏ tất cả thay đổi cục bộ của bạn
+bằng các lệnh sau trong terminal:
 
 :begin_tab:`mxnet`
 
@@ -155,17 +155,17 @@ git pull
 
 :end_tab:
 
-## Summary
+## Tóm tắt
 
-* We can create a notebook instance using Amazon SageMaker to run GPU-intensive code of this book.
-* We can update notebooks via the terminal on the Amazon SageMaker instance.
-
-
-## Exercises
+* Chúng ta có thể tạo một notebook instance bằng Amazon SageMaker để chạy mã yêu cầu nhiều GPU trong cuốn sách này.
+* Chúng ta có thể cập nhật notebook thông qua terminal trên Amazon SageMaker instance.
 
 
-1. Edit and run any section that requires a GPU using Amazon SageMaker.
-1. Open a terminal to access the local directory that hosts all the notebooks of this book.
+## Bài tập
 
 
-[Discussions](https://discuss.d2l.ai/t/422)
+1. Chỉnh sửa và chạy bất kỳ phần nào yêu cầu GPU bằng Amazon SageMaker.
+1. Mở một terminal để truy cập thư mục cục bộ chứa tất cả notebook của cuốn sách này.
+
+
+[Thảo luận](https://discuss.d2l.ai/t/422)

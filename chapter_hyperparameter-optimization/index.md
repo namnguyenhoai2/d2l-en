@@ -1,27 +1,27 @@
-# Hyperparameter Optimization
+# Tối ưu hóa siêu tham số
 :label:`chap_hyperopt`
 
-**Aaron Klein** (*Amazon*), **Matthias Seeger** (*Amazon*), and **Cedric Archambeau** (*Amazon*)
+**Aaron Klein** (*Amazon*), **Matthias Seeger** (*Amazon*) và **Cedric Archambeau** (*Amazon*)
 
-The performance of every machine learning model depends on its hyperparameters.
-They control the learning algorithm or the structure of the underlying
-statistical model. However, there is no general way to choose hyperparameters
-in practice. Instead, hyperparameters are often set in a trial-and-error manner
-or sometimes left to their default values by practitioners, leading to
-suboptimal generalization.
+Hiệu năng của mọi mô hình machine learning đều phụ thuộc vào các siêu tham số.
+Chúng kiểm soát thuật toán học hoặc cấu trúc của mô hình thống kê cơ sở.
+Tuy nhiên, trên thực tế không có cách tổng quát nào để lựa chọn các siêu tham số.
+Thay vào đó, các practitioner thường thiết lập siêu tham số theo cách thử và sai,
+hoặc đôi khi giữ nguyên các giá trị mặc định của chúng, dẫn đến khả năng
+tổng quát hóa không tối ưu.
 
-Hyperparameter optimization provides a systematic approach to this problem, by
-casting it as an optimization problem: a good set of hyperparameters should (at
-least) minimize a validation error. Compared to most other optimization problems
-arising in machine learning, hyperparameter optimization is a nested one, where
-each iteration requires training and validating a machine learning model.
+Tối ưu hóa siêu tham số cung cấp một cách tiếp cận có hệ thống cho vấn đề này bằng
+cách chuyển nó thành một bài toán tối ưu hóa: một tập hợp siêu tham số tốt ít nhất
+phải giảm thiểu sai số validation. So với hầu hết các bài toán tối ưu hóa khác
+phát sinh trong machine learning, tối ưu hóa siêu tham số là một bài toán lồng nhau,
+trong đó mỗi lần lặp đều yêu cầu huấn luyện và validation một mô hình machine learning.
 
-In this chapter, we will first introduce the basics of hyperparameter
-optimization. We will also present some recent advancements that improve the
-overall efficiency of hyperparameter optimization by exploiting cheap-to-evaluate
-proxies of the original objective function. At the end of this chapter, you
-should be able to apply state-of-the-art hyperparameter optimization techniques
-to optimize the hyperparameter of your own machine learning algorithm.
+Trong chương này, trước tiên chúng ta sẽ giới thiệu những kiến thức cơ bản về tối ưu hóa
+siêu tham số. Chúng ta cũng sẽ trình bày một số tiến bộ gần đây giúp cải thiện hiệu quả
+tổng thể của quá trình tối ưu hóa siêu tham số bằng cách tận dụng các đại diện
+(proxy) có chi phí đánh giá thấp của hàm mục tiêu ban đầu. Khi kết thúc chương này, bạn
+sẽ có thể áp dụng các kỹ thuật tối ưu hóa siêu tham số hiện đại nhất để tối ưu hóa
+siêu tham số của thuật toán machine learning của riêng mình.
 
 ```toc
 :maxdepth: 2
@@ -32,4 +32,3 @@ rs-async.md
 sh-intro
 sh-async
 ```
-

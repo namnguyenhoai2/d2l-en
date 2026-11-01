@@ -1,36 +1,36 @@
 # Deep Factorization Machines
 
-Learning effective feature combinations is critical to the success of click-through rate prediction task. Factorization machines model feature interactions in a linear paradigm (e.g., bilinear interactions). This is often insufficient for real-world data where inherent feature crossing structures are usually very complex and nonlinear. What's worse, second-order feature interactions are generally used in factorization machines in practice. Modeling higher degrees of feature combinations with factorization machines is possible theoretically but it is usually not adopted due to numerical instability and high computational complexity.
+Việc học các tổ hợp đặc trưng hiệu quả đóng vai trò then chốt đối với sự thành công của bài toán dự đoán tỷ lệ nhấp. Factorization machines mô hình hóa các tương tác đặc trưng theo một paradigm tuyến tính (ví dụ: các tương tác song tuyến tính). Điều này thường không đủ đối với dữ liệu thực tế, nơi các cấu trúc giao cắt đặc trưng vốn có thường rất phức tạp và phi tuyến. Tệ hơn nữa, trong thực tế, factorization machines thường chỉ sử dụng các tương tác đặc trưng bậc hai. Về mặt lý thuyết, có thể mô hình hóa các tổ hợp đặc trưng bậc cao hơn bằng factorization machines, nhưng cách này thường không được áp dụng do tính bất ổn số và độ phức tạp tính toán cao.
 
-One effective solution is using deep neural networks. Deep neural networks are powerful in feature representation learning and have the potential to learn sophisticated feature interactions. As such, it is natural to integrate deep neural networks to factorization machines. Adding nonlinear transformation layers to factorization machines gives it the capability to model both low-order feature combinations and high-order feature combinations. Moreover, non-linear inherent structures from inputs can also be captured with deep neural networks. In this section, we will introduce a representative model named deep factorization machines (DeepFM) :cite:`Guo.Tang.Ye.ea.2017` which combine FM and deep neural networks.
+Một giải pháp hiệu quả là sử dụng mạng neural sâu. Mạng neural sâu có khả năng mạnh mẽ trong việc học biểu diễn đặc trưng và có tiềm năng học các tương tác đặc trưng tinh vi. Do đó, việc tích hợp mạng neural sâu vào factorization machines là một hướng đi tự nhiên. Việc thêm các lớp biến đổi phi tuyến vào factorization machines giúp mô hình có khả năng mô hình hóa cả các tổ hợp đặc trưng bậc thấp và bậc cao. Ngoài ra, mạng neural sâu cũng có thể nắm bắt các cấu trúc phi tuyến vốn có từ đầu vào. Trong phần này, chúng ta sẽ giới thiệu một mô hình tiêu biểu có tên deep factorization machines (DeepFM) :cite:`Guo.Tang.Ye.ea.2017` kết hợp FM và mạng neural sâu.
 
 
-## Model Architectures
+## Kiến trúc mô hình
 
-DeepFM consists of an FM component and a deep component which are integrated in a parallel structure. The FM component is the same as the 2-way factorization machines which is used to model the low-order feature interactions. The deep component is an MLP that is used to capture high-order feature interactions and nonlinearities. These two components share the same inputs/embeddings and their outputs are summed up as the final prediction. It is worth pointing out that the spirit of DeepFM resembles that of the Wide \& Deep architecture which can capture both memorization and generalization. The advantages of DeepFM over the Wide \& Deep model is that it reduces the effort of hand-crafted feature engineering by identifying feature combinations automatically.
+DeepFM bao gồm một thành phần FM và một thành phần deep được tích hợp theo cấu trúc song song. Thành phần FM giống với factorization machines 2-way, được dùng để mô hình hóa các tương tác đặc trưng bậc thấp. Thành phần deep là một MLP, được dùng để nắm bắt các tương tác đặc trưng bậc cao và các tính phi tuyến. Hai thành phần này chia sẻ cùng đầu vào/embeddings, và đầu ra của chúng được cộng lại để tạo thành dự đoán cuối cùng. Cần lưu ý rằng tinh thần của DeepFM tương tự kiến trúc Wide \& Deep, vốn có thể nắm bắt cả memorization và generalization. Ưu điểm của DeepFM so với mô hình Wide \& Deep là giảm công sức feature engineering thủ công bằng cách tự động xác định các tổ hợp đặc trưng.
 
-We omit the description of the FM component for brevity and denote the output as $\hat{y}^{(FM)}$. Readers are referred to the last section for more details. Let $\mathbf{e}_i \in \mathbb{R}^{k}$ denote the latent feature vector of the $i^\textrm{th}$ field.  The input of the deep component is the concatenation of the dense embeddings of all fields that are looked up with the sparse categorical feature input, denoted as:
+Để ngắn gọn, chúng tôi bỏ qua phần mô tả thành phần FM và ký hiệu đầu ra là $\hat{y}^{(FM)}$. Người đọc có thể tham khảo phần cuối để biết thêm chi tiết. Gọi $\mathbf{e}_i \in \mathbb{R}^{k}$ là vector đặc trưng latent của trường $i^\textrm{th}$. Đầu vào của thành phần deep là phép nối các embedding dense của tất cả các trường được tra cứu bằng đầu vào đặc trưng phân loại sparse, được ký hiệu như sau:
 
 $$
 \mathbf{z}^{(0)}  = [\mathbf{e}_1, \mathbf{e}_2, ..., \mathbf{e}_f],
 $$
 
-where $f$ is the number of fields.  It is then fed into the following neural network:
+trong đó $f$ là số lượng trường. Sau đó, đầu vào này được đưa vào mạng neural sau:
 
 $$
 \mathbf{z}^{(l)}  = \alpha(\mathbf{W}^{(l)}\mathbf{z}^{(l-1)} + \mathbf{b}^{(l)}),
 $$
 
-where $\alpha$ is the activation function.  $\mathbf{W}_{l}$ and $\mathbf{b}_{l}$ are the weight and bias at the $l^\textrm{th}$ layer. Let $y_{DNN}$ denote the output of the prediction. The ultimate prediction of DeepFM is the summation of the outputs from both FM and DNN. So we have:
+trong đó $\alpha$ là hàm activation. $\mathbf{W}_{l}$ và $\mathbf{b}_{l}$ lần lượt là weight và bias tại layer $l^\textrm{th}$. Gọi $y_{DNN}$ là đầu ra của dự đoán. Dự đoán cuối cùng của DeepFM là tổng đầu ra từ FM và DNN. Do đó, ta có:
 
 $$
 \hat{y} = \sigma(\hat{y}^{(FM)} + \hat{y}^{(DNN)}),
 $$
 
-where $\sigma$ is the sigmoid function. The architecture of DeepFM is illustrated below.
-![Illustration of the DeepFM model](../img/rec-deepfm.svg)
+trong đó $\sigma$ là hàm sigmoid. Kiến trúc của DeepFM được minh họa bên dưới.
+![Minh họa mô hình DeepFM](../img/rec-deepfm.svg)
 
-It is worth noting that DeepFM is not the only way to combine deep neural networks with FM. We can also add nonlinear layers over the feature interactions :cite:`He.Chua.2017`.
+Cần lưu ý rằng DeepFM không phải là cách duy nhất để kết hợp mạng neural sâu với FM. Chúng ta cũng có thể thêm các layer phi tuyến lên trên các tương tác đặc trưng :cite:`He.Chua.2017`.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -42,8 +42,8 @@ import os
 npx.set_np()
 ```
 
-## Implementation of DeepFM
-The implementation of DeepFM is similar to that of FM. We keep the FM part unchanged and use an MLP block with `relu` as the activation function. Dropout is also used to regularize the model. The number of neurons of the MLP can be adjusted with the `mlp_dims` hyperparameter.
+## Triển khai DeepFM
+Việc triển khai DeepFM tương tự như triển khai FM. Chúng ta giữ nguyên phần FM và sử dụng một block MLP với `relu` làm hàm activation. Dropout cũng được sử dụng để regularize mô hình. Số lượng neuron của MLP có thể được điều chỉnh bằng hyperparameter `mlp_dims`.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -74,8 +74,8 @@ class DeepFM(nn.Block):
         return x
 ```
 
-## Training and Evaluating the Model
-The data loading process is the same as that of FM. We set the MLP component of DeepFM to a three-layered dense network with the a pyramid structure (30-20-10). All other hyperparameters remain the same as FM.
+## Huấn luyện và đánh giá mô hình
+Quy trình tải dữ liệu giống với FM. Chúng ta thiết lập thành phần MLP của DeepFM thành một mạng dense ba layer có cấu trúc hình kim tự tháp (30-20-10). Tất cả hyperparameter khác vẫn giữ nguyên như FM.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -102,18 +102,18 @@ loss = gluon.loss.SigmoidBinaryCrossEntropyLoss()
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-Compared with FM, DeepFM converges faster and achieves better performance.
+So với FM, DeepFM hội tụ nhanh hơn và đạt hiệu năng tốt hơn.
 
-## Summary
+## Tóm tắt
 
-* Integrating neural networks to FM enables it to model complex and high-order interactions.
-* DeepFM outperforms the original FM on the advertising dataset.
+* Việc tích hợp mạng neural vào FM cho phép mô hình hóa các tương tác phức tạp và bậc cao.
+* DeepFM vượt trội FM gốc trên tập dữ liệu quảng cáo.
 
-## Exercises
+## Bài tập
 
-* Vary the structure of the MLP to check its impact on model performance.
-* Change the dataset to Criteo and compare it with the original FM model.
+* Thay đổi cấu trúc của MLP để kiểm tra ảnh hưởng của nó đến hiệu năng mô hình.
+* Thay đổi tập dữ liệu thành Criteo và so sánh với mô hình FM gốc.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/407)
+[Thảo luận](https://discuss.d2l.ai/t/407)
 :end_tab:

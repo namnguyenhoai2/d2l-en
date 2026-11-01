@@ -1,9 +1,9 @@
-# Deep Convolutional Generative Adversarial Networks
+# Mạng đối sinh tích chập sâu
 :label:`sec_dcgan`
 
-In :numref:`sec_basic_gan`, we introduced the basic ideas behind how GANs work. We showed that they can draw samples from some simple, easy-to-sample distribution, like a uniform or normal distribution, and transform them into samples that appear to match the distribution of some dataset. And while our example of matching a 2D Gaussian distribution got the point across, it is not especially exciting.
+Trong :numref:`sec_basic_gan`, chúng ta đã giới thiệu những ý tưởng cơ bản về cách GAN hoạt động. Chúng ta đã chỉ ra rằng chúng có thể lấy mẫu từ một số phân phối đơn giản, dễ lấy mẫu, chẳng hạn như phân phối đều hoặc phân phối chuẩn, rồi biến đổi chúng thành các mẫu có vẻ khớp với phân phối của một tập dữ liệu nào đó. Mặc dù ví dụ về việc khớp với một phân phối Gaussian 2D đã truyền đạt được ý chính, nhưng nó không thực sự thú vị.
 
-In this section, we will demonstrate how you can use GANs to generate photorealistic images. We will be basing our models on the deep convolutional GANs (DCGAN) introduced in :citet:`Radford.Metz.Chintala.2015`. We will borrow the convolutional architecture that have proven so successful for discriminative computer vision problems and show how via GANs, they can be leveraged to generate photorealistic images.
+Trong phần này, chúng ta sẽ minh họa cách sử dụng GAN để tạo ra các hình ảnh chân thực như ảnh chụp. Các mô hình của chúng ta sẽ dựa trên mạng đối sinh tích chập sâu (deep convolutional GAN, DCGAN) được giới thiệu trong :citet:`Radford.Metz.Chintala.2015`. Chúng ta sẽ sử dụng kiến trúc tích chập đã chứng minh được hiệu quả trong các bài toán thị giác máy tính phân biệt, đồng thời chỉ ra cách tận dụng kiến trúc này thông qua GAN để tạo ra các hình ảnh chân thực như ảnh chụp.
 
 ```{.python .input}
 #@tab mxnet
@@ -29,9 +29,9 @@ from d2l import tensorflow as d2l
 import tensorflow as tf
 ```
 
-## The Pokemon Dataset
+## Tập dữ liệu Pokemon
 
-The dataset we will use is a collection of Pokemon sprites obtained from [pokemondb](https://pokemondb.net/sprites). First download, extract and load this dataset.
+Tập dữ liệu chúng ta sẽ sử dụng là một bộ sưu tập các sprite Pokemon được lấy từ [pokemondb](https://pokemondb.net/sprites). Trước tiên, hãy tải xuống, giải nén và nạp tập dữ liệu này.
 
 ```{.python .input}
 #@tab mxnet
@@ -65,7 +65,7 @@ pokemon = tf.keras.preprocessing.image_dataset_from_directory(
     data_dir, batch_size=batch_size, image_size=(64, 64))
 ```
 
-We resize each image into $64\times 64$. The `ToTensor` transformation will project the pixel value into $[0, 1]$, while our generator will use the tanh function to obtain outputs in $[-1, 1]$. Therefore we normalize the data with $0.5$ mean and $0.5$ standard deviation to match the value range.
+Chúng ta thay đổi kích thước mỗi hình ảnh thành $64\times 64$. Phép biến đổi `ToTensor` sẽ ánh xạ giá trị pixel vào $[0, 1]$, trong khi generator sẽ sử dụng hàm tanh để tạo ra các đầu ra trong $[-1, 1]$. Do đó, chúng ta chuẩn hóa dữ liệu với giá trị trung bình $0.5$ và độ lệch chuẩn $0.5$ để khớp với khoảng giá trị này.
 
 ```{.python .input}
 #@tab mxnet
@@ -108,7 +108,7 @@ data_iter = data_iter.cache().shuffle(buffer_size=1000).prefetch(
     buffer_size=tf.data.experimental.AUTOTUNE)
 ```
 
-Let's visualize the first 20 images.
+Hãy trực quan hóa 20 hình ảnh đầu tiên.
 
 ```{.python .input}
 #@tab mxnet
@@ -137,9 +137,9 @@ for X, y in data_iter.take(1):
     d2l.show_images(imgs, num_rows=4, num_cols=5)
 ```
 
-## The Generator
+## Generator
 
-The generator needs to map the noise variable $\mathbf z\in\mathbb R^d$, a length-$d$ vector, to a RGB image with width and height to be $64\times 64$ . In :numref:`sec_fcn` we introduced the fully convolutional network that uses transposed convolution layer (refer to :numref:`sec_transposed_conv`) to enlarge input size. The basic block of the generator contains a transposed convolution layer followed by the batch normalization and ReLU activation.
+Generator cần ánh xạ biến nhiễu $\mathbf z\in\mathbb R^d$, một vector có độ dài $d$, thành một hình ảnh RGB có chiều rộng và chiều cao là $64\times 64$. Trong :numref:`sec_fcn`, chúng ta đã giới thiệu mạng tích chập hoàn toàn, sử dụng lớp tích chập chuyển vị (xem :numref:`sec_transposed_conv`) để tăng kích thước đầu vào. Khối cơ bản của generator gồm một lớp tích chập chuyển vị, tiếp theo là batch normalization và activation ReLU.
 
 ```{.python .input}
 #@tab mxnet
@@ -186,7 +186,7 @@ class G_block(tf.keras.layers.Layer):
         return self.activation(self.batch_norm(self.conv2d_trans(X)))
 ```
 
-In default, the transposed convolution layer uses a $k_h = k_w = 4$ kernel, a $s_h = s_w = 2$ strides, and a $p_h = p_w = 1$ padding. With a input shape of $n_h^{'} \times n_w^{'} = 16 \times 16$, the generator block will double input's width and height.
+Theo mặc định, lớp tích chập chuyển vị sử dụng kernel $k_h = k_w = 4$, stride $s_h = s_w = 2$ và padding $p_h = p_w = 1$. Với shape đầu vào là $n_h^{'} \times n_w^{'} = 16 \times 16$, khối generator sẽ tăng gấp đôi chiều rộng và chiều cao của đầu vào.
 
 $$
 \begin{aligned}
@@ -219,7 +219,7 @@ g_blk = G_block(20)
 g_blk(x).shape
 ```
 
-If changing the transposed convolution layer to a $4\times 4$ kernel, $1\times 1$ strides and zero padding. With a input size of $1 \times 1$, the output will have its width and height increased by 3 respectively.
+Nếu thay đổi lớp tích chập chuyển vị thành kernel $4\times 4$, stride $1\times 1$ và padding bằng 0, với kích thước đầu vào là $1 \times 1$, chiều rộng và chiều cao của đầu ra sẽ lần lượt tăng thêm 3.
 
 ```{.python .input}
 #@tab mxnet
@@ -244,7 +244,7 @@ g_blk = G_block(20, strides=1, padding="valid")
 g_blk(x).shape
 ```
 
-The generator consists of four basic blocks that increase input's both width and height from 1 to 32. At the same time, it first projects the latent variable into $64\times 8$ channels, and then halve the channels each time. At last, a transposed convolution layer is used to generate the output. It further doubles the width and height to match the desired $64\times 64$ shape, and reduces the channel size to $3$. The tanh activation function is applied to project output values into the $(-1, 1)$ range.
+Generator gồm bốn khối cơ bản, tăng cả chiều rộng và chiều cao của đầu vào từ 1 lên 32. Đồng thời, đầu tiên nó chiếu biến tiềm ẩn vào $64\times 8$ kênh, sau đó giảm một nửa số kênh ở mỗi bước. Cuối cùng, một lớp tích chập chuyển vị được sử dụng để tạo đầu ra. Lớp này tiếp tục tăng gấp đôi chiều rộng và chiều cao để khớp với shape mong muốn $64\times 64$, đồng thời giảm số kênh xuống còn $3$. Hàm activation tanh được áp dụng để ánh xạ các giá trị đầu ra vào khoảng $(-1, 1)$.
 
 ```{.python .input}
 #@tab mxnet
@@ -289,7 +289,7 @@ net_G = tf.keras.Sequential([
 ])
 ```
 
-Generate a 100 dimensional latent variable to verify the generator's output shape.
+Tạo một biến tiềm ẩn có 100 chiều để kiểm tra shape đầu ra của generator.
 
 ```{.python .input}
 #@tab mxnet
@@ -312,11 +312,11 @@ net_G(x).shape
 
 ## Discriminator
 
-The discriminator is a normal convolutional network network except that it uses a leaky ReLU as its activation function. Given $\alpha \in[0, 1]$, its definition is
+Discriminator là một mạng tích chập thông thường, ngoại trừ việc nó sử dụng leaky ReLU làm hàm activation. Với $\alpha \in[0, 1]$, định nghĩa của nó là
 
 $$\textrm{leaky ReLU}(x) = \begin{cases}x & \textrm{if}\ x > 0\\ \alpha x &\textrm{otherwise}\end{cases}.$$
 
-As it can be seen, it is normal ReLU if $\alpha=0$, and an identity function if $\alpha=1$. For $\alpha \in (0, 1)$, leaky ReLU is a nonlinear function that give a non-zero output for a negative input. It aims to fix the "dying ReLU" problem that a neuron might always output a negative value and therefore cannot make any progress since the gradient of ReLU is 0.
+Như có thể thấy, đây là ReLU thông thường khi $\alpha=0$, và là hàm đồng nhất khi $\alpha=1$. Với $\alpha \in (0, 1)$, leaky ReLU là một hàm phi tuyến cho đầu ra khác 0 đối với đầu vào âm. Hàm này nhằm khắc phục vấn đề "dying ReLU", trong đó một neuron có thể luôn tạo ra giá trị âm và vì vậy không thể tiến triển do gradient của ReLU bằng 0.
 
 ```{.python .input}
 #@tab mxnet,pytorch
@@ -334,7 +334,7 @@ Y = [tf.keras.layers.LeakyReLU(alpha)(x).numpy() for alpha in alphas]
 d2l.plot(x.numpy(), Y, 'x', 'y', alphas)
 ```
 
-The basic block of the discriminator is a convolution layer followed by a batch normalization layer and a leaky ReLU activation. The hyperparameters of the convolution layer are similar to the transpose convolution layer in the generator block.
+Khối cơ bản của discriminator là một lớp tích chập, tiếp theo là một lớp batch normalization và activation leaky ReLU. Các hyperparameter của lớp tích chập tương tự như lớp tích chập chuyển vị trong khối generator.
 
 ```{.python .input}
 #@tab mxnet
@@ -381,7 +381,7 @@ class D_block(tf.keras.layers.Layer):
         return self.activation(self.batch_norm(self.conv2d(X)))
 ```
 
-A basic block with default settings will halve the width and height of the inputs, as we demonstrated in :numref:`sec_padding`. For example, given a input shape $n_h = n_w = 16$, with a kernel shape $k_h = k_w = 4$, a stride shape $s_h = s_w = 2$, and a padding shape $p_h = p_w = 1$, the output shape will be:
+Một khối cơ bản với các thiết lập mặc định sẽ giảm một nửa chiều rộng và chiều cao của đầu vào, như đã minh họa trong :numref:`sec_padding`. Ví dụ, với shape đầu vào $n_h = n_w = 16$, shape kernel $k_h = k_w = 4$, shape stride $s_h = s_w = 2$ và shape padding $p_h = p_w = 1$, shape đầu ra sẽ là:
 
 $$
 \begin{aligned}
@@ -413,7 +413,7 @@ d_blk = D_block(20)
 d_blk(x).shape
 ```
 
-The discriminator is a mirror of the generator.
+Discriminator là ảnh phản chiếu của generator.
 
 ```{.python .input}
 #@tab mxnet
@@ -451,7 +451,7 @@ net_D = tf.keras.Sequential([
 ])
 ```
 
-It uses a convolution layer with output channel $1$ as the last layer to obtain a single prediction value.
+Nó sử dụng một lớp tích chập có số kênh đầu ra là $1$ làm lớp cuối cùng để thu được một giá trị dự đoán duy nhất.
 
 ```{.python .input}
 #@tab mxnet
@@ -472,9 +472,9 @@ x = tf.zeros((1, 64, 64, 3))
 net_D(x).shape
 ```
 
-## Training
+## Huấn luyện
 
-Compared to the basic GAN in :numref:`sec_basic_gan`, we use the same learning rate for both generator and discriminator since they are similar to each other. In addition, we change $\beta_1$ in Adam (:numref:`sec_adam`) from $0.9$ to $0.5$. It decreases the smoothness of the momentum, the exponentially weighted moving average of past gradients, to take care of the rapid changing gradients because the generator and the discriminator fight with each other. Besides, the random generated noise `Z`, is a 4-D tensor and we are using GPU to accelerate the computation.
+So với GAN cơ bản trong :numref:`sec_basic_gan`, chúng ta sử dụng cùng một learning rate cho cả generator và discriminator vì chúng tương tự nhau. Ngoài ra, chúng ta thay đổi $\beta_1$ trong Adam (:numref:`sec_adam`) từ $0.9$ thành $0.5$. Điều này làm giảm độ trơn của momentum, tức trung bình động có trọng số theo hàm mũ của các gradient trước đó, để xử lý các gradient thay đổi nhanh do generator và discriminator đối đầu với nhau. Bên cạnh đó, nhiễu được tạo ngẫu nhiên `Z` là một tensor 4-D, và chúng ta sử dụng GPU để tăng tốc tính toán.
 
 ```{.python .input}
 #@tab mxnet
@@ -611,9 +611,9 @@ def train(net_D, net_G, data_iter, num_epochs, lr, latent_dim,
           f'{metric[2] / timer.stop():.1f} examples/sec on {str(device._device_name)}')
 ```
 
-We train the model with a small number of epochs just for demonstration.
-For better performance,
-the variable `num_epochs` can be set to a larger number.
+Chúng ta huấn luyện mô hình với một số lượng epoch nhỏ chỉ nhằm mục đích minh họa.
+Để đạt hiệu năng tốt hơn,
+có thể đặt biến `num_epochs` thành một giá trị lớn hơn.
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -627,22 +627,22 @@ latent_dim, lr, num_epochs = 100, 0.0005, 40
 train(net_D, net_G, data_iter, num_epochs, lr, latent_dim)
 ```
 
-## Summary
+## Tóm tắt
 
-* DCGAN architecture has four convolutional layers for the Discriminator and four "fractionally-strided" convolutional layers for the Generator.
-* The Discriminator is a 4-layer strided convolutions with batch normalization (except its input layer) and leaky ReLU activations.
-* Leaky ReLU is a nonlinear function that give a non-zero output for a negative input. It aims to fix the “dying ReLU” problem and helps the gradients flow easier through the architecture.
+* Kiến trúc DCGAN có bốn lớp tích chập cho Discriminator và bốn lớp tích chập "fractionally-strided" cho Generator.
+* Discriminator là một mạng tích chập có stride gồm 4 lớp, với batch normalization (ngoại trừ lớp đầu vào) và các activation leaky ReLU.
+* Leaky ReLU là một hàm phi tuyến cho đầu ra khác 0 đối với đầu vào âm. Hàm này nhằm khắc phục vấn đề “dying ReLU” và giúp gradient truyền qua kiến trúc dễ dàng hơn.
 
 
-## Exercises
+## Bài tập
 
-1. What will happen if we use standard ReLU activation rather than leaky ReLU?
-1. Apply DCGAN on Fashion-MNIST and see which category works well and which does not.
+1. Điều gì sẽ xảy ra nếu chúng ta sử dụng activation ReLU tiêu chuẩn thay vì leaky ReLU?
+1. Áp dụng DCGAN cho Fashion-MNIST và xem danh mục nào hoạt động tốt, danh mục nào không.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/409)
+[Thảo luận](https://discuss.d2l.ai/t/409)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1083)
+[Thảo luận](https://discuss.d2l.ai/t/1083)
 :end_tab:

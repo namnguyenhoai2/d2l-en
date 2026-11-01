@@ -1,97 +1,96 @@
-# Using Jupyter Notebooks
+# Sử dụng Jupyter Notebook
 :label:`sec_jupyter`
 
 
-This section describes how to edit and run the code
-in each section of this book
-using the Jupyter Notebook. Make sure you have
-installed Jupyter and downloaded the
-code as described in
+Phần này mô tả cách chỉnh sửa và chạy mã
+trong từng phần của cuốn sách này
+bằng Jupyter Notebook. Hãy đảm bảo bạn đã
+cài đặt Jupyter và tải xuống
+mã nguồn như được mô tả trong
 :ref:`chap_installation`.
-If you want to know more about Jupyter see the excellent tutorial in
-their [documentation](https://jupyter.readthedocs.io/en/latest/).
+Nếu muốn tìm hiểu thêm về Jupyter, hãy xem hướng dẫn tuyệt vời trong
+[tài liệu](https://jupyter.readthedocs.io/en/latest/) của họ.
 
 
-## Editing and Running the Code Locally
+## Chỉnh sửa và chạy mã cục bộ
 
-Suppose that the local path of the book's code is `xx/yy/d2l-en/`. Use the shell to change the directory to this path (`cd xx/yy/d2l-en`) and run the command `jupyter notebook`. If your browser does not do this automatically, open http://localhost:8888 and you will see the interface of Jupyter and all the folders containing the code of the book, as shown in :numref:`fig_jupyter00`.
+Giả sử đường dẫn cục bộ của mã nguồn cuốn sách là `xx/yy/d2l-en/`. Sử dụng shell để chuyển thư mục đến đường dẫn này (`cd xx/yy/d2l-en`) và chạy lệnh `jupyter notebook`. Nếu trình duyệt của bạn không tự động thực hiện việc này, hãy mở http://localhost:8888 và bạn sẽ thấy giao diện của Jupyter cùng tất cả các thư mục chứa mã nguồn của cuốn sách, như minh họa trong :numref:`fig_jupyter00`.
 
-![The folders containing the code of this book.](../img/jupyter00.png)
+![Các thư mục chứa mã nguồn của cuốn sách này.](../img/jupyter00.png)
 :width:`600px`
 :label:`fig_jupyter00`
 
 
-You can access the notebook files by clicking on the folder displayed on the webpage.
-They usually have the suffix ".ipynb".
-For the sake of brevity, we create a temporary "test.ipynb" file.
-The content displayed after you click it is
-shown in :numref:`fig_jupyter01`.
-This notebook includes a markdown cell and a code cell. The content in the markdown cell includes "This Is a Title" and "This is text.".
-The code cell contains two lines of Python code.
+Bạn có thể truy cập các tệp notebook bằng cách nhấp vào thư mục hiển thị trên trang web.
+Chúng thường có hậu tố ".ipynb".
+Để ngắn gọn, chúng ta tạo một tệp "test.ipynb" tạm thời.
+Nội dung hiển thị sau khi bạn nhấp vào tệp này
+được minh họa trong :numref:`fig_jupyter01`.
+Notebook này bao gồm một ô markdown và một ô mã. Nội dung trong ô markdown bao gồm "This Is a Title" và "This is text.".
+Ô mã chứa hai dòng mã Python.
 
-![Markdown and code cells in the "text.ipynb" file.](../img/jupyter01.png)
+![Các ô markdown và mã trong tệp "text.ipynb".](../img/jupyter01.png)
 :width:`600px`
 :label:`fig_jupyter01`
 
 
-Double click on the markdown cell to enter edit mode.
-Add a new text string "Hello world." at the end of the cell, as shown in :numref:`fig_jupyter02`.
+Nhấp đúp vào ô markdown để chuyển sang chế độ chỉnh sửa.
+Thêm một chuỗi văn bản mới "Hello world." vào cuối ô, như minh họa trong :numref:`fig_jupyter02`.
 
-![Edit the markdown cell.](../img/jupyter02.png)
+![Chỉnh sửa ô markdown.](../img/jupyter02.png)
 :width:`600px`
 :label:`fig_jupyter02`
 
 
-As demonstrated in :numref:`fig_jupyter03`,
-click "Cell" $\rightarrow$ "Run Cells" in the menu bar to run the edited cell.
+Như minh họa trong :numref:`fig_jupyter03`,
+nhấp vào "Cell" $\rightarrow$ "Run Cells" trên thanh menu để chạy ô đã chỉnh sửa.
 
-![Run the cell.](../img/jupyter03.png)
+![Chạy ô.](../img/jupyter03.png)
 :width:`600px`
 :label:`fig_jupyter03`
 
-After running, the markdown cell is shown in :numref:`fig_jupyter04`.
+Sau khi chạy, ô markdown được hiển thị trong :numref:`fig_jupyter04`.
 
-![The markdown cell after running.](../img/jupyter04.png)
+![Ô markdown sau khi chạy.](../img/jupyter04.png)
 :width:`600px`
 :label:`fig_jupyter04`
 
 
-Next, click on the code cell. Multiply the elements by 2 after the last line of code, as shown in :numref:`fig_jupyter05`.
+Tiếp theo, nhấp vào ô mã. Nhân các phần tử với 2 sau dòng mã cuối cùng, như minh họa trong :numref:`fig_jupyter05`.
 
-![Edit the code cell.](../img/jupyter05.png)
+![Chỉnh sửa ô mã.](../img/jupyter05.png)
 :width:`600px`
 :label:`fig_jupyter05`
 
 
-You can also run the cell with a shortcut ("Ctrl + Enter" by default) and obtain the output result from :numref:`fig_jupyter06`.
+Bạn cũng có thể chạy ô bằng phím tắt (mặc định là "Ctrl + Enter") và nhận được kết quả đầu ra như trong :numref:`fig_jupyter06`.
 
-![Run the code cell to obtain the output.](../img/jupyter06.png)
+![Chạy ô mã để nhận kết quả đầu ra.](../img/jupyter06.png)
 :width:`600px`
 :label:`fig_jupyter06`
 
 
-When a notebook contains more cells, we can click "Kernel" $\rightarrow$ "Restart & Run All" in the menu bar to run all the cells in the entire notebook. By clicking "Help" $\rightarrow$ "Edit Keyboard Shortcuts" in the menu bar, you can edit the shortcuts according to your preferences.
+Khi notebook chứa nhiều ô hơn, chúng ta có thể nhấp vào "Kernel" $\rightarrow$ "Restart & Run All" trên thanh menu để chạy tất cả các ô trong toàn bộ notebook. Bằng cách nhấp vào "Help" $\rightarrow$ "Edit Keyboard Shortcuts" trên thanh menu, bạn có thể chỉnh sửa các phím tắt theo sở thích của mình.
 
-## Advanced Options
+## Tùy chọn nâng cao
 
-Beyond local editing two things are quite important: editing the notebooks in the markdown format and running Jupyter remotely.
-The latter matters when we want to run the code on a faster server.
-The former matters since Jupyter's native ipynb format stores a lot of auxiliary data that is
-irrelevant to the content,
-mostly related to how and where the code is run.
-This is confusing for Git, making
-reviewing contributions very difficult.
-Fortunately there is an alternative---native editing in the markdown format.
+Ngoài việc chỉnh sửa cục bộ, có hai vấn đề khá quan trọng: chỉnh sửa notebook ở định dạng markdown và chạy Jupyter từ xa.
+Vấn đề sau hữu ích khi chúng ta muốn chạy mã trên một máy chủ nhanh hơn.
+Vấn đề trước quan trọng vì định dạng ipynb gốc của Jupyter lưu trữ rất nhiều dữ liệu phụ trợ không liên quan đến nội dung,
+chủ yếu liên quan đến cách thức và nơi mã được chạy.
+Điều này gây khó khăn cho Git, khiến
+việc xem xét các đóng góp trở nên rất khó khăn.
+May mắn là có một lựa chọn khác---chỉnh sửa trực tiếp ở định dạng markdown.
 
-### Markdown Files in Jupyter
+### Các tệp Markdown trong Jupyter
 
-If you wish to contribute to the content of this book, you need to modify the
-source file (md file, not ipynb file) on GitHub.
-Using the notedown plugin we
-can modify notebooks in the md format directly in Jupyter.
+Nếu muốn đóng góp cho nội dung của cuốn sách này, bạn cần sửa đổi
+tệp nguồn (tệp md, không phải tệp ipynb) trên GitHub.
+Bằng plugin notedown, chúng ta
+có thể trực tiếp chỉnh sửa notebook ở định dạng md trong Jupyter.
 
 
-First, install the notedown plugin, run the Jupyter Notebook, and load the plugin:
+Trước tiên, cài đặt plugin notedown, chạy Jupyter Notebook và nạp plugin:
 
 ```
 pip install d2l-notedown  # You may need to uninstall the original notedown.
@@ -99,40 +98,40 @@ jupyter notebook --NotebookApp.contents_manager_class='notedown.NotedownContents
 ```
 
 
-You may also turn on the notedown plugin by default whenever you run the Jupyter Notebook.
-First, generate a Jupyter Notebook configuration file (if it has already been generated, you can skip this step).
+Bạn cũng có thể bật plugin notedown theo mặc định mỗi khi chạy Jupyter Notebook.
+Trước tiên, tạo một tệp cấu hình Jupyter Notebook (nếu tệp này đã được tạo, bạn có thể bỏ qua bước này).
 
 ```
 jupyter notebook --generate-config
 ```
 
 
-Then, add the following line to the end of the Jupyter Notebook configuration file (for Linux or macOS, usually in the path `~/.jupyter/jupyter_notebook_config.py`):
+Sau đó, thêm dòng sau vào cuối tệp cấu hình Jupyter Notebook (đối với Linux hoặc macOS, thường nằm tại đường dẫn `~/.jupyter/jupyter_notebook_config.py`):
 
 ```
 c.NotebookApp.contents_manager_class = 'notedown.NotedownContentsManager'
 ```
 
 
-After that, you only need to run the `jupyter notebook` command to turn on the notedown plugin by default.
+Sau đó, bạn chỉ cần chạy lệnh `jupyter notebook` để bật plugin notedown theo mặc định.
 
-### Running Jupyter Notebooks on a Remote Server
+### Chạy Jupyter Notebook trên máy chủ từ xa
 
-Sometimes, you may want to run Jupyter notebooks on a remote server and access it through a browser on your local computer. If Linux or macOS is installed on your local machine (Windows can also support this function through third-party software such as PuTTY), you can use port forwarding:
+Đôi khi, bạn có thể muốn chạy Jupyter notebook trên một máy chủ từ xa và truy cập máy chủ đó thông qua trình duyệt trên máy tính cục bộ. Nếu máy cục bộ của bạn đã cài Linux hoặc macOS (Windows cũng hỗ trợ chức năng này thông qua phần mềm bên thứ ba như PuTTY), bạn có thể sử dụng chuyển tiếp cổng:
 
 ```
 ssh myserver -L 8888:localhost:8888
 ```
 
 
-The above string `myserver` is the address of the remote server.
-Then we can use http://localhost:8888 to access the remote server `myserver` that runs Jupyter notebooks. We will detail on how to run Jupyter notebooks on AWS instances
-later in this appendix.
+Chuỗi `myserver` ở trên là địa chỉ của máy chủ từ xa.
+Sau đó, chúng ta có thể sử dụng http://localhost:8888 để truy cập máy chủ từ xa `myserver` đang chạy Jupyter notebook. Chúng tôi sẽ trình bày chi tiết cách chạy Jupyter notebook trên các instance AWS
+ở phần sau của phụ lục này.
 
-### Timing
+### Đo thời gian
 
-We can use the `ExecuteTime` plugin to time the execution of each code cell in Jupyter notebooks.
-Use the following commands to install the plugin:
+Chúng ta có thể sử dụng plugin `ExecuteTime` để đo thời gian thực thi của từng ô mã trong Jupyter notebook.
+Sử dụng các lệnh sau để cài đặt plugin:
 
 ```
 pip install jupyter_contrib_nbextensions
@@ -141,17 +140,17 @@ jupyter nbextension enable execute_time/ExecuteTime
 ```
 
 
-## Summary
+## Tóm tắt
 
-* Using the Jupyter Notebook tool, we can edit, run, and contribute to each section of the book.
-* We can run Jupyter notebooks on remote servers using port forwarding.
-
-
-## Exercises
-
-1. Edit and run the code in this book with the Jupyter Notebook on your local machine.
-1. Edit and run the code in this book with the Jupyter Notebook *remotely* via port forwarding.
-1. Compare the running time of the operations $\mathbf{A}^\top \mathbf{B}$ and $\mathbf{A} \mathbf{B}$ for two square matrices in $\mathbb{R}^{1024 \times 1024}$. Which one is faster?
+* Bằng công cụ Jupyter Notebook, chúng ta có thể chỉnh sửa, chạy và đóng góp cho từng phần của cuốn sách.
+* Chúng ta có thể chạy Jupyter notebook trên các máy chủ từ xa bằng chuyển tiếp cổng.
 
 
-[Discussions](https://discuss.d2l.ai/t/421)
+## Bài tập
+
+1. Chỉnh sửa và chạy mã trong cuốn sách này bằng Jupyter Notebook trên máy cục bộ của bạn.
+1. Chỉnh sửa và chạy mã trong cuốn sách này bằng Jupyter Notebook *từ xa* thông qua chuyển tiếp cổng.
+1. So sánh thời gian chạy của các phép toán $\mathbf{A}^\top \mathbf{B}$ và $\mathbf{A} \mathbf{B}$ đối với hai ma trận vuông trong $\mathbb{R}^{1024 \times 1024}$. Phép toán nào nhanh hơn?
+
+
+[Thảo luận](https://discuss.d2l.ai/t/421)

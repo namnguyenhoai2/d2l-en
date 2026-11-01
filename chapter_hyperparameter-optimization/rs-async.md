@@ -4,49 +4,46 @@ tab.interact_select(["pytorch"])
 #required_libs("syne-tune[gpsearchers]==0.3.2")
 ```
 
-# Asynchronous Random Search
+# Tìm kiếm ngẫu nhiên bất đồng bộ
 :label:`sec_rs_async`
 
-As we have seen in the previous :numref:`sec_api_hpo`, we might have to wait
-hours or even days before random search returns a good hyperparameter
-configuration, because of the expensive evaluation of hyperparameter
-configurations. In practice, we have often access to a pool of resources such as
-multiple GPUs on the same machine or multiple machines with a single GPU. This
-begs the question: *How do we efficiently distribute random search?*
+Như chúng ta đã thấy trong :numref:`sec_api_hpo` trước đó, chúng ta có thể phải chờ
+hàng giờ hoặc thậm chí hàng ngày trước khi tìm kiếm ngẫu nhiên trả về một cấu hình
+hyperparameter tốt, vì việc đánh giá các cấu hình hyperparameter rất tốn kém. Trong thực tế,
+chúng ta thường có quyền truy cập vào một nhóm tài nguyên như nhiều GPU trên cùng một máy
+hoặc nhiều máy, mỗi máy có một GPU. Điều này dẫn đến câu hỏi: *Làm thế nào để phân phối
+tìm kiếm ngẫu nhiên một cách hiệu quả?*
 
-In general, we distinguish between synchronous and asynchronous parallel
-hyperparameter optimization (see :numref:`distributed_scheduling`). In the
-synchronous setting, we wait for all concurrently running trials to finish,
-before we start the next batch. Consider configuration spaces that contain
-hyperparameters such as the number of filters or number of layers of a deep
-neural network. Hyperparameter configurations that contain a larger number of 
-layers of filters will naturally take more time to finish, and all other trials
-in the same batch will have to wait at synchronisation points (grey area in
-:numref:`distributed_scheduling`) before we can continue the optimization
-process.
+Nhìn chung, chúng ta phân biệt giữa tối ưu hóa hyperparameter song song đồng bộ và bất đồng
+bộ (xem :numref:`distributed_scheduling`). Trong thiết lập đồng bộ, chúng ta chờ tất cả các
+trial đang chạy đồng thời hoàn tất trước khi bắt đầu batch tiếp theo. Hãy xét các không gian
+cấu hình chứa những hyperparameter như số lượng filter hoặc số lượng layer của một mạng
+neural sâu. Các cấu hình hyperparameter chứa số lượng layer hoặc filter lớn hơn đương nhiên
+sẽ mất nhiều thời gian hơn để hoàn tất, và tất cả trial khác trong cùng batch sẽ phải chờ
+tại các điểm đồng bộ hóa (vùng màu xám trong :numref:`distributed_scheduling`) trước khi chúng
+ta có thể tiếp tục quá trình tối ưu hóa.
 
-In the asynchronous setting we immediately schedule a new trial as soon as resources
-become available. This will optimally exploit our resources, since we can avoid any
-synchronisation overhead. For random search, each new hyperparameter configuration
-is chosen independently of all others, and in particular without exploiting
-observations from any prior evaluation. This means we can trivially parallelize random
-search asynchronously. This is not straight-forward with more sophisticated methods
-that make decision based on previous observations (see :numref:`sec_sh_async`).
-While we need access to more resources than in the sequential setting, asynchronous
-random search exhibits a linear speed-up, in that a certain performance is reached
-$K$ times faster if $K$ trials can be run in parallel. 
+Trong thiết lập bất đồng bộ, chúng ta lập tức lên lịch cho một trial mới ngay khi tài nguyên
+khả dụng. Điều này giúp tận dụng tối ưu tài nguyên, vì chúng ta có thể tránh mọi overhead
+đồng bộ hóa. Đối với tìm kiếm ngẫu nhiên, mỗi cấu hình hyperparameter mới được chọn độc lập
+với tất cả cấu hình khác, cụ thể là không tận dụng các quan sát từ bất kỳ lần đánh giá trước
+đó nào. Điều này có nghĩa là chúng ta có thể dễ dàng song song hóa tìm kiếm ngẫu nhiên theo
+cách bất đồng bộ. Điều này không đơn giản với các phương pháp tinh vi hơn, vốn đưa ra quyết
+định dựa trên các quan sát trước đó (xem :numref:`sec_sh_async`). Mặc dù cần truy cập
+nhiều tài nguyên hơn so với thiết lập tuần tự, tìm kiếm ngẫu nhiên bất đồng bộ vẫn cho tốc độ
+tăng tuyến tính: một mức hiệu năng nhất định sẽ đạt được nhanh hơn $K$ lần nếu có thể chạy
+song song $K$ trial.
 
 
-![Distributing the hyperparameter optimization process either synchronously or asynchronously. Compared to the sequential setting, we can reduce the overall wall-clock time while keep the total compute constant. Synchronous scheduling might lead to idling workers in the case of stragglers.](../img/distributed_scheduling.svg)
+![Phân phối quá trình tối ưu hóa hyperparameter theo cách đồng bộ hoặc bất đồng bộ. So với thiết lập tuần tự, chúng ta có thể giảm tổng thời gian thực tế trong khi vẫn giữ nguyên tổng lượng tính toán. Lập lịch đồng bộ có thể khiến các worker không hoạt động khi có các tác vụ chậm.](../img/distributed_scheduling.svg)
 :label:`distributed_scheduling`
 
-In this notebook, we will look at asynchronous random search that, where trials are
-executed in multiple python processes on the same machine. Distributed job scheduling
-and execution is difficult to implement from scratch. We will use *Syne Tune*
-:cite:`salinas-automl22`, which provides us with a simple interface for asynchronous
-HPO. Syne Tune is designed to be run with different execution back-ends, and the
-interested reader is invited to study its simple APIs in order to learn more about
-distributed HPO.
+Trong notebook này, chúng ta sẽ xem xét tìm kiếm ngẫu nhiên bất đồng bộ, trong đó các trial
+được thực thi trong nhiều tiến trình Python trên cùng một máy. Việc tự triển khai từ đầu chức
+năng lập lịch và thực thi job phân tán rất khó. Chúng ta sẽ sử dụng *Syne Tune*
+:cite:`salinas-automl22`, thư viện cung cấp cho chúng ta một interface đơn giản để thực
+hiện HPO bất đồng bộ. Syne Tune được thiết kế để chạy với nhiều execution back-end khác nhau,
+và bạn đọc quan tâm có thể tìm hiểu các API đơn giản của thư viện để hiểu thêm về HPO phân tán.
 
 ```{.python .input}
 from d2l import torch as d2l
@@ -59,10 +56,10 @@ from syne_tune import Tuner, StoppingCriterion
 from syne_tune.experiments import load_experiment
 ```
 
-## Objective Function
+## Hàm mục tiêu
 
-First, we have to define a new objective function such that it now returns the
-performance back to Syne Tune via the `report` callback.
+Trước tiên, chúng ta phải định nghĩa một hàm mục tiêu mới để giờ đây hàm này trả về hiệu năng
+cho Syne Tune thông qua callback `report`.
 
 ```{.python .input  n=34}
 def hpo_objective_lenet_synetune(learning_rate, batch_size, max_epochs):
@@ -84,14 +81,14 @@ def hpo_objective_lenet_synetune(learning_rate, batch_size, max_epochs):
         report(epoch=epoch, validation_error=float(validation_error))
 ```
 
-Note that the `PythonBackend` of Syne Tune requires dependencies to be imported
-inside the function definition.
+Lưu ý rằng `PythonBackend` của Syne Tune yêu cầu các dependency phải được import
+bên trong phần định nghĩa hàm.
 
-## Asynchronous Scheduler
+## Bộ lập lịch bất đồng bộ
 
-First, we define the number of workers that evaluate trials concurrently. We
-also need to specify how long we want to run random search, by defining an
-upper limit on the total wall-clock time.
+Trước tiên, chúng ta xác định số lượng worker đánh giá các trial đồng thời. Chúng ta cũng
+cần chỉ định thời gian muốn chạy tìm kiếm ngẫu nhiên bằng cách định nghĩa giới hạn trên cho
+tổng thời gian thực tế.
 
 ```{.python .input  n=37}
 n_workers = 2  # Needs to be <= the number of available GPUs
@@ -99,19 +96,19 @@ n_workers = 2  # Needs to be <= the number of available GPUs
 max_wallclock_time = 12 * 60  # 12 minutes
 ```
 
-Next, we state which metric we want to optimize and whether we want to minimize or
-maximize this metric. Namely, `metric` needs to correspond to the argument name
-passed to the `report` callback.
+Tiếp theo, chúng ta chỉ rõ metric muốn tối ưu và liệu muốn tối thiểu hóa hay tối đa hóa
+metric này. Cụ thể, `metric` phải tương ứng với tên đối số được truyền cho
+callback `report`.
 
 ```{.python .input  n=38}
 mode = "min"
 metric = "validation_error"
 ```
 
-We use the configuration space from our previous example. In Syne Tune, this
-dictionary can also be used to pass constant attributes to the training script.
-We make use of this feature in order to pass `max_epochs`. Moreover, we specify
-the first configuration to be evaluated in `initial_config`.
+Chúng ta sử dụng không gian cấu hình từ ví dụ trước. Trong Syne Tune, dictionary này cũng
+có thể được dùng để truyền các thuộc tính hằng số cho training script. Chúng ta tận dụng
+tính năng này để truyền `max_epochs`. Ngoài ra, chúng ta chỉ định cấu hình đầu
+tiên cần được đánh giá trong `initial_config`.
 
 ```{.python .input  n=39}
 config_space = {
@@ -125,10 +122,10 @@ initial_config = {
 }
 ```
 
-Next, we need to specify the back-end for job executions. Here we just consider
-the distribution on a local machine where parallel jobs are executed as
-sub-processes. However, for large scale HPO, we could run this also on a cluster
-or cloud environment, where each trial consumes a full instance.
+Tiếp theo, chúng ta cần chỉ định back-end để thực thi job. Ở đây, chúng ta chỉ xét việc
+phân phối trên một máy cục bộ, nơi các job song song được thực thi dưới dạng các sub-process.
+Tuy nhiên, đối với HPO quy mô lớn, chúng ta cũng có thể chạy việc này trên một cluster hoặc
+môi trường cloud, nơi mỗi trial sử dụng toàn bộ một instance.
 
 ```{.python .input  n=40}
 trial_backend = PythonBackend(
@@ -137,8 +134,8 @@ trial_backend = PythonBackend(
 )
 ```
 
-We can now create the scheduler for asynchronous random search, which is similar
-in behaviour to our `BasicScheduler` from :numref:`sec_api_hpo`.
+Bây giờ chúng ta có thể tạo bộ lập lịch cho tìm kiếm ngẫu nhiên bất đồng bộ, có hành vi
+tương tự `BasicScheduler` của chúng ta trong :numref:`sec_api_hpo`.
 
 ```{.python .input  n=41}
 scheduler = RandomSearch(
@@ -149,9 +146,9 @@ scheduler = RandomSearch(
 )
 ```
 
-Syne Tune also features a `Tuner`, where the main experiment loop and
-bookkeeping is centralized, and interactions between scheduler and back-end are
-mediated.
+Syne Tune cũng cung cấp một `Tuner`, trong đó vòng lặp experiment chính và
+việc bookkeeping được tập trung, còn các tương tác giữa scheduler và back-end được trung gian
+hóa.
 
 ```{.python .input  n=42}
 stop_criterion = StoppingCriterion(max_wallclock_time=max_wallclock_time)
@@ -165,16 +162,16 @@ tuner = Tuner(
 )
 ```
 
-Let us run our distributed HPO experiment. According to our stopping criterion,
-it will run for about 12 minutes.
+Bây giờ hãy chạy experiment HPO phân tán. Theo tiêu chí dừng của chúng ta, experiment sẽ
+chạy trong khoảng 12 phút.
 
 ```{.python .input  n=43}
 tuner.run()
 ```
 
-The logs of all evaluated hyperparameter configurations are stored for further
-analysis. At any time during the tuning job, we can easily get the results
-obtained so far and plot the incumbent trajectory.
+Log của tất cả cấu hình hyperparameter đã được đánh giá được lưu lại để phân tích sau này.
+Vào bất kỳ thời điểm nào trong quá trình tuning job, chúng ta đều có thể dễ dàng lấy các kết
+quả đạt được cho đến lúc đó và vẽ quỹ đạo incumbent.
 
 ```{.python .input  n=46}
 d2l.set_figsize()
@@ -182,13 +179,13 @@ tuning_experiment = load_experiment(tuner.name)
 tuning_experiment.plot()
 ```
 
-## Visualize the Asynchronous Optimization Process
+## Trực quan hóa quá trình tối ưu hóa bất đồng bộ
 
-Below we visualize how the learning curves of every trial (each color in the plot represents a trial) evolve during the
-asynchronous optimization process. At any point in time, there are as many trials
-running concurrently as we have workers. Once a trial finishes, we immediately
-start the next trial, without waiting for the other trials to finish. Idle time
-of workers is reduced to a minimum with asynchronous scheduling.
+Dưới đây, chúng ta trực quan hóa cách các learning curve của từng trial (mỗi màu trong biểu
+đồ biểu thị một trial) thay đổi trong quá trình tối ưu hóa bất đồng bộ. Tại bất kỳ thời điểm
+nào, có số trial đang chạy đồng thời bằng với số worker. Khi một trial hoàn tất, chúng ta
+ngay lập tức bắt đầu trial tiếp theo mà không chờ các trial khác hoàn tất. Lập lịch bất đồng
+bộ giảm thời gian nhàn rỗi của worker xuống mức tối thiểu.
 
 ```{.python .input  n=45}
 d2l.set_figsize([6, 2.5])
@@ -206,32 +203,43 @@ d2l.plt.xlabel("wall-clock time")
 d2l.plt.ylabel("objective function")
 ```
 
-## Summary
+## Tóm tắt
 
-We can reduce the waiting time for random search substantially by distribution
-trials across parallel resources. In general, we distinguish between synchronous
-scheduling and asynchronous scheduling. Synchronous scheduling means that we
-sample a new batch of hyperparameter configurations once the previous batch
-finished. If we have a stragglers - trials that takes more time to finish than
-other trials - our workers need to wait at synchronization points. Asynchronous
-scheduling evaluates a new hyperparameter configurations as soon as resources
-become available, and, hence, ensures that all workers are busy at any point in
-time. While random search is easy to distribute asynchronously and does not
-require any change of the actual algorithm, other methods require some additional
-modifications.
+Chúng ta có thể giảm đáng kể thời gian chờ của tìm kiếm ngẫu nhiên bằng cách phân phối các
+trial trên những tài nguyên song song. Nhìn chung, chúng ta phân biệt giữa lập lịch đồng bộ
+và lập lịch bất đồng bộ. Lập lịch đồng bộ có nghĩa là chúng ta lấy mẫu một batch cấu hình
+hyperparameter mới sau khi batch trước đó hoàn tất. Nếu có một tác vụ chậm — tức là trial mất
+nhiều thời gian hoàn tất hơn các trial khác — worker của chúng ta phải chờ tại các điểm đồng
+bộ hóa. Lập lịch bất đồng bộ đánh giá một cấu hình hyperparameter mới ngay khi tài nguyên khả
+dụng và do đó đảm bảo tất cả worker đều bận tại mọi thời điểm. Mặc dù tìm kiếm ngẫu nhiên dễ
+được phân phối theo cách bất đồng bộ và không yêu cầu thay đổi thuật toán thực tế, các phương
+pháp khác cần một số điều chỉnh bổ sung.
 
-## Exercises
+## Bài tập
 
-1. Consider the `DropoutMLP` model implemented in :numref:`sec_dropout`, and used in Exercise 1 of :numref:`sec_api_hpo`.
-    1. Implement an objective function `hpo_objective_dropoutmlp_synetune` to be used with Syne Tune. Make sure that your function reports the validation error after every epoch.
-    2. Using the setup of Exercise 1 in :numref:`sec_api_hpo`, compare random search to Bayesian optimization. If you use SageMaker, feel free to use Syne Tune's benchmarking facilities in order to run experiments in parallel. Hint: Bayesian optimization is provided as `syne_tune.optimizer.baselines.BayesianOptimization`.
-    3. For this exercise, you need to run on an instance with at least 4 CPU cores. For one of the methods used above (random search, Bayesian optimization), run experiments with `n_workers=1`, `n_workers=2`, `n_workers=4`, and compare results (incumbent trajectories). At least for random search, you should observe linear scaling with respect to the number of workers. Hint: For robust results, you may have to average over several repetitions each.
-2. *Advanced*. The goal of this exercise is to implement a new scheduler in Syne Tune.
-    1. Create a virtual environment containing both the [d2lbook](https://github.com/d2l-ai/d2l-en/blob/master/INFO.md#installation-for-developers) and [syne-tune](https://syne-tune.readthedocs.io/en/latest/getting_started.html) sources.
-    2. Implement the `LocalSearcher` from Exercise 2 in :numref:`sec_api_hpo` as a new searcher in Syne Tune. Hint: Read [this tutorial](https://syne-tune.readthedocs.io/en/latest/tutorials/developer/README.html). Alternatively, you may follow this [example](https://syne-tune.readthedocs.io/en/latest/examples.html#launch-hpo-experiment-with-home-made-scheduler).
-    3. Compare your new `LocalSearcher` with `RandomSearch` on the `DropoutMLP` benchmark.
+1. Xét model `DropoutMLP` được triển khai trong :numref:`sec_dropout` và
+   được sử dụng trong Bài tập 1 của :numref:`sec_api_hpo`.
+    1. Triển khai một hàm mục tiêu `hpo_objective_dropoutmlp_synetune` để sử dụng với Syne Tune. Đảm bảo
+       rằng hàm của bạn báo cáo lỗi validation sau mỗi epoch.
+    2. Sử dụng thiết lập của Bài tập 1 trong :numref:`sec_api_hpo`, hãy so sánh
+       tìm kiếm ngẫu nhiên với tối ưu hóa Bayesian. Nếu sử dụng SageMaker, bạn có thể sử dụng
+       các tiện ích benchmarking của Syne Tune để chạy các experiment song song. Gợi ý: Tối
+       ưu hóa Bayesian được cung cấp dưới dạng `syne_tune.optimizer.baselines.BayesianOptimization`.
+    3. Đối với bài tập này, bạn cần chạy trên một instance có ít nhất 4 CPU core. Với một
+       trong các phương pháp được sử dụng ở trên (tìm kiếm ngẫu nhiên, tối ưu hóa Bayesian),
+       hãy chạy các experiment với `n_workers=1`, `n_workers=2`,
+       `n_workers=4` và so sánh kết quả (các quỹ đạo incumbent). Ít nhất đối với tìm
+       kiếm ngẫu nhiên, bạn sẽ quan sát thấy khả năng mở rộng tuyến tính theo số lượng worker.
+       Gợi ý: Để có kết quả đáng tin cậy, bạn có thể cần lấy trung bình qua nhiều lần lặp cho
+       mỗi trường hợp.
+2. *Nâng cao*. Mục tiêu của bài tập này là triển khai một scheduler mới trong Syne Tune.
+    1. Tạo một virtual environment chứa cả mã nguồn [d2lbook](https://github.com/d2l-ai/d2l-en/blob/master/INFO.md#installation-for-developers) và [syne-tune](https://syne-tune.readthedocs.io/en/latest/getting_started.html).
+    2. Triển khai `LocalSearcher` từ Bài tập 2 trong :numref:`sec_api_hpo`
+       như một searcher mới trong Syne Tune. Gợi ý: Đọc [hướng dẫn này](https://syne-tune.readthedocs.io/en/latest/tutorials/developer/README.html). Ngoài ra, bạn có thể làm theo [ví dụ](https://syne-tune.readthedocs.io/en/latest/examples.html#launch-hpo-experiment-with-home-made-scheduler) này.
+    3. So sánh `LocalSearcher` mới của bạn với `RandomSearch` trên benchmark
+       `DropoutMLP`.
 
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/12093)
+[Thảo luận](https://discuss.d2l.ai/t/12093)
 :end_tab:

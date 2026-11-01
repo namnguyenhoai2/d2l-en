@@ -1,19 +1,19 @@
-# Neural Collaborative Filtering for Personalized Ranking
+# Collaborative Filtering thần kinh cho xếp hạng cá nhân hóa
 
-This section moves beyond explicit feedback, introducing the neural collaborative filtering (NCF) framework for recommendation with implicit feedback. Implicit feedback is pervasive in recommender systems. Actions such as Clicks, buys, and watches are common implicit feedback which are easy to collect and indicative of users' preferences. The model we will introduce, titled NeuMF :cite:`He.Liao.Zhang.ea.2017`, short for neural matrix factorization, aims to address the personalized ranking task with implicit feedback. This model leverages the flexibility and non-linearity of neural networks to replace dot products of matrix factorization, aiming at enhancing the model expressiveness. In specific, this model is structured with two subnetworks including generalized matrix factorization (GMF) and MLP and models the interactions from two pathways instead of simple dot products. The outputs of these two networks are concatenated for the final prediction scores calculation. Unlike the rating prediction task in AutoRec, this model generates a ranked recommendation list to each user based on the implicit feedback. We will use the personalized ranking loss introduced in the last section to train this model.
+Phần này vượt ra ngoài phản hồi tường minh, giới thiệu framework collaborative filtering thần kinh (NCF) cho bài toán recommendation với phản hồi ngầm. Phản hồi ngầm xuất hiện phổ biến trong các hệ thống recommender. Những hành động như nhấp chuột, mua hàng và xem là các dạng phản hồi ngầm thường gặp, dễ thu thập và thể hiện rõ sở thích của người dùng. Mô hình chúng ta sẽ giới thiệu, có tên NeuMF :cite:`He.Liao.Zhang.ea.2017`, viết tắt của neural matrix factorization, nhằm giải quyết bài toán xếp hạng cá nhân hóa với phản hồi ngầm. Mô hình này tận dụng tính linh hoạt và tính phi tuyến của mạng neural để thay thế các tích vô hướng trong matrix factorization, nhằm tăng khả năng biểu diễn của mô hình. Cụ thể, mô hình được cấu trúc từ hai subnetworks gồm generalized matrix factorization (GMF) và MLP, đồng thời mô hình hóa các tương tác theo hai nhánh thay vì chỉ sử dụng các tích vô hướng đơn giản. Đầu ra của hai mạng này được nối lại để tính các điểm dự đoán cuối cùng. Không giống bài toán dự đoán rating trong AutoRec, mô hình này tạo ra một danh sách recommendation được xếp hạng cho mỗi người dùng dựa trên phản hồi ngầm. Chúng ta sẽ sử dụng hàm loss xếp hạng cá nhân hóa được giới thiệu ở phần trước để huấn luyện mô hình này.
 
-## The NeuMF model
+## Mô hình NeuMF
 
-As aforementioned, NeuMF fuses two subnetworks. The GMF is a generic neural network version of matrix factorization where the input is the elementwise product of user and item latent factors. It consists of two neural layers:
+Như đã đề cập, NeuMF kết hợp hai subnetworks. GMF là một phiên bản mạng neural tổng quát của matrix factorization, trong đó đầu vào là tích theo từng phần tử của các latent factor của người dùng và item. Mô hình này gồm hai neural layers:
 
 $$
 \mathbf{x} = \mathbf{p}_u \odot \mathbf{q}_i \\
 \hat{y}_{ui} = \alpha(\mathbf{h}^\top \mathbf{x}),
 $$
 
-where $\odot$ denotes the Hadamard product of vectors. $\mathbf{P} \in \mathbb{R}^{m \times k}$  and $\mathbf{Q} \in \mathbb{R}^{n \times k}$ correspond to user and item latent matrix respectively. $\mathbf{p}_u \in \mathbb{R}^{ k}$ is the $u^\textrm{th}$ row of $P$ and $\mathbf{q}_i \in \mathbb{R}^{ k}$ is the $i^\textrm{th}$ row of $Q$.  $\alpha$ and $h$ denote the activation function and weight of the output layer. $\hat{y}_{ui}$ is the prediction score of the user $u$ might give to the item $i$.
+trong đó $\odot$ biểu thị tích Hadamard của các vector. $\mathbf{P} \in \mathbb{R}^{m \times k}$ và $\mathbf{Q} \in \mathbb{R}^{n \times k}$ lần lượt tương ứng với các ma trận latent của người dùng và item. $\mathbf{p}_u \in \mathbb{R}^{ k}$ là hàng thứ $u^\textrm{th}$ của $P$, còn $\mathbf{q}_i \in \mathbb{R}^{ k}$ là hàng thứ $i^\textrm{th}$ của $Q$. $\alpha$ và $h$ lần lượt biểu thị hàm activation và trọng số của output layer. $\hat{y}_{ui}$ là điểm dự đoán mà người dùng $u$ có thể gán cho item $i$.
 
-Another component of this model is MLP. To enrich model flexibility, the MLP subnetwork does not share user and item embeddings with GMF. It uses the concatenation of user and item embeddings as input. With the complicated connections and nonlinear transformations, it is capable of estimating the intricate interactions between users and items. More precisely, the MLP subnetwork is defined as:
+Một thành phần khác của mô hình này là MLP. Để tăng tính linh hoạt của mô hình, subnetwork MLP không dùng chung embedding của người dùng và item với GMF. MLP sử dụng phép nối embedding của người dùng và item làm đầu vào. Với các kết nối phức tạp và các phép biến đổi phi tuyến, MLP có khả năng ước lượng những tương tác tinh vi giữa người dùng và item. Cụ thể hơn, subnetwork MLP được định nghĩa như sau:
 
 $$
 \begin{aligned}
@@ -25,16 +25,16 @@ z^{(1)} &= \phi_1(\mathbf{U}_u, \mathbf{V}_i) = \left[ \mathbf{U}_u, \mathbf{V}_
 \end{aligned}
 $$
 
-where $\mathbf{W}^*, \mathbf{b}^*$ and $\alpha^*$ denote the weight matrix, bias vector, and activation function. $\phi^*$ denotes the function of the corresponding layer. $\mathbf{z}^*$ denotes the output of corresponding layer.
+trong đó $\mathbf{W}^*, \mathbf{b}^*$ và $\alpha^*$ lần lượt biểu thị ma trận trọng số, vector bias và hàm activation. $\phi^*$ biểu thị hàm của layer tương ứng. $\mathbf{z}^*$ biểu thị đầu ra của layer tương ứng.
 
-To fuse the results of GMF and MLP, instead of simple addition, NeuMF concatenates the second last layers of two subnetworks to create a feature vector which can be passed to the further layers. Afterwards, the outputs are projected with matrix $\mathbf{h}$ and a sigmoid activation function. The prediction layer is formulated as:
+Để kết hợp kết quả của GMF và MLP, thay vì cộng đơn giản, NeuMF nối hai layer áp chót của hai subnetworks để tạo thành một feature vector có thể được truyền đến các layer tiếp theo. Sau đó, các đầu ra được chiếu bằng ma trận $\mathbf{h}$ và một hàm activation sigmoid. Prediction layer được biểu diễn như sau:
 $$
 \hat{y}_{ui} = \sigma(\mathbf{h}^\top[\mathbf{x}, \phi^L(z^{(L-1)})]).
 $$
 
-The following figure illustrates the model architecture of NeuMF.
+Hình dưới đây minh họa kiến trúc mô hình NeuMF.
 
-![Illustration of the NeuMF model](../img/rec-neumf.svg)
+![Minh họa mô hình NeuMF](../img/rec-neumf.svg)
 
 ```{.python .input  n=1}
 #@tab mxnet
@@ -47,8 +47,8 @@ import random
 npx.set_np()
 ```
 
-## Model Implementation
-The following code implements the NeuMF model. It consists of a generalized matrix factorization model and an MLP with different user and item embedding vectors. The structure of the MLP is controlled with the parameter `nums_hiddens`. ReLU is used as the default activation function.
+## Triển khai mô hình
+Đoạn code sau triển khai mô hình NeuMF. Mô hình gồm một generalized matrix factorization model và một MLP với các vector embedding khác nhau cho người dùng và item. Cấu trúc của MLP được điều khiển bằng tham số `nums_hiddens`. ReLU được sử dụng làm hàm activation mặc định.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -77,9 +77,9 @@ class NeuMF(nn.Block):
         return self.prediction_layer(con_res)
 ```
 
-## Customized Dataset with Negative Sampling
+## Dataset tùy chỉnh với Negative Sampling
 
-For pairwise ranking loss, an important step is negative sampling. For each user, the items that a user has not interacted with are candidate items (unobserved entries). The following function takes users identity and candidate items as input, and samples negative items randomly for each user from the candidate set of that user. During the training stage, the model ensures that the items that a user likes to be ranked higher than items he dislikes or has not interacted with.
+Đối với pairwise ranking loss, một bước quan trọng là negative sampling. Với mỗi người dùng, các item mà người dùng chưa từng tương tác là các item ứng viên (các entry chưa được quan sát). Hàm sau nhận identity của người dùng và các item ứng viên làm đầu vào, rồi lấy mẫu ngẫu nhiên các item âm cho từng người dùng từ tập ứng viên của người dùng đó. Trong giai đoạn training, mô hình đảm bảo rằng các item mà người dùng thích được xếp hạng cao hơn những item mà họ không thích hoặc chưa từng tương tác.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -99,24 +99,25 @@ class PRDataset(gluon.data.Dataset):
         return self.users[idx], self.items[idx], neg_items[indices]
 ```
 
-## Evaluator
-In this section, we adopt the splitting by time strategy to construct the training and test sets. Two evaluation measures including hit rate at given cutting off $\ell$ ($\textrm{Hit}@\ell$) and area under the ROC curve (AUC) are used to assess the model effectiveness.  Hit rate at given position $\ell$ for each user indicates that whether the recommended item is included in the top $\ell$ ranked list. The formal definition is as follows:
+## Bộ đánh giá
+
+Trong phần này, chúng ta áp dụng chiến lược chia theo thời gian để xây dựng tập training và tập test. Hai thước đo đánh giá gồm hit rate tại ngưỡng cắt $\ell$ cho trước ($\textrm{Hit}@\ell$) và diện tích dưới đường cong ROC (AUC) được sử dụng để đánh giá hiệu quả của mô hình. Hit rate tại vị trí $\ell$ cho mỗi người dùng cho biết item được recommendation có nằm trong danh sách xếp hạng top $\ell$ hay không. Định nghĩa chính thức như sau:
 
 $$
 \textrm{Hit}@\ell = \frac{1}{m} \sum_{u \in \mathcal{U}} \textbf{1}(rank_{u, g_u} <= \ell),
 $$
 
-where $\textbf{1}$ denotes an indicator function that is equal to one if the ground truth item is ranked in the top $\ell$ list, otherwise it is equal to zero. $rank_{u, g_u}$ denotes the ranking of the ground truth item $g_u$ of the user $u$ in the recommendation list (The ideal ranking is 1). $m$ is the number of users. $\mathcal{U}$ is the user set.
+trong đó $\textbf{1}$ biểu thị một hàm chỉ báo, có giá trị bằng một nếu item ground truth được xếp hạng trong danh sách top $\ell$, và bằng không trong trường hợp ngược lại. $rank_{u, g_u}$ biểu thị thứ hạng của item ground truth $g_u$ của người dùng $u$ trong danh sách recommendation (thứ hạng lý tưởng là 1). $m$ là số người dùng. $\mathcal{U}$ là tập người dùng.
 
-The definition of AUC is as follows:
+Định nghĩa của AUC như sau:
 
 $$
 \textrm{AUC} = \frac{1}{m} \sum_{u \in \mathcal{U}} \frac{1}{|\mathcal{I} \backslash S_u|} \sum_{j \in I \backslash S_u} \textbf{1}(rank_{u, g_u} < rank_{u, j}),
 $$
 
-where $\mathcal{I}$ is the item set. $S_u$ is the candidate items of user $u$. Note that many other evaluation protocols such as precision, recall and normalized discounted cumulative gain (NDCG) can also be used.
+trong đó $\mathcal{I}$ là tập item. $S_u$ là các item ứng viên của người dùng $u$. Lưu ý rằng nhiều protocol đánh giá khác như precision, recall và normalized discounted cumulative gain (NDCG) cũng có thể được sử dụng.
 
-The following function calculates the hit counts and AUC for each user.
+Hàm sau tính số hit và AUC cho từng người dùng.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -131,7 +132,7 @@ def hit_and_auc(rankedlist, test_matrix, k):
     return len(hits_k), auc
 ```
 
-Then, the overall Hit rate and AUC are calculated as follows.
+Sau đó, Hit rate và AUC tổng thể được tính như sau.
 
 ```{.python .input  n=5}
 #@tab mxnet
@@ -166,9 +167,9 @@ def evaluate_ranking(net, test_input, seq, candidates, num_users, num_items,
     return np.mean(np.array(hit_rate)), np.mean(np.array(auc))
 ```
 
-## Training and Evaluating the Model
+## Huấn luyện và đánh giá mô hình
 
-The training function is defined below. We train the model in the pairwise manner.
+Hàm training được định nghĩa bên dưới. Chúng ta huấn luyện mô hình theo pairwise manner.
 
 ```{.python .input  n=6}
 #@tab mxnet
@@ -207,7 +208,7 @@ def train_ranking(net, train_iter, test_iter, loss, trainer, test_seq_iter,
           f'on {str(devices)}')
 ```
 
-Now, we can load the MovieLens 100k dataset and train the model. Since there are only ratings in the MovieLens dataset, with some losses of accuracy, we binarize these ratings to zeros and ones. If a user rated an item, we consider the implicit feedback as one, otherwise as zero. The action of rating an item can be treated as a form of providing implicit feedback.  Here, we split the dataset in the `seq-aware` mode where users' latest interacted items are left out for test.
+Bây giờ, chúng ta có thể tải dataset MovieLens 100k và huấn luyện mô hình. Vì dataset MovieLens chỉ có các rating, nên với một phần độ chính xác bị giảm, chúng ta nhị phân hóa các rating này thành số 0 và 1. Nếu người dùng đã rating một item, chúng ta xem phản hồi ngầm là một; nếu không thì xem là không. Hành động rating một item có thể được xem là một hình thức cung cấp phản hồi ngầm. Ở đây, chúng ta chia dataset theo chế độ `seq-aware`, trong đó các item mà người dùng tương tác gần đây nhất được giữ lại cho tập test.
 
 ```{.python .input  n=11}
 #@tab mxnet
@@ -224,7 +225,7 @@ train_iter = gluon.data.DataLoader(
     True, last_batch="rollover", num_workers=d2l.get_dataloader_workers())
 ```
 
-We then create and initialize the model. We use a three-layer MLP with constant hidden size 10.
+Sau đó, chúng ta tạo và khởi tạo mô hình. Chúng ta sử dụng một MLP ba layer với kích thước hidden cố định là 10.
 
 ```{.python .input  n=8}
 #@tab mxnet
@@ -233,7 +234,7 @@ net = NeuMF(10, num_users, num_items, nums_hiddens=[10, 10, 10])
 net.initialize(ctx=devices, force_reinit=True, init=mx.init.Normal(0.01))
 ```
 
-The following code trains the model.
+Đoạn code sau huấn luyện mô hình.
 
 ```{.python .input  n=12}
 #@tab mxnet
@@ -245,18 +246,18 @@ train_ranking(net, train_iter, test_iter, loss, trainer, None, num_users,
               num_items, num_epochs, devices, evaluate_ranking, candidates)
 ```
 
-## Summary
+## Tóm tắt
 
-* Adding nonlinearity to matrix factorization model is beneficial for improving the model capability and effectiveness.
-* NeuMF is a combination of matrix factorization and an MLP. The MLP takes the concatenation of user and item embeddings as input.
+* Việc thêm tính phi tuyến vào mô hình matrix factorization có lợi cho việc cải thiện năng lực và hiệu quả của mô hình.
+* NeuMF là sự kết hợp giữa matrix factorization và một MLP. MLP nhận phép nối embedding của người dùng và item làm đầu vào.
 
-## Exercises
+## Bài tập
 
-* Vary the size of latent factors. How the size of latent factors impact the model performance?
-* Vary the architectures (e.g., number of layers, number of neurons of each layer) of the MLP to check the its impact on the performance.
-* Try different optimizers, learning rate and weight decay rate.
-* Try to use hinge loss defined in the last section to optimize this model.
+* Thay đổi kích thước của các latent factor. Kích thước của latent factor ảnh hưởng như thế nào đến hiệu năng của mô hình?
+* Thay đổi kiến trúc (ví dụ: số lượng layer, số neuron của mỗi layer) của MLP để kiểm tra ảnh hưởng của chúng đến hiệu năng.
+* Thử các optimizer, learning rate và weight decay rate khác nhau.
+* Thử sử dụng hinge loss được định nghĩa ở phần trước để tối ưu mô hình này.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/403)
+[Thảo luận](https://discuss.d2l.ai/t/403)
 :end_tab:

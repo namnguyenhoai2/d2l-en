@@ -1,13 +1,13 @@
-# Feature-Rich Recommender Systems
+# Hệ thống gợi ý giàu đặc trưng
 
-Interaction data is the most basic indication of users' preferences and interests. It plays a critical role in former introduced models. Yet, interaction data is usually extremely sparse and can be noisy at times. To address this issue, we can integrate side information such as features of items, profiles of users, and even in which context that the interaction occurred into the recommendation model. Utilizing these features are helpful in making recommendations in that these features can be an effective predictor of users interests especially when interaction data is lacking. As such, it is essential for recommendation models also have the capability to deal with those features and give the model some content/context awareness. To demonstrate this type of recommendation models, we introduce another task on click-through rate (CTR) for online advertisement recommendations :cite:`McMahan.Holt.Sculley.ea.2013` and present an anonymous advertising dataset. Targeted advertisement services have attracted widespread attention and are often framed as recommendation engines. Recommending advertisements that match users' personal taste and interest is important for click-through rate improvement.
+Dữ liệu tương tác là chỉ báo cơ bản nhất về sở thích và mối quan tâm của người dùng. Nó đóng vai trò quan trọng trong các mô hình được giới thiệu trước đó. Tuy nhiên, dữ liệu tương tác thường cực kỳ thưa và đôi khi có thể bị nhiễu. Để giải quyết vấn đề này, chúng ta có thể tích hợp thông tin bổ sung, chẳng hạn như các đặc trưng của sản phẩm, hồ sơ người dùng, và thậm chí cả ngữ cảnh diễn ra tương tác, vào mô hình gợi ý. Việc sử dụng các đặc trưng này rất hữu ích cho việc đưa ra gợi ý, vì chúng có thể là yếu tố dự đoán hiệu quả về mối quan tâm của người dùng, đặc biệt khi dữ liệu tương tác còn thiếu. Do đó, điều thiết yếu là các mô hình gợi ý cũng phải có khả năng xử lý những đặc trưng này và cung cấp cho mô hình khả năng nhận biết nội dung/ngữ cảnh. Để minh họa cho loại mô hình gợi ý này, chúng ta giới thiệu một tác vụ khác về tỷ lệ nhấp (click-through rate, CTR) cho việc gợi ý quảng cáo trực tuyến :cite:`McMahan.Holt.Sculley.ea.2013` và trình bày một bộ dữ liệu quảng cáo ẩn danh. Các dịch vụ quảng cáo nhắm mục tiêu đã thu hút sự chú ý rộng rãi và thường được xem như các hệ thống gợi ý. Việc gợi ý những quảng cáo phù hợp với sở thích và mối quan tâm cá nhân của người dùng rất quan trọng để cải thiện tỷ lệ nhấp.
 
 
-Digital marketers use online advertising to display advertisements to customers. Click-through rate is a metric that measures the number of clicks advertisers receive on their ads per number of impressions and it is expressed as a percentage calculated with the formula: 
+Các nhà tiếp thị kỹ thuật số sử dụng quảng cáo trực tuyến để hiển thị quảng cáo cho khách hàng. Tỷ lệ nhấp là một chỉ số đo lường số lượt nhấp mà nhà quảng cáo nhận được trên quảng cáo của họ trên mỗi lượt hiển thị, và được biểu thị dưới dạng phần trăm, tính theo công thức:
 
 $$ \textrm{CTR} = \frac{\#\textrm{Clicks}} {\#\textrm{Impressions}} \times 100 \% .$$
 
-Click-through rate is an important signal that indicates the effectiveness of prediction algorithms. Click-through rate prediction is a task of predicting the likelihood that something on a website will be clicked. Models on CTR prediction can not only be employed in targeted advertising systems but also in general item (e.g., movies, news, products) recommender systems, email campaigns, and even search engines. It is also closely related to user satisfaction, conversion rate, and can be helpful in setting campaign goals as it can help advertisers to set realistic expectations.
+Tỷ lệ nhấp là một tín hiệu quan trọng cho biết mức độ hiệu quả của các thuật toán dự đoán. Dự đoán tỷ lệ nhấp là tác vụ dự đoán khả năng một nội dung nào đó trên website được nhấp vào. Các mô hình dự đoán CTR không chỉ có thể được sử dụng trong các hệ thống quảng cáo nhắm mục tiêu mà còn trong các hệ thống gợi ý sản phẩm nói chung (ví dụ: phim, tin tức, sản phẩm), chiến dịch email và thậm chí cả công cụ tìm kiếm. Nó cũng liên quan chặt chẽ đến mức độ hài lòng của người dùng và tỷ lệ chuyển đổi, đồng thời có thể hữu ích trong việc thiết lập mục tiêu chiến dịch vì giúp nhà quảng cáo đưa ra những kỳ vọng thực tế.
 
 ```{.python .input}
 #@tab mxnet
@@ -17,11 +17,11 @@ from mxnet import gluon, np
 import os
 ```
 
-## An Online Advertising Dataset
+## Một bộ dữ liệu quảng cáo trực tuyến
 
-With the considerable advancements of Internet and mobile technology, online advertising has become an important income resource and generates vast majority of revenue in the Internet industry. It is important to display relevant advertisements or advertisements that pique users' interests so that casual visitors can be converted into paying customers. The dataset we introduced is an online advertising dataset. It consists of 34 fields, with the first column representing the target variable that indicates if an ad was clicked (1) or not (0). All the other columns are categorical features. The columns might represent the advertisement id, site or application id, device id, time, user profiles and so on. The real semantics of the features are undisclosed due to anonymization and privacy concern.
+Cùng với những tiến bộ đáng kể của Internet và công nghệ di động, quảng cáo trực tuyến đã trở thành một nguồn thu nhập quan trọng và tạo ra phần lớn doanh thu trong ngành Internet. Việc hiển thị các quảng cáo có liên quan hoặc thu hút sự quan tâm của người dùng là rất quan trọng để những khách truy cập ngẫu nhiên có thể trở thành khách hàng trả phí. Bộ dữ liệu mà chúng ta giới thiệu là một bộ dữ liệu quảng cáo trực tuyến. Bộ dữ liệu này gồm 34 trường, trong đó cột đầu tiên biểu diễn biến mục tiêu cho biết một quảng cáo có được nhấp vào hay không (1 là có, 0 là không). Tất cả các cột còn lại là các đặc trưng phân loại. Các cột có thể biểu diễn id quảng cáo, id website hoặc ứng dụng, id thiết bị, thời gian, hồ sơ người dùng, v.v. Ý nghĩa thực tế của các đặc trưng không được công bố do yêu cầu ẩn danh hóa và những lo ngại về quyền riêng tư.
 
-The following code downloads the dataset from our server and saves it into the local data folder.
+Đoạn mã sau tải bộ dữ liệu từ máy chủ của chúng ta và lưu vào thư mục dữ liệu cục bộ.
 
 ```{.python .input  n=15}
 #@tab mxnet
@@ -32,11 +32,11 @@ d2l.DATA_HUB['ctr'] = (d2l.DATA_URL + 'ctr.zip',
 data_dir = d2l.download_extract('ctr')
 ```
 
-There are a training set and a test set, consisting of 15000 and 3000 samples/lines, respectively.
+Có một tập huấn luyện và một tập kiểm tra, lần lượt gồm 15000 và 3000 mẫu/dòng.
 
 ## Dataset Wrapper
 
-For the convenience of data loading, we implement a `CTRDataset` which loads the advertising dataset from the CSV file and can be used by `DataLoader`.
+Để thuận tiện cho việc tải dữ liệu, chúng ta triển khai một `CTRDataset` để tải bộ dữ liệu quảng cáo từ tệp CSV và có thể được sử dụng bởi `DataLoader`.
 
 ```{.python .input  n=13}
 #@tab mxnet
@@ -82,7 +82,7 @@ class CTRDataset(gluon.data.Dataset):
         return feat + self.offsets, self.data[idx]['y']
 ```
 
-The following example loads the training data and print out the first record.
+Ví dụ sau tải dữ liệu huấn luyện và in bản ghi đầu tiên.
 
 ```{.python .input  n=16}
 #@tab mxnet
@@ -90,16 +90,16 @@ train_data = CTRDataset(os.path.join(data_dir, 'train.csv'))
 train_data[0]
 ```
 
-As can be seen, all the 34 fields are categorical features. Each value represents the one-hot index of the corresponding entry. The label $0$ means that it is not clicked. This `CTRDataset` can also be used to load other datasets such as the Criteo display advertising challenge [dataset](https://labs.criteo.com/2014/02/kaggle-display-advertising-challenge-dataset/) and the Avazu click-through rate prediction [dataset](https://www.kaggle.com/c/avazu-ctr-prediction).  
+Có thể thấy, cả 34 trường đều là các đặc trưng phân loại. Mỗi giá trị biểu diễn chỉ mục one-hot của mục tương ứng. Nhãn $0$ có nghĩa là quảng cáo không được nhấp vào. `CTRDataset` này cũng có thể được sử dụng để tải các bộ dữ liệu khác như bộ dữ liệu Criteo display advertising challenge [dataset](https://labs.criteo.com/2014/02/kaggle-display-advertising-challenge-dataset/) và bộ dữ liệu Avazu click-through rate prediction [dataset](https://www.kaggle.com/c/avazu-ctr-prediction).
 
-## Summary 
-* Click-through rate is an important metric that is used to measure the effectiveness of advertising systems and recommender systems.
-* Click-through rate prediction is usually converted to a binary classification problem. The target is to predict whether an ad/item will be clicked or not based on given features.
+## Tóm tắt
+* Tỷ lệ nhấp là một chỉ số quan trọng được sử dụng để đo lường mức độ hiệu quả của các hệ thống quảng cáo và hệ thống gợi ý.
+* Dự đoán tỷ lệ nhấp thường được chuyển thành bài toán phân loại nhị phân. Mục tiêu là dự đoán liệu một quảng cáo/sản phẩm có được nhấp vào hay không dựa trên các đặc trưng đã cho.
 
-## Exercises
+## Bài tập
 
-* Can you load the Criteo and Avazu dataset with the provided `CTRDataset`. It is worth noting that the Criteo dataset consisting of real-valued features so you may have to revise the code a bit.
+* Bạn có thể tải bộ dữ liệu Criteo và Avazu bằng `CTRDataset` được cung cấp không? Cần lưu ý rằng bộ dữ liệu Criteo gồm các đặc trưng có giá trị thực, vì vậy bạn có thể phải sửa đổi một chút đoạn mã.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/405)
+[Thảo luận](https://discuss.d2l.ai/t/405)
 :end_tab:

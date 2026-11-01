@@ -1,61 +1,60 @@
-# Contributing to This Book
+# Đóng góp cho cuốn sách
 :label:`sec_how_to_contribute`
 
-Contributions by [readers](https://github.com/d2l-ai/d2l-en/graphs/contributors) help us improve this book. If you find a typo, an outdated link, something where you think we missed a citation, where the code does not look elegant or where an explanation is unclear, please contribute back and help us help our readers. While in regular books the delay between print runs (and thus between typo corrections) can be measured in years, it typically takes hours to days to incorporate an improvement in this book. This is all possible due to version control and continuous integration (CI) testing. To do so you need to submit a [pull request](https://github.com/d2l-ai/d2l-en/pulls) to the GitHub repository. When your pull request is merged into the code repository by the authors, you will become a contributor.
+Những đóng góp từ [độc giả](https://github.com/d2l-ai/d2l-en/graphs/contributors) giúp chúng tôi cải thiện cuốn sách này. Nếu bạn phát hiện lỗi chính tả, liên kết lỗi thời, nội dung mà bạn cho rằng chúng tôi đã bỏ sót trích dẫn, đoạn code chưa được viết một cách thanh lịch, hoặc phần giải thích chưa rõ ràng, hãy đóng góp và giúp chúng tôi hỗ trợ độc giả tốt hơn. Trong khi với những cuốn sách thông thường, khoảng thời gian giữa các lần in (và do đó giữa các lần sửa lỗi chính tả) có thể tính bằng năm, thì thông thường chỉ mất vài giờ đến vài ngày để đưa một cải tiến vào cuốn sách này. Tất cả điều đó đều có thể thực hiện được nhờ version control và kiểm thử continuous integration (CI). Để thực hiện việc này, bạn cần gửi một [pull request](https://github.com/d2l-ai/d2l-en/pulls) đến repository GitHub. Khi pull request của bạn được các tác giả merge vào code repository, bạn sẽ trở thành một contributor.
 
-## Submitting Minor Changes
+## Gửi các thay đổi nhỏ
 
-The most common contributions are editing one sentence or fixing typos. We recommend that you find the source file in the [GitHub repository](https://github.com/d2l-ai/d2l-en) and edit the file directly. For example, you can search the file through the [Find file](https://github.com/d2l-ai/d2l-en/find/master) button (:numref:`fig_edit_file`) to locate the source file (a markdown file). Then you click the "Edit this file" button on the upper-right corner to make your changes in the markdown file.
+Những đóng góp phổ biến nhất là chỉnh sửa một câu hoặc sửa lỗi chính tả. Chúng tôi khuyên bạn tìm file nguồn trong [repository GitHub](https://github.com/d2l-ai/d2l-en) và chỉnh sửa file trực tiếp. Ví dụ: bạn có thể tìm kiếm file thông qua nút [Find file](https://github.com/d2l-ai/d2l-en/find/master) (:numref:`fig_edit_file`) để xác định file nguồn (một file markdown). Sau đó, bạn nhấp vào nút "Edit this file" ở góc trên bên phải để thực hiện thay đổi trong file markdown.
 
-![Edit the file on Github.](../img/edit-file.png)
+![Chỉnh sửa file trên Github.](../img/edit-file.png)
 :width:`300px`
 :label:`fig_edit_file`
 
-After you are done, fill in your change descriptions in the "Propose file change" panel on the page bottom and then click the "Propose file change" button. It will redirect you to a new page to review your changes (:numref:`fig_git_createpr`). If everything is good, you can submit a pull request by clicking the "Create pull request" button.
+Sau khi hoàn tất, hãy điền mô tả thay đổi vào bảng "Propose file change" ở cuối trang, rồi nhấp vào nút "Propose file change". Bạn sẽ được chuyển hướng đến một trang mới để xem lại các thay đổi của mình (:numref:`fig_git_createpr`). Nếu mọi thứ đều ổn, bạn có thể gửi pull request bằng cách nhấp vào nút "Create pull request".
 
-## Proposing Major Changes
+## Đề xuất các thay đổi lớn
 
-If you plan to update a large portion of text or code, then you need to know a little bit more about the format this book is using. The source file is based on the [markdown format](https://daringfireball.net/projects/markdown/syntax) with a set of extensions through the [D2L-Book](http://book.d2l.ai/user/markdown.html) package such as referring to equations, images, chapters, and citations. You can use any markdown editors to open these files and make your changes.
+Nếu bạn dự định cập nhật một phần lớn nội dung hoặc code, bạn cần biết thêm một chút về định dạng mà cuốn sách này sử dụng. File nguồn dựa trên định dạng [markdown](https://daringfireball.net/projects/markdown/syntax) cùng một tập hợp extension thông qua package [D2L-Book](http://book.d2l.ai/user/markdown.html), chẳng hạn như tham chiếu đến equation, image, chapter và citation. Bạn có thể dùng bất kỳ markdown editor nào để mở các file này và thực hiện thay đổi.
 
-If you would like to change the code, we recommend that you use the Jupyter Notebook to open these markdown files as described in :numref:`sec_jupyter`, so that you can run and test your changes. Please remember to clear all outputs before submitting your changes since our CI system will execute the sections you updated to generate outputs.
+Nếu muốn thay đổi code, chúng tôi khuyên bạn sử dụng Jupyter Notebook để mở các file markdown như mô tả trong :numref:`sec_jupyter`, để có thể chạy và kiểm thử các thay đổi. Hãy nhớ xóa toàn bộ output trước khi gửi thay đổi, vì hệ thống CI của chúng tôi sẽ thực thi các section mà bạn đã cập nhật để tạo output.
 
-Some sections may support multiple framework implementations.
-If you add a new code block, please use `%%tab` to mark this block on the beginning line. For example,
-`%%tab pytorch` for a PyTorch code block, `%%tab tensorflow` for a TensorFlow code block, or `%%tab all` a shared code block for all implementations. You may refer to the `d2lbook` package for more information.
+Một số section có thể hỗ trợ nhiều triển khai framework.
+Nếu thêm một code block mới, hãy sử dụng `%%tab` để đánh dấu block này ở dòng đầu tiên. Ví dụ, `%%tab pytorch` cho code block PyTorch, `%%tab tensorflow` cho code block TensorFlow, hoặc `%%tab all` cho code block dùng chung cho mọi triển khai. Bạn có thể tham khảo package `d2lbook` để biết thêm thông tin.
 
-## Submitting Major Changes
+## Gửi các thay đổi lớn
 
-We suggest you to use the standard Git process to submit a major change. In a nutshell the process works as described in :numref:`fig_contribute`.
+Chúng tôi đề xuất bạn sử dụng quy trình Git tiêu chuẩn để gửi một thay đổi lớn. Tóm lại, quy trình này diễn ra như mô tả trong :numref:`fig_contribute`.
 
-![Contributing to the book.](../img/contribute.svg)
+![Đóng góp cho cuốn sách.](../img/contribute.svg)
 :label:`fig_contribute`
 
-We will walk you through the steps in detail. If you are already familiar with Git you can skip this section. For concreteness we assume that the contributor's user name is "astonzhang".
+Chúng tôi sẽ hướng dẫn chi tiết từng bước. Nếu đã quen thuộc với Git, bạn có thể bỏ qua section này. Để làm rõ, chúng tôi giả định rằng user name của contributor là "astonzhang".
 
-### Installing Git
+### Cài đặt Git
 
-The Git open-source book describes [how to install Git](https://git-scm.com/book/en/v2). This typically works via `apt install git` on Ubuntu Linux, by installing the Xcode developer tools on macOS, or by using GitHub's [desktop client](https://desktop.github.com). If you do not have a GitHub account, you need to sign up for one.
+Cuốn sách Git mã nguồn mở mô tả [cách cài đặt Git](https://git-scm.com/book/en/v2). Thông thường, cách này hoạt động thông qua `apt install git` trên Ubuntu Linux, bằng cách cài đặt bộ công cụ dành cho developer Xcode trên macOS, hoặc bằng cách sử dụng [desktop client](https://desktop.github.com) của GitHub. Nếu chưa có tài khoản GitHub, bạn cần đăng ký một tài khoản.
 
-### Logging in to GitHub
+### Đăng nhập vào GitHub
 
-Enter the [address](https://github.com/d2l-ai/d2l-en/) of the book's code repository in your browser. Click on the `Fork` button in the red box at the upper-right of :numref:`fig_git_fork`, to make a copy of the repository of this book. This is now *your copy* and you can change it any way you want.
+Nhập [địa chỉ](https://github.com/d2l-ai/d2l-en/) của code repository của cuốn sách vào trình duyệt. Nhấp vào nút `Fork` trong khung màu đỏ ở góc trên bên phải của :numref:`fig_git_fork` để tạo một bản sao của repository của cuốn sách này. Đây sẽ là *bản sao của bạn* và bạn có thể thay đổi tùy ý.
 
-![The code repository page.](../img/git-fork.png)
+![Trang code repository.](../img/git-fork.png)
 :width:`700px`
 :label:`fig_git_fork`
 
 
-Now, the code repository of this book will be forked (i.e., copied) to your username, such as `astonzhang/d2l-en` shown at the upper-left of :numref:`fig_git_forked`.
+Bây giờ, code repository của cuốn sách này sẽ được fork (tức là sao chép) vào user name của bạn, chẳng hạn như `astonzhang/d2l-en` được hiển thị ở góc trên bên trái của :numref:`fig_git_forked`.
 
-![The forked code repository.](../img/git-forked.png)
+![Code repository đã được fork.](../img/git-forked.png)
 :width:`700px`
 :label:`fig_git_forked`
 
-### Cloning the Repository
+### Clone Repository
 
-To clone the repository (i.e., to make a local copy) we need to get its repository address. The green button in :numref:`fig_git_clone` displays this. Make sure that your local copy is up to date with the main repository if you decide to keep this fork around for longer. For now simply follow the instructions in :ref:`chap_installation` to get started. The main difference is that you are now downloading *your own fork* of the repository.
+Để clone repository (tức là tạo một bản sao cục bộ), chúng ta cần lấy địa chỉ repository của nó. Nút màu xanh lá cây trong :numref:`fig_git_clone` hiển thị địa chỉ này. Nếu quyết định giữ fork này trong thời gian dài hơn, hãy đảm bảo rằng bản sao cục bộ của bạn được cập nhật với repository chính. Hiện tại, chỉ cần làm theo hướng dẫn trong :ref:`chap_installation` để bắt đầu. Điểm khác biệt chính là bây giờ bạn đang tải xuống *fork của chính mình* của repository.
 
-![Cloning the repository.](../img/git-clone.png)
+![Clone repository.](../img/git-clone.png)
 :width:`700px`
 :label:`fig_git_clone`
 
@@ -65,12 +64,12 @@ git clone https://github.com/your_github_username/d2l-en.git
 ```
 
 
-### Editing and Pushing
+### Chỉnh sửa và Push
 
-Now it is time to edit the book. It is best to edit it in the Jupyter Notebook following instructions in :numref:`sec_jupyter`. Make the changes and check that they are OK. Assume that we have modified a typo in the file `~/d2l-en/chapter_appendix-tools-for-deep-learning/contributing.md`.
-You can then check which files you have changed.
+Bây giờ là lúc chỉnh sửa cuốn sách. Tốt nhất là chỉnh sửa trong Jupyter Notebook theo hướng dẫn ở :numref:`sec_jupyter`. Thực hiện các thay đổi và kiểm tra để đảm bảo chúng đúng. Giả sử chúng ta đã sửa một lỗi chính tả trong file `~/d2l-en/chapter_appendix-tools-for-deep-learning/contributing.md`.
+Sau đó, bạn có thể kiểm tra những file đã thay đổi.
 
-At this point Git will prompt that the `chapter_appendix-tools-for-deep-learning/contributing.md` file has been modified.
+Lúc này Git sẽ thông báo rằng file `chapter_appendix-tools-for-deep-learning/contributing.md` đã được chỉnh sửa.
 
 ```
 mylaptop:d2l-en me$ git status
@@ -85,7 +84,7 @@ Changes not staged for commit:
 ```
 
 
-After confirming that this is what you want, execute the following command:
+Sau khi xác nhận rằng đây là điều bạn muốn, hãy thực thi command sau:
 
 ```
 git add chapter_appendix-tools-for-deep-learning/contributing.md
@@ -94,37 +93,37 @@ git push
 ```
 
 
-The changed code will then be in your personal fork of the repository. To request the addition of your change, you have to create a pull request for the official repository of the book.
+Code đã thay đổi sẽ nằm trong fork cá nhân của bạn của repository. Để yêu cầu thêm thay đổi của mình, bạn phải tạo một pull request cho repository chính thức của cuốn sách.
 
-### Submitting Pull Requests
+### Gửi Pull Request
 
-As shown in :numref:`fig_git_newpr`, go to your fork of the repository on GitHub and select "New pull request". This will open up a screen that shows you the changes between your edits and what is current in the main repository of the book.
+Như minh họa trong :numref:`fig_git_newpr`, hãy truy cập fork của repository trên GitHub và chọn "New pull request". Thao tác này sẽ mở một màn hình hiển thị những thay đổi giữa các chỉnh sửa của bạn và phiên bản hiện tại trong repository chính của cuốn sách.
 
-![New pull request.](../img/git-newpr.png)
+![Pull request mới.](../img/git-newpr.png)
 :width:`700px`
 :label:`fig_git_newpr`
 
 
-Finally, submit a pull request by clicking the button as shown in :numref:`fig_git_createpr`. Make sure to describe the changes you have made in the pull request.
-This will make it easier for the authors to review it and to merge it with the book. Depending on the changes, this might get accepted right away, rejected, or more likely, you will get some feedback on the changes. Once you have incorporated them, you are good to go.
+Cuối cùng, gửi một pull request bằng cách nhấp vào nút như minh họa trong :numref:`fig_git_createpr`. Hãy đảm bảo mô tả những thay đổi bạn đã thực hiện trong pull request.
+Điều này sẽ giúp các tác giả dễ dàng xem xét và merge thay đổi vào cuốn sách hơn. Tùy thuộc vào các thay đổi, pull request có thể được chấp nhận ngay, bị từ chối, hoặc nhiều khả năng hơn là bạn sẽ nhận được phản hồi về các thay đổi. Sau khi tiếp thu các phản hồi đó, bạn đã hoàn tất.
 
-![Create pull request.](../img/git-createpr.png)
+![Tạo pull request.](../img/git-createpr.png)
 :width:`700px`
 :label:`fig_git_createpr`
 
 
-## Summary
+## Tóm tắt
 
-* You can use GitHub to contribute to this book.
-* You can edit the file on GitHub directly for minor changes.
-* For a major change, please fork the repository, edit things locally, and only contribute back once you are ready.
-* Pull requests are how contributions are being bundled up. Try not to submit huge pull requests since this makes them hard to understand and incorporate. Better send several smaller ones.
+* Bạn có thể sử dụng GitHub để đóng góp cho cuốn sách này.
+* Bạn có thể chỉnh sửa trực tiếp file trên GitHub đối với các thay đổi nhỏ.
+* Đối với một thay đổi lớn, hãy fork repository, chỉnh sửa cục bộ, và chỉ gửi đóng góp khi bạn đã sẵn sàng.
+* Pull request là cách các đóng góp được tập hợp. Cố gắng không gửi pull request quá lớn, vì chúng sẽ khó hiểu và khó tích hợp. Tốt hơn hết là gửi nhiều pull request nhỏ hơn.
 
 
-## Exercises
+## Bài tập
 
-1. Star and fork the `d2l-ai/d2l-en` repository.
-1. If you spot anything that needs improvement (e.g., missing a reference), submit a pull request. 
-1. It is usually a better practice to create a pull request using a new branch. Learn how to do it with [Git branching](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell).
+1. Star và fork repository `d2l-ai/d2l-en`.
+1. Nếu phát hiện điều gì cần cải thiện (ví dụ: thiếu tài liệu tham khảo), hãy gửi một pull request.
+1. Thông thường, tốt hơn là tạo pull request bằng một branch mới. Tìm hiểu cách thực hiện trong [Git branching](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell).
 
-[Discussions](https://discuss.d2l.ai/t/426)
+[Thảo luận](https://discuss.d2l.ai/t/426)

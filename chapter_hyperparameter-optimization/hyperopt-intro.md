@@ -3,69 +3,66 @@
 tab.interact_select(["pytorch"])
 ```
 
-# What Is Hyperparameter Optimization?
+# Tối ưu hóa siêu tham số là gì?
 :label:`sec_what_is_hpo`
 
-As we have seen in the previous chapters, deep neural networks come with a
-large number of parameters or weights that are learned during training. On
-top of these, every neural network has additional *hyperparameters* that need
-to be configured by the user. For example, to ensure that stochastic gradient
-descent converges to a local optimum of the training loss
-(see :numref:`chap_optimization`), we have to adjust the learning rate and batch
-size. To avoid overfitting on training datasets,
-we might have to set regularization parameters, such as weight decay
-(see :numref:`sec_weight_decay`) or dropout (see :numref:`sec_dropout`). We can
-define the capacity and inductive bias of the model by setting the number of
-layers and number of units or filters per layer (i.e., the effective number
-of weights).
+Như chúng ta đã thấy trong các chương trước, mạng neural sâu có một số lượng lớn
+tham số hoặc trọng số được học trong quá trình huấn luyện. Ngoài các tham số này,
+mọi mạng neural còn có thêm các *siêu tham số* cần được người dùng cấu hình. Ví dụ,
+để đảm bảo stochastic gradient descent hội tụ đến một cực tiểu địa phương của hàm
+mất mát huấn luyện (xem :numref:`chap_optimization`), chúng ta phải điều chỉnh
+learning rate và batch size. Để tránh overfitting trên các tập dữ liệu huấn luyện,
+chúng ta có thể phải thiết lập các tham số regularization, chẳng hạn như weight decay
+(xem :numref:`sec_weight_decay`) hoặc dropout (xem :numref:`sec_dropout`).
+Chúng ta có thể xác định capacity và inductive bias của mô hình bằng cách thiết lập
+số lớp và số unit hoặc filter trên mỗi lớp (tức là số lượng trọng số hiệu dụng).
 
-Unfortunately, we cannot simply adjust these hyperparameters by minimizing the
-training loss, because this would lead to overfitting on the training data. For
-example, setting regularization parameters, such as dropout or weight decay
-to zero leads to a small training loss, but might hurt the generalization
-performance.
+Đáng tiếc là chúng ta không thể chỉ điều chỉnh các siêu tham số này bằng cách tối
+thiểu hóa training loss, vì điều đó sẽ dẫn đến overfitting trên dữ liệu huấn luyện.
+Ví dụ, việc đặt các tham số regularization như dropout hoặc weight decay bằng không
+sẽ dẫn đến training loss nhỏ, nhưng có thể làm giảm hiệu năng generalization.
 
-![Typical workflow in machine learning that consists of training the model multiple times with different hyperparameters.](../img/ml_workflow.svg)
+![Quy trình điển hình trong machine learning, bao gồm việc huấn luyện mô hình nhiều lần với các siêu tham số khác nhau.](../img/ml_workflow.svg)
 :label:`ml_workflow`
 
-Without a different form of automation, hyperparameters have to be set manually
-in a trial-and-error fashion, in what amounts to a time-consuming and difficult
-part of machine learning workflows. For example, consider training
-a ResNet (see :numref:`sec_resnet`) on CIFAR-10, which requires more than 2 hours
-on an Amazon Elastic Cloud Compute (EC2) `g4dn.xlarge` instance. Even just
-trying ten hyperparameter configurations in sequence, this would already take us
-roughly one day. To make matters worse, hyperparameters are usually not directly
-transferable across architectures and datasets
-:cite:`feurer-arxiv22,wistuba-ml18,bardenet-icml13a`, and need to be re-optimized
-for every new task. Also, for most hyperparameters, there are no rule-of-thumbs,
-and expert knowledge is required to find sensible values.
+Nếu không có một hình thức tự động hóa khác, các siêu tham số phải được thiết lập
+thủ công theo cách thử và sai, trở thành một phần tốn thời gian và khó khăn trong
+quy trình machine learning. Ví dụ, hãy xét việc huấn luyện một ResNet
+(xem :numref:`sec_resnet`) trên CIFAR-10, quá trình này cần hơn 2 giờ
+trên một instance Amazon Elastic Cloud Compute (EC2) `g4dn.xlarge`. Ngay cả
+chỉ thử tuần tự mười cấu hình siêu tham số cũng sẽ mất khoảng một ngày. Tệ hơn nữa,
+các siêu tham số thường không thể được chuyển trực tiếp giữa các kiến trúc và tập dữ
+liệu :cite:`feurer-arxiv22,wistuba-ml18,bardenet-icml13a`, và cần được tối ưu hóa lại cho mỗi tác vụ mới.
+Ngoài ra, đối với hầu hết siêu tham số, không có quy tắc kinh nghiệm rõ ràng nào,
+và cần có kiến thức chuyên môn để tìm ra các giá trị hợp lý.
 
-*Hyperparameter optimization (HPO)* algorithms are designed to tackle this
-problem in a principled and automated fashion :cite:`feurer-automlbook18a`, by
-framing it as a global optimization problem. The default objective is the error
-on a hold-out validation dataset, but could in principle be any other business
-metric. It can be combined with or constrained by secondary objectives, such as
-training time, inference time, or model complexity. 
+Các thuật toán *tối ưu hóa siêu tham số (HPO)* được thiết kế để giải quyết vấn đề
+này một cách có hệ thống và tự động :cite:`feurer-automlbook18a`, bằng cách đặt vấn
+đề dưới dạng một bài toán tối ưu hóa toàn cục. Mục tiêu mặc định là lỗi trên một tập
+dữ liệu validation được giữ lại, nhưng về nguyên tắc có thể là bất kỳ metric nghiệp
+vụ nào khác. Mục tiêu này có thể được kết hợp với hoặc bị ràng buộc bởi các mục tiêu
+thứ cấp, chẳng hạn như thời gian huấn luyện, thời gian inference hoặc độ phức tạp
+của mô hình.
 
-Recently, hyperparameter optimization has been extended to *neural architecture
-search (NAS)* :cite:`elsken-arxiv18a,wistuba-arxiv19`, where the goal is to find
-entirely new neural network architectures. Compared to classical HPO, NAS is even
-more expensive in terms of computation and requires additional efforts to remain
-feasible in practice. Both, HPO and NAS can be considered as sub-fields of 
-AutoML :cite:`hutter-book19a`, which aims to automate the entire ML pipeline.
+Gần đây, tối ưu hóa siêu tham số đã được mở rộng sang *neural architecture
+search (NAS)* :cite:`elsken-arxiv18a,wistuba-arxiv19`, trong đó mục tiêu là tìm ra các kiến trúc
+mạng neural hoàn toàn mới. So với HPO cổ điển, NAS thậm chí còn tốn kém hơn về mặt
+tính toán và đòi hỏi thêm nỗ lực để vẫn khả thi trong thực tế. Cả HPO và NAS đều có
+thể được xem là các phân ngành của AutoML :cite:`hutter-book19a`, với mục tiêu
+tự động hóa toàn bộ ML pipeline.
 
-In this section we will introduce HPO and show how we can automatically find
-the best hyperparameters of the logistic regression example introduced in
+Trong phần này, chúng ta sẽ giới thiệu HPO và trình bày cách tự động tìm các siêu
+tham số tốt nhất cho ví dụ logistic regression được giới thiệu trong
 :numref:`sec_softmax_concise`.
 
-##  The Optimization Problem
+##  Bài toán tối ưu hóa
 :label:`sec_definition_hpo`
 
-We will start with a simple toy problem: searching for the learning rate of the
-multi-class logistic regression model `SoftmaxRegression` from
-:numref:`sec_softmax_concise` to minimize the validation error on the Fashion
-MNIST dataset. While other hyperparameters like batch size or number of epochs
-are also worth tuning, we focus on learning rate alone for simplicity.
+Chúng ta sẽ bắt đầu với một bài toán minh họa đơn giản: tìm learning rate cho mô
+hình multi-class logistic regression `SoftmaxRegression` từ
+:numref:`sec_softmax_concise` để tối thiểu hóa validation error trên tập dữ liệu
+Fashion MNIST. Mặc dù các siêu tham số khác như batch size hoặc số epoch cũng đáng
+được điều chỉnh, chúng ta chỉ tập trung vào learning rate để đơn giản hóa.
 
 ```{.python .input}
 %%tab pytorch
@@ -76,41 +73,41 @@ from torch import nn
 from scipy import stats
 ```
 
-Before we can run HPO, we first need to define two ingredients: the objective
-function and the configuration space.
+Trước khi có thể chạy HPO, trước hết chúng ta cần xác định hai thành phần: hàm mục
+tiêu và configuration space.
 
-### The Objective Function
+### Hàm mục tiêu
 
-The performance of a learning algorithm can be seen as a function
-$f: \mathcal{X} \rightarrow \mathbb{R}$ that maps from the hyperparameter space
-$\mathbf{x} \in \mathcal{X}$ to the validation loss. For every evaluation of
-$f(\mathbf{x})$, we have to train and validate our machine learning model, which
-can be time and compute intensive in the case of deep neural networks trained on
-large datasets. Given our criterion $f(\mathbf{x})$ our goal is to find
-$\mathbf{x}_{\star} \in \mathrm{argmin}_{\mathbf{x} \in \mathcal{X}} f(\mathbf{x})$. 
+Hiệu năng của một thuật toán học có thể được xem là một hàm
+$f: \mathcal{X} \rightarrow \mathbb{R}$ ánh xạ từ không gian siêu tham số
+$\mathbf{x} \in \mathcal{X}$ đến validation loss. Với mỗi lần đánh giá
+$f(\mathbf{x})$, chúng ta phải huấn luyện và validation mô hình machine learning, việc này
+có thể tốn nhiều thời gian và tài nguyên tính toán trong trường hợp mạng neural sâu
+được huấn luyện trên các tập dữ liệu lớn. Với tiêu chí $f(\mathbf{x})$, mục tiêu của chúng ta là tìm
+$\mathbf{x}_{\star} \in \mathrm{argmin}_{\mathbf{x} \in \mathcal{X}} f(\mathbf{x})$.
 
-There is no simple way to compute gradients of $f$ with respect to $\mathbf{x}$,
-because it would require to propagate the gradient through the entire training
-process. While there is recent work :cite:`maclaurin-icml15,franceschi-icml17a`
-to drive HPO by approximate "hypergradients", none of the existing approaches
-are competitive with the state-of-the-art yet, and we will not discuss them
-here. Furthermore, the computational burden of evaluating $f$ requires HPO
-algorithms to approach the global optimum with as few samples as possible.
+Không có cách đơn giản nào để tính gradient của $f$ theo $\mathbf{x}$,
+vì điều đó đòi hỏi phải lan truyền gradient qua toàn bộ quá trình huấn luyện. Mặc
+dù đã có các công trình gần đây :cite:`maclaurin-icml15,franceschi-icml17a` nhằm dẫn dắt HPO bằng
+các “hypergradient” xấp xỉ, chưa có phương pháp hiện có nào đạt hiệu năng cạnh tranh
+với state-of-the-art, nên chúng ta sẽ không thảo luận về chúng ở đây. Hơn nữa, chi
+phí tính toán để đánh giá $f$ đòi hỏi các thuật toán HPO phải tiến gần đến cực trị
+toàn cục với số mẫu ít nhất có thể.
 
-The training of neural networks is stochastic (e.g., weights are randomly
-initialized, mini-batches are randomly sampled), so that our observations will
-be noisy: $y \sim f(\mathbf{x}) + \epsilon$, where we usually assume that the
-$\epsilon \sim N(0, \sigma)$ observation noise is Gaussian distributed.
+Quá trình huấn luyện mạng neural mang tính ngẫu nhiên (ví dụ: trọng số được khởi tạo
+ngẫu nhiên, các mini-batch được lấy mẫu ngẫu nhiên), vì vậy các quan sát của chúng
+ta sẽ có nhiễu: $y \sim f(\mathbf{x}) + \epsilon$, trong đó chúng ta thường giả định rằng
+nhiễu quan sát $\epsilon \sim N(0, \sigma)$ có phân phối Gaussian.
 
-Faced with all these challenges, we usually try to identify a small set of well
-performing hyperparameter configurations quickly, instead of hitting the global
-optima exactly. However, due to large computational demands of most neural
-networks models, even this can take days or weeks of compute. We will explore
-in :numref:`sec_mf_hpo` how we can speed-up the optimization process by either
-distributing the search or using cheaper-to-evaluate approximations of the
-objective function.
+Đối mặt với tất cả những thách thức này, chúng ta thường cố gắng nhanh chóng xác định
+một tập nhỏ các cấu hình siêu tham số hoạt động tốt, thay vì đạt chính xác các cực
+trị toàn cục. Tuy nhiên, do nhu cầu tính toán lớn của hầu hết các mô hình mạng neural,
+ngay cả việc này cũng có thể mất vài ngày hoặc vài tuần tính toán. Trong
+:numref:`sec_mf_hpo`, chúng ta sẽ tìm hiểu cách tăng tốc quá trình tối ưu
+hóa bằng cách phân tán quá trình tìm kiếm hoặc sử dụng các xấp xỉ hàm mục tiêu có
+chi phí đánh giá thấp hơn.
 
-We begin with a method for computing the validation error of a model.
+Chúng ta bắt đầu với một phương pháp tính validation error của một mô hình.
 
 ```{.python .input  n=8}
 %%tab pytorch
@@ -128,9 +125,9 @@ class HPOTrainer(d2l.Trainer):  #@save
         return 1 -  accuracy / val_batch_idx
 ```
 
-We optimize validation error with respect to the hyperparameter configuration
-`config`, consisting of the `learning_rate`. For each evaluation, we train our
-model for `max_epochs` epochs, then compute and return its validation error:
+Chúng ta tối ưu hóa validation error theo cấu hình siêu tham số
+`config`, bao gồm `learning_rate`. Với mỗi lần đánh giá, chúng ta huấn luyện
+mô hình trong `max_epochs` epoch, sau đó tính và trả về validation error của mô hình:
 
 ```{.python .input  n=5}
 %%tab pytorch
@@ -143,70 +140,70 @@ def hpo_objective_softmax_classification(config, max_epochs=8):
     return d2l.numpy(trainer.validation_error())
 ```
 
-### The Configuration Space
+### Configuration space
 :label:`sec_intro_config_spaces`
 
-Along with the objective function $f(\mathbf{x})$, we also need to define the
-feasible set $\mathbf{x} \in \mathcal{X}$ to optimize over, known as
-*configuration space* or *search space*. For our logistic regression example,
-we will use:
+Cùng với hàm mục tiêu $f(\mathbf{x})$, chúng ta cũng cần xác định tập khả thi
+$\mathbf{x} \in \mathcal{X}$ để tối ưu hóa, được gọi là
+*configuration space* hoặc *search space*. Đối với ví dụ logistic regression,
+chúng ta sẽ sử dụng:
 
 ```{.python .input  n=6}
 config_space = {"learning_rate": stats.loguniform(1e-4, 1)}
 ```
 
-Here we use the use the `loguniform` object from SciPy, which represents a
-uniform distribution between -4 and -1 in the logarithmic space. This object
-allows us to sample random variables from this distribution.
+Ở đây, chúng ta sử dụng đối tượng `loguniform` từ SciPy, đại diện cho một
+phân phối đều từ -4 đến -1 trong không gian logarithmic. Đối tượng này cho phép
+chúng ta lấy mẫu các biến ngẫu nhiên từ phân phối đó.
 
-Each hyperparameter has a data type, such as `float` for `learning_rate`, as
-well as a closed bounded range (i.e., lower and upper bounds). We usually assign
-a prior distribution (e.g, uniform or log-uniform) to each hyperparameter to
-sample from. Some positive parameters, such as `learning_rate`, are best
-represented on a logarithmic scale as optimal values can differ by several
-orders of magnitude, while others, such as momentum, come with linear scale.
+Mỗi siêu tham số có một kiểu dữ liệu, chẳng hạn như `float` đối với
+`learning_rate`, cũng như một miền giá trị đóng và bị chặn (tức là cận dưới và
+cận trên). Chúng ta thường gán một phân phối tiên nghiệm (ví dụ: uniform hoặc
+log-uniform) cho mỗi siêu tham số để lấy mẫu. Một số tham số dương, chẳng hạn như
+`learning_rate`, được biểu diễn tốt nhất trên thang logarithmic vì các giá trị
+tối ưu có thể khác nhau nhiều bậc độ lớn, trong khi các tham số khác, chẳng hạn như
+momentum, sử dụng thang tuyến tính.
 
-Below we show a simple example of a configuration space consisting of typical
-hyperparameters of a multi-layer perceptron including their type and standard
-ranges.
+Dưới đây là một ví dụ đơn giản về configuration space gồm các siêu tham số điển
+hình của một multi-layer perceptron, cùng với kiểu và miền giá trị tiêu chuẩn của
+chúng.
 
-: Example configuration space of multi-layer perceptron
+: Configuration space mẫu của multi-layer perceptron
 :label:`tab_example_configspace`
 
-| Name                | Type        |Hyperparameter Ranges           | log-scale |
+| Tên                 | Kiểu        |Miền giá trị siêu tham số     | thang logarithmic |
 | :----:              | :----:      |:------------------------------:|:---------:|
-| learning rate       | float       |      $[10^{-6},10^{-1}]$       |    yes    |
-| batch size          | integer     |           $[8,256]$            |    yes    |
-| momentum            | float       |           $[0,0.99]$           |    no     |
+| learning rate       | float       |      $[10^{-6},10^{-1}]$       |    có    |
+| batch size          | integer     |           $[8,256]$            |    có    |
+| momentum            | float       |           $[0,0.99]$           |    không     |
 | activation function | categorical | $\{\textrm{tanh}, \textrm{relu}\}$ |     -     |
-| number of units     | integer     |          $[32, 1024]$          |    yes    |
-| number of layers    | integer     |            $[1, 6]$            |    no     |
+| number of units     | integer     |          $[32, 1024]$          |    có    |
+| number of layers    | integer     |            $[1, 6]$            |    không     |
 
 
 
-In general, the structure of the configuration space $\mathcal{X}$ can be complex
-and it can be quite different from $\mathbb{R}^d$. In practice, some
-hyperparameters may depend on the value of others. For example, assume we try
-to tune the number of layers for a multi-layer perceptron, and for each layer
-the number of units. The number of units of the $l\textrm{-th}$ layer is
-relevant only if the network has at least $l+1$ layers. These advanced HPO
-problems are beyond the scope of this chapter. We refer the interested reader
-to :cite:`hutter-lion11a,jenatton-icml17a,baptista-icml18a`.
+Nhìn chung, cấu trúc của configuration space $\mathcal{X}$ có thể phức
+tạp và khá khác với $\mathbb{R}^d$. Trong thực tế, một số siêu
+tham số có thể phụ thuộc vào giá trị của các siêu tham số khác. Ví dụ, giả sử chúng
+ta muốn điều chỉnh số lớp của một multi-layer perceptron, cũng như số unit cho mỗi
+lớp. Số unit của lớp $l\textrm{-th}$ chỉ có ý nghĩa nếu mạng có ít
+nhất $l+1$ lớp. Những bài toán HPO nâng cao này nằm ngoài phạm vi của chương. Bạn
+đọc quan tâm có thể tham khảo :cite:`hutter-lion11a,jenatton-icml17a,baptista-icml18a`.
 
-The configuration space plays an important role for hyperparameter optimization,
-since no algorithms can find something that is not included in the configuration
-space. On the other hand, if the ranges are too large, the computation budget
-to find well performing configurations might become infeasible.
+Configuration space đóng vai trò quan trọng trong tối ưu hóa siêu tham số, vì không
+thuật toán nào có thể tìm được thứ không nằm trong configuration space. Mặt khác,
+nếu các miền giá trị quá lớn, ngân sách tính toán để tìm các cấu hình hoạt động tốt
+có thể trở nên không khả thi.
 
 ## Random Search
 :label:`sec_rs`
 
-*Random search* is the first hyperparameter optimization algorithm we will
-consider. The main idea of random search is to independently sample from the
-configuration space until a predefined budget (e.g maximum
-number of iterations) is exhausted, and to return the best observed
-configuration. All evaluations can be executed independently in parallel (see
-:numref:`sec_rs_async`), but here we use a sequential loop for simplicity.
+*Random search* là thuật toán tối ưu hóa siêu tham số đầu tiên mà chúng ta sẽ xem
+xét. Ý tưởng chính của random search là lấy mẫu độc lập từ configuration space cho
+đến khi hết ngân sách được xác định trước (ví dụ: số vòng lặp tối đa), rồi trả về
+cấu hình tốt nhất đã quan sát. Tất cả các lần đánh giá có thể được thực thi song
+song một cách độc lập (xem :numref:`sec_rs_async`), nhưng ở đây chúng ta sử
+dụng một vòng lặp tuần tự để đơn giản hóa.
 
 ```{.python .input  n=7}
 errors, values = [], []
@@ -221,61 +218,60 @@ for i in range(num_iterations):
     errors.append(y)
 ```
 
-The best learning rate is then simply the one with the lowest validation error.
+Khi đó, learning rate tốt nhất đơn giản là learning rate có validation error thấp nhất.
 
 ```{.python .input  n=7}
 best_idx = np.argmin(errors)
 print(f"optimal learning rate = {values[best_idx]}")
 ```
 
-Due to its simplicity and generality, random search is one of the most frequently
-used HPO algorithms. It does not require any sophisticated implementation and
-can be applied to any configuration space as long as we can define some
-probability distribution for each hyperparameter.
+Nhờ tính đơn giản và tính tổng quát, random search là một trong những thuật toán HPO
+được sử dụng thường xuyên nhất. Thuật toán này không yêu cầu triển khai phức tạp và
+có thể áp dụng cho mọi configuration space, miễn là chúng ta có thể xác định một
+phân phối xác suất cho từng hyperparameter.
 
-Unfortunately random search also comes with a few shortcomings. First, it does
-not adapt the sampling distribution based on the previous observations it
-collected so far. Hence, it is equally likely to sample a poorly performing
-configuration than a better performing configuration. Second, the same amount
-of resources are spent for all configurations, even though some may show poor
-initial performance and are less likely to outperform previously seen
-configurations.
+Đáng tiếc là random search cũng có một vài hạn chế. Thứ nhất, thuật toán không
+điều chỉnh phân phối lấy mẫu dựa trên các quan sát trước đó đã thu thập. Do đó,
+xác suất lấy mẫu một configuration có hiệu năng kém cũng tương đương với xác suất
+lấy mẫu một configuration có hiệu năng tốt hơn. Thứ hai, cùng một lượng tài nguyên
+được sử dụng cho tất cả configuration, mặc dù một số configuration có thể cho thấy
+hiệu năng ban đầu kém và ít có khả năng vượt qua các configuration đã thấy trước đó.
 
-In the next sections we will look at more sample efficient hyperparameter
-optimization algorithms that overcome the shortcomings of random search by
-using a model to guide the search. We will also look at algorithms that
-automatically stop the evaluation process of poorly performing configurations
-to speed up the optimization process.
+Trong các phần tiếp theo, chúng ta sẽ tìm hiểu những thuật toán tối ưu hóa
+hyperparameter hiệu quả hơn về số lượng mẫu, khắc phục các hạn chế của random search
+bằng cách sử dụng một model để định hướng quá trình tìm kiếm. Chúng ta cũng sẽ tìm
+hiểu các thuật toán tự động dừng quá trình đánh giá những configuration có hiệu năng
+kém để tăng tốc quá trình tối ưu hóa.
 
-## Summary
+## Tóm tắt
 
-In this section we introduced hyperparameter optimization (HPO) and how we can
-phrase it as a global optimization by defining a configuration space and an
-objective function. We also implemented our first HPO algorithm, random search,
-and applied it on a simple softmax classification problem.
+Trong phần này, chúng ta đã giới thiệu tối ưu hóa hyperparameter (HPO) và cách
+diễn đạt bài toán này dưới dạng một bài toán tối ưu hóa toàn cục bằng cách xác định
+một configuration space và một objective function. Chúng ta cũng đã triển khai
+thuật toán HPO đầu tiên, random search, và áp dụng nó cho một bài toán phân loại
+softmax đơn giản.
 
-While random search is very simple, it is the better alternative to grid
-search, which simply evaluates a fixed set of hyperparameters. Random search
-somewhat mitigates the curse of dimensionality :cite:`bellman-science66`, and
-can be far more efficient than grid search if the criterion most strongly
-depends on a small subset of the hyperparameters.
+Mặc dù random search rất đơn giản, đây là lựa chọn tốt hơn grid search, vốn chỉ
+đánh giá một tập hyperparameter cố định. Random search phần nào giảm bớt lời nguyền
+chiều :cite:`bellman-science66`, và có thể hiệu quả hơn grid search rất nhiều nếu
+tiêu chí phụ thuộc mạnh nhất vào một tập con nhỏ các hyperparameter.
 
-## Exercises
+## Bài tập
 
-1. In this chapter, we optimize the validation error of a model after training on a disjoint training set. For simplicity, our code uses `Trainer.val_dataloader`, which maps to a loader around `FashionMNIST.val`.
-    1. Convince yourself (by looking at the code) that this means we use the original FashionMNIST training set (60000 examples) for training, and the original *test set* (10000 examples) for validation.
-    2. Why could this practice be problematic? Hint: Re-read :numref:`sec_generalization_basics`, especially about *model selection*.
-    3. What should we have done instead?
-2. We stated above that hyperparameter optimization by gradient descent is very hard to do. Consider a small problem, such as training a two-layer perceptron on the FashionMNIST dataset (:numref:`sec_mlp-implementation`) with a batch size of 256. We would like to tune the learning rate of SGD in order to minimize a validation metric after one epoch of training.
-    1. Why cannot we use validation *error* for this purpose? What metric on the validation set would you use?
-    2. Sketch (roughly) the computational graph of the validation metric after training for one epoch. You may assume that initial weights and hyperparameters (such as learning rate) are input nodes to this graph. Hint: Re-read about computational graphs in :numref:`sec_backprop`.
-    3. Give a rough estimate of the number of floating point values you need to store during a forward pass on this graph. Hint: FashionMNIST has 60000 cases. Assume the required memory is dominated by the activations after each layer, and look up the layer widths in :numref:`sec_mlp-implementation`.
-    5. Apart from the sheer amount of compute and storage required, what other issues would gradient-based hyperparameter optimization run into? Hint: Re-read about vanishing and exploding gradients in :numref:`sec_numerical_stability`.
-    6. *Advanced*: Read :cite:`maclaurin-icml15` for an elegant (yet still somewhat unpractical) approach to gradient-based HPO.
-3. Grid search is another HPO baseline, where we define an equi-spaced grid for each hyperparameter, then iterate over the (combinatorial) Cartesian product in order to suggest configurations.
-    1. We stated above that random search can be much more efficient than grid search for HPO on a sizable number of hyperparameters, if the criterion most strongly depends on a small subset of the hyperparameters. Why is this? Hint: Read :cite:`bergstra2011algorithms`.
+1. Trong chương này, chúng ta tối ưu validation error của một model sau khi huấn luyện trên một tập training tách biệt. Để đơn giản, code của chúng ta sử dụng `Trainer.val_dataloader`, ánh xạ tới một loader bao quanh `FashionMNIST.val`.
+    1. Hãy tự kiểm chứng (bằng cách xem code) rằng điều này có nghĩa là chúng ta sử dụng tập training FashionMNIST ban đầu (60000 mẫu) để huấn luyện, và *test set* ban đầu (10000 mẫu) để validation.
+    2. Tại sao cách làm này có thể gây ra vấn đề? Gợi ý: Đọc lại :numref:`sec_generalization_basics`, đặc biệt là phần về *model selection*.
+    3. Thay vào đó, chúng ta nên làm gì?
+2. Ở trên, chúng ta đã nêu rằng thực hiện tối ưu hóa hyperparameter bằng gradient descent là rất khó. Hãy xét một bài toán nhỏ, chẳng hạn như huấn luyện một perceptron hai lớp trên tập dữ liệu FashionMNIST (:numref:`sec_mlp-implementation`) với batch size là 256. Chúng ta muốn điều chỉnh learning rate của SGD để tối thiểu hóa một validation metric sau một epoch huấn luyện.
+    1. Tại sao chúng ta không thể sử dụng validation *error* cho mục đích này? Bạn sẽ sử dụng metric nào trên validation set?
+    2. Hãy phác thảo (một cách gần đúng) computational graph của validation metric sau khi huấn luyện trong một epoch. Bạn có thể giả định rằng initial weights và các hyperparameter (chẳng hạn như learning rate) là các input node của graph này. Gợi ý: Đọc lại phần về computational graph trong :numref:`sec_backprop`.
+    3. Hãy ước lượng sơ bộ số lượng giá trị floating point cần lưu trữ trong một forward pass trên graph này. Gợi ý: FashionMNIST có 60000 trường hợp. Giả định rằng bộ nhớ cần thiết chủ yếu do các activation sau mỗi layer chi phối, và tra cứu độ rộng của các layer trong :numref:`sec_mlp-implementation`.
+    5. Ngoài lượng compute và storage khổng lồ cần thiết, tối ưu hóa hyperparameter dựa trên gradient còn gặp những vấn đề nào khác? Gợi ý: Đọc lại phần về vanishing và exploding gradient trong :numref:`sec_numerical_stability`.
+    6. *Nâng cao*: Đọc :cite:`maclaurin-icml15` để tìm hiểu một cách tiếp cận tao nhã (nhưng vẫn hơi thiếu tính thực tiễn) đối với HPO dựa trên gradient.
+3. Grid search là một baseline HPO khác, trong đó chúng ta xác định một grid cách đều cho mỗi hyperparameter, sau đó lặp qua tích Cartesian (tổ hợp) của chúng để đề xuất các configuration.
+    1. Ở trên, chúng ta đã nêu rằng random search có thể hiệu quả hơn grid search nhiều đối với HPO trên một số lượng hyperparameter đáng kể, nếu tiêu chí phụ thuộc mạnh nhất vào một tập con nhỏ các hyperparameter. Tại sao lại như vậy? Gợi ý: Đọc :cite:`bergstra2011algorithms`.
 
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/12090)
+[Thảo luận](https://discuss.d2l.ai/t/12090)
 :end_tab:

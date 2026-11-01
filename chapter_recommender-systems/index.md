@@ -1,15 +1,14 @@
-# Recommender Systems
+# Hệ thống gợi ý
 :label:`chap_recsys`
 
 
-**Shuai Zhang** (*Amazon*), **Aston Zhang** (*Amazon*), and **Yi Tay** (*Google*)
+**Shuai Zhang** (*Amazon*), **Aston Zhang** (*Amazon*) và **Yi Tay** (*Google*)
 
-Recommender systems are widely employed in industry and are ubiquitous in our daily lives. These systems are utilized in a number of areas such as online shopping sites (e.g., amazon.com), music/movie services site (e.g., Netflix and Spotify), mobile application stores (e.g., IOS app store and google play), online advertising, just to name a few. 
+Hệ thống gợi ý được sử dụng rộng rãi trong ngành và hiện diện phổ biến trong đời sống hằng ngày của chúng ta. Các hệ thống này được ứng dụng trong nhiều lĩnh vực, chẳng hạn như các trang web mua sắm trực tuyến (ví dụ: amazon.com), các dịch vụ âm nhạc/phim ảnh (ví dụ: Netflix và Spotify), các cửa hàng ứng dụng di động (ví dụ: IOS app store và google play), quảng cáo trực tuyến, và một số lĩnh vực khác.
 
-The major goal of recommender systems is to help users discover relevant items such as movies to watch, text to read or products to buy, so as to create a delightful user experience. Moreover, recommender systems are among the most powerful machine learning systems that online retailers implement in order to drive incremental revenue. Recommender systems are replacements of search engines by reducing the efforts in proactive searches and surprising users with offers they never searched for. Many companies managed to position themselves ahead of their competitors with the help of more effective recommender systems. As such, recommender systems are central to not only our everyday lives but also highly indispensable in some industries.
+Mục tiêu chính của hệ thống gợi ý là giúp người dùng khám phá những mục phù hợp, chẳng hạn như phim để xem, văn bản để đọc hoặc sản phẩm để mua, qua đó tạo ra trải nghiệm người dùng thú vị. Hơn nữa, hệ thống gợi ý nằm trong số những hệ thống machine learning mạnh mẽ nhất mà các nhà bán lẻ trực tuyến triển khai nhằm thúc đẩy doanh thu gia tăng. Hệ thống gợi ý thay thế các công cụ tìm kiếm bằng cách giảm công sức tìm kiếm chủ động và khiến người dùng bất ngờ với những đề xuất mà họ chưa từng tìm kiếm. Nhiều công ty đã thành công trong việc tạo lợi thế trước đối thủ cạnh tranh nhờ các hệ thống gợi ý hiệu quả hơn. Vì vậy, hệ thống gợi ý không chỉ đóng vai trò trung tâm trong đời sống hằng ngày mà còn hết sức thiết yếu trong một số ngành.
 
-
-In this chapter, we will cover the fundamentals and advancements of recommender systems, along with exploring some common fundamental techniques for building recommender systems with different data sources available and their implementations. Specifically, you will learn how to predict the rating a user might give to a prospective item, how to generate a recommendation list of items and how to predict the click-through rate from abundant features. These tasks are commonplace in real-world applications. By studying this chapter, you will get hands-on experience pertaining to solving real world recommendation problems with not only classical methods but the more advanced deep learning based models as well.
+Trong chương này, chúng ta sẽ tìm hiểu những nền tảng và tiến bộ của hệ thống gợi ý, đồng thời khám phá một số kỹ thuật nền tảng phổ biến để xây dựng hệ thống gợi ý với các nguồn dữ liệu khác nhau và cách triển khai chúng. Cụ thể, bạn sẽ học cách dự đoán mức đánh giá mà người dùng có thể dành cho một mục tiềm năng, cách tạo danh sách gợi ý các mục và cách dự đoán tỷ lệ nhấp (click-through rate) từ nguồn đặc trưng dồi dào. Đây là những tác vụ phổ biến trong các ứng dụng thực tế. Qua việc học chương này, bạn sẽ có kinh nghiệm thực hành trong việc giải quyết các bài toán gợi ý trong thực tế bằng cả những phương pháp kinh điển và các mô hình nâng cao hơn dựa trên deep learning.
 
 ```toc
 :maxdepth: 2
@@ -25,4 +24,3 @@ ctr
 fm
 deepfm
 ```
-

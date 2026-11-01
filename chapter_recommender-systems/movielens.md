@@ -1,14 +1,14 @@
-#  The MovieLens Dataset
+#  Bộ dữ liệu MovieLens
 
-There are a number of datasets that are available for recommendation research. Amongst them, the [MovieLens](https://movielens.org/) dataset is probably one of the more popular ones. MovieLens is a non-commercial web-based movie recommender system. It is created in 1997 and run by GroupLens, a research lab at the University of Minnesota, in order to gather movie rating data for research purposes.  MovieLens data has been critical for several research studies including personalized recommendation and social psychology.
-
-
-## Getting the Data
+Có một số bộ dữ liệu được cung cấp cho nghiên cứu về recommendation. Trong số đó, bộ dữ liệu [MovieLens](https://movielens.org/) có lẽ là một trong những bộ phổ biến hơn. MovieLens là một hệ thống recommendation phim trên nền web, phi thương mại. Hệ thống được tạo ra vào năm 1997 và do GroupLens, một phòng thí nghiệm nghiên cứu tại University of Minnesota, vận hành nhằm thu thập dữ liệu đánh giá phim cho mục đích nghiên cứu. Dữ liệu MovieLens đóng vai trò quan trọng trong một số nghiên cứu, bao gồm recommendation được cá nhân hóa và tâm lý học xã hội.
 
 
-The MovieLens dataset is hosted by the [GroupLens](https://grouplens.org/datasets/movielens/) website. Several versions are available. We will use the MovieLens 100K dataset :cite:`Herlocker.Konstan.Borchers.ea.1999`.  This dataset is comprised of $100,000$ ratings, ranging from 1 to 5 stars, from 943 users on 1682 movies. It has been cleaned up so that each user has rated at least 20 movies. Some simple demographic information such as age, gender, genres for the users and items are also available.  We can download the [ml-100k.zip](http://files.grouplens.org/datasets/movielens/ml-100k.zip) and extract the `u.data` file, which contains all the $100,000$ ratings in the csv format. There are many other files in the folder, a detailed description for each file can be found in the [README](http://files.grouplens.org/datasets/movielens/ml-100k-README.txt) file of the dataset.
+## Lấy dữ liệu
 
-To begin with, let's import the packages required to run this section's experiments.
+
+Bộ dữ liệu MovieLens được lưu trữ trên website [GroupLens](https://grouplens.org/datasets/movielens/). Có một số phiên bản được cung cấp. Chúng ta sẽ sử dụng bộ dữ liệu MovieLens 100K :cite:`Herlocker.Konstan.Borchers.ea.1999`. Bộ dữ liệu này bao gồm $100,000$ lượt đánh giá, từ 1 đến 5 sao, của 943 người dùng dành cho 1682 bộ phim. Dữ liệu đã được làm sạch để mỗi người dùng đánh giá ít nhất 20 bộ phim. Một số thông tin nhân khẩu học đơn giản như tuổi, giới tính và thể loại của người dùng và item cũng được cung cấp. Chúng ta có thể tải xuống [ml-100k.zip](http://files.grouplens.org/datasets/movielens/ml-100k.zip) và giải nén file `u.data`, trong đó chứa toàn bộ $100,000$ lượt đánh giá ở định dạng csv. Có nhiều file khác trong thư mục; mô tả chi tiết cho từng file có thể được tìm thấy trong file [README](http://files.grouplens.org/datasets/movielens/ml-100k-README.txt) của bộ dữ liệu.
+
+Trước tiên, hãy import các package cần thiết để chạy các thí nghiệm trong phần này.
 
 ```{.python .input  n=1}
 #@tab mxnet
@@ -18,7 +18,7 @@ import os
 import pandas as pd
 ```
 
-Then, we download the MovieLens 100k dataset and load the interactions as `DataFrame`.
+Tiếp theo, chúng ta tải xuống bộ dữ liệu MovieLens 100k và nạp các interaction dưới dạng `DataFrame`.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -38,9 +38,9 @@ def read_data_ml100k():
     return data, num_users, num_items
 ```
 
-## Statistics of the Dataset
+## Thống kê của bộ dữ liệu
 
-Let's load up the data and inspect the first five records manually. It is an effective way to learn the data structure and verify that they have been loaded properly.
+Hãy nạp dữ liệu và kiểm tra thủ công năm bản ghi đầu tiên. Đây là một cách hiệu quả để tìm hiểu cấu trúc dữ liệu và xác minh rằng dữ liệu đã được nạp đúng cách.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -51,9 +51,9 @@ print(f'matrix sparsity: {sparsity:f}')
 print(data.head(5))
 ```
 
-We can see that each line consists of four columns, including "user id" 1-943, "item id" 1-1682, "rating" 1-5 and "timestamp". We can construct an interaction matrix of size $n \times m$, where $n$ and $m$ are the number of users and the number of items respectively. This dataset only records the existing ratings, so we can also call it rating matrix and we will use interaction matrix and rating matrix interchangeably in case that the values of this matrix represent exact ratings. Most of the values in the rating matrix are unknown as users have not rated the majority of movies. We also show the sparsity of this dataset. The sparsity is defined as `1 - number of nonzero entries / ( number of users * number of items)`. Clearly, the interaction matrix is extremely sparse (i.e., sparsity = 93.695%). Real world datasets may suffer from a greater extent of sparsity and has been a long-standing challenge in building recommender systems. A viable solution is to use additional side information such as user/item features to alleviate the sparsity.
+Có thể thấy mỗi dòng gồm bốn cột, bao gồm "user id" từ 1-943, "item id" từ 1-1682, "rating" từ 1-5 và "timestamp". Chúng ta có thể xây dựng một ma trận interaction có kích thước $n \times m$, trong đó $n$ và $m$ lần lượt là số người dùng và số item. Bộ dữ liệu này chỉ ghi lại các rating hiện có, vì vậy chúng ta cũng có thể gọi nó là ma trận rating; hai thuật ngữ ma trận interaction và ma trận rating sẽ được sử dụng thay thế cho nhau khi các giá trị của ma trận này biểu thị rating chính xác. Phần lớn các giá trị trong ma trận rating là không xác định vì người dùng chưa đánh giá phần lớn các bộ phim. Chúng ta cũng hiển thị độ thưa của bộ dữ liệu này. Độ thưa được định nghĩa là `1 - number of nonzero entries / ( number of users * number of items)`. Rõ ràng, ma trận interaction cực kỳ thưa (tức là sparsity = 93.695%). Các bộ dữ liệu trong thế giới thực có thể gặp mức độ thưa lớn hơn, và đây từ lâu đã là một thách thức trong việc xây dựng các hệ thống recommendation. Một giải pháp khả thi là sử dụng thêm side information như các feature của user/item để giảm thiểu độ thưa.
 
-We then plot the distribution of the count of different ratings. As expected, it appears to be a normal distribution, with most ratings centered at 3-4.
+Sau đó, chúng ta vẽ phân phối số lượng của các rating khác nhau. Đúng như dự đoán, phân phối này có vẻ là phân phối chuẩn, trong đó phần lớn rating tập trung ở mức 3-4.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -64,9 +64,9 @@ d2l.plt.title('Distribution of Ratings in MovieLens 100K')
 d2l.plt.show()
 ```
 
-## Splitting the dataset
+## Chia bộ dữ liệu
 
-We split the dataset into training and test sets. The following function provides two split modes including `random` and `seq-aware`. In the `random` mode, the function splits the 100k interactions randomly without considering timestamp and uses the 90% of the data as training samples and the rest 10% as test samples by default. In the `seq-aware` mode, we leave out the item that a user rated most recently for test, and users' historical interactions as training set.  User historical interactions are sorted from oldest to newest based on timestamp. This mode will be used in the sequence-aware recommendation section.
+Chúng ta chia bộ dữ liệu thành tập training và tập test. Hàm sau đây cung cấp hai chế độ chia, bao gồm `random` và `seq-aware`. Ở chế độ `random`, hàm chia ngẫu nhiên 100k interaction mà không xét đến timestamp, mặc định sử dụng 90% dữ liệu làm mẫu training và 10% còn lại làm mẫu test. Ở chế độ `seq-aware`, chúng ta để lại item mà người dùng đánh giá gần đây nhất làm test, còn các interaction trước đây của người dùng được dùng làm tập training. Các interaction trước đây của người dùng được sắp xếp từ cũ nhất đến mới nhất dựa trên timestamp. Chế độ này sẽ được sử dụng trong phần recommendation có nhận biết thứ tự.
 
 ```{.python .input  n=5}
 #@tab mxnet
@@ -95,11 +95,11 @@ def split_data_ml100k(data, num_users, num_items,
     return train_data, test_data
 ```
 
-Note that it is good practice to use a validation set in practice, apart from only a test set. However, we omit that for the sake of brevity. In this case, our test set can be regarded as our held-out validation set.
+Lưu ý rằng trong thực tế, việc sử dụng một tập validation bên cạnh tập test duy nhất là một thông lệ tốt. Tuy nhiên, để ngắn gọn, chúng ta sẽ bỏ qua tập này. Trong trường hợp đó, tập test của chúng ta có thể được xem là tập validation được giữ lại.
 
-## Loading the data
+## Nạp dữ liệu
 
-After dataset splitting, we will convert the training set and test set into lists and dictionaries/matrix for the sake of convenience. The following function reads the dataframe line by line and enumerates the index of users/items start from zero. The function then returns lists of users, items, ratings and a dictionary/matrix that records the interactions. We can specify the type of feedback to either `explicit` or `implicit`.
+Sau khi chia bộ dữ liệu, chúng ta sẽ chuyển tập training và tập test thành các list và dictionary/matrix để thuận tiện sử dụng. Hàm sau đây đọc dataframe theo từng dòng và đánh số index của user/item bắt đầu từ zero. Sau đó, hàm trả về các list user, item, rating và một dictionary/matrix ghi lại các interaction. Chúng ta có thể chỉ định loại feedback là `explicit` hoặc `implicit`.
 
 ```{.python .input  n=6}
 #@tab mxnet
@@ -120,7 +120,7 @@ def load_data_ml100k(data, num_users, num_items, feedback='explicit'):
     return users, items, scores, inter
 ```
 
-Afterwards, we put the above steps together and it will be used in the next section. The results are wrapped with `Dataset` and `DataLoader`. Note that the `last_batch` of `DataLoader` for training data is set to the `rollover` mode (The remaining samples are rolled over to the next epoch.) and orders are shuffled.
+Sau đó, chúng ta kết hợp các bước trên; phần này sẽ được sử dụng trong section tiếp theo. Kết quả được đóng gói bằng `Dataset` và `DataLoader`. Lưu ý rằng `last_batch` của `DataLoader` cho dữ liệu training được đặt ở chế độ `rollover` (Các mẫu còn lại sẽ được chuyển sang epoch tiếp theo.) và thứ tự được shuffle.
 
 ```{.python .input  n=7}
 #@tab mxnet
@@ -146,17 +146,17 @@ def split_and_load_ml100k(split_mode='seq-aware', feedback='explicit',
     return num_users, num_items, train_iter, test_iter
 ```
 
-## Summary
+## Tóm tắt
 
-* MovieLens datasets are widely used for recommendation research. It is public available and free to use.
-* We define functions to download and preprocess the MovieLens 100k dataset for further use in later sections.
+* Các bộ dữ liệu MovieLens được sử dụng rộng rãi cho nghiên cứu về recommendation. Chúng được công khai và miễn phí sử dụng.
+* Chúng ta định nghĩa các hàm để tải xuống và tiền xử lý bộ dữ liệu MovieLens 100k nhằm sử dụng trong các section tiếp theo.
 
 
-## Exercises
+## Bài tập
 
-* What other similar recommendation datasets can you find?
-* Go through the [https://movielens.org/](https://movielens.org/) site for more information about MovieLens.
+* Bạn có thể tìm thấy những bộ dữ liệu recommendation tương tự nào khác?
+* Truy cập trang [https://movielens.org/](https://movielens.org/) để biết thêm thông tin về MovieLens.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/399)
+[Thảo luận](https://discuss.d2l.ai/t/399)
 :end_tab:

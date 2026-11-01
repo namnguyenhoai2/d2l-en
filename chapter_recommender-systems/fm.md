@@ -1,22 +1,22 @@
 # Factorization Machines
 
-Factorization machines (FM), proposed by :citet:`Rendle.2010`, is a supervised algorithm that can be used for classification, regression, and ranking tasks. It quickly took notice and became a popular and impactful method for making predictions and recommendations. Particularly, it is a generalization of the linear regression model and the matrix factorization model. Moreover, it is reminiscent of support vector machines with a polynomial kernel. The strengths of factorization machines over the linear regression and matrix factorization are: (1) it can model $\chi$-way variable interactions, where $\chi$ is the number of polynomial order and is usually set to two. (2) A fast optimization algorithm associated with factorization machines can reduce the polynomial computation time to linear complexity, making it extremely efficient especially for high dimensional sparse inputs.  For these reasons, factorization machines are widely employed in modern advertisement and products recommendations. The technical details and implementations are described below.
+Factorization machine (FM), được đề xuất bởi :citet:`Rendle.2010`, là một thuật toán có giám sát có thể được sử dụng cho các tác vụ phân loại, hồi quy và xếp hạng. Thuật toán này nhanh chóng thu hút sự chú ý và trở thành một phương pháp phổ biến, có ảnh hưởng trong việc đưa ra dự đoán và khuyến nghị. Cụ thể, đây là sự tổng quát hóa của mô hình hồi quy tuyến tính và mô hình matrix factorization. Ngoài ra, nó còn gợi nhớ đến support vector machine với polynomial kernel. Những ưu điểm của factorization machine so với hồi quy tuyến tính và matrix factorization là: (1) nó có thể mô hình hóa các tương tác biến $\chi$-chiều, trong đó $\chi$ là số bậc của đa thức và thường được đặt bằng hai. (2) Một thuật toán tối ưu nhanh đi kèm với factorization machine có thể giảm thời gian tính toán đa thức xuống độ phức tạp tuyến tính, khiến thuật toán này đặc biệt hiệu quả đối với các đầu vào thưa có số chiều cao. Vì những lý do này, factorization machine được sử dụng rộng rãi trong quảng cáo hiện đại và hệ thống khuyến nghị sản phẩm. Các chi tiết kỹ thuật và phần triển khai được mô tả dưới đây.
 
 
-## 2-Way Factorization Machines
+## Factorization Machine 2 chiều
 
-Formally, let $x \in \mathbb{R}^d$ denote the feature vectors of one sample, and $y$ denote the corresponding label which can be real-valued label or class label such as binary class "click/non-click". The model for a factorization machine of degree two is defined as:
+Về hình thức, giả sử $x \in \mathbb{R}^d$ là vector đặc trưng của một mẫu, và $y$ là nhãn tương ứng, có thể là nhãn có giá trị thực hoặc nhãn lớp, chẳng hạn như lớp nhị phân "click/không click". Mô hình factorization machine bậc hai được định nghĩa như sau:
 
 $$
 \hat{y}(x) = \mathbf{w}_0 + \sum_{i=1}^d \mathbf{w}_i x_i + \sum_{i=1}^d\sum_{j=i+1}^d \langle\mathbf{v}_i, \mathbf{v}_j\rangle x_i x_j
 $$
 
-where $\mathbf{w}_0 \in \mathbb{R}$ is the global bias; $\mathbf{w} \in \mathbb{R}^d$ denotes the weights of the i-th variable; $\mathbf{V} \in \mathbb{R}^{d\times k}$ represents the feature embeddings; $\mathbf{v}_i$ represents the $i^\textrm{th}$ row of $\mathbf{V}$; $k$ is the dimensionality of latent factors; $\langle\cdot, \cdot \rangle$ is the dot product of two vectors.  $\langle \mathbf{v}_i, \mathbf{v}_j \rangle$ model the interaction between the $i^\textrm{th}$ and $j^\textrm{th}$ feature. Some feature interactions can be easily understood so they can be designed by experts. However, most other feature interactions are hidden in data and difficult to identify. So modeling feature interactions automatically can greatly reduce the efforts in feature engineering. It is obvious that the first two terms correspond to the linear regression model and the last term is an extension of the matrix factorization model. If the feature $i$ represents an item and the feature $j$ represents a user, the third term is exactly the dot product between user and item embeddings. It is worth noting that FM can also generalize to higher orders (degree > 2). Nevertheless, the numerical stability might weaken the generalization.
+trong đó $\mathbf{w}_0 \in \mathbb{R}$ là bias tổng thể; $\mathbf{w} \in \mathbb{R}^d$ biểu diễn các trọng số của biến thứ i; $\mathbf{V} \in \mathbb{R}^{d\times k}$ biểu diễn các embedding của đặc trưng; $\mathbf{v}_i$ biểu diễn hàng $i^\textrm{th}$ của $\mathbf{V}$; $k$ là số chiều của các nhân tố tiềm ẩn; $\langle\cdot, \cdot \rangle$ là tích vô hướng của hai vector. $\langle \mathbf{v}_i, \mathbf{v}_j \rangle$ mô hình hóa tương tác giữa đặc trưng thứ $i^\textrm{th}$ và đặc trưng thứ $j^\textrm{th}$. Một số tương tác đặc trưng có thể dễ dàng được hiểu, vì vậy các chuyên gia có thể thiết kế chúng. Tuy nhiên, hầu hết các tương tác đặc trưng khác đều ẩn trong dữ liệu và khó xác định. Do đó, việc tự động mô hình hóa các tương tác đặc trưng có thể giảm đáng kể công sức trong feature engineering. Rõ ràng, hai hạng đầu tương ứng với mô hình hồi quy tuyến tính, còn hạng cuối là phần mở rộng của mô hình matrix factorization. Nếu đặc trưng $i$ biểu diễn một item và đặc trưng $j$ biểu diễn một user, hạng thứ ba chính là tích vô hướng giữa embedding của user và item. Cần lưu ý rằng FM cũng có thể được tổng quát hóa cho các bậc cao hơn (bậc > 2). Tuy nhiên, tính ổn định số có thể làm suy yếu khả năng tổng quát hóa.
 
 
-## An Efficient Optimization Criterion
+## Tiêu chí Tối ưu Hiệu quả
 
-Optimizing the factorization machines in a  straight forward method leads to a complexity of $\mathcal{O}(kd^2)$ as all pairwise interactions require to be computed. To solve this inefficiency problem, we can reorganize the third term of FM which could greatly reduce the computation cost, leading to a linear time complexity ($\mathcal{O}(kd)$).  The reformulation of the pairwise interaction term is as follows:
+Việc tối ưu factorization machine theo phương pháp trực tiếp dẫn đến độ phức tạp $\mathcal{O}(kd^2)$ vì cần tính tất cả các tương tác theo từng cặp. Để giải quyết vấn đề kém hiệu quả này, chúng ta có thể sắp xếp lại hạng thứ ba của FM, qua đó giảm đáng kể chi phí tính toán và đạt độ phức tạp thời gian tuyến tính ($\mathcal{O}(kd)$). Phép biến đổi của hạng tương tác theo từng cặp như sau:
 
 $$
 \begin{aligned}
@@ -28,9 +28,9 @@ $$
  \end{aligned}
 $$
 
-With this reformulation, the model complexity are decreased greatly. Moreover, for sparse features, only non-zero elements needs to be computed so that the overall complexity is linear to the number of non-zero features.
+Với phép biến đổi này, độ phức tạp của mô hình được giảm đáng kể. Ngoài ra, đối với các đặc trưng thưa, chỉ cần tính các phần tử khác không, vì vậy độ phức tạp tổng thể tuyến tính theo số lượng đặc trưng khác không.
 
-To learn the FM model, we can use the MSE loss for regression task, the cross-entropy loss for classification tasks, and the BPR loss for ranking task. Standard optimizers such as stochastic gradient descent and Adam are viable for optimization.
+Để học mô hình FM, chúng ta có thể sử dụng hàm mất mát MSE cho tác vụ hồi quy, hàm mất mát cross-entropy cho các tác vụ phân loại và hàm mất mát BPR cho tác vụ xếp hạng. Các optimizer tiêu chuẩn như stochastic gradient descent và Adam đều phù hợp để tối ưu hóa.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -42,8 +42,8 @@ import os
 npx.set_np()
 ```
 
-## Model Implementation
-The following code implement the factorization machines. It is clear to see that FM consists a linear regression block and an efficient feature interaction block. We apply a sigmoid function over the final score since we treat the CTR prediction as a classification task.
+## Triển khai Mô hình
+Đoạn mã sau triển khai factorization machine. Có thể thấy rõ rằng FM gồm một khối hồi quy tuyến tính và một khối tương tác đặc trưng hiệu quả. Chúng ta áp dụng hàm sigmoid lên điểm số cuối cùng vì coi việc dự đoán CTR là một tác vụ phân loại.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -64,8 +64,8 @@ class FM(nn.Block):
         return x
 ```
 
-## Load the Advertising Dataset
-We use the CTR data wrapper from the last section to load the online advertising dataset.
+## Tải Tập dữ liệu Quảng cáo
+Chúng ta sử dụng data wrapper CTR từ phần trước để tải tập dữ liệu quảng cáo trực tuyến.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -83,8 +83,8 @@ test_iter = gluon.data.DataLoader(
     num_workers=d2l.get_dataloader_workers())
 ```
 
-## Train the Model
-Afterwards, we train the model. The learning rate is set to 0.02 and the embedding size is set to 20 by default. The `Adam` optimizer and the `SigmoidBinaryCrossEntropyLoss` loss are used for model training.
+## Huấn luyện Mô hình
+Sau đó, chúng ta huấn luyện mô hình. Learning rate được đặt mặc định là 0.02 và kích thước embedding là 20. Optimizer `Adam` và hàm mất mát `SigmoidBinaryCrossEntropyLoss` được sử dụng để huấn luyện mô hình.
 
 ```{.python .input  n=5}
 #@tab mxnet
@@ -98,16 +98,16 @@ loss = gluon.loss.SigmoidBinaryCrossEntropyLoss()
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-## Summary
+## Tóm tắt
 
-* FM is a general framework that can be applied on a variety of tasks such as regression, classification, and ranking.
-* Feature interaction/crossing is important for prediction tasks and the 2-way interaction can be efficiently modeled with FM.
+* FM là một framework tổng quát có thể được áp dụng cho nhiều loại tác vụ như hồi quy, phân loại và xếp hạng.
+* Tương tác/crossing giữa các đặc trưng rất quan trọng đối với các tác vụ dự đoán, và tương tác 2 chiều có thể được mô hình hóa hiệu quả bằng FM.
 
-## Exercises
+## Bài tập
 
-* Can you test FM on other dataset such as Avazu, MovieLens, and Criteo datasets?
-* Vary the embedding size to check its impact on performance, can you observe a similar pattern as that of matrix factorization?
+* Bạn có thể kiểm thử FM trên các tập dữ liệu khác như Avazu, MovieLens và Criteo không?
+* Hãy thay đổi kích thước embedding để kiểm tra ảnh hưởng của nó đến hiệu năng. Bạn có quan sát thấy một mô hình tương tự như mô hình của matrix factorization không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/406)
+[Thảo luận](https://discuss.d2l.ai/t/406)
 :end_tab:

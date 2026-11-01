@@ -1,13 +1,13 @@
-# Eigendecompositions
+# Phân rã riêng
 :label:`sec_eigendecompositions`
 
-Eigenvalues are often one of the most useful notions
-we will encounter when studying linear algebra,
-however, as a beginner, it is easy to overlook their importance.
-Below, we introduce eigendecomposition and
-try to convey some sense of just why it is so important.
+Trị riêng thường là một trong những khái niệm hữu ích nhất
+mà chúng ta sẽ gặp khi học đại số tuyến tính,
+tuy nhiên, với người mới bắt đầu, ta rất dễ bỏ qua tầm quan trọng của chúng.
+Dưới đây, chúng ta giới thiệu phép phân rã riêng và
+cố gắng giúp bạn hiểu được phần nào tại sao nó lại quan trọng đến vậy.
 
-Suppose that we have a matrix $A$ with the following entries:
+Giả sử ta có một ma trận $A$ với các phần tử như sau:
 
 $$
 \mathbf{A} = \begin{bmatrix}
@@ -16,49 +16,49 @@ $$
 \end{bmatrix}.
 $$
 
-If we apply $A$ to any vector $\mathbf{v} = [x, y]^\top$,
-we obtain a vector $\mathbf{A}\mathbf{v} = [2x, -y]^\top$.
-This has an intuitive interpretation:
-stretch the vector to be twice as wide in the $x$-direction,
-and then flip it in the $y$-direction.
+Nếu áp dụng $A$ lên bất kỳ vector $\mathbf{v} = [x, y]^\top$ nào,
+ta thu được vector $\mathbf{A}\mathbf{v} = [2x, -y]^\top$.
+Điều này có một cách diễn giải trực quan:
+kéo giãn vector để nó rộng gấp đôi theo hướng $x$,
+sau đó lật nó theo hướng $y$.
 
-However, there are *some* vectors for which something remains unchanged.
-Namely $[1, 0]^\top$ gets sent to $[2, 0]^\top$
-and $[0, 1]^\top$ gets sent to $[0, -1]^\top$.
-These vectors are still in the same line,
-and the only modification is that the matrix stretches them
-by a factor of $2$ and $-1$ respectively.
-We call such vectors *eigenvectors*
-and the factor they are stretched by *eigenvalues*.
+Tuy nhiên, có *một số* vector mà một điều gì đó vẫn không thay đổi.
+Cụ thể, $[1, 0]^\top$ được biến thành $[2, 0]^\top$
+và $[0, 1]^\top$ được biến thành $[0, -1]^\top$.
+Các vector này vẫn nằm trên cùng một đường thẳng,
+và thay đổi duy nhất là ma trận kéo giãn chúng
+lần lượt theo hệ số $2$ và $-1$.
+Ta gọi những vector như vậy là *vector riêng*
+và hệ số mà chúng được kéo giãn là *trị riêng*.
 
-In general, if we can find a number $\lambda$
-and a vector $\mathbf{v}$ such that
+Nói chung, nếu ta có thể tìm được một số $\lambda$
+và một vector $\mathbf{v}$ sao cho
 
 $$
 \mathbf{A}\mathbf{v} = \lambda \mathbf{v}.
 $$
 
-We say that $\mathbf{v}$ is an eigenvector for $A$ and $\lambda$ is an eigenvalue.
+Ta nói rằng $\mathbf{v}$ là một vector riêng của $A$ và $\lambda$ là một trị riêng.
 
-## Finding Eigenvalues
-Let's figure out how to find them. By subtracting off the $\lambda \mathbf{v}$ from both sides,
-and then factoring out the vector,
-we see the above is equivalent to:
+## Tìm trị riêng
+Hãy tìm hiểu cách tìm chúng. Bằng cách chuyển $\lambda \mathbf{v}$ từ cả hai vế sang vế kia,
+sau đó phân tích vector ra ngoài,
+ta thấy biểu thức trên tương đương với:
 
 $$(\mathbf{A} - \lambda \mathbf{I})\mathbf{v} = 0.$$
 :eqlabel:`eq_eigvalue_der`
 
-For :eqref:`eq_eigvalue_der` to happen, we see that $(\mathbf{A} - \lambda \mathbf{I})$
-must compress some direction down to zero,
-hence it is not invertible, and thus the determinant is zero.
-Thus, we can find the *eigenvalues*
-by finding for what $\lambda$ is $\det(\mathbf{A}-\lambda \mathbf{I}) = 0$.
-Once we find the eigenvalues, we can solve
+Để :eqref:`eq_eigvalue_der` xảy ra, ta thấy rằng $(\mathbf{A} - \lambda \mathbf{I})$
+phải nén một hướng nào đó về không,
+do đó nó không khả nghịch, và vì vậy định thức của nó bằng không.
+Vì thế, ta có thể tìm các *trị riêng*
+bằng cách tìm $\lambda$ sao cho $\det(\mathbf{A}-\lambda \mathbf{I}) = 0$.
+Sau khi tìm được các trị riêng, ta có thể giải
 $\mathbf{A}\mathbf{v} = \lambda \mathbf{v}$
-to find the associated *eigenvector(s)*.
+để tìm *vector riêng* tương ứng.
 
-### An Example
-Let's see this with a more challenging matrix
+### Một ví dụ
+Hãy xét điều này với một ma trận phức tạp hơn:
 
 $$
 \mathbf{A} = \begin{bmatrix}
@@ -67,11 +67,11 @@ $$
 \end{bmatrix}.
 $$
 
-If we consider $\det(\mathbf{A}-\lambda \mathbf{I}) = 0$,
-we see this is equivalent to the polynomial equation
+Nếu xét $\det(\mathbf{A}-\lambda \mathbf{I}) = 0$,
+ta thấy điều này tương đương với phương trình đa thức
 $0 = (2-\lambda)(3-\lambda)-2 = (4-\lambda)(1-\lambda)$.
-Thus, two eigenvalues are $4$ and $1$.
-To find the associated vectors, we then need to solve
+Do đó, hai trị riêng là $4$ và $1$.
+Để tìm các vector tương ứng, ta cần giải
 
 $$
 \begin{bmatrix}
@@ -84,9 +84,9 @@ $$
 \end{bmatrix}\begin{bmatrix}x \\ y\end{bmatrix}  = \begin{bmatrix}4x \\ 4y\end{bmatrix} .
 $$
 
-We can solve this with the vectors $[1, -1]^\top$ and $[1, 2]^\top$ respectively.
+Ta có thể giải bài toán này bằng các vector $[1, -1]^\top$ và $[1, 2]^\top$ tương ứng.
 
-We can check this in code using the built-in `numpy.linalg.eig` routine.
+Ta có thể kiểm tra điều này trong code bằng routine `numpy.linalg.eig` tích hợp sẵn.
 
 ```{.python .input}
 #@tab mxnet
@@ -118,14 +118,14 @@ import tensorflow as tf
 tf.linalg.eig(tf.constant([[2, 1], [2, 3]], dtype=tf.float64))
 ```
 
-Note that `numpy` normalizes the eigenvectors to be of length one,
-whereas we took ours to be of arbitrary length.
-Additionally, the choice of sign is arbitrary.
-However, the vectors computed are parallel
-to the ones we found by hand with the same eigenvalues.
+Lưu ý rằng `numpy` chuẩn hóa các vector riêng để có độ dài bằng một,
+trong khi ta đã chọn các vector của mình có độ dài tùy ý.
+Ngoài ra, việc chọn dấu là tùy ý.
+Tuy nhiên, các vector được tính toán song song
+với những vector ta tìm được bằng tay với cùng các trị riêng.
 
-## Decomposing Matrices
-Let's continue the previous example one step further.  Let
+## Phân rã ma trận
+Hãy tiếp tục ví dụ trước thêm một bước. Đặt
 
 $$
 \mathbf{W} = \begin{bmatrix}
@@ -134,7 +134,7 @@ $$
 \end{bmatrix},
 $$
 
-be the matrix where the columns are the eigenvectors of the matrix $\mathbf{A}$. Let
+là ma trận mà các cột của nó là các vector riêng của ma trận $\mathbf{A}$. Đặt
 
 $$
 \boldsymbol{\Sigma} = \begin{bmatrix}
@@ -143,73 +143,73 @@ $$
 \end{bmatrix},
 $$
 
-be the matrix with the associated eigenvalues on the diagonal.
-Then the definition of eigenvalues and eigenvectors tells us that
+là ma trận có các trị riêng tương ứng trên đường chéo.
+Khi đó, định nghĩa về trị riêng và vector riêng cho ta biết rằng
 
 $$
 \mathbf{A}\mathbf{W} =\mathbf{W} \boldsymbol{\Sigma} .
 $$
 
-The matrix $W$ is invertible, so we may multiply both sides by $W^{-1}$ on the right,
-we see that we may write
+Ma trận $W$ khả nghịch, vì vậy ta có thể nhân cả hai vế với $W^{-1}$ ở bên phải,
+từ đó thấy rằng ta có thể viết
 
 $$\mathbf{A} = \mathbf{W} \boldsymbol{\Sigma} \mathbf{W}^{-1}.$$
 :eqlabel:`eq_eig_decomp`
 
-In the next section we will see some nice consequences of this,
-but for now we need only know that such a decomposition
-will exist as long as we can find a full collection
-of linearly independent eigenvectors (so that $W$ is invertible).
+Trong phần tiếp theo, ta sẽ thấy một số hệ quả thú vị của điều này,
+nhưng hiện tại, ta chỉ cần biết rằng phép phân rã như vậy
+sẽ tồn tại miễn là ta có thể tìm được một tập đầy đủ
+các vector riêng độc lập tuyến tính (để $W$ khả nghịch).
 
-## Operations on Eigendecompositions
-One nice thing about eigendecompositions :eqref:`eq_eig_decomp` is that
-we can write many operations we usually encounter cleanly
-in terms of the eigendecomposition. As a first example, consider:
+## Các phép toán trên phép phân rã riêng
+Một ưu điểm của phép phân rã riêng :eqref:`eq_eig_decomp` là
+ta có thể biểu diễn rõ ràng nhiều phép toán thường gặp
+theo phép phân rã riêng. Trước hết, hãy xét:
 
 $$
 \mathbf{A}^n = \overbrace{\mathbf{A}\cdots \mathbf{A}}^{\textrm{$n$ times}} = \overbrace{(\mathbf{W}\boldsymbol{\Sigma} \mathbf{W}^{-1})\cdots(\mathbf{W}\boldsymbol{\Sigma} \mathbf{W}^{-1})}^{\textrm{$n$ times}} =  \mathbf{W}\overbrace{\boldsymbol{\Sigma}\cdots\boldsymbol{\Sigma}}^{\textrm{$n$ times}}\mathbf{W}^{-1} = \mathbf{W}\boldsymbol{\Sigma}^n \mathbf{W}^{-1}.
 $$
 
-This tells us that for any positive power of a matrix,
-the eigendecomposition is obtained by just raising the eigenvalues to the same power.
-The same can be shown for negative powers,
-so if we want to invert a matrix we need only consider
+Điều này cho ta biết rằng với mọi lũy thừa dương của một ma trận,
+phép phân rã riêng được thu được chỉ bằng cách nâng các trị riêng lên cùng số mũ.
+Điều tương tự cũng có thể chứng minh cho các lũy thừa âm,
+vì vậy nếu muốn lấy nghịch đảo của một ma trận, ta chỉ cần xét
 
 $$
 \mathbf{A}^{-1} = \mathbf{W}\boldsymbol{\Sigma}^{-1} \mathbf{W}^{-1},
 $$
 
-or in other words, just invert each eigenvalue.
-This will work as long as each eigenvalue is non-zero,
-so we see that invertible is the same as having no zero eigenvalues.
+hay nói cách khác, chỉ cần lấy nghịch đảo của từng trị riêng.
+Điều này đúng miễn là mỗi trị riêng đều khác không,
+vì vậy ta thấy khả nghịch tương đương với việc không có trị riêng bằng không.
 
-Indeed, additional work can show that if $\lambda_1, \ldots, \lambda_n$
-are the eigenvalues of a matrix, then the determinant of that matrix is
+Thực tế, với các phép biến đổi bổ sung, ta có thể chứng minh rằng nếu $\lambda_1, \ldots, \lambda_n$
+là các trị riêng của một ma trận, thì định thức của ma trận đó là
 
 $$
 \det(\mathbf{A}) = \lambda_1 \cdots \lambda_n,
 $$
 
-or the product of all the eigenvalues.
-This makes sense intuitively because whatever stretching $\mathbf{W}$ does,
-$W^{-1}$ undoes it, so in the end the only stretching that happens is
-by multiplication by the diagonal matrix $\boldsymbol{\Sigma}$,
-which stretches volumes by the product of the diagonal elements.
+hay tích của tất cả các trị riêng.
+Điều này có ý nghĩa trực quan vì bất kể $\mathbf{W}$ thực hiện phép kéo giãn nào,
+$W^{-1}$ sẽ hoàn tác phép kéo giãn đó, nên cuối cùng phép kéo giãn duy nhất xảy ra là
+phép nhân với ma trận đường chéo $\boldsymbol{\Sigma}$,
+ma trận này kéo giãn thể tích theo tích của các phần tử trên đường chéo.
 
-Finally, recall that the rank was the maximum number
-of linearly independent columns of your matrix.
-By examining the eigendecomposition closely,
-we can see that the rank is the same
-as the number of non-zero eigenvalues of $\mathbf{A}$.
+Cuối cùng, hãy nhớ rằng hạng là số lượng lớn nhất
+các cột độc lập tuyến tính của ma trận.
+Bằng cách xem xét kỹ phép phân rã riêng,
+ta có thể thấy rằng hạng bằng
+số lượng trị riêng khác không của $\mathbf{A}$.
 
-The examples could continue, but hopefully the point is clear:
-eigendecomposition can simplify many linear-algebraic computations
-and is a fundamental operation underlying many numerical algorithms
-and much of the analysis that we do in linear algebra.
+Có thể tiếp tục đưa ra các ví dụ, nhưng hy vọng điểm chính đã rõ:
+phép phân rã riêng có thể đơn giản hóa nhiều phép tính đại số tuyến tính
+và là một phép toán nền tảng đứng sau nhiều thuật toán số
+cũng như phần lớn các phép phân tích mà ta thực hiện trong đại số tuyến tính.
 
-## Eigendecompositions of Symmetric Matrices
-It is not always possible to find enough linearly independent eigenvectors
-for the above process to work. For instance the matrix
+## Phân rã riêng của ma trận đối xứng
+Không phải lúc nào cũng có thể tìm đủ các vector riêng độc lập tuyến tính
+để quy trình trên hoạt động. Chẳng hạn, ma trận
 
 $$
 \mathbf{A} = \begin{bmatrix}
@@ -218,37 +218,37 @@ $$
 \end{bmatrix},
 $$
 
-has only a single eigenvector, namely $(1, 0)^\top$.
-To handle such matrices, we require more advanced techniques
-than we can cover (such as the Jordan Normal Form, or Singular Value Decomposition).
-We will often need to restrict our attention to those matrices
-where we can guarantee the existence of a full set of eigenvectors.
+chỉ có một vector riêng duy nhất, cụ thể là $(1, 0)^\top$.
+Để xử lý các ma trận như vậy, ta cần những kỹ thuật nâng cao hơn
+những gì có thể trình bày ở đây (chẳng hạn như Jordan Normal Form hoặc Singular Value Decomposition).
+Ta thường cần giới hạn sự chú ý vào những ma trận
+mà ta có thể đảm bảo sự tồn tại của một tập đầy đủ các vector riêng.
 
-The most commonly encountered family are the *symmetric matrices*,
-which are those matrices where $\mathbf{A} = \mathbf{A}^\top$.
-In this case, we may take $W$ to be an *orthogonal matrix*—a matrix whose columns are all length one vectors that are at right angles to one another, where
-$\mathbf{W}^\top = \mathbf{W}^{-1}$—and all the eigenvalues will be real.
-Thus, in this special case, we can write :eqref:`eq_eig_decomp` as
+Họ ma trận thường gặp nhất là *ma trận đối xứng*,
+tức là những ma trận thỏa mãn $\mathbf{A} = \mathbf{A}^\top$.
+Trong trường hợp này, ta có thể chọn $W$ là một *ma trận trực giao*—một ma trận mà các cột của nó đều là các vector độ dài một và vuông góc với nhau, trong đó
+$\mathbf{W}^\top = \mathbf{W}^{-1}$—và tất cả các trị riêng đều là số thực.
+Do đó, trong trường hợp đặc biệt này, ta có thể viết :eqref:`eq_eig_decomp` dưới dạng
 
 $$
 \mathbf{A} = \mathbf{W}\boldsymbol{\Sigma}\mathbf{W}^\top .
 $$
 
-## Gershgorin Circle Theorem
-Eigenvalues are often difficult to reason with intuitively.
-If presented an arbitrary matrix, there is little that can be said
-about what the eigenvalues are without computing them.
-There is, however, one theorem that can make it easy to approximate well
-if the largest values are on the diagonal.
+## Định lý vòng tròn Gershgorin
+Các trị riêng thường khó diễn giải một cách trực quan.
+Nếu được cho một ma trận bất kỳ, ta hầu như không thể nói gì
+về các trị riêng nếu chưa tính toán chúng.
+Tuy nhiên, có một định lý giúp ta dễ dàng xấp xỉ tốt
+nếu các giá trị lớn nhất nằm trên đường chéo.
 
-Let $\mathbf{A} = (a_{ij})$ be any square matrix ($n\times n$).
-We will define $r_i = \sum_{j \neq i} |a_{ij}|$.
-Let $\mathcal{D}_i$ represent the disc in the complex plane
-with center $a_{ii}$ radius $r_i$.
-Then, every eigenvalue of $\mathbf{A}$ is contained in one of the $\mathcal{D}_i$.
+Cho $\mathbf{A} = (a_{ij})$ là một ma trận vuông bất kỳ ($n\times n$).
+Ta định nghĩa $r_i = \sum_{j \neq i} |a_{ij}|$.
+Gọi $\mathcal{D}_i$ là đĩa trong mặt phẳng phức
+có tâm tại $a_{ii}$ và bán kính $r_i$.
+Khi đó, mọi trị riêng của $\mathbf{A}$ đều nằm trong một trong các $\mathcal{D}_i$.
 
-This can be a bit to unpack, so let's look at an example.
-Consider the matrix:
+Điều này có thể hơi khó hiểu, vì vậy hãy xem một ví dụ.
+Xét ma trận:
 
 $$
 \mathbf{A} = \begin{bmatrix}
@@ -259,9 +259,9 @@ $$
 \end{bmatrix}.
 $$
 
-We have $r_1 = 0.3$, $r_2 = 0.6$, $r_3 = 0.8$ and $r_4 = 0.9$.
-The matrix is symmetric, so all eigenvalues are real.
-This means that all of our eigenvalues will be in one of the ranges of
+Ta có $r_1 = 0.3$, $r_2 = 0.6$, $r_3 = 0.8$ và $r_4 = 0.9$.
+Ma trận đối xứng, vì vậy mọi trị riêng đều là số thực.
+Điều này có nghĩa là tất cả các trị riêng của chúng ta sẽ nằm trong một trong các khoảng
 
 $$[a_{11}-r_1, a_{11}+r_1] = [0.7, 1.3], $$
 
@@ -272,9 +272,9 @@ $$[a_{33}-r_3, a_{33}+r_3] = [4.2, 5.8], $$
 $$[a_{44}-r_4, a_{44}+r_4] = [8.1, 9.9]. $$
 
 
-Performing the numerical computation shows
-that the eigenvalues are approximately $0.99$, $2.97$, $4.95$, $9.08$,
-all comfortably inside the ranges provided.
+Tính toán số cho thấy
+các trị riêng xấp xỉ bằng $0.99$, $2.97$, $4.95$, $9.08$,
+tất cả đều nằm khá thoải mái trong các khoảng đã cho.
 
 ```{.python .input}
 #@tab mxnet
@@ -309,40 +309,41 @@ v, _ = tf.linalg.eigh(A)
 v
 ```
 
-In this way, eigenvalues can be approximated,
-and the approximations will be fairly accurate
-in the case that the diagonal is
-significantly larger than all the other elements.
+Bằng cách này, ta có thể xấp xỉ các trị riêng,
+và các giá trị xấp xỉ sẽ khá chính xác
+trong trường hợp các phần tử trên đường chéo
+lớn hơn đáng kể so với tất cả các phần tử khác.
 
-It is a small thing, but with a complex
-and subtle topic like eigendecomposition,
-it is good to get any intuitive grasp we can.
+Đây là một điều nhỏ, nhưng với một chủ đề
+phức tạp và tinh tế như phân rã riêng,
+việc có được bất kỳ trực giác nào cũng đều hữu ích.
 
-## A Useful Application: The Growth of Iterated Maps
+## Một ứng dụng hữu ích: Sự tăng trưởng của các ánh xạ lặp
 
-Now that we understand what eigenvectors are in principle,
-let's see how they can be used to provide a deep understanding
-of a problem central to neural network behavior: proper weight initialization.
+Giờ đây, khi đã hiểu về nguyên tắc các vector riêng là gì,
+hãy xem chúng có thể được sử dụng như thế nào để giúp hiểu sâu
+một vấn đề cốt lõi trong hoạt động của mạng neural: khởi tạo trọng số đúng cách.
 
-### Eigenvectors as Long Term Behavior
+### Vector riêng biểu diễn hành vi dài hạn
 
-The full mathematical investigation of the initialization
-of deep neural networks is beyond the scope of the text,
-but we can see a toy version here to understand
-how eigenvalues can help us see how these models work.
-As we know, neural networks operate by interspersing layers
-of linear transformations with non-linear operations.
-For simplicity here, we will assume that there is no non-linearity,
-and that the transformation is a single repeated matrix operation $A$,
-so that the output of our model is
+Việc khảo sát toán học đầy đủ về cách khởi tạo
+các mạng neural sâu nằm ngoài phạm vi của tài liệu này,
+nhưng ở đây ta có thể xem một phiên bản đơn giản hóa để hiểu
+các trị riêng có thể giúp ta thấy cách những mô hình này hoạt động như thế nào.
+Như đã biết, mạng neural hoạt động bằng cách xen kẽ các lớp
+biến đổi tuyến tính với các phép toán phi tuyến.
+Để đơn giản, ở đây ta sẽ giả sử không có tính phi tuyến,
+và phép biến đổi là một phép nhân ma trận lặp lại duy nhất $A$,
+sao cho đầu ra của mô hình là
 
 $$
 \mathbf{v}_{out} = \mathbf{A}\cdot \mathbf{A}\cdots \mathbf{A} \mathbf{v}_{in} = \mathbf{A}^N \mathbf{v}_{in}.
 $$
 
-When these models are initialized, $A$ is taken to be
-a random matrix with Gaussian entries, so let's make one of those.
-To be concrete, we start with a mean zero, variance one Gaussian distributed $5 \times 5$ matrix.
+Khi các mô hình này được khởi tạo, $A$ được chọn là
+một ma trận ngẫu nhiên với các phần tử Gaussian, vì vậy hãy tạo một ma trận như vậy.
+Cụ thể, ta bắt đầu với một ma trận $5 \times 5$ có phân phối Gaussian
+với trung bình bằng không và phương sai bằng một.
 
 ```{.python .input}
 #@tab mxnet
@@ -369,30 +370,30 @@ A = tf.random.normal((k, k), dtype=tf.float64)
 A
 ```
 
-### Behavior on Random Data
-For simplicity in our toy model,
-we will assume that the data vector we feed in $\mathbf{v}_{in}$
-is a random five dimensional Gaussian vector.
-Let's think about what we want to have happen.
-For context, lets think of a generic ML problem,
-where we are trying to turn input data, like an image, into a prediction,
-like the probability the image is a picture of a cat.
-If repeated application of $\mathbf{A}$
-stretches a random vector out to be very long,
-then small changes in input will be amplified
-into large changes in output---tiny modifications of the input image
-would lead to vastly different predictions.
-This does not seem right!
+### Hành vi trên dữ liệu ngẫu nhiên
+Để đơn giản trong mô hình minh họa này,
+ta sẽ giả sử vector dữ liệu đầu vào $\mathbf{v}_{in}$
+là một vector Gaussian ngẫu nhiên năm chiều.
+Hãy suy nghĩ về điều ta muốn xảy ra.
+Để có bối cảnh, hãy xét một bài toán ML tổng quát,
+trong đó ta cố gắng biến dữ liệu đầu vào, chẳng hạn như một hình ảnh, thành một dự đoán,
+chẳng hạn như xác suất hình ảnh đó là ảnh một con mèo.
+Nếu việc áp dụng lặp lại $\mathbf{A}$
+kéo giãn một vector ngẫu nhiên thành một vector rất dài,
+thì những thay đổi nhỏ ở đầu vào sẽ bị khuếch đại
+thành những thay đổi lớn ở đầu ra---những sửa đổi rất nhỏ trên ảnh đầu vào
+sẽ dẫn đến các dự đoán khác biệt hoàn toàn.
+Điều này có vẻ không đúng!
 
-On the flip side, if $\mathbf{A}$ shrinks random vectors to be shorter,
-then after running through many layers, the vector will essentially shrink to nothing,
-and the output will not depend on the input. This is also clearly not right either!
+Ngược lại, nếu $\mathbf{A}$ thu nhỏ các vector ngẫu nhiên,
+thì sau khi đi qua nhiều lớp, vector về cơ bản sẽ co lại thành không,
+và đầu ra sẽ không phụ thuộc vào đầu vào. Điều này rõ ràng cũng không đúng!
 
-We need to walk the narrow line between growth and decay
-to make sure that our output changes depending on our input, but not much!
+Ta cần đi trên ranh giới hẹp giữa tăng trưởng và suy giảm
+để bảo đảm đầu ra thay đổi theo đầu vào, nhưng không thay đổi quá nhiều!
 
-Let's see what happens when we repeatedly multiply our matrix $\mathbf{A}$
-against a random input vector, and keep track of the norm.
+Hãy xem điều gì xảy ra khi ta liên tục nhân ma trận $\mathbf{A}$
+với một vector đầu vào ngẫu nhiên và theo dõi chuẩn của vector.
 
 ```{.python .input}
 #@tab mxnet
@@ -433,8 +434,8 @@ for i in range(1, 100):
 d2l.plot(tf.range(0, 100), norm_list, 'Iteration', 'Value')
 ```
 
-The norm is growing uncontrollably!
-Indeed if we take the list of quotients, we will see a pattern.
+Chuẩn đang tăng một cách mất kiểm soát!
+Quả thực, nếu lấy danh sách các thương số, ta sẽ thấy một quy luật.
 
 ```{.python .input}
 #@tab mxnet
@@ -466,23 +467,23 @@ for i in range(1, 100):
 d2l.plot(tf.range(1, 100), norm_ratio_list, 'Iteration', 'Ratio')
 ```
 
-If we look at the last portion of the above computation,
-we see that the random vector is stretched by a factor of `1.974459321485[...]`,
-where the portion at the end shifts a little,
-but the stretching factor is stable.
+Nếu nhìn vào phần cuối của phép tính ở trên,
+ta thấy vector ngẫu nhiên được kéo giãn theo hệ số `1.974459321485[...]`,
+trong đó phần ở cuối chỉ dịch chuyển một chút,
+nhưng hệ số kéo giãn vẫn ổn định.
 
-### Relating Back to Eigenvectors
+### Liên hệ trở lại với các vector riêng
 
-We have seen that eigenvectors and eigenvalues correspond
-to the amount something is stretched,
-but that was for specific vectors, and specific stretches.
-Let's take a look at what they are for $\mathbf{A}$.
-A bit of a caveat here: it turns out that to see them all,
-we will need to go to complex numbers.
-You can think of these as stretches and rotations.
-By taking the norm of the complex number
-(square root of the sums of squares of real and imaginary parts)
-we can measure that stretching factor. Let's also sort them.
+Ta đã thấy các vector riêng và trị riêng tương ứng
+với mức độ một thứ gì đó bị kéo giãn,
+nhưng điều đó chỉ đúng với những vector cụ thể và những độ kéo giãn cụ thể.
+Hãy xem chúng là gì đối với $\mathbf{A}$.
+Có một lưu ý ở đây: hóa ra để thấy được tất cả chúng,
+ta sẽ cần chuyển sang các số phức.
+Bạn có thể hình dung chúng là các phép kéo giãn và phép quay.
+Bằng cách lấy chuẩn của số phức
+(căn bậc hai của tổng bình phương phần thực và phần ảo),
+ta có thể đo hệ số kéo giãn đó. Hãy đồng thời sắp xếp chúng.
 
 ```{.python .input}
 #@tab mxnet
@@ -511,48 +512,48 @@ norm_eigs.sort()
 print(f'norms of eigenvalues: {norm_eigs}')
 ```
 
-### An Observation
+### Một nhận xét
 
-We see something a bit unexpected happening here:
-that number we identified before for the
-long term stretching of our matrix $\mathbf{A}$
-applied to a random vector is *exactly*
-(accurate to thirteen decimal places!)
-the largest eigenvalue of $\mathbf{A}$.
-This is clearly not a coincidence!
+Ta thấy một điều hơi bất ngờ đang xảy ra ở đây:
+con số mà trước đó ta đã xác định cho
+độ kéo giãn dài hạn của ma trận $\mathbf{A}$
+khi áp dụng lên một vector ngẫu nhiên chính là *đúng bằng*
+(chính xác đến mười ba chữ số thập phân!)
+trị riêng lớn nhất của $\mathbf{A}$.
+Rõ ràng đây không phải là sự trùng hợp!
 
-But, if we now think about what is happening geometrically,
-this starts to make sense. Consider a random vector.
-This random vector points a little in every direction,
-so in particular, it points at least a little bit
-in the same direction as the eigenvector of $\mathbf{A}$
-associated with the largest eigenvalue.
-This is so important that it is called
-the *principle eigenvalue* and *principle eigenvector*.
-After applying $\mathbf{A}$, our random vector
-gets stretched in every possible direction,
-as is associated with every possible eigenvector,
-but it is stretched most of all in the direction
-associated with this principle eigenvector.
-What this means is that after apply in $A$,
-our random vector is longer, and points in a direction
-closer to being aligned with the principle eigenvector.
-After applying the matrix many times,
-the alignment with the principle eigenvector becomes closer and closer until,
-for all practical purposes, our random vector has been transformed
-into the principle eigenvector!
-Indeed this algorithm is the basis
-for what is known as the *power iteration*
-for finding the largest eigenvalue and eigenvector of a matrix. For details see, for example, :cite:`Golub.Van-Loan.1996`.
+Tuy nhiên, nếu giờ ta suy nghĩ về điều đang xảy ra xét về mặt hình học,
+điều này bắt đầu trở nên hợp lý. Hãy xét một vector ngẫu nhiên.
+Vector ngẫu nhiên này hướng một phần về mọi hướng,
+vì vậy đặc biệt là nó hướng ít nhất một phần
+theo cùng hướng với vector riêng của $\mathbf{A}$
+ứng với trị riêng lớn nhất.
+Điều này quan trọng đến mức nó được gọi là
+*trị riêng chính* và *vector riêng chính*.
+Sau khi áp dụng $\mathbf{A}$, vector ngẫu nhiên của ta
+được kéo giãn theo mọi hướng có thể,
+tương ứng với mọi vector riêng có thể,
+nhưng nó được kéo giãn nhiều nhất theo hướng
+ứng với vector riêng chính này.
+Điều đó có nghĩa là sau khi áp dụng $A$,
+vector ngẫu nhiên của ta dài hơn và hướng theo một hướng
+gần với sự thẳng hàng cùng vector riêng chính hơn.
+Sau khi áp dụng ma trận nhiều lần,
+sự thẳng hàng với vector riêng chính ngày càng tăng cho đến khi,
+vì mọi mục đích thực tế, vector ngẫu nhiên của ta đã được biến đổi
+thành vector riêng chính!
+Quả thực, thuật toán này là cơ sở
+của phương pháp được gọi là *lặp lũy thừa*
+để tìm trị riêng và vector riêng lớn nhất của một ma trận. Để biết chi tiết, hãy xem chẳng hạn :cite:`Golub.Van-Loan.1996`.
 
-### Fixing the Normalization
+### Điều chỉnh chuẩn hóa
 
-Now, from above discussions, we concluded
-that we do not want a random vector to be stretched or squished at all,
-we would like random vectors to stay about the same size throughout the entire process.
-To do so, we now rescale our matrix by this principle eigenvalue
-so that the largest eigenvalue is instead now just one.
-Let's see what happens in this case.
+Từ những thảo luận ở trên, ta kết luận
+rằng ta không muốn một vector ngẫu nhiên bị kéo giãn hay nén lại,
+mà muốn các vector ngẫu nhiên duy trì kích thước gần như không đổi trong suốt quá trình.
+Để làm vậy, giờ ta chuẩn hóa lại ma trận bằng trị riêng chính này
+sao cho trị riêng lớn nhất giờ chỉ còn bằng một.
+Hãy xem điều gì xảy ra trong trường hợp này.
 
 ```{.python .input}
 #@tab mxnet
@@ -602,7 +603,8 @@ for i in range(1, 100):
 d2l.plot(tf.range(0, 100), norm_list, 'Iteration', 'Value')
 ```
 
-We can also plot the ratio between consecutive norms as before and see that indeed it stabilizes.
+Ta cũng có thể vẽ tỷ số giữa các chuẩn liên tiếp như trước
+và thấy rằng quả thực tỷ số này ổn định.
 
 ```{.python .input}
 #@tab mxnet
@@ -634,44 +636,47 @@ for i in range(1, 100):
 d2l.plot(tf.range(1, 100), norm_ratio_list, 'Iteration', 'Ratio')
 ```
 
-## Discussion
+## Thảo luận
 
-We now see exactly what we hoped for!
-After normalizing the matrices by the principal eigenvalue,
-we see that the random data does not explode as before,
-but rather eventually equilibrates to a specific value.
-It would be nice to be able to do these things from first principles,
-and it turns out that if we look deeply at the mathematics of it,
-we can see that the largest eigenvalue
-of a large random matrix with independent mean zero,
-variance one Gaussian entries is on average about $\sqrt{n}$,
-or in our case $\sqrt{5} \approx 2.2$,
-due to a fascinating fact known as the *circular law* :cite:`Ginibre.1965`.
-The relationship between the eigenvalues (and a related object called singular values) of random matrices has been shown to have deep connections to proper initialization of neural networks as was discussed in :citet:`Pennington.Schoenholz.Ganguli.2017` and subsequent works.
+Giờ đây ta thấy chính xác điều mình mong đợi!
+Sau khi chuẩn hóa các ma trận bằng trị riêng chính,
+ta thấy dữ liệu ngẫu nhiên không bùng nổ như trước,
+mà cuối cùng ổn định quanh một giá trị cụ thể.
+Sẽ thật hữu ích nếu có thể thực hiện những điều này từ các nguyên lý đầu tiên,
+và hóa ra khi nghiên cứu sâu vào phần toán học,
+ta có thể thấy rằng trị riêng lớn nhất
+của một ma trận ngẫu nhiên lớn với các phần tử Gaussian độc lập,
+có trung bình bằng không và phương sai bằng một, trung bình vào khoảng $\sqrt{n}$,
+hay trong trường hợp của chúng ta là $\sqrt{5} \approx 2.2$,
+do một sự thật thú vị được gọi là *định luật hình tròn* :cite:`Ginibre.1965`.
+Mối quan hệ giữa các trị riêng (và một đối tượng liên quan gọi là các giá trị kỳ dị)
+của các ma trận ngẫu nhiên đã được chứng minh là có mối liên hệ sâu sắc
+với việc khởi tạo đúng cách các mạng neural, như đã thảo luận trong :citet:`Pennington.Schoenholz.Ganguli.2017` và các công trình tiếp theo.
 
-## Summary
-* Eigenvectors are vectors which are stretched by a matrix without changing direction.
-* Eigenvalues are the amount that the eigenvectors are stretched by the application of the matrix.
-* The eigendecomposition of a matrix can allow for many operations to be reduced to operations on the eigenvalues.
-* The Gershgorin Circle Theorem can provide approximate values for the eigenvalues of a matrix.
-* The behavior of iterated matrix powers depends primarily on the size of the largest eigenvalue.  This understanding has many applications in the theory of neural network initialization.
+## Tóm tắt
+* Vector riêng là các vector được ma trận kéo giãn mà không thay đổi hướng.
+* Trị riêng là mức độ mà các vector riêng bị kéo giãn khi áp dụng ma trận.
+* Phân rã riêng của một ma trận có thể cho phép rút gọn nhiều phép toán thành các phép toán trên các trị riêng.
+* Định lý vòng tròn Gershgorin có thể cung cấp các giá trị xấp xỉ cho các trị riêng của một ma trận.
+* Hành vi của các lũy thừa ma trận lặp lại phụ thuộc chủ yếu vào độ lớn của trị riêng lớn nhất. Hiểu biết này có nhiều ứng dụng trong lý thuyết khởi tạo mạng neural.
 
-## Exercises
-1. What are the eigenvalues and eigenvectors of
+## Bài tập
+1. Các trị riêng và vector riêng của
 $$
 \mathbf{A} = \begin{bmatrix}
 2 & 1 \\
 1 & 2
 \end{bmatrix}?
 $$
-1.  What are the eigenvalues and eigenvectors of the following matrix, and what is strange about this example compared to the previous one?
+là gì?
+1.  Các trị riêng và vector riêng của ma trận sau là gì, và điều gì kỳ lạ ở ví dụ này so với ví dụ trước?
 $$
 \mathbf{A} = \begin{bmatrix}
 2 & 1 \\
 0 & 2
 \end{bmatrix}.
 $$
-1. Without computing the eigenvalues, is it possible that the smallest eigenvalue of the following matrix is less that $0.5$? *Note*: this problem can be done in your head.
+1. Không cần tính các trị riêng, liệu có khả năng trị riêng nhỏ nhất của ma trận sau nhỏ hơn $0.5$ không? *Gợi ý*: có thể giải bài này trong đầu.
 $$
 \mathbf{A} = \begin{bmatrix}
 3.0 & 0.1 & 0.3 & 1.0 \\
@@ -682,14 +687,14 @@ $$
 $$
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/411)
+[Thảo luận](https://discuss.d2l.ai/t/411)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1086)
+[Thảo luận](https://discuss.d2l.ai/t/1086)
 :end_tab:
 
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1087)
+[Thảo luận](https://discuss.d2l.ai/t/1087)
 :end_tab:

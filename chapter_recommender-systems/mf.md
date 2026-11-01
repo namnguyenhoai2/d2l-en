@@ -1,25 +1,22 @@
-# Matrix Factorization
+# Phân rã ma trận
 
-Matrix Factorization :cite:`Koren.Bell.Volinsky.2009` is a well-established algorithm in the recommender systems literature. The first version of matrix factorization model is proposed by Simon Funk in a famous [blog
-post](https://sifter.org/%7Esimon/journal/20061211.html) in which he described the idea of factorizing the interaction matrix. It then became widely known due to the Netflix contest which was held in 2006. At that time, Netflix, a media-streaming and video-rental company, announced a contest to improve its recommender system performance. The best team that can improve on the Netflix baseline, i.e., Cinematch), by 10 percent would win a one million USD prize.  As such, this contest attracted
-a lot of attention to the field of recommender system research. Subsequently, the grand prize was won by the BellKor's Pragmatic Chaos team, a combined team of BellKor, Pragmatic Theory, and BigChaos (you do not need to worry about these algorithms now). Although the final score was the result of an ensemble solution (i.e., a combination of many algorithms), the matrix factorization algorithm played a critical role in the final blend. The technical report of the Netflix Grand Prize solution :cite:`Toscher.Jahrer.Bell.2009` provides a detailed introduction to the adopted model. In this section, we will dive into the details of the matrix factorization model and its implementation.
+Phân rã ma trận :cite:`Koren.Bell.Volinsky.2009` là một thuật toán lâu đời và được công nhận rộng rãi trong các tài liệu nghiên cứu về hệ thống gợi ý. Phiên bản đầu tiên của mô hình phân rã ma trận được Simon Funk đề xuất trong một [bài đăng trên blog](https://sifter.org/%7Esimon/journal/20061211.html), trong đó ông mô tả ý tưởng phân rã ma trận tương tác. Sau đó, thuật toán này trở nên phổ biến rộng rãi nhờ cuộc thi Netflix được tổ chức vào năm 2006. Vào thời điểm đó, Netflix, một công ty cung cấp dịch vụ truyền phát nội dung đa phương tiện và cho thuê video, đã công bố một cuộc thi nhằm cải thiện hiệu suất hệ thống gợi ý của mình. Đội đạt thành tích tốt nhất và cải thiện 10 phần trăm so với hệ thống cơ sở của Netflix, tức Cinematch, sẽ giành được giải thưởng một triệu USD. Vì vậy, cuộc thi này đã thu hút rất nhiều sự chú ý đến lĩnh vực nghiên cứu hệ thống gợi ý. Sau đó, giải thưởng lớn đã thuộc về đội BellKor's Pragmatic Chaos, một đội kết hợp giữa BellKor, Pragmatic Theory và BigChaos (hiện tại bạn chưa cần quan tâm đến các thuật toán này). Mặc dù điểm số cuối cùng là kết quả của một giải pháp ensemble (tức là sự kết hợp của nhiều thuật toán), thuật toán phân rã ma trận đóng vai trò quan trọng trong tổ hợp cuối cùng. Báo cáo kỹ thuật về giải pháp giành Giải thưởng lớn Netflix :cite:`Toscher.Jahrer.Bell.2009` cung cấp phần giới thiệu chi tiết về mô hình được sử dụng. Trong phần này, chúng ta sẽ tìm hiểu sâu các chi tiết của mô hình phân rã ma trận và cách triển khai mô hình.
 
+## Mô hình phân rã ma trận
 
-## The Matrix Factorization Model
+Phân rã ma trận là một nhóm các mô hình collaborative filtering. Cụ thể, mô hình phân rã ma trận tương tác người dùng–mặt hàng (ví dụ: ma trận đánh giá) thành tích của hai ma trận có hạng thấp hơn, qua đó nắm bắt cấu trúc hạng thấp của các tương tác người dùng–mặt hàng.
 
-Matrix factorization is a class of collaborative filtering models. Specifically, the model factorizes the user-item interaction matrix (e.g., rating matrix) into the product of two lower-rank matrices, capturing the low-rank structure of the user-item interactions.
-
-Let $\mathbf{R} \in \mathbb{R}^{m \times n}$ denote the interaction matrix with $m$ users and $n$ items, and the values of $\mathbf{R}$ represent explicit ratings. The user-item interaction will be factorized into a user latent matrix $\mathbf{P} \in \mathbb{R}^{m \times k}$ and an item latent matrix $\mathbf{Q} \in \mathbb{R}^{n \times k}$, where $k \ll m, n$, is the latent factor size. Let $\mathbf{p}_u$ denote the $u^\textrm{th}$ row of $\mathbf{P}$ and $\mathbf{q}_i$ denote the $i^\textrm{th}$ row of $\mathbf{Q}$.  For a given item $i$, the elements of $\mathbf{q}_i$ measure the extent to which the item possesses those characteristics such as the genres and languages of a movie. For a given user $u$, the elements of $\mathbf{p}_u$ measure the extent of interest the user has in items' corresponding characteristics. These latent factors might measure obvious dimensions as mentioned in those examples or are completely uninterpretable. The predicted ratings can be estimated by
+Gọi $\mathbf{R} \in \mathbb{R}^{m \times n}$ là ma trận tương tác với $m$ người dùng và $n$ mặt hàng, trong đó các giá trị của $\mathbf{R}$ biểu diễn các đánh giá tường minh. Tương tác người dùng–mặt hàng sẽ được phân rã thành một ma trận tiềm ẩn của người dùng $\mathbf{P} \in \mathbb{R}^{m \times k}$ và một ma trận tiềm ẩn của mặt hàng $\mathbf{Q} \in \mathbb{R}^{n \times k}$, trong đó $k \ll m, n$ là kích thước của nhân tố tiềm ẩn. Gọi $\mathbf{p}_u$ là hàng thứ $u^\textrm{th}$ của $\mathbf{P}$ và $\mathbf{q}_i$ là hàng thứ $i^\textrm{th}$ của $\mathbf{Q}$. Với một mặt hàng $i$ cho trước, các phần tử của $\mathbf{q}_i$ đo lường mức độ mặt hàng đó sở hữu những đặc điểm nhất định, chẳng hạn như thể loại và ngôn ngữ của một bộ phim. Với một người dùng $u$ cho trước, các phần tử của $\mathbf{p}_u$ đo lường mức độ quan tâm của người dùng đối với những đặc điểm tương ứng của các mặt hàng. Các nhân tố tiềm ẩn này có thể đo lường những khía cạnh dễ nhận biết như trong các ví dụ trên, hoặc hoàn toàn không thể diễn giải được. Các đánh giá dự đoán có thể được ước tính bằng
 
 $$\hat{\mathbf{R}} = \mathbf{PQ}^\top$$
 
-where $\hat{\mathbf{R}}\in \mathbb{R}^{m \times n}$ is the predicted rating matrix which has the same shape as $\mathbf{R}$. One major problem of this prediction rule is that users/items biases can not be modeled. For example, some users tend to give higher ratings or some items always get lower ratings due to poorer quality. These biases are commonplace in real-world applications. To capture these biases, user specific and item specific bias terms are introduced. Specifically, the predicted rating user $u$ gives to item $i$ is calculated by
+trong đó $\hat{\mathbf{R}}\in \mathbb{R}^{m \times n}$ là ma trận đánh giá dự đoán có cùng dạng với $\mathbf{R}$. Một vấn đề lớn của quy tắc dự đoán này là không thể mô hình hóa độ thiên lệch của người dùng/mặt hàng. Ví dụ, một số người dùng có xu hướng đưa ra đánh giá cao hơn, hoặc một số mặt hàng luôn nhận được đánh giá thấp hơn do chất lượng kém. Những độ thiên lệch này rất phổ biến trong các ứng dụng thực tế. Để nắm bắt các độ thiên lệch này, các hạng tử độ thiên lệch riêng cho người dùng và mặt hàng được đưa vào. Cụ thể, đánh giá dự đoán mà người dùng $u$ đưa ra cho mặt hàng $i$ được tính bằng
 
 $$
 \hat{\mathbf{R}}_{ui} = \mathbf{p}_u\mathbf{q}^\top_i + b_u + b_i
 $$
 
-Then, we train the matrix factorization model by minimizing the mean squared error between predicted rating scores and real rating scores.  The objective function is defined as follows:
+Sau đó, chúng ta huấn luyện mô hình phân rã ma trận bằng cách cực tiểu hóa sai số bình phương trung bình giữa điểm đánh giá dự đoán và điểm đánh giá thực tế. Hàm mục tiêu được định nghĩa như sau:
 
 $$
 \underset{\mathbf{P}, \mathbf{Q}, b}{\mathrm{argmin}} \sum_{(u, i) \in \mathcal{K}} \| \mathbf{R}_{ui} -
@@ -27,15 +24,15 @@ $$
 \|^2_F + b_u^2 + b_i^2 )
 $$
 
-where $\lambda$ denotes the regularization rate. The regularizing term $\lambda (\| \mathbf{P} \|^2_F + \| \mathbf{Q}
-\|^2_F + b_u^2 + b_i^2 )$ is used to avoid over-fitting by penalizing the magnitude of the parameters. The $(u, i)$ pairs for which $\mathbf{R}_{ui}$ is known are stored in the set
-$\mathcal{K}=\{(u, i) \mid \mathbf{R}_{ui} \textrm{ is known}\}$. The model parameters can be learned with an optimization algorithm, such as Stochastic Gradient Descent and Adam.
+trong đó $\lambda$ biểu thị hệ số regularization. Hạng tử regularization $\lambda (\| \mathbf{P} \|^2_F + \| \mathbf{Q}
+\|^2_F + b_u^2 + b_i^2 )$ được sử dụng để tránh over-fitting bằng cách phạt độ lớn của các tham số. Các cặp $(u, i)$ mà $\mathbf{R}_{ui}$ đã biết được lưu trong tập hợp
+$\mathcal{K}=\{(u, i) \mid \mathbf{R}_{ui} \textrm{ is known}\}$. Các tham số của mô hình có thể được học bằng một thuật toán tối ưu hóa, chẳng hạn như Stochastic Gradient Descent và Adam.
 
-An intuitive illustration of the matrix factorization model is shown below:
+Hình minh họa trực quan về mô hình phân rã ma trận được trình bày dưới đây:
 
-![Illustration of matrix factorization model](../img/rec-mf.svg)
+![Hình minh họa mô hình phân rã ma trận](../img/rec-mf.svg)
 
-In the rest of this section, we will explain the implementation of matrix factorization and train the model on the MovieLens dataset.
+Trong phần còn lại của phần này, chúng ta sẽ giải thích cách triển khai phân rã ma trận và huấn luyện mô hình trên tập dữ liệu MovieLens.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -46,9 +43,9 @@ import mxnet as mx
 npx.set_np()
 ```
 
-## Model Implementation
+## Triển khai mô hình
 
-First, we implement the matrix factorization model described above. The user and item latent factors can be created with the `nn.Embedding`. The `input_dim` is the number of items/users and the `output_dim` is the dimension of the latent factors $k$.  We can also use `nn.Embedding` to create the user/item biases by setting the `output_dim` to one. In the `forward` function, user and item ids are used to look up the embeddings.
+Trước tiên, chúng ta triển khai mô hình phân rã ma trận đã mô tả ở trên. Các nhân tố tiềm ẩn của người dùng và mặt hàng có thể được tạo bằng `nn.Embedding`. `input_dim` là số lượng mặt hàng/người dùng và `output_dim` là số chiều của các nhân tố tiềm ẩn $k$. Chúng ta cũng có thể sử dụng `nn.Embedding` để tạo các độ thiên lệch của người dùng/mặt hàng bằng cách đặt `output_dim` thành một. Trong hàm `forward`, các id của người dùng và mặt hàng được sử dụng để tra cứu các embedding.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -69,15 +66,15 @@ class MF(nn.Block):
         return outputs.flatten()
 ```
 
-## Evaluation Measures
+## Thước đo đánh giá
 
-We then implement the RMSE (root-mean-square error) measure, which is commonly used to measure the differences between rating scores predicted by the model and the actually observed ratings (ground truth) :cite:`Gunawardana.Shani.2015`. RMSE is defined as:
+Tiếp theo, chúng ta triển khai thước đo RMSE (root-mean-square error), thường được sử dụng để đo sự khác biệt giữa các điểm đánh giá do mô hình dự đoán và các đánh giá thực tế đã quan sát (ground truth) :cite:`Gunawardana.Shani.2015`. RMSE được định nghĩa như sau:
 
 $$
 \textrm{RMSE} = \sqrt{\frac{1}{|\mathcal{T}|}\sum_{(u, i) \in \mathcal{T}}(\mathbf{R}_{ui} -\hat{\mathbf{R}}_{ui})^2}
 $$
 
-where $\mathcal{T}$ is the set consisting of pairs of users and items that you want to evaluate on. $|\mathcal{T}|$ is the size of this set. We can use the RMSE function provided by `mx.metric`.
+trong đó $\mathcal{T}$ là tập hợp gồm các cặp người dùng và mặt hàng mà bạn muốn đánh giá. $|\mathcal{T}|$ là kích thước của tập hợp này. Chúng ta có thể sử dụng hàm RMSE do `mx.metric` cung cấp.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -94,10 +91,10 @@ def evaluator(net, test_iter, devices):
     return float(np.mean(np.array(rmse_list)))
 ```
 
-## Training and Evaluating the Model
+## Huấn luyện và đánh giá mô hình
 
 
-In the training function, we adopt the $\ell_2$ loss with weight decay. The weight decay mechanism has the same effect as the $\ell_2$ regularization.
+Trong hàm huấn luyện, chúng ta sử dụng loss $\ell_2$ với weight decay. Cơ chế weight decay có tác dụng tương tự như regularization $\ell_2$.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -139,7 +136,7 @@ def train_recsys_rating(net, train_iter, test_iter, loss, trainer, num_epochs,
           f'on {str(devices)}')
 ```
 
-Finally, let's put all things together and train the model. Here, we set the latent factor dimension to 30.
+Cuối cùng, hãy kết hợp tất cả các phần lại với nhau và huấn luyện mô hình. Ở đây, chúng ta đặt số chiều của nhân tố tiềm ẩn là 30.
 
 ```{.python .input  n=5}
 #@tab mxnet
@@ -156,7 +153,7 @@ train_recsys_rating(net, train_iter, test_iter, loss, trainer, num_epochs,
                     devices, evaluator)
 ```
 
-Below, we use the trained model to predict the rating that a user (ID 20) might give to an item (ID 30).
+Dưới đây, chúng ta sử dụng mô hình đã huấn luyện để dự đoán đánh giá mà một người dùng (ID 20) có thể đưa ra cho một mặt hàng (ID 30).
 
 ```{.python .input  n=6}
 #@tab mxnet
@@ -165,19 +162,19 @@ scores = net(np.array([20], dtype='int', ctx=devices[0]),
 scores
 ```
 
-## Summary
+## Tóm tắt
 
-* The matrix factorization model is widely used in recommender systems.  It can be used to predict ratings that a user might give to an item.
-* We can implement and train matrix factorization for recommender systems.
+* Mô hình phân rã ma trận được sử dụng rộng rãi trong các hệ thống gợi ý. Mô hình này có thể được sử dụng để dự đoán đánh giá mà người dùng có thể đưa ra cho một mặt hàng.
+* Chúng ta có thể triển khai và huấn luyện phân rã ma trận cho các hệ thống gợi ý.
 
 
-## Exercises
+## Bài tập
 
-* Vary the size of latent factors. How does the size of latent factors influence the model performance?
-* Try different optimizers, learning rates, and weight decay rates.
-* Check the predicted rating scores of other users for a specific movie.
+* Thay đổi kích thước của các nhân tố tiềm ẩn. Kích thước của các nhân tố tiềm ẩn ảnh hưởng như thế nào đến hiệu suất của mô hình?
+* Thử các optimizer, learning rate và weight decay rate khác nhau.
+* Kiểm tra các điểm đánh giá dự đoán của những người dùng khác đối với một bộ phim cụ thể.
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/400)
+[Thảo luận](https://discuss.d2l.ai/t/400)
 :end_tab:

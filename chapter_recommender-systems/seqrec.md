@@ -1,47 +1,47 @@
-# Sequence-Aware Recommender Systems
+# Hệ thống đề xuất có nhận biết trình tự
 
-In previous sections, we abstract the recommendation task as a matrix completion problem without considering users' short-term behaviors. In this section, we will introduce a recommendation model that takes  the sequentially-ordered user interaction logs into account.  It is a sequence-aware recommender :cite:`Quadrana.Cremonesi.Jannach.2018` where the input is an ordered and often timestamped list of past user actions.  A number of recent literatures have demonstrated the usefulness of incorporating such information in modeling users' temporal behavioral patterns and discovering their interest drift.
+Trong các phần trước, chúng ta trừu tượng hóa bài toán đề xuất thành bài toán hoàn thiện ma trận mà không xét đến hành vi ngắn hạn của người dùng. Trong phần này, chúng ta sẽ giới thiệu một mô hình đề xuất có tính đến các nhật ký tương tác của người dùng được sắp xếp theo trình tự. Đây là một hệ thống đề xuất có nhận biết trình tự :cite:`Quadrana.Cremonesi.Jannach.2018`, trong đó đầu vào là danh sách các hành động trước đây của người dùng được sắp xếp theo thứ tự và thường có kèm dấu thời gian. Nhiều nghiên cứu gần đây đã chứng minh tính hữu ích của việc đưa thông tin này vào mô hình hóa các mẫu hành vi theo thời gian của người dùng và phát hiện sự dịch chuyển trong mối quan tâm của họ.
 
-The model we will introduce, Caser :cite:`Tang.Wang.2018`, short for convolutional sequence embedding recommendation model, adopts convolutional neural networks capture the dynamic pattern influences of users' recent activities. The main component of Caser consists of a horizontal convolutional network and a vertical convolutional network, aiming to uncover the union-level and point-level sequence patterns, respectively.  Point-level pattern indicates the impact of single item in the historical sequence on the target item, while union level pattern implies the influences of several previous actions on the subsequent target. For example, buying both milk and butter together leads to higher probability of buying flour than just buying one of them. Moreover, users' general interests, or long term preferences are also modeled in the last fully connected layers, resulting in a more comprehensive modeling of user interests. Details of the model are described as follows.
+Mô hình chúng ta sẽ giới thiệu, Caser :cite:`Tang.Wang.2018`, viết tắt của convolutional sequence embedding recommendation model, sử dụng mạng nơ-ron tích chập để nắm bắt ảnh hưởng của các mẫu động trong những hoạt động gần đây của người dùng. Thành phần chính của Caser gồm một mạng tích chập ngang và một mạng tích chập dọc, lần lượt nhằm phát hiện các mẫu trình tự ở cấp độ tổ hợp và cấp độ điểm. Mẫu ở cấp độ điểm biểu thị ảnh hưởng của một mục đơn lẻ trong trình tự lịch sử đến mục tiêu, trong khi mẫu ở cấp độ tổ hợp biểu thị ảnh hưởng của một số hành động trước đó đến mục tiêu tiếp theo. Ví dụ, việc mua cả sữa và bơ cùng lúc dẫn đến xác suất mua bột mì cao hơn so với chỉ mua một trong hai món. Ngoài ra, mối quan tâm chung của người dùng, hay sở thích dài hạn, cũng được mô hình hóa trong các lớp kết nối đầy đủ cuối cùng, tạo ra mô hình hóa toàn diện hơn về mối quan tâm của người dùng. Chi tiết mô hình được mô tả như sau.
 
-## Model Architectures
+## Kiến trúc mô hình
 
-In sequence-aware recommendation system, each user is associated with a sequence of some items from the item set. Let $S^u = (S_1^u, ... S_{|S_u|}^u)$ denotes the ordered sequence. The goal of Caser is to recommend item by considering user general tastes as well as short-term intention. Suppose we take the previous $L$ items into consideration, an embedding matrix that represents the former interactions for time step $t$ can be constructed:
+Trong hệ thống đề xuất có nhận biết trình tự, mỗi người dùng được gắn với một trình tự gồm một số mục từ tập mục. Gọi $S^u = (S_1^u, ... S_{|S_u|}^u)$ là trình tự được sắp xếp theo thứ tự. Mục tiêu của Caser là đề xuất mục bằng cách xem xét cả sở thích chung và ý định ngắn hạn của người dùng. Giả sử chúng ta xem xét $L$ mục trước đó, một ma trận embedding biểu diễn các tương tác trước thời điểm $t$ có thể được xây dựng như sau:
 
 $$
 \mathbf{E}^{(u, t)} = [ \mathbf{q}_{S_{t-L}^u} , ..., \mathbf{q}_{S_{t-2}^u}, \mathbf{q}_{S_{t-1}^u} ]^\top,
 $$
 
-where $\mathbf{Q} \in \mathbb{R}^{n \times k}$ represents item embeddings and $\mathbf{q}_i$ denotes the $i^\textrm{th}$ row. $\mathbf{E}^{(u, t)} \in \mathbb{R}^{L \times k}$ can be used to infer the transient interest of user $u$ at time-step $t$. We can view the input matrix $\mathbf{E}^{(u, t)}$ as an image which is the input of the subsequent two convolutional components.
+trong đó $\mathbf{Q} \in \mathbb{R}^{n \times k}$ biểu diễn các embedding của mục và $\mathbf{q}_i$ biểu thị hàng thứ $i^\textrm{th}$. $\mathbf{E}^{(u, t)} \in \mathbb{R}^{L \times k}$ có thể được sử dụng để suy ra mối quan tâm nhất thời của người dùng $u$ tại thời điểm $t$. Chúng ta có thể xem ma trận đầu vào $\mathbf{E}^{(u, t)}$ như một hình ảnh, làm đầu vào cho hai thành phần tích chập tiếp theo.
 
-The horizontal convolutional layer has $d$ horizontal filters $\mathbf{F}^j \in \mathbb{R}^{h \times k}, 1 \leq j \leq d, h = \{1, ..., L\}$, and the vertical convolutional layer has $d'$ vertical filters $\mathbf{G}^j \in \mathbb{R}^{ L \times 1}, 1 \leq j \leq d'$. After a series of convolutional and pool operations, we get the two outputs:
+Lớp tích chập ngang có $d$ bộ lọc ngang $\mathbf{F}^j \in \mathbb{R}^{h \times k}, 1 \leq j \leq d, h = \{1, ..., L\}$, còn lớp tích chập dọc có $d'$ bộ lọc dọc $\mathbf{G}^j \in \mathbb{R}^{ L \times 1}, 1 \leq j \leq d'$. Sau một loạt phép tích chập và pooling, chúng ta thu được hai đầu ra:
 
 $$
 \mathbf{o} = \textrm{HConv}(\mathbf{E}^{(u, t)}, \mathbf{F}) \\
 \mathbf{o}'= \textrm{VConv}(\mathbf{E}^{(u, t)}, \mathbf{G}) ,
 $$
 
-where $\mathbf{o} \in \mathbb{R}^d$ is the output of horizontal convolutional network and $\mathbf{o}' \in \mathbb{R}^{kd'}$ is the output of vertical convolutional network. For simplicity, we omit the details of convolution and pool operations. They are concatenated and fed into a fully connected neural network layer to get more high-level representations.
+trong đó $\mathbf{o} \in \mathbb{R}^d$ là đầu ra của mạng tích chập ngang và $\mathbf{o}' \in \mathbb{R}^{kd'}$ là đầu ra của mạng tích chập dọc. Để đơn giản, chúng ta bỏ qua chi tiết của các phép tích chập và pooling. Hai đầu ra này được nối lại và đưa vào một lớp mạng nơ-ron kết nối đầy đủ để thu được các biểu diễn ở cấp độ cao hơn.
 
 $$
 \mathbf{z} = \phi(\mathbf{W}[\mathbf{o}, \mathbf{o}']^\top + \mathbf{b}),
 $$
 
-where $\mathbf{W} \in \mathbb{R}^{k \times (d + kd')}$ is the weight matrix and $\mathbf{b} \in \mathbb{R}^k$ is the bias. The learned vector $\mathbf{z} \in \mathbb{R}^k$ is the representation of user's short-term intent.
+trong đó $\mathbf{W} \in \mathbb{R}^{k \times (d + kd')}$ là ma trận trọng số và $\mathbf{b} \in \mathbb{R}^k$ là bias. Vector được học $\mathbf{z} \in \mathbb{R}^k$ là biểu diễn cho ý định ngắn hạn của người dùng.
 
-At last, the prediction function combines users' short-term and general taste together, which is defined as:
+Cuối cùng, hàm dự đoán kết hợp sở thích ngắn hạn và sở thích chung của người dùng, được định nghĩa như sau:
 
 $$
 \hat{y}_{uit} = \mathbf{v}_i \cdot [\mathbf{z}, \mathbf{p}_u]^\top + \mathbf{b}'_i,
 $$
 
-where $\mathbf{V} \in \mathbb{R}^{n \times 2k}$ is another item embedding matrix. $\mathbf{b}' \in \mathbb{R}^n$ is the item specific bias.  $\mathbf{P} \in \mathbb{R}^{m \times k}$ is the user embedding matrix for users' general tastes. $\mathbf{p}_u \in \mathbb{R}^{ k}$ is the $u^\textrm{th}$ row of $P$ and $\mathbf{v}_i \in \mathbb{R}^{2k}$ is the $i^\textrm{th}$ row of $\mathbf{V}$.
+trong đó $\mathbf{V} \in \mathbb{R}^{n \times 2k}$ là một ma trận embedding khác của mục. $\mathbf{b}' \in \mathbb{R}^n$ là bias riêng của mục. $\mathbf{P} \in \mathbb{R}^{m \times k}$ là ma trận embedding của người dùng, biểu diễn sở thích chung của người dùng. $\mathbf{p}_u \in \mathbb{R}^{ k}$ là hàng thứ $u^\textrm{th}$ của $P$ và $\mathbf{v}_i \in \mathbb{R}^{2k}$ là hàng thứ $i^\textrm{th}$ của $\mathbf{V}$.
 
-The model can be learned with BPR or Hinge loss. The architecture of Caser is shown below:
+Mô hình có thể được học bằng BPR hoặc Hinge loss. Kiến trúc của Caser được minh họa bên dưới:
 
-![Illustration of the Caser Model](../img/rec-caser.svg)
+![Minh họa mô hình Caser](../img/rec-caser.svg)
 
-We first import the required libraries.
+Trước tiên, chúng ta import các thư viện cần thiết.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -54,8 +54,8 @@ import random
 npx.set_np()
 ```
 
-## Model Implementation
-The following code implements the Caser model. It consists of a vertical convolutional layer, a horizontal convolutional layer, and a full-connected layer.
+## Triển khai mô hình
+Đoạn mã sau triển khai mô hình Caser. Mô hình gồm một lớp tích chập dọc, một lớp tích chập ngang và một lớp kết nối đầy đủ.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -105,10 +105,10 @@ class Caser(nn.Block):
         return res
 ```
 
-## Sequential Dataset with Negative Sampling
-To process the sequential interaction data, we need to reimplement the `Dataset` class. The following code creates a new dataset class named `SeqDataset`. In each sample, it outputs the user identity, his previous $L$ interacted items as a sequence and the next item he interacts as the target. The following figure demonstrates the data loading process for one user. Suppose that this user liked 9 movies, we organize these nine movies in chronological order. The latest movie is left out as the test item. For the remaining eight movies, we can get three training samples, with each sample containing a sequence of five ($L=5$) movies and its subsequent item as the target item. Negative samples are also included in the customized dataset.
+## Tập dữ liệu tuần tự với negative sampling
+Để xử lý dữ liệu tương tác tuần tự, chúng ta cần triển khai lại lớp `Dataset`. Đoạn mã sau tạo một lớp dataset mới có tên `SeqDataset`. Trong mỗi mẫu, lớp này xuất ra danh tính người dùng, $L$ mục mà người dùng đã tương tác trước đó dưới dạng một trình tự, và mục tiếp theo mà người dùng tương tác làm mục tiêu. Hình sau minh họa quy trình tải dữ liệu cho một người dùng. Giả sử người dùng này thích 9 bộ phim, chúng ta sắp xếp chín bộ phim theo thứ tự thời gian. Bộ phim mới nhất được giữ lại làm mục kiểm tra. Với tám bộ phim còn lại, chúng ta có thể tạo ba mẫu huấn luyện, trong đó mỗi mẫu chứa một trình tự gồm năm bộ phim ($L=5$) và mục tiếp theo của trình tự đó làm mục tiêu. Các mẫu âm cũng được đưa vào dataset tùy chỉnh.
 
-![Illustration of the data generation process](../img/rec-seq-data.svg)
+![Minh họa quy trình tạo dữ liệu](../img/rec-seq-data.svg)
 
 ```{.python .input  n=5}
 #@tab mxnet
@@ -165,9 +165,9 @@ class SeqDataset(gluon.data.Dataset):
                 neg[i])
 ```
 
-## Load the MovieLens 100K dataset
+## Tải dataset MovieLens 100K
 
-Afterwards, we read and split the MovieLens 100K dataset in sequence-aware mode and load the training data with sequential dataloader implemented above.
+Sau đó, chúng ta đọc và chia dataset MovieLens 100K ở chế độ có nhận biết trình tự, đồng thời tải dữ liệu huấn luyện bằng sequential dataloader đã triển khai ở trên.
 
 ```{.python .input  n=6}
 #@tab mxnet
@@ -188,10 +188,10 @@ test_seq_iter = train_seq_data.test_seq
 train_seq_data[0]
 ```
 
-The training data structure is shown above. The first element is the user identity, the next list indicates the last five items this user liked, and the last element is the item this user liked after the five items.
+Cấu trúc dữ liệu huấn luyện được minh họa ở trên. Phần tử đầu tiên là danh tính người dùng, danh sách tiếp theo biểu thị năm mục gần nhất mà người dùng này thích, còn phần tử cuối cùng là mục mà người dùng thích sau năm mục đó.
 
-## Train the Model
-Now, let's train the model. We use the same setting as NeuMF, including learning rate, optimizer, and $k$, in the last section so that the results are comparable.
+## Huấn luyện mô hình
+Bây giờ, hãy huấn luyện mô hình. Chúng ta sử dụng cùng thiết lập như NeuMF, bao gồm learning rate, optimizer và $k$, trong phần trước để kết quả có thể so sánh được.
 
 ```{.python .input  n=7}
 #@tab mxnet
@@ -207,17 +207,17 @@ trainer = gluon.Trainer(net.collect_params(), optimizer,
 # d2l.train_ranking(net, train_iter, test_iter, loss, trainer, test_seq_iter, num_users, num_items, num_epochs, devices, d2l.evaluate_ranking, candidates, eval_step=1)
 ```
 
-## Summary
-* Inferring a user's short-term and long-term interests can make prediction of the next item that he preferred more effectively.
-* Convolutional neural networks can be utilized to capture users' short-term interests from sequential interactions.
+## Tóm tắt
+* Suy luận sở thích ngắn hạn và dài hạn của người dùng có thể giúp dự đoán hiệu quả hơn mục tiếp theo mà họ sẽ yêu thích.
+* Mạng nơ-ron tích chập có thể được sử dụng để nắm bắt sở thích ngắn hạn của người dùng từ các tương tác tuần tự.
 
-## Exercises
+## Bài tập
 
-* Conduct an ablation study by removing one of the horizontal and vertical convolutional networks, which component is the more important ?
-* Vary the hyperparameter $L$. Does longer historical interactions bring higher accuracy?
-* Apart from the sequence-aware recommendation task we introduced above, there is another type of sequence-aware recommendation task called session-based recommendation :cite:`Hidasi.Karatzoglou.Baltrunas.ea.2015`. Can you explain the differences between these two tasks?
+* Thực hiện ablation study bằng cách loại bỏ một trong hai mạng tích chập ngang và dọc. Thành phần nào quan trọng hơn?
+* Thay đổi hyperparameter $L$. Liệu việc sử dụng lịch sử tương tác dài hơn có mang lại độ chính xác cao hơn không?
+* Ngoài bài toán đề xuất có nhận biết trình tự được giới thiệu ở trên, còn có một loại bài toán đề xuất có nhận biết trình tự khác gọi là session-based recommendation :cite:`Hidasi.Karatzoglou.Baltrunas.ea.2015`. Bạn có thể giải thích sự khác biệt giữa hai bài toán này không?
 
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/404)
+[Thảo luận](https://discuss.d2l.ai/t/404)
 :end_tab:

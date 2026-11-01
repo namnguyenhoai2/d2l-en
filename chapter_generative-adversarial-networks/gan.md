@@ -1,46 +1,46 @@
-# Generative Adversarial Networks
+# Mạng đối sinh
 :label:`sec_basic_gan`
 
-Throughout most of this book, we have talked about how to make predictions. In some form or another, we used deep neural networks to learn mappings from data examples to labels. This kind of learning is called discriminative learning, as in, we'd like to be able to discriminate between photos of cats and photos of dogs. Classifiers and regressors are both examples of discriminative learning. And neural networks trained by backpropagation have upended everything we thought we knew about discriminative learning on large complicated datasets. Classification accuracies on high-res images have gone from useless to human-level (with some caveats) in just 5-6 years. We will spare you another spiel about all the other discriminative tasks where deep neural networks do astoundingly well.
+Trong phần lớn cuốn sách này, chúng ta đã nói về cách đưa ra dự đoán. Dưới một hình thức nào đó, chúng ta sử dụng mạng neural sâu để học các ánh xạ từ các ví dụ dữ liệu đến các nhãn. Kiểu học này được gọi là học phân biệt (discriminative learning), vì chúng ta muốn có khả năng phân biệt ảnh mèo với ảnh chó. Bộ phân loại và bộ hồi quy đều là những ví dụ về học phân biệt. Các mạng neural được huấn luyện bằng lan truyền ngược đã làm thay đổi hoàn toàn mọi điều chúng ta từng biết về học phân biệt trên các tập dữ liệu lớn và phức tạp. Độ chính xác phân loại trên ảnh độ phân giải cao đã tăng từ mức vô dụng lên mức tương đương con người (với một số điều kiện) chỉ trong 5–6 năm. Chúng tôi sẽ không nhắc lại dài dòng về tất cả những tác vụ phân biệt khác mà mạng neural sâu thực hiện đáng kinh ngạc.
 
-But there is more to machine learning than just solving discriminative tasks. For example, given a large dataset, without any labels, we might want to learn a model that concisely captures the characteristics of this data. Given such a model, we could sample synthetic data examples that resemble the distribution of the training data. For example, given a large corpus of photographs of faces, we might want to be able to generate a new photorealistic image that looks like it might plausibly have come from the same dataset. This kind of learning is called generative modeling.
+Nhưng machine learning không chỉ có việc giải quyết các tác vụ phân biệt. Chẳng hạn, với một tập dữ liệu lớn không có nhãn, chúng ta có thể muốn học một mô hình nắm bắt ngắn gọn các đặc trưng của dữ liệu này. Với một mô hình như vậy, chúng ta có thể lấy mẫu các ví dụ dữ liệu tổng hợp giống với phân phối của dữ liệu huấn luyện. Ví dụ, với một kho ảnh khuôn mặt lớn, chúng ta có thể muốn tạo ra một ảnh mới có tính chân thực cao, trông như thể hợp lý là nó được lấy từ cùng tập dữ liệu đó. Kiểu học này được gọi là mô hình hóa sinh (generative modeling).
 
-Until recently, we had no method that could synthesize novel photorealistic images. But the success of deep neural networks for discriminative learning opened up new possibilities. One big trend over the last three years has been the application of discriminative deep nets to overcome challenges in problems that we do not generally think of as supervised learning problems. The recurrent neural network language models are one example of using a discriminative network (trained to predict the next character) that once trained can act as a generative model.
+Cho đến gần đây, chúng ta chưa có phương pháp nào có thể tổng hợp các ảnh mới có tính chân thực cao. Nhưng thành công của mạng neural sâu trong học phân biệt đã mở ra những khả năng mới. Một xu hướng lớn trong ba năm qua là áp dụng các deep net phân biệt để vượt qua những thách thức trong các bài toán mà chúng ta thường không xem là các bài toán học có giám sát. Các mô hình ngôn ngữ dùng mạng neural hồi quy là một ví dụ về việc sử dụng một mạng phân biệt (được huấn luyện để dự đoán ký tự tiếp theo) mà sau khi huấn luyện có thể hoạt động như một mô hình sinh.
 
-In 2014, a breakthrough paper introduced Generative adversarial networks (GANs) :cite:`Goodfellow.Pouget-Abadie.Mirza.ea.2014`, a clever new way to leverage the power of discriminative models to get good generative models. At their heart, GANs rely on the idea that a data generator is good if we cannot tell fake data apart from real data. In statistics, this is called a two-sample test - a test to answer the question whether datasets $X=\{x_1,\ldots, x_n\}$ and $X'=\{x'_1,\ldots, x'_n\}$ were drawn from the same distribution. The main difference between most statistics papers and GANs is that the latter use this idea in a constructive way. In other words, rather than just training a model to say "hey, these two datasets do not look like they came from the same distribution", they use the [two-sample test](https://en.wikipedia.org/wiki/Two-sample_hypothesis_testing) to provide training signals to a generative model. This allows us to improve the data generator until it generates something that resembles the real data. At the very least, it needs to fool the classifier even if our classifier is a state of the art deep neural network.
+Năm 2014, một bài báo mang tính đột phá đã giới thiệu mạng đối sinh (Generative adversarial networks, GANs) :cite:`Goodfellow.Pouget-Abadie.Mirza.ea.2014`, một cách thức mới đầy khéo léo để tận dụng sức mạnh của các mô hình phân biệt nhằm tạo ra các mô hình sinh tốt. Về bản chất, GAN dựa trên ý tưởng rằng một bộ sinh dữ liệu là tốt nếu chúng ta không thể phân biệt dữ liệu giả với dữ liệu thật. Trong thống kê, điều này được gọi là kiểm định hai mẫu (two-sample test) — một kiểm định nhằm trả lời câu hỏi liệu các tập dữ liệu $X=\{x_1,\ldots, x_n\}$ và $X'=\{x'_1,\ldots, x'_n\}$ có được lấy từ cùng một phân phối hay không. Điểm khác biệt chính giữa hầu hết các bài báo thống kê và GAN là GAN sử dụng ý tưởng này theo cách mang tính xây dựng. Nói cách khác, thay vì chỉ huấn luyện một mô hình để nói rằng “này, hai tập dữ liệu này trông không giống như được lấy từ cùng một phân phối”, chúng sử dụng kiểm định hai mẫu[](https://en.wikipedia.org/wiki/Two-sample_hypothesis_testing) để cung cấp tín hiệu huấn luyện cho một mô hình sinh. Điều này cho phép chúng ta cải thiện bộ sinh dữ liệu cho đến khi nó tạo ra thứ gì đó giống với dữ liệu thật. Ít nhất, nó cần đánh lừa được bộ phân loại, ngay cả khi bộ phân loại của chúng ta là một mạng neural sâu hiện đại nhất.
 
-![Generative Adversarial Networks](../img/gan.svg)
+![Mạng đối sinh](../img/gan.svg)
 :label:`fig_gan`
 
 
-The GAN architecture is illustrated in :numref:`fig_gan`.
-As you can see, there are two pieces in GAN architecture - first off, we need a device (say, a deep network but it really could be anything, such as a game rendering engine) that might potentially be able to generate data that looks just like the real thing. If we are dealing with images, this needs to generate images. If we are dealing with speech, it needs to generate audio sequences, and so on. We call this the generator network. The second component is the discriminator network. It attempts to distinguish fake and real data from each other. Both networks are in competition with each other. The generator network attempts to fool the discriminator network. At that point, the discriminator network adapts to the new fake data. This information, in turn is used to improve the generator network, and so on.
+Kiến trúc GAN được minh họa trong :numref:`fig_gan`.
+Như bạn có thể thấy, kiến trúc GAN gồm hai phần — trước hết, chúng ta cần một thiết bị (chẳng hạn một deep network, nhưng thực ra có thể là bất cứ thứ gì, như một game rendering engine) có khả năng tạo ra dữ liệu trông giống hệt dữ liệu thật. Nếu chúng ta làm việc với ảnh, thiết bị này cần tạo ra ảnh. Nếu chúng ta làm việc với tiếng nói, nó cần tạo ra các chuỗi âm thanh, v.v. Chúng ta gọi đây là generator network. Thành phần thứ hai là discriminator network. Nó cố gắng phân biệt dữ liệu giả và dữ liệu thật. Hai mạng cạnh tranh với nhau. Generator network cố gắng đánh lừa discriminator network. Khi đó, discriminator network thích ứng với dữ liệu giả mới. Đến lượt mình, thông tin này được sử dụng để cải thiện generator network, và cứ tiếp tục như vậy.
 
 
-The discriminator is a binary classifier to distinguish if the input $x$ is real (from real data) or fake (from the generator). Typically, the discriminator outputs a scalar prediction $o\in\mathbb R$ for input $\mathbf x$, such as using a fully connected layer with hidden size 1, and then applies sigmoid function to obtain the predicted probability $D(\mathbf x) = 1/(1+e^{-o})$. Assume the label $y$ for the true data is $1$ and $0$ for the fake data. We train the discriminator to minimize the cross-entropy loss, *i.e.*,
+Discriminator là một bộ phân loại nhị phân dùng để phân biệt đầu vào $x$ là thật (từ dữ liệu thật) hay giả (từ generator). Thông thường, discriminator xuất ra một dự đoán vô hướng $o\in\mathbb R$ cho đầu vào $\mathbf x$, chẳng hạn bằng cách sử dụng một fully connected layer có hidden size bằng 1, rồi áp dụng hàm sigmoid để thu được xác suất dự đoán $D(\mathbf x) = 1/(1+e^{-o})$. Giả sử nhãn $y$ của dữ liệu thật là $1$ và của dữ liệu giả là $0$. Chúng ta huấn luyện discriminator để tối thiểu hóa cross-entropy loss, *tức là*,
 
 $$ \min_D \{ - y \log D(\mathbf x) - (1-y)\log(1-D(\mathbf x)) \},$$
 
-For the generator, it first draws some parameter $\mathbf z\in\mathbb R^d$ from a source of randomness, *e.g.*, a normal distribution $\mathbf z \sim \mathcal{N} (0, 1)$. We often call $\mathbf z$ as the latent variable.
-It then applies a function to generate $\mathbf x'=G(\mathbf z)$. The goal of the generator is to fool the discriminator to classify $\mathbf x'=G(\mathbf z)$ as true data, *i.e.*, we want $D( G(\mathbf z)) \approx 1$.
-In other words, for a given discriminator $D$, we update the parameters of the generator $G$ to maximize the cross-entropy loss when $y=0$, *i.e.*,
+Đối với generator, trước hết nó lấy một tham số $\mathbf z\in\mathbb R^d$ từ một nguồn ngẫu nhiên, *ví dụ*, một phân phối chuẩn $\mathbf z \sim \mathcal{N} (0, 1)$. Chúng ta thường gọi $\mathbf z$ là latent variable.
+Sau đó, nó áp dụng một hàm để tạo ra $\mathbf x'=G(\mathbf z)$. Mục tiêu của generator là đánh lừa discriminator để phân loại $\mathbf x'=G(\mathbf z)$ là dữ liệu thật, *tức là*, chúng ta muốn $D( G(\mathbf z)) \approx 1$.
+Nói cách khác, với một discriminator $D$ cho trước, chúng ta cập nhật các tham số của generator $G$ để tối đa hóa cross-entropy loss khi $y=0$, *tức là*,
 
 $$ \max_G \{ - (1-y) \log(1-D(G(\mathbf z))) \} = \max_G \{ - \log(1-D(G(\mathbf z))) \}.$$
 
-If the generator does a perfect job, then $D(\mathbf x')\approx 1$, so the above loss is near 0, which results in the gradients that are too small to make good progress for the discriminator. So commonly, we minimize the following loss:
+Nếu generator thực hiện hoàn hảo, thì $D(\mathbf x')\approx 1$, do đó loss ở trên gần bằng 0, dẫn đến các gradient quá nhỏ để discriminator có thể tiến bộ hiệu quả. Vì vậy, chúng ta thường tối thiểu hóa loss sau:
 
 $$ \min_G \{ - y \log(D(G(\mathbf z))) \} = \min_G \{ - \log(D(G(\mathbf z))) \}, $$
 
-which is just feeding $\mathbf x'=G(\mathbf z)$ into the discriminator but giving label $y=1$.
+tức là chỉ đưa $\mathbf x'=G(\mathbf z)$ vào discriminator nhưng gán nhãn $y=1$.
 
 
-To sum up, $D$ and $G$ are playing a "minimax" game with the comprehensive objective function:
+Tóm lại, $D$ và $G$ đang chơi một trò chơi “minimax” với hàm mục tiêu tổng quát:
 
 $$\min_D \max_G \{ -E_{x \sim \textrm{Data}} \log D(\mathbf x) - E_{z \sim \textrm{Noise}} \log(1 - D(G(\mathbf z))) \}.$$
 
 
 
-Many of the GANs applications are in the context of images. As a demonstration purpose, we are going to content ourselves with fitting a much simpler distribution first. We will illustrate what happens if we use GANs to build the world's most inefficient estimator of parameters for a Gaussian. Let's get started.
+Nhiều ứng dụng của GAN nằm trong lĩnh vực ảnh. Để minh họa, trước tiên chúng ta sẽ hài lòng với việc khớp một phân phối đơn giản hơn nhiều. Chúng ta sẽ minh họa điều gì xảy ra khi sử dụng GAN để xây dựng bộ ước lượng tham số kém hiệu quả nhất thế giới cho một Gaussian. Hãy bắt đầu.
 
 ```{.python .input}
 #@tab mxnet
@@ -65,9 +65,9 @@ from d2l import tensorflow as d2l
 import tensorflow as tf
 ```
 
-## Generate Some "Real" Data
+## Tạo một số dữ liệu “thật”
 
-Since this is going to be the world's lamest example, we simply generate data drawn from a Gaussian.
+Vì đây sẽ là ví dụ ngớ ngẩn nhất thế giới, chúng ta chỉ cần tạo dữ liệu được lấy từ một Gaussian.
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -85,7 +85,7 @@ b = d2l.tensor([1, 2], tf.float32)
 data = d2l.matmul(X, A) + b
 ```
 
-Let's see what we got. This should be a Gaussian shifted in some rather arbitrary way with mean $b$ and covariance matrix $A^TA$.
+Hãy xem chúng ta thu được gì. Đây sẽ là một Gaussian được dịch chuyển theo một cách khá tùy ý, với trung bình $b$ và ma trận hiệp phương sai $A^TA$.
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -109,7 +109,7 @@ data_iter = d2l.load_array((data,), batch_size)
 
 ## Generator
 
-Our generator network will be the simplest network possible - a single layer linear model. This is since we will be driving that linear network with a Gaussian data generator. Hence, it literally only needs to learn the parameters to fake things perfectly.
+Generator network của chúng ta sẽ là mạng đơn giản nhất có thể — một mô hình tuyến tính một layer. Lý do là chúng ta sẽ điều khiển mạng tuyến tính đó bằng một bộ sinh dữ liệu Gaussian. Vì vậy, theo đúng nghĩa đen, nó chỉ cần học các tham số để tạo ra dữ liệu giả hoàn hảo.
 
 ```{.python .input}
 #@tab mxnet
@@ -129,7 +129,7 @@ net_G = tf.keras.layers.Dense(2)
 
 ## Discriminator
 
-For the discriminator we will be a bit more discriminating: we will use an MLP with 3 layers to make things a bit more interesting.
+Với discriminator, chúng ta sẽ phân biệt kỹ hơn một chút: chúng ta sẽ sử dụng một MLP gồm 3 layer để mọi thứ thú vị hơn.
 
 ```{.python .input}
 #@tab mxnet
@@ -156,9 +156,9 @@ net_D = tf.keras.models.Sequential([
 ])
 ```
 
-## Training
+## Huấn luyện
 
-First we define a function to update the discriminator.
+Trước tiên, chúng ta định nghĩa một hàm để cập nhật discriminator.
 
 ```{.python .input}
 #@tab mxnet
@@ -222,7 +222,7 @@ def update_D(X, Z, net_D, net_G, loss, optimizer_D):
     return loss_D
 ```
 
-The generator is updated similarly. Here we reuse the cross-entropy loss but change the label of the fake data from $0$ to $1$.
+Generator được cập nhật tương tự. Ở đây, chúng ta sử dụng lại cross-entropy loss nhưng thay đổi nhãn của dữ liệu giả từ $0$ thành $1$.
 
 ```{.python .input}
 #@tab mxnet
@@ -279,7 +279,7 @@ def update_G(Z, net_D, net_G, loss, optimizer_G):
     return loss_G
 ```
 
-Both the discriminator and the generator performs a binary logistic regression with the cross-entropy loss. We use Adam to smooth the training process. In each iteration, we first update the discriminator and then the generator. We visualize both losses and generated examples.
+Cả discriminator và generator đều thực hiện hồi quy logistic nhị phân với cross-entropy loss. Chúng ta sử dụng Adam để làm mượt quá trình huấn luyện. Trong mỗi vòng lặp, trước tiên chúng ta cập nhật discriminator, sau đó cập nhật generator. Chúng ta trực quan hóa cả hai loss và các ví dụ được tạo ra.
 
 ```{.python .input}
 #@tab mxnet
@@ -399,7 +399,7 @@ def train(net_D, net_G, data_iter, num_epochs, lr_D, lr_G, latent_dim, data):
           f'{metric[2] / timer.stop():.1f} examples/sec')
 ```
 
-Now we specify the hyperparameters to fit the Gaussian distribution.
+Bây giờ, chúng ta chỉ định các hyperparameter để khớp phân phối Gaussian.
 
 ```{.python .input}
 #@tab all
@@ -408,20 +408,20 @@ train(net_D, net_G, data_iter, num_epochs, lr_D, lr_G,
       latent_dim, d2l.numpy(data[:100]))
 ```
 
-## Summary
+## Tóm tắt
 
-* Generative adversarial networks (GANs) composes of two deep networks, the generator and the discriminator.
-* The generator generates the image as much closer to the true image as possible to fool the discriminator, via maximizing the cross-entropy loss, *i.e.*, $\max \log(D(\mathbf{x'}))$.
-* The discriminator tries to distinguish the generated images from the true images, via minimizing the cross-entropy loss, *i.e.*, $\min - y \log D(\mathbf{x}) - (1-y)\log(1-D(\mathbf{x}))$.
+* Mạng đối sinh (GAN) gồm hai mạng sâu: generator và discriminator.
+* Generator tạo ra ảnh càng gần với ảnh thật càng tốt để đánh lừa discriminator, bằng cách tối đa hóa cross-entropy loss, *tức là*, $\max \log(D(\mathbf{x'}))$.
+* Discriminator cố gắng phân biệt ảnh được tạo ra với ảnh thật, bằng cách tối thiểu hóa cross-entropy loss, *tức là*, $\min - y \log D(\mathbf{x}) - (1-y)\log(1-D(\mathbf{x}))$.
 
-## Exercises
+## Bài tập
 
-* Does an equilibrium exist where the generator wins, *i.e.* the discriminator ends up unable to distinguish the two distributions on finite samples?
+* Có tồn tại một trạng thái cân bằng trong đó generator chiến thắng hay không, *tức là*, discriminator cuối cùng không thể phân biệt hai phân phối trên các mẫu hữu hạn?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/408)
+[Thảo luận](https://discuss.d2l.ai/t/408)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1082)
+[Thảo luận](https://discuss.d2l.ai/t/1082)
 :end_tab:

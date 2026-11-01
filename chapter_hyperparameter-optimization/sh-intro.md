@@ -3,42 +3,42 @@
 tab.interact_select(["pytorch"])
 ```
 
-# Multi-Fidelity Hyperparameter Optimization
+# Tối ưu hóa siêu tham số đa độ trung thực
 :label:`sec_mf_hpo`
 
-Training neural networks can be expensive even on moderate size datasets.
-Depending on the configuration space (:numref:`sec_intro_config_spaces`),
-hyperparameter optimization requires tens to hundreds of function evaluations
-to find a well-performing hyperparameter configuration. As we have seen in
-:numref:`sec_rs_async`, we can significantly speed up the overall wall-clock
-time of HPO by exploiting parallel resources, but this does not reduce the total
-amount of compute required.
+Huấn luyện mạng nơ-ron có thể tốn kém ngay cả trên các tập dữ liệu có kích thước vừa phải.
+Tùy thuộc vào không gian cấu hình (:numref:`sec_intro_config_spaces`),
+tối ưu hóa siêu tham số đòi hỏi từ hàng chục đến hàng trăm lần đánh giá hàm
+để tìm được một cấu hình siêu tham số hoạt động tốt. Như đã thấy trong
+:numref:`sec_rs_async`, chúng ta có thể tăng tốc đáng kể tổng thời gian thực
+của HPO bằng cách khai thác các tài nguyên song song, nhưng điều này không làm giảm
+tổng lượng tính toán cần thiết.
 
-In this section, we will show how the evaluation of hyperparameter configurations
-can be sped up. Methods such as random search allocate the same amount of
-resources (e.g., number of epochs, training data points) to each hyperparameter
-evaluation. :numref:`img_samples_lc` depicts learning curves of a set of neural
-networks trained with different hyperparameter configurations. After a few epochs we are
-already able to visually distinguish between well-performing and suboptimal
-configurations. However, the learning curves are noisy, and we might still require
-the full amount of 100 epochs to identify the best performing one.
+Trong phần này, chúng ta sẽ chỉ ra cách có thể tăng tốc việc đánh giá các cấu hình
+siêu tham số. Những phương pháp như random search phân bổ cùng một lượng
+tài nguyên (ví dụ: số epoch, số điểm dữ liệu huấn luyện) cho mỗi lần đánh giá
+siêu tham số. :numref:`img_samples_lc` minh họa các đường cong học của một tập mạng nơ-ron
+được huấn luyện với các cấu hình siêu tham số khác nhau. Chỉ sau vài epoch, chúng ta
+đã có thể phân biệt trực quan giữa các cấu hình hoạt động tốt và các cấu hình
+dưới tối ưu. Tuy nhiên, các đường cong học có nhiễu, và chúng ta vẫn có thể cần
+đủ 100 epoch để xác định cấu hình hoạt động tốt nhất.
 
-![Learning curves of random hyperparameter configurations](../img/samples_lc.svg)
+![Các đường cong học của các cấu hình siêu tham số ngẫu nhiên](../img/samples_lc.svg)
 :label:`img_samples_lc`
 
-Multi-fidelity hyperparameter optimization allocates more resources
-to promising configurations and stop evaluations of poorly performing ones early.
-This speeds up the optimization process, since we can try a larger number of
-configurations for the same total amount of resources.
+Tối ưu hóa siêu tham số đa độ trung thực phân bổ nhiều tài nguyên hơn
+cho các cấu hình đầy hứa hẹn và dừng sớm việc đánh giá các cấu hình hoạt động kém.
+Điều này tăng tốc quá trình tối ưu hóa, vì chúng ta có thể thử số lượng cấu hình lớn hơn
+với cùng tổng lượng tài nguyên.
 
-More formally, we expand our definition in :numref:`sec_definition_hpo`,
-such that our objective function $f(\mathbf{x}, r)$ gets an additional input
-$r \in [r_{\mathrm{min}}, r_{max}]$, specifying the amount of resources that we are
-willing to spend for the evaluation of configuration $\mathbf{x}$. We assume that
-the error $f(\mathbf{x}, r)$ decreases with $r$, whereas the computational
-cost $c(\mathbf{x}, r)$ increases. Typically, $r$ represents the number of
-epochs for training the neural network, but it could also be the training
-subset size or the number of cross-validation folds.
+Trang trọng hơn, chúng ta mở rộng định nghĩa trong :numref:`sec_definition_hpo`,
+sao cho hàm mục tiêu $f(\mathbf{x}, r)$ của chúng ta nhận thêm một đầu vào
+$r \in [r_{\mathrm{min}}, r_{max}]$, chỉ định lượng tài nguyên mà chúng ta
+sẵn sàng chi cho việc đánh giá cấu hình $\mathbf{x}$. Chúng ta giả định rằng
+lỗi $f(\mathbf{x}, r)$ giảm theo $r$, trong khi chi phí
+tính toán $c(\mathbf{x}, r)$ tăng. Thông thường, $r$ biểu thị số
+epoch để huấn luyện mạng nơ-ron, nhưng cũng có thể là kích thước tập con huấn luyện
+hoặc số fold cross-validation.
 
 ```{.python .input}
 %%tab pytorch
@@ -52,41 +52,41 @@ d2l.set_figsize()
 ## Successive Halving
 :label:`sec_mf_hpo_sh`
 
-One of the simplest ways to adapt random search to the multi-fidelity setting is
-*successive halving* :cite:`jamieson-aistats16,karnin-icml13`. The basic
-idea is to start with $N$ configurations, for example randomly sampled from the
-configuration space, and to train each of them for $r_{\mathrm{min}}$ epochs only. We
-then discard a fraction of the worst performing trials and train the remaining
-ones for longer. Iterating this process, fewer trials run for longer, until at
-least one trial reaches $r_{max}$ epochs.
+Một trong những cách đơn giản nhất để điều chỉnh random search cho bối cảnh
+đa độ trung thực là *successive halving* :cite:`jamieson-aistats16,karnin-icml13`. Ý tưởng
+cơ bản là bắt đầu với $N$ cấu hình, chẳng hạn được lấy mẫu ngẫu nhiên từ
+không gian cấu hình, và chỉ huấn luyện mỗi cấu hình trong $r_{\mathrm{min}}$ epoch. Sau đó,
+chúng ta loại bỏ một phần các trial hoạt động kém nhất và huấn luyện các trial
+còn lại lâu hơn. Lặp lại quá trình này, số trial chạy lâu hơn sẽ ít dần, cho đến khi
+ít nhất một trial đạt $r_{max}$ epoch.
 
-More formally, consider a minimum budget $r_{\mathrm{min}}$ (for example 1 epoch), a maximum
-budget $r_{max}$, for example `max_epochs` in our previous example, and a halving
-constant $\eta\in\{2, 3, \dots\}$. For simplicity, assume that
-$r_{max} = r_{\mathrm{min}} \eta^K$, with $K \in \mathbb{I}$ . The number of initial
-configurations is then $N = \eta^K$. Let us define the set of rungs
+Trang trọng hơn, xét ngân sách tối thiểu $r_{\mathrm{min}}$ (ví dụ: 1 epoch), ngân sách
+tối đa $r_{max}$, chẳng hạn `max_epochs` trong ví dụ trước, và hằng số chia đôi
+$\eta\in\{2, 3, \dots\}$. Để đơn giản, giả sử rằng
+$r_{max} = r_{\mathrm{min}} \eta^K$, với $K \in \mathbb{I}$. Khi đó, số cấu hình
+ban đầu là $N = \eta^K$. Hãy định nghĩa tập các rung
 $\mathcal{R} = \{ r_{\mathrm{min}}, r_{\mathrm{min}}\eta, r_{\mathrm{min}}\eta^2, \dots, r_{max} \}$.
 
-One round of successive halving proceeds as follows. We start with running $N$
-trials until the first rung $r_{\mathrm{min}}$. Sorting the validation errors, we keep
-the top $1 / \eta$ fraction (which amounts to $\eta^{K-1}$ configurations) and
-discard all the rest. The surviving trials are trained for the next rung
-($r_{\mathrm{min}}\eta$ epochs), and the process is repeated. At each rung, a
-$1 / \eta$ fraction of trials survives and their training continues with a
-$\eta$ times larger budget. With this particular choice of $N$, only a single
-trial will be trained to the full budget $r_{max}$. Once such a round of
-successive halving is done, we start the next one with a new set of initial
-configurations, iterating until the total budget is spent.
+Một vòng successive halving diễn ra như sau. Chúng ta bắt đầu bằng cách chạy $N$
+trial đến rung đầu tiên $r_{\mathrm{min}}$. Sau khi sắp xếp các lỗi validation, chúng ta giữ lại
+phần $1 / \eta$ đứng đầu (tương ứng với $\eta^{K-1}$ cấu hình) và
+loại bỏ tất cả phần còn lại. Các trial còn sống sót được huấn luyện đến rung tiếp theo
+($r_{\mathrm{min}}\eta$ epoch), và quá trình được lặp lại. Tại mỗi rung,
+một phần $1 / \eta$ số trial sống sót và quá trình huấn luyện của chúng tiếp tục với
+ngân sách lớn hơn $\eta$ lần. Với lựa chọn $N$ cụ thể này, chỉ một
+trial duy nhất sẽ được huấn luyện đến ngân sách đầy đủ $r_{max}$. Khi một vòng
+successive halving hoàn tất, chúng ta bắt đầu vòng tiếp theo với một tập cấu hình
+ban đầu mới, lặp lại cho đến khi tổng ngân sách được sử dụng hết.
 
-![Learning curves of random hyperparameter configurations.](../img/sh.svg)
+![Các đường cong học của các cấu hình siêu tham số ngẫu nhiên.](../img/sh.svg)
 
-We subclass the `HPOScheduler` base class from :numref:`sec_api_hpo` in order to
-implement successive halving, allowing for a generic `HPOSearcher` object to
-sample configurations (which, in our example below, will be a `RandomSearcher`).
-Additionally, the user has to pass the minimum resource $r_{\mathrm{min}}$, the maximum
-resource $r_{max}$ and $\eta$ as input. Inside our scheduler, we maintain a
-queue of configurations that still need to be evaluated for the current rung
-$r_i$. We update the queue every time we jump to the next rung.
+Chúng ta kế thừa lớp cơ sở `HPOScheduler` từ :numref:`sec_api_hpo` để
+triển khai successive halving, cho phép một đối tượng `HPOSearcher` tổng quát
+lấy mẫu các cấu hình (trong ví dụ dưới đây của chúng ta, đối tượng này sẽ là một `RandomSearcher`).
+Ngoài ra, người dùng phải truyền vào tài nguyên tối thiểu $r_{\mathrm{min}}$, tài nguyên tối đa
+$r_{max}$ và $\eta$. Bên trong scheduler, chúng ta duy trì một
+hàng đợi các cấu hình vẫn cần được đánh giá cho rung hiện tại $r_i$.
+Chúng ta cập nhật hàng đợi mỗi khi chuyển sang rung tiếp theo.
 
 ```{.python .input  n=2}
 class SuccessiveHalvingScheduler(d2l.HPOScheduler):  #@save
@@ -107,16 +107,16 @@ class SuccessiveHalvingScheduler(d2l.HPOScheduler):  #@save
         self.queue = []
 ```
 
-In the beginning our queue is empty, and we fill it with
-$n = \textrm{prefact} \cdot \eta^{K}$ configurations, which are first evaluated on
-the smallest rung $r_{\mathrm{min}}$. Here, $\textrm{prefact}$ allows us to reuse our
-code in a different context. For the purpose of this section, we fix
-$\textrm{prefact} = 1$. Every time resources become available and the `HPOTuner`
-object queries the `suggest` function, we return an element from the queue. Once
-we finish one round of successive halving, which means that we evaluated all
-surviving configurations on the highest resource level $r_{max}$ and our queue
-is empty, we start the entire process again with a new, randomly sampled set
-of configurations.
+Ban đầu, hàng đợi của chúng ta trống, và chúng ta điền vào đó
+$n = \textrm{prefact} \cdot \eta^{K}$ cấu hình, trước tiên được đánh giá tại
+rung nhỏ nhất $r_{\mathrm{min}}$. Ở đây, $\textrm{prefact}$ cho phép chúng ta tái sử dụng
+mã trong một ngữ cảnh khác. Trong phần này, chúng ta cố định
+$\textrm{prefact} = 1$. Mỗi khi tài nguyên trở nên khả dụng và đối tượng `HPOTuner`
+truy vấn hàm `suggest`, chúng ta trả về một phần tử từ hàng đợi. Khi
+hoàn thành một vòng successive halving, nghĩa là chúng ta đã đánh giá tất cả
+cấu hình còn sống sót ở mức tài nguyên cao nhất $r_{max}$ và hàng đợi
+của chúng ta trống, chúng ta lại bắt đầu toàn bộ quá trình với một tập cấu hình
+mới được lấy mẫu ngẫu nhiên.
 
 ```{.python .input  n=12}
 %%tab pytorch
@@ -134,10 +134,10 @@ def suggest(self):
     return self.queue.pop()
 ```
 
-When we collected a new data point, we first update the searcher module.
-Afterwards we check if we already collect all data points on the current rung.
-If so, we sort all configurations and push the top $\frac{1}{\eta}$
-configurations into the queue.
+Khi thu thập một điểm dữ liệu mới, trước tiên chúng ta cập nhật mô-đun searcher.
+Sau đó, chúng ta kiểm tra xem đã thu thập đủ tất cả điểm dữ liệu tại rung hiện tại hay chưa.
+Nếu có, chúng ta sắp xếp tất cả cấu hình và đưa $\frac{1}{\eta}$
+cấu hình đứng đầu vào hàng đợi.
 
 ```{.python .input  n=4}
 %%tab pytorch
@@ -171,8 +171,7 @@ def update(self, config: dict, error: float, info=None):
             self.observed_error_at_rungs[ri] = []  # Reset
 ```
 
-Configurations are sorted based on their observed performance on the current
-rung.
+Các cấu hình được sắp xếp dựa trên hiệu năng quan sát được của chúng tại rung hiện tại.
 
 ```{.python .input  n=4}
 %%tab pytorch
@@ -186,8 +185,8 @@ def get_top_n_configurations(self, rung_level, n):
     return [x[0] for x in sorted_rung[:n]]
 ```
 
-Let us see how successive halving is doing on our neural network example. We
-will use $r_{\mathrm{min}} = 2$, $\eta = 2$, $r_{max} = 10$, so that rung levels are
+Hãy xem successive halving hoạt động thế nào trên ví dụ mạng nơ-ron của chúng ta. Chúng ta
+sẽ sử dụng $r_{\mathrm{min}} = 2$, $\eta = 2$, $r_{max} = 10$, để các mức rung là
 $2, 4, 8, 10$.
 
 ```{.python .input  n=5}
@@ -206,7 +205,7 @@ initial_config = {
 }
 ```
 
-We just replace the scheduler with our new `SuccessiveHalvingScheduler`.
+Chúng ta chỉ cần thay scheduler bằng `SuccessiveHalvingScheduler` mới.
 
 ```{.python .input  n=14}
 searcher = d2l.RandomSearcher(config_space, initial_config=initial_config)
@@ -223,10 +222,10 @@ tuner = d2l.HPOTuner(
 tuner.run(number_of_trials=30)
 ```
 
-We can visualize the learning curves of all configurations that we evaluated.
-Most of the configurations are stopped early and only the better performing
-configurations survive until $r_{max}$. Compare this to vanilla random search,
-which would allocate $r_{max}$ to every configuration.
+Chúng ta có thể trực quan hóa các đường cong học của tất cả cấu hình đã đánh giá.
+Hầu hết cấu hình bị dừng sớm và chỉ các cấu hình hoạt động tốt hơn
+mới sống sót đến $r_{max}$. Hãy so sánh điều này với random search thông thường,
+vốn sẽ phân bổ $r_{max}$ cho mọi cấu hình.
 
 ```{.python .input  n=19}
 for rung_index, rung in scheduler.all_observed_error_at_rungs.items():
@@ -241,31 +240,30 @@ d2l.plt.ylabel("validation error")
 d2l.plt.xlabel("epochs")
 ```
 
-Finally, note some slight complexity in our implementation of
-`SuccessiveHalvingScheduler`. Say that a worker is free to run a job, and
-`suggest` is called when the current rung has almost been completely filled, but
-another worker is still busy with an evaluation. Since we lack the metric value
-from this worker, we cannot determine the top $1 / \eta$ fraction to open up
-the next rung. On the other hand, we want to assign a job to our free worker,
-so it does not remain idle. Our solution is to start a new round of successive
-halving and assign our worker to the first trial there. However, once a rung is
-completed in `update`, we make sure to insert new configurations at the
-beginning of the queue, so they take precedence over configurations from the
-next round.
+Cuối cùng, hãy lưu ý một chút phức tạp trong cách triển khai
+`SuccessiveHalvingScheduler` của chúng ta. Giả sử một worker rảnh để chạy một job, và
+`suggest` được gọi khi rung hiện tại gần như đã được lấp đầy hoàn toàn, nhưng
+một worker khác vẫn đang bận đánh giá. Vì thiếu giá trị metric từ worker này,
+chúng ta không thể xác định phần $1 / \eta$ đứng đầu để mở rung tiếp theo.
+Mặt khác, chúng ta muốn giao một job cho worker đang rảnh để nó không bị nhàn rỗi.
+Giải pháp của chúng ta là bắt đầu một vòng successive halving mới và giao
+worker cho trial đầu tiên trong vòng đó. Tuy nhiên, khi một rung được hoàn thành trong
+`update`, chúng ta đảm bảo chèn các cấu hình mới vào đầu hàng đợi,
+để chúng được ưu tiên hơn các cấu hình từ vòng tiếp theo.
 
-## Summary
+## Tóm tắt
 
-In this section, we introduced the concept of multi-fidelity hyperparameter
-optimization, where we assume to have access to cheap-to-evaluate approximations
-of the objective function, such as validation error after a certain number of
-epochs of training as proxy to validation error after the full number of epochs.
-Multi-fidelity hyperparameter optimization allows to reduce the overall
-computation of the HPO instead of just reducing the wall-clock time.
+Trong phần này, chúng ta đã giới thiệu khái niệm tối ưu hóa siêu tham số đa độ
+trung thực, trong đó chúng ta giả định có quyền truy cập vào các xấp xỉ của hàm mục tiêu
+có chi phí đánh giá thấp, chẳng hạn lỗi validation sau một số epoch huấn luyện nhất định
+được dùng làm đại diện cho lỗi validation sau toàn bộ số epoch.
+Tối ưu hóa siêu tham số đa độ trung thực giúp giảm tổng lượng tính toán của HPO
+thay vì chỉ giảm thời gian thực.
 
-We implemented and evaluated successive halving, a simple yet efficient
-multi-fidelity HPO algorithm.
+Chúng ta đã triển khai và đánh giá successive halving, một thuật toán HPO đa độ
+trung thực đơn giản nhưng hiệu quả.
 
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/12094)
+[Thảo luận](https://discuss.d2l.ai/t/12094)
 :end_tab:

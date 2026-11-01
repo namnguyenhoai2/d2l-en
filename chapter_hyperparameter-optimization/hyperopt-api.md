@@ -3,23 +3,23 @@
 tab.interact_select(["pytorch"])
 ```
 
-# Hyperparameter Optimization API
+# API Tối ưu hóa Siêu tham số
 :label:`sec_api_hpo`
 
-Before we dive into the methodology, we will first discuss a basic code
-structure that allows us to efficiently implement various HPO algorithms. In
-general, all HPO algorithms considered here need to implement two decision
-making primitives, *searching* and *scheduling*. First, they need to sample new
-hyperparameter configurations, which often involves some kind of search over the
-configuration space. Second, for each configuration, an HPO algorithm needs to
-schedule its evaluation and decide how many resources to allocate for it. Once
-we start to evaluate a configuration, we will refer to it as a *trial*. We map
-these decisions to two classes, `HPOSearcher` and `HPOScheduler`. On top of that,
-we also provide a `HPOTuner` class that executes the optimization process.
+Trước khi đi sâu vào phương pháp, trước hết chúng ta sẽ thảo luận về một cấu trúc
+mã cơ bản cho phép triển khai hiệu quả nhiều thuật toán HPO. Nhìn chung, tất cả
+các thuật toán HPO được xem xét ở đây cần triển khai hai primitive ra quyết định,
+*searching* và *scheduling*. Thứ nhất, chúng cần lấy mẫu các cấu hình siêu tham
+số mới, thường liên quan đến một dạng tìm kiếm trong không gian cấu hình. Thứ
+hai, với mỗi cấu hình, một thuật toán HPO cần lập lịch cho việc đánh giá cấu hình
+đó và quyết định lượng tài nguyên cần phân bổ cho nó. Khi bắt đầu đánh giá một
+cấu hình, chúng ta sẽ gọi cấu hình đó là một *trial*. Chúng ta ánh xạ các quyết
+định này vào hai lớp, `HPOSearcher` và `HPOScheduler`. Ngoài ra,
+chúng ta cũng cung cấp một lớp `HPOTuner` thực thi quá trình tối ưu hóa.
 
-This concept of scheduler and searcher is also implemented in popular HPO
-libraries, such as Syne Tune :cite:`salinas-automl22`, Ray Tune
-:cite:`liaw-arxiv18` or Optuna :cite:`akiba-sigkdd19`.
+Khái niệm scheduler và searcher cũng được triển khai trong các thư viện HPO phổ
+biến, chẳng hạn như Syne Tune :cite:`salinas-automl22`, Ray Tune
+:cite:`liaw-arxiv18` hoặc Optuna :cite:`akiba-sigkdd19`.
 
 ```{.python .input  n=2}
 %%tab pytorch
@@ -30,15 +30,15 @@ from scipy import stats
 
 ## Searcher
 
-Below we define a base class for searchers, which provides a new candidate
-configuration through the `sample_configuration` function. A simple way to
-implement this function would be to sample configurations uniformly at random,
-as we did for random search in :numref:`sec_what_is_hpo`. More sophisticated
-algorithms, such as Bayesian optimization, will make these
-decisions based on the performance of previous trials. As a result, these
-algorithms are able to sample more promising candidates over time. We add the
-`update` function in order to update the history of previous trials, which can
-then be exploited to improve our sampling distribution.
+Dưới đây, chúng ta định nghĩa một lớp cơ sở cho các searcher. Lớp này cung cấp
+một cấu hình ứng viên mới thông qua hàm `sample_configuration`. Một cách đơn giản
+để triển khai hàm này là lấy mẫu các cấu hình đồng đều một cách ngẫu nhiên, như
+chúng ta đã làm với random search trong :numref:`sec_what_is_hpo`. Các thuật
+toán phức tạp hơn, chẳng hạn như Bayesian optimization, sẽ đưa ra các quyết định
+này dựa trên hiệu năng của các trial trước đó. Nhờ vậy, các thuật toán này có thể
+lấy mẫu những ứng viên tiềm năng hơn theo thời gian. Chúng ta thêm hàm
+`update` để cập nhật lịch sử của các trial trước đó, sau đó có thể
+khai thác lịch sử này để cải thiện phân phối lấy mẫu.
 
 ```{.python .input  n=3}
 %%tab pytorch
@@ -50,10 +50,10 @@ class HPOSearcher(d2l.HyperParameters):  #@save
         pass
 ```
 
-The following code shows how to implement our random search optimizer from the
-previous section in this API. As a slight extension, we allow the user to
-prescribe the first configuration to be evaluated via `initial_config`, while
-subsequent ones are drawn at random.
+Đoạn mã sau đây cho thấy cách triển khai random search optimizer từ phần trước
+trong API này. Như một mở rộng nhỏ, chúng ta cho phép người dùng chỉ định cấu
+hình đầu tiên sẽ được đánh giá thông qua `initial_config`, còn các cấu hình
+tiếp theo sẽ được lấy ngẫu nhiên.
 
 ```{.python .input  n=4}
 %%tab pytorch
@@ -75,14 +75,15 @@ class RandomSearcher(HPOSearcher):  #@save
 
 ## Scheduler
 
-Beyond sampling configurations for new trials, we also need to decide when and
-for how long to run a trial. In practice, all these decisions are done by the
-`HPOScheduler`, which delegates the choice of new configurations to a
-`HPOSearcher`. The `suggest` method is called whenever some resource for training
-becomes available. Apart from invoking `sample_configuration` of a searcher, it
-may also decide upon parameters like `max_epochs` (i.e., how long to train the
-model for). The `update` method is called whenever a trial returns a new
-observation.
+Ngoài việc lấy mẫu các cấu hình cho những trial mới, chúng ta cũng cần quyết định
+khi nào và trong bao lâu sẽ chạy một trial. Trên thực tế, tất cả các quyết định
+này đều được đưa ra bởi `HPOScheduler`, thành phần này ủy quyền việc lựa
+chọn các cấu hình mới cho một `HPOSearcher`. Phương thức
+`suggest` được gọi bất cứ khi nào có một phần tài nguyên dành cho việc
+training trở nên khả dụng. Ngoài việc gọi `sample_configuration` của một searcher,
+phương thức này cũng có thể quyết định các tham số như `max_epochs` (tức
+là thời gian training model). Phương thức `update` được gọi bất cứ
+khi nào một trial trả về một observation mới.
 
 ```{.python .input  n=5}
 %%tab pytorch
@@ -94,9 +95,9 @@ class HPOScheduler(d2l.HyperParameters):  #@save
         raise NotImplementedError
 ```
 
-To implement random search, but also other HPO algorithms, we only need a basic
-scheduler that schedules a new configuration every time new resources become
-available.
+Để triển khai random search cũng như các thuật toán HPO khác, chúng ta chỉ cần
+một scheduler cơ bản, có nhiệm vụ lập lịch một cấu hình mới mỗi khi có tài nguyên
+mới trở nên khả dụng.
 
 ```{.python .input  n=6}
 %%tab pytorch
@@ -113,11 +114,11 @@ class BasicScheduler(HPOScheduler):  #@save
 
 ## Tuner
 
-Finally, we need a component that runs the scheduler/searcher and does some
-book-keeping of the results. The following code implements a sequential
-execution of the HPO trials that evaluates one training job after the next and
-will serve as a basic example. We will later use *Syne Tune* for more scalable
-distributed HPO cases.
+Cuối cùng, chúng ta cần một component chạy scheduler/searcher và thực hiện một
+số công việc ghi nhận kết quả. Đoạn mã sau triển khai việc thực thi tuần tự các
+trial HPO, trong đó mỗi training job được đánh giá sau training job trước đó, và
+sẽ đóng vai trò là một ví dụ cơ bản. Về sau, chúng ta sẽ sử dụng *Syne Tune* cho
+các trường hợp HPO phân tán có khả năng mở rộng tốt hơn.
 
 ```{.python .input  n=7}
 %%tab pytorch
@@ -145,17 +146,19 @@ class HPOTuner(d2l.HyperParameters):  #@save
             print(f"    error = {error}, runtime = {runtime}")
 ```
 
-## Bookkeeping the Performance of HPO Algorithms
+## Ghi nhận Hiệu năng của các Thuật toán HPO
 
-With any HPO algorithm, we are mostly interested in the best performing
-configuration (called *incumbent*) and its validation error after a given 
-wall-clock time. This is why we track `runtime` per iteration, which includes
-both the time to run an evaluation (call of `objective`) and the time to
-make a decision (call of `scheduler.suggest`). In the sequel, we will plot
-`cumulative_runtime` against `incumbent_trajectory` in  order to visualize the
-*any-time performance* of the HPO algorithm defined in  terms of `scheduler`
-(and `searcher`). This allows us to quantify not only how well the configuration
-found by an optimizer works, but also how quickly an optimizer is able to find it.
+Với bất kỳ thuật toán HPO nào, mối quan tâm chính của chúng ta là cấu hình có
+hiệu năng tốt nhất (gọi là *incumbent*) và validation error của nó sau một
+khoảng thời gian wall-clock nhất định. Vì vậy, chúng ta theo dõi
+`runtime` trên mỗi iteration. Giá trị này bao gồm cả thời gian chạy
+một evaluation (lần gọi `objective`) và thời gian đưa ra quyết định
+(lần gọi `scheduler.suggest`). Trong phần tiếp theo, chúng ta sẽ biểu diễn
+`cumulative_runtime` theo `incumbent_trajectory` để trực quan hóa
+*any-time performance* của thuật toán HPO, được xác định theo
+`scheduler` (và `searcher`). Điều này cho phép chúng ta
+định lượng không chỉ mức độ hiệu quả của cấu hình do optimizer tìm được, mà còn
+cả tốc độ optimizer tìm ra cấu hình đó.
 
 ```{.python .input  n=8}
 %%tab pytorch
@@ -174,12 +177,12 @@ def bookkeeping(self, config: dict, error: float, runtime: float):
     self.cumulative_runtime.append(self.current_runtime)
 ```
 
-## Example: Optimizing the Hyperparameters of a Convolutional Neural Network
+## Ví dụ: Tối ưu hóa các Siêu tham số của Mạng nơ-ron tích chập
 
-We now use our new implementation of random search to optimize the
-*batch size* and *learning rate* of the `LeNet` convolutional neural network
-from :numref:`sec_lenet`. We being by defining the objective function, which
-will once more be validation error.
+Bây giờ, chúng ta sử dụng triển khai random search mới để tối ưu hóa
+*batch size* và *learning rate* của mạng nơ-ron tích chập
+`LeNet` trong :numref:`sec_lenet`. Chúng ta bắt đầu bằng
+việc định nghĩa objective function, một lần nữa sẽ là validation error.
 
 ```{.python .input  n=9}
 %%tab pytorch
@@ -193,8 +196,8 @@ def hpo_objective_lenet(learning_rate, batch_size, max_epochs=10):  #@save
     return validation_error
 ```
 
-We also need to define the configuration space. Moreover, the first configuration
-to be evaluated is the default setting used in :numref:`sec_lenet`.
+Chúng ta cũng cần định nghĩa không gian cấu hình. Ngoài ra, cấu hình đầu tiên
+được đánh giá là thiết lập mặc định được sử dụng trong :numref:`sec_lenet`.
 
 ```{.python .input  n=10}
 config_space = {
@@ -207,7 +210,7 @@ initial_config = {
 }
 ```
 
-Now we can start our random search:
+Bây giờ chúng ta có thể bắt đầu random search:
 
 ```{.python .input}
 searcher = RandomSearcher(config_space, initial_config=initial_config)
@@ -216,8 +219,8 @@ tuner = HPOTuner(scheduler=scheduler, objective=hpo_objective_lenet)
 tuner.run(number_of_trials=5)
 ```
 
-Below we plot the optimization trajectory of the incumbent to get the any-time
-performance of random search:
+Dưới đây, chúng ta biểu diễn quỹ đạo tối ưu hóa của incumbent để thu được
+any-time performance của random search:
 
 ```{.python .input  n=11}
 board = d2l.ProgressBoard(xlabel="time", ylabel="error")
@@ -227,50 +230,52 @@ for time_stamp, error in zip(
     board.draw(time_stamp, error, "random search", every_n=1)
 ```
 
-## Comparing HPO Algorithms
+## So sánh các Thuật toán HPO
 
-Just as with training algorithms or model architectures, it is important to
-understand how to best compare different HPO algorithms. Each HPO run depends
-on two major sources of randomness: the random effects of the training process,
-such as random weight initialization or mini-batch ordering, and the intrinsic
-randomness of the HPO algorithm itself, such as the random sampling of random
-search. Hence, when comparing different algorithms, it is crucial to run each
-experiment several times and report statistics, such as mean or median, across
-a population of multiple repetitions of an algorithm based on different seeds
-of the random number generator.
+Cũng như với các thuật toán training hoặc kiến trúc model, việc hiểu cách so
+sánh tốt nhất các thuật toán HPO khác nhau là rất quan trọng. Mỗi lần chạy HPO
+phụ thuộc vào hai nguồn ngẫu nhiên chính: các tác động ngẫu nhiên của quá trình
+training, chẳng hạn như khởi tạo trọng số ngẫu nhiên hoặc thứ tự mini-batch, và
+tính ngẫu nhiên nội tại của chính thuật toán HPO, chẳng hạn như việc lấy mẫu
+ngẫu nhiên của random search. Do đó, khi so sánh các thuật toán khác nhau, điều
+quan trọng là chạy mỗi experiment nhiều lần và báo cáo các thống kê, chẳng hạn
+như mean hoặc median, trên một tập hợp gồm nhiều lần lặp của thuật toán dựa trên
+các seed khác nhau của random number generator.
 
-To illustrate this, we compare random search (see :numref:`sec_rs`) and Bayesian
-optimization :cite:`snoek-nips12` on tuning the hyperparameters of a feed-forward
-neural network. Each algorithm was evaluated
-$50$ times with a different random seed. The solid line indicates the average
-performance of the incumbent across these $50$ repetitions and the dashed line
-the standard deviation. We can see that random search and Bayesian optimization
-perform roughly the same up to ~1000 seconds, but Bayesian optimization can
-make use of the past observation to identify better configurations and thus
-quickly outperforms random search afterwards.
+Để minh họa điều này, chúng ta so sánh random search (xem
+:numref:`sec_rs`) và Bayesian optimization
+:cite:`snoek-nips12` trong việc tuning các siêu tham số của một mạng
+nơ-ron feed-forward. Mỗi thuật toán được đánh giá
+$50$ lần với một random seed khác nhau. Đường liền biểu thị hiệu năng trung bình
+của incumbent qua $50$ lần lặp này, còn đường nét đứt biểu thị độ lệch chuẩn.
+Chúng ta có thể thấy random search và Bayesian optimization có hiệu năng gần như
+tương đương cho đến khoảng 1000 giây, nhưng Bayesian optimization có thể tận
+dụng observation trước đó để xác định các cấu hình tốt hơn, do đó nhanh chóng
+vượt qua random search sau thời điểm này.
 
 
-![Example any-time performance plot to compare two algorithms A and B.](../img/example_anytime_performance.svg)
+![Ví dụ về biểu đồ any-time performance để so sánh hai thuật toán A và B.](../img/example_anytime_performance.svg)
 :label:`example_anytime_performance`
 
-## Summary
+## Tóm tắt
 
-This section laid out a simple, yet flexible interface to implement various HPO
-algorithms that we will look at in this chapter. Similar interfaces can be found
-in popular open-source HPO frameworks. We also looked at how we can compare HPO
-algorithms, and potential pitfall one needs to be aware. 
+Phần này đã trình bày một interface đơn giản nhưng linh hoạt để triển khai
+nhiều thuật toán HPO mà chúng ta sẽ tìm hiểu trong chương này. Có thể tìm thấy
+các interface tương tự trong những framework HPO mã nguồn mở phổ biến. Chúng ta
+cũng đã xem xét cách so sánh các thuật toán HPO và những cạm bẫy tiềm ẩn cần
+lưu ý.
 
-## Exercises
+## Bài tập
 
-1. The goal of this exercise is to implement the objective function for a slightly more challenging HPO problem, and to run more realistic experiments. We will use the two hidden layer MLP `DropoutMLP` implemented in :numref:`sec_dropout`.
-    1. Code up the objective function, which should depend on all hyperparameters of the model and `batch_size`. Use `max_epochs=50`. GPUs do not help here, so `num_gpus=0`. Hint: Modify `hpo_objective_lenet`.
-    2. Choose a sensible search space, where `num_hiddens_1`, `num_hiddens_2` are integers in $[8, 1024]$, and dropout values lie in $[0, 0.95]$, while `batch_size` lies in $[16, 384]$. Provide code for `config_space`, using sensible distributions from `scipy.stats`.
-    3. Run random search on this example with `number_of_trials=20` and plot the results. Make sure to first evaluate the default configuration of :numref:`sec_dropout`, which is `initial_config = {'num_hiddens_1': 256, 'num_hiddens_2': 256, 'dropout_1': 0.5, 'dropout_2': 0.5, 'lr': 0.1, 'batch_size': 256}`.
-2. In this exercise, you will implement a new searcher (subclass of `HPOSearcher`) which makes decisions based on past data. It depends on parameters `probab_local`, `num_init_random`. Its `sample_configuration` method works as follows. For the first `num_init_random` calls, do the same as `RandomSearcher.sample_configuration`. Otherwise, with probability `1 - probab_local`, do the same as `RandomSearcher.sample_configuration`. Otherwise, pick the configuration which attained the smallest validation error so far, select one of its hyperparameters at random, and sample its value randomly like in `RandomSearcher.sample_configuration`, but leave all other values the same. Return this configuration, which is identical to the best configuration so far, except in this one hyperparameter.
-    1. Code up this new `LocalSearcher`. Hint: Your searcher requires `config_space` as argument at construction. Feel free to use a member of type `RandomSearcher`. You will also have to implement the `update` method.
-    2. Re-run the experiment from the previous exercise, but using your new searcher instead of `RandomSearcher`. Experiment with different values for `probab_local`, `num_init_random`. However, note that a proper comparison between different HPO methods requires repeating experiments several times, and ideally considering a number of benchmark tasks.
+1. Mục tiêu của bài tập này là triển khai objective function cho một bài toán HPO khó hơn một chút và chạy các experiment thực tế hơn. Chúng ta sẽ sử dụng MLP hai hidden layer `DropoutMLP` được triển khai trong :numref:`sec_dropout`.
+    1. Viết code cho objective function, hàm này phải phụ thuộc vào tất cả các siêu tham số của model và `batch_size`. Sử dụng `max_epochs=50`. GPU không giúp ích trong trường hợp này, vì vậy `num_gpus=0`. Gợi ý: Sửa đổi `hpo_objective_lenet`.
+    2. Chọn một search space hợp lý, trong đó `num_hiddens_1`, `num_hiddens_2` là các số nguyên trong $[8, 1024]$, các giá trị dropout nằm trong $[0, 0.95]$, còn `batch_size` nằm trong $[16, 384]$. Cung cấp code cho `config_space`, sử dụng các distribution hợp lý từ `scipy.stats`.
+    3. Chạy random search trên ví dụ này với `number_of_trials=20` và biểu diễn kết quả. Trước tiên, hãy đảm bảo đánh giá cấu hình mặc định của :numref:`sec_dropout`, đó là `initial_config = {'num_hiddens_1': 256, 'num_hiddens_2': 256, 'dropout_1': 0.5, 'dropout_2': 0.5, 'lr': 0.1, 'batch_size': 256}`.
+2. Trong bài tập này, bạn sẽ triển khai một searcher mới (lớp con của `HPOSearcher`) đưa ra quyết định dựa trên dữ liệu trước đó. Searcher này phụ thuộc vào các tham số `probab_local`, `num_init_random`. Phương thức `sample_configuration` của nó hoạt động như sau. Trong `num_init_random` lần gọi đầu tiên, thực hiện giống như `RandomSearcher.sample_configuration`. Sau đó, với xác suất `1 - probab_local`, thực hiện giống như `RandomSearcher.sample_configuration`. Nếu không, chọn cấu hình đạt validation error nhỏ nhất cho đến thời điểm hiện tại, chọn ngẫu nhiên một trong các siêu tham số của cấu hình đó và lấy mẫu giá trị của nó một cách ngẫu nhiên như trong `RandomSearcher.sample_configuration`, nhưng giữ nguyên tất cả các giá trị khác. Trả về cấu hình này, vốn giống hệt cấu hình tốt nhất cho đến thời điểm hiện tại, ngoại trừ một siêu tham số.
+    1. Viết code cho `LocalSearcher` mới này. Gợi ý: Searcher của bạn yêu cầu `config_space` làm đối số khi khởi tạo. Bạn có thể sử dụng một member có kiểu `RandomSearcher`. Bạn cũng sẽ phải triển khai phương thức `update`.
+    2. Chạy lại experiment từ bài tập trước, nhưng sử dụng searcher mới thay cho `RandomSearcher`. Thử nghiệm với các giá trị khác nhau của `probab_local`, `num_init_random`. Tuy nhiên, lưu ý rằng để so sánh đúng đắn giữa các phương pháp HPO khác nhau, cần lặp lại các experiment nhiều lần và lý tưởng nhất là xem xét một số benchmark task.
 
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/12092)
+[Thảo luận](https://discuss.d2l.ai/t/12092)
 :end_tab:

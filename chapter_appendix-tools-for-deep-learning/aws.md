@@ -1,165 +1,165 @@
-# Using AWS EC2 Instances
+# Sử dụng các phiên bản EC2 của AWS
 :label:`sec_aws`
 
-In this section, we will show you how to install all libraries on a raw Linux machine. Recall that in :numref:`sec_sagemaker` we discussed how to use Amazon SageMaker, while building an instance by yourself costs less on AWS. The walkthrough includes three steps:
+Trong phần này, chúng ta sẽ hướng dẫn bạn cách cài đặt tất cả thư viện trên một máy Linux thô. Hãy nhớ rằng trong :numref:`sec_sagemaker` chúng ta đã thảo luận về cách sử dụng Amazon SageMaker, trong khi tự xây dựng một phiên bản sẽ tiết kiệm chi phí hơn trên AWS. Hướng dẫn này gồm ba bước:
 
-1. Request for a GPU Linux instance from AWS EC2.
-1. Install CUDA (or use an Amazon Machine Image with preinstalled CUDA).
-1. Install the deep learning framework and other libraries for running the code of the book.
+1. Yêu cầu một phiên bản Linux có GPU từ AWS EC2.
+1. Cài đặt CUDA (hoặc sử dụng Amazon Machine Image đã cài đặt sẵn CUDA).
+1. Cài đặt deep learning framework và các thư viện khác để chạy mã của cuốn sách.
 
-This process applies to other instances (and other clouds), too, albeit with some minor modifications. Before going forward, you need to create an AWS account, see :numref:`sec_sagemaker` for more details.
+Quy trình này cũng áp dụng cho các phiên bản khác (và các cloud khác), dù cần một vài thay đổi nhỏ. Trước khi tiếp tục, bạn cần tạo một tài khoản AWS; xem :numref:`sec_sagemaker` để biết thêm chi tiết.
 
 
-## Creating and Running an EC2 Instance
+## Tạo và chạy một phiên bản EC2
 
-After logging into your AWS account, click "EC2" (:numref:`fig_aws`) to go to the EC2 panel.
+Sau khi đăng nhập vào tài khoản AWS, nhấp vào "EC2" (:numref:`fig_aws`) để đi đến bảng điều khiển EC2.
 
-![Open the EC2 console.](../img/aws.png)
+![Mở bảng điều khiển EC2.](../img/aws.png)
 :width:`400px`
 :label:`fig_aws`
 
-:numref:`fig_ec2` shows the EC2 panel.
+:numref:`fig_ec2` hiển thị bảng điều khiển EC2.
 
-![The EC2 panel.](../img/ec2.png)
+![Bảng điều khiển EC2.](../img/ec2.png)
 :width:`700px`
 :label:`fig_ec2`
 
-### Presetting Location
-Select a nearby data center to reduce latency, e.g., "Oregon" (marked by the red box in the top-right of :numref:`fig_ec2`). If you are located in China,
-you can select a nearby Asia Pacific region, such as Seoul or Tokyo. Please note
-that some data centers may not have GPU instances.
+### Thiết lập vị trí
+
+Chọn một trung tâm dữ liệu ở gần để giảm độ trễ, chẳng hạn như "Oregon" (được đánh dấu bằng khung màu đỏ ở góc trên bên phải của :numref:`fig_ec2`). Nếu bạn ở Trung Quốc,
+bạn có thể chọn một khu vực Châu Á - Thái Bình Dương ở gần, chẳng hạn như Seoul hoặc Tokyo. Lưu ý
+rằng một số trung tâm dữ liệu có thể không có các phiên bản GPU.
 
 
-### Increasing Limits
+### Tăng hạn mức
 
-Before choosing an instance, check if there are quantity
-restrictions by clicking the "Limits" label in the bar on the left as shown in
+Trước khi chọn một phiên bản, hãy kiểm tra xem có giới hạn
+số lượng hay không bằng cách nhấp vào nhãn "Limits" trên thanh bên trái như minh họa trong
 :numref:`fig_ec2`. 
-:numref:`fig_limits` shows an example of such a
-limitation. The account currently cannot open "p2.xlarge" instances according to the region. If
-you need to open one or more instances, click on the "Request limit increase" link to
-apply for a higher instance quota.
-Generally, it takes one business day to
-process an application.
+:numref:`fig_limits` minh họa một ví dụ về giới hạn như vậy. Tài khoản hiện không thể mở các phiên bản "p2.xlarge" tùy theo khu vực. Nếu
+bạn cần mở một hoặc nhiều phiên bản, hãy nhấp vào liên kết "Request limit increase" để
+yêu cầu hạn ngạch phiên bản cao hơn.
+Thông thường, mất một ngày làm việc để
+xử lý yêu cầu.
 
-![Instance quantity restrictions.](../img/limits.png)
+![Giới hạn số lượng phiên bản.](../img/limits.png)
 :width:`700px`
 :label:`fig_limits`
 
 
-### Launching an Instance
+### Khởi chạy một phiên bản
 
-Next, click the "Launch Instance" button marked by the red box in :numref:`fig_ec2` to launch your instance.
+Tiếp theo, nhấp vào nút "Launch Instance" được đánh dấu bằng khung màu đỏ trong :numref:`fig_ec2` để khởi chạy phiên bản của bạn.
 
-We begin by selecting a suitable Amazon Machine Image (AMI). Select an Ubuntu instance (:numref:`fig_ubuntu`).
+Trước tiên, chúng ta chọn một Amazon Machine Image (AMI) phù hợp. Chọn một phiên bản Ubuntu (:numref:`fig_ubuntu`).
 
 
-![Choose an AMI.](../img/ubuntu-new.png)
+![Chọn một AMI.](../img/ubuntu-new.png)
 :width:`700px`
 :label:`fig_ubuntu`
 
-EC2 provides many different instance configurations to choose from. This can sometimes feel overwhelming to a beginner. :numref:`tab_ec2` lists different suitable machines.
+EC2 cung cấp nhiều cấu hình phiên bản khác nhau để lựa chọn. Điều này đôi khi có thể khiến người mới bắt đầu cảm thấy choáng ngợp. :numref:`tab_ec2` liệt kê các máy phù hợp khác nhau.
 
-:Different EC2 instance types
+:Các loại phiên bản EC2 khác nhau
 :label:`tab_ec2`
 
-| Name | GPU         | Notes                         |
+| Tên | GPU         | Ghi chú                         |
 |------|-------------|-------------------------------|
-| g2   | Grid K520   | ancient                       |
-| p2   | Kepler K80  | old but often cheap as spot   |
-| g3   | Maxwell M60 | good trade-off                |
-| p3   | Volta V100  | high performance for FP16     |
-| p4   | Ampere A100 | high performance for large-scale training |
-| g4   | Turing T4   | inference optimized FP16/INT8 |
+| g2   | Grid K520   | lỗi thời                       |
+| p2   | Kepler K80  | cũ nhưng thường rẻ khi dùng spot |
+| g3   | Maxwell M60 | sự cân bằng tốt                |
+| p3   | Volta V100  | hiệu năng cao cho FP16         |
+| p4   | Ampere A100 | hiệu năng cao cho quá trình training quy mô lớn |
+| g4   | Turing T4   | được tối ưu cho inference FP16/INT8 |
 
 
-All these servers come in multiple flavors indicating the number of GPUs used. For example, a p2.xlarge has 1 GPU and a p2.16xlarge has 16 GPUs and more memory. For more details, see the [AWS EC2 documentation](https://aws.amazon.com/ec2/instance-types/) or a [summary page](https://www.ec2instances.info). For the purpose of illustration, a p2.xlarge will suffice (marked in the red box of :numref:`fig_p2x`).
+Tất cả các máy chủ này đều có nhiều biến thể, cho biết số lượng GPU được sử dụng. Ví dụ, p2.xlarge có 1 GPU, còn p2.16xlarge có 16 GPU và nhiều bộ nhớ hơn. Để biết thêm chi tiết, hãy xem [tài liệu AWS EC2](https://aws.amazon.com/ec2/instance-types/) hoặc [trang tóm tắt](https://www.ec2instances.info). Với mục đích minh họa, p2.xlarge là đủ (được đánh dấu bằng khung màu đỏ trong :numref:`fig_p2x`).
 
-![Choose an instance.](../img/p2x.png)
+![Chọn một phiên bản.](../img/p2x.png)
 :width:`700px`
 :label:`fig_p2x`
 
-Note that you should use a GPU-enabled instance with suitable drivers and a GPU-enabled deep learning framework. Otherwise you will not see any benefit from using GPUs.
+Lưu ý rằng bạn nên sử dụng một phiên bản hỗ trợ GPU với các driver phù hợp và một deep learning framework hỗ trợ GPU. Nếu không, bạn sẽ không nhận được lợi ích nào từ việc sử dụng GPU.
 
-We go on to select the key pair used to access
-the instance. If you do not have a key pair, click "Create new key pair" in :numref:`fig_keypair` to generate a key pair. Subsequently,
-you can select the
-previously generated key pair. 
-Make sure that you download the key pair and store it in a safe location if you
-generated a new one. This is your only way to SSH into the server.
+Tiếp theo, chúng ta chọn key pair được dùng để truy cập
+phiên bản. Nếu chưa có key pair, hãy nhấp vào "Create new key pair" trong :numref:`fig_keypair` để tạo một key pair. Sau đó,
+bạn có thể chọn key pair
+đã tạo trước đó.
+Hãy chắc chắn rằng bạn tải key pair xuống và lưu trữ ở nơi an toàn nếu
+bạn tạo một key pair mới. Đây là cách duy nhất để SSH vào máy chủ.
 
-![Select a key pair.](../img/keypair.png)
+![Chọn một key pair.](../img/keypair.png)
 :width:`500px`
 :label:`fig_keypair`
 
-In this example, we will keep the default configurations for "Network settings" (click the "Edit" button to configure items such as the subnet and security groups). We just increase the default hard disk size to 64 GB (:numref:`fig_disk`). Note that CUDA by itself already takes up 4 GB.
+Trong ví dụ này, chúng ta giữ nguyên cấu hình mặc định cho "Network settings" (nhấp vào nút "Edit" để cấu hình các mục như subnet và security group). Chúng ta chỉ tăng kích thước ổ cứng mặc định lên 64 GB (:numref:`fig_disk`). Lưu ý rằng riêng CUDA đã chiếm 4 GB.
 
-![Modify the hard disk size.](../img/disk.png)
+![Thay đổi kích thước ổ cứng.](../img/disk.png)
 :width:`700px`
 :label:`fig_disk`
 
 
-Click "Launch Instance" to launch the created
-instance. Click the
-instance ID shown in :numref:`fig_launching` to view the status of this instance.
+Nhấp vào "Launch Instance" để khởi chạy
+phiên bản đã tạo. Nhấp vào
+instance ID hiển thị trong :numref:`fig_launching` để xem trạng thái của phiên bản này.
 
-![Click the instance ID.](../img/launching.png)
+![Nhấp vào instance ID.](../img/launching.png)
 :width:`700px`
 :label:`fig_launching`
 
-### Connecting to the Instance
+### Kết nối với phiên bản
 
-As shown in :numref:`fig_connect`, after the instance state turns green, right-click the instance and select `Connect` to view the instance access method.
+Như minh họa trong :numref:`fig_connect`, sau khi trạng thái phiên bản chuyển sang màu xanh lục, hãy nhấp chuột phải vào phiên bản và chọn `Connect` để xem phương thức truy cập phiên bản.
 
-![View the instance access method.](../img/connect.png)
+![Xem phương thức truy cập phiên bản.](../img/connect.png)
 :width:`700px`
 :label:`fig_connect`
 
-If this is a new key, it must not be publicly viewable for SSH to work. Go to the folder where you store `D2L_key.pem` and 
-execute the following command 
-to make the key not publicly viewable:
+Nếu đây là key mới, key đó không được phép hiển thị công khai để SSH hoạt động. Đi đến thư mục nơi bạn lưu `D2L_key.pem` và 
+thực thi lệnh sau
+để key không còn hiển thị công khai:
 
 ```bash
 chmod 400 D2L_key.pem
 ```
 
 
-![View instance access and startup method.](../img/chmod.png)
+![Xem phương thức truy cập và khởi động phiên bản.](../img/chmod.png)
 :width:`400px`
 :label:`fig_chmod`
 
 
-Now, copy the SSH command in the lower red box of :numref:`fig_chmod` and paste onto the command line:
+Bây giờ, sao chép lệnh SSH trong khung màu đỏ phía dưới của :numref:`fig_chmod` và dán vào dòng lệnh:
 
 ```bash
 ssh -i "D2L_key.pem" ubuntu@ec2-xx-xxx-xxx-xxx.y.compute.amazonaws.com
 ```
 
 
-When the command line prompts "Are you sure you want to continue connecting (yes/no)", enter "yes" and press Enter to log into the instance.
+Khi dòng lệnh hỏi "Are you sure you want to continue connecting (yes/no)", hãy nhập "yes" và nhấn Enter để đăng nhập vào phiên bản.
 
-Your server is ready now.
+Bây giờ, máy chủ của bạn đã sẵn sàng.
 
 
-## Installing CUDA
+## Cài đặt CUDA
 
-Before installing CUDA, be sure to update the instance with the latest drivers.
+Trước khi cài đặt CUDA, hãy nhớ cập nhật phiên bản bằng các driver mới nhất.
 
 ```bash
 sudo apt-get update && sudo apt-get install -y build-essential git libgfortran3
 ```
 
 
-Here we download CUDA 12.1. Visit NVIDIA's [official repository](https://developer.nvidia.com/cuda-toolkit-archive) to find the download link as shown in :numref:`fig_cuda`.
+Ở đây, chúng ta tải xuống CUDA 12.1. Truy cập [kho lưu trữ chính thức](https://developer.nvidia.com/cuda-toolkit-archive) của NVIDIA để tìm liên kết tải xuống như minh họa trong :numref:`fig_cuda`.
 
-![Find the CUDA 12.1 download address.](../img/cuda121.png)
+![Tìm địa chỉ tải xuống CUDA 12.1.](../img/cuda121.png)
 :width:`500px`
 :label:`fig_cuda`
 
-Copy the instructions and paste them onto the terminal to install CUDA 12.1.
+Sao chép hướng dẫn và dán vào terminal để cài đặt CUDA 12.1.
 
 ```bash
-# The link and file name are subject to changes
+# Liên kết và tên tệp có thể thay đổi
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
 sudo mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
 wget https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda-repo-ubuntu2204-12-1-local_12.1.0-530.30.02-1_amd64.deb
@@ -170,14 +170,14 @@ sudo apt-get -y install cuda
 ```
 
 
-After installing the program, run the following command to view the GPUs:
+Sau khi cài đặt chương trình, chạy lệnh sau để xem các GPU:
 
 ```bash
 nvidia-smi
 ```
 
 
-Finally, add CUDA to the library path to help other libraries find it, such as appending the following lines to the end of `~/.bashrc`.
+Cuối cùng, thêm CUDA vào library path để các thư viện khác có thể tìm thấy nó, chẳng hạn như bằng cách thêm các dòng sau vào cuối `~/.bashrc`.
 
 ```bash
 export PATH="/usr/local/cuda-12.1/bin:$PATH"
@@ -185,21 +185,21 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/cuda-12.1/lib64
 ```
 
 
-## Installing Libraries for Running the Code
+## Cài đặt các thư viện để chạy mã
 
-To run the code of this book,
-just follow steps in :ref:`chap_installation`
-for Linux users on the EC2 instance
-and use the following tips 
-for working on a remote Linux server:
+Để chạy mã của cuốn sách này,
+chỉ cần làm theo các bước trong :ref:`chap_installation`
+dành cho người dùng Linux trên phiên bản EC2
+và sử dụng các mẹo sau
+khi làm việc trên một máy chủ Linux từ xa:
 
-* To download the bash script on the Miniconda installation page, right click the download link and select "Copy Link Address", then execute `wget [copied link address]`.
-* After running `~/miniconda3/bin/conda init`, you may execute `source ~/.bashrc` instead of closing and reopening your current shell.
+* Để tải xuống bash script trên trang cài đặt Miniconda, hãy nhấp chuột phải vào liên kết tải xuống và chọn "Copy Link Address", sau đó thực thi `wget [copied link address]`.
+* Sau khi chạy `~/miniconda3/bin/conda init`, bạn có thể thực thi `source ~/.bashrc` thay vì đóng rồi mở lại shell hiện tại.
 
 
-## Running the Jupyter Notebook remotely
+## Chạy Jupyter Notebook từ xa
 
-To run the Jupyter Notebook remotely you need to use SSH port forwarding. After all, the server in the cloud does not have a monitor or keyboard. For this, log into your server from your desktop (or laptop) as follows:
+Để chạy Jupyter Notebook từ xa, bạn cần sử dụng SSH port forwarding. Suy cho cùng, máy chủ trên cloud không có màn hình hoặc bàn phím. Để thực hiện việc này, hãy đăng nhập vào máy chủ từ máy tính để bàn (hoặc laptop) của bạn như sau:
 
 ```
 # This command must be run in the local command line
@@ -207,10 +207,10 @@ ssh -i "/path/to/key.pem" ubuntu@ec2-xx-xxx-xxx-xxx.y.compute.amazonaws.com -L 8
 ```
 
 
-Next, go to the location 
-of the downloaded code of this book
-on the EC2 instance,
-then run:
+Tiếp theo, đi đến vị trí
+của mã cuốn sách đã tải xuống
+trên phiên bản EC2,
+sau đó chạy:
 
 ```
 conda activate d2l
@@ -218,50 +218,49 @@ jupyter notebook
 ```
 
 
-:numref:`fig_jupyter` shows the possible output after you run the Jupyter Notebook. The last row is the URL for port 8888.
+:numref:`fig_jupyter` hiển thị kết quả có thể nhận được sau khi bạn chạy Jupyter Notebook. Dòng cuối cùng là URL của port 8888.
 
-![Output after running the Jupyter Notebook. The last row is the URL for port 8888.](../img/jupyter.png)
+![Kết quả sau khi chạy Jupyter Notebook. Dòng cuối cùng là URL của port 8888.](../img/jupyter.png)
 :width:`700px`
 :label:`fig_jupyter`
 
-Since you used port forwarding to port 8889,
-copy the last row in the red box of :numref:`fig_jupyter`,
-replace "8888" with "8889" in the URL,
-and open it in your local browser.
+Vì bạn đã sử dụng port forwarding đến port 8889,
+hãy sao chép dòng cuối cùng trong khung màu đỏ của :numref:`fig_jupyter`,
+thay "8888" bằng "8889" trong URL,
+và mở URL đó trong trình duyệt cục bộ.
 
 
-## Closing Unused Instances
+## Đóng các phiên bản không sử dụng
 
-As cloud services are billed by the time of use, you should close instances that are not being used. Note that there are alternatives:
+Vì các dịch vụ cloud được tính phí theo thời gian sử dụng, bạn nên đóng những phiên bản không được sử dụng. Lưu ý rằng có các lựa chọn thay thế:
 
-* "Stopping" an instance means that you will be able to start it again. This is akin to switching off the power for your regular server. However, stopped instances will still be billed a small amount for the hard disk space retained. 
-* "Terminating" an instance will delete all data associated with it. This includes the disk, hence you cannot start it again. Only do this if you know that you will not need it in the future.
+* "Stopping" một phiên bản nghĩa là bạn có thể khởi động lại phiên bản đó. Điều này tương tự như tắt nguồn máy chủ thông thường của bạn. Tuy nhiên, các phiên bản đã dừng vẫn bị tính một khoản phí nhỏ cho không gian ổ đĩa được giữ lại.
+* "Terminating" một phiên bản sẽ xóa mọi dữ liệu liên quan đến phiên bản đó. Việc này bao gồm cả ổ đĩa, vì vậy bạn không thể khởi động lại phiên bản. Chỉ thực hiện việc này nếu bạn chắc chắn rằng sẽ không cần đến phiên bản đó trong tương lai.
 
-If you want to use the instance as a template for many more instances,
-right-click on the example in :numref:`fig_connect` and select "Image" $\rightarrow$
-"Create" to create an image of the instance. Once this is complete, select
-"Instance State" $\rightarrow$ "Terminate" to terminate the instance. The next
-time you want to use this instance, you can follow the steps in this section 
-to create an instance based on
-the saved image. The only difference is that, in "1. Choose AMI" shown in
-:numref:`fig_ubuntu`, you must use the "My AMIs" option on the left to select your saved
-image. The created instance will retain the information stored on the image hard
-disk. For example, you will not have to reinstall CUDA and other runtime
-environments.
-
-
-## Summary
-
-* We can launch and stop instances on demand without having to buy and build our own computer.
-* We need to install CUDA before using the GPU-enabled deep learning framework.
-* We can use port forwarding to run the Jupyter Notebook on a remote server.
+Nếu muốn sử dụng instance làm template cho nhiều instance khác,
+hãy nhấp chuột phải vào ví dụ trong :numref:`fig_connect` và chọn "Image" $\rightarrow$
+"Create" để tạo image của instance. Sau khi hoàn tất, chọn
+"Instance State" $\rightarrow$ "Terminate" để terminate instance. Lần tới
+khi muốn sử dụng instance này, bạn có thể làm theo các bước trong phần này 
+để tạo một instance dựa trên
+image đã lưu. Điểm khác biệt duy nhất là trong mục "1. Choose AMI" được hiển thị trong
+:numref:`fig_ubuntu`, bạn phải sử dụng tùy chọn "My AMIs" ở bên trái để chọn image đã lưu.
+Instance được tạo sẽ giữ lại thông tin được lưu trên ổ đĩa của image.
+Ví dụ, bạn sẽ không phải cài đặt lại CUDA và các runtime environment khác.
 
 
-## Exercises
+## Tóm tắt
 
-1. The cloud offers convenience, but it does not come cheap. Find out how to launch [spot instances](https://aws.amazon.com/ec2/spot/) to see how to reduce costs.
-1. Experiment with different GPU servers. How fast are they?
-1. Experiment with multi-GPU servers. How well can you scale things up?
+* Chúng ta có thể khởi chạy và dừng các instance theo nhu cầu mà không cần mua và tự xây dựng máy tính riêng.
+* Chúng ta cần cài đặt CUDA trước khi sử dụng deep learning framework hỗ trợ GPU.
+* Chúng ta có thể sử dụng port forwarding để chạy Jupyter Notebook trên một máy chủ từ xa.
 
 
-[Discussions](https://discuss.d2l.ai/t/423)
+## Bài tập
+
+1. Cloud mang lại sự tiện lợi, nhưng không hề rẻ. Hãy tìm hiểu cách khởi chạy [spot instances](https://aws.amazon.com/ec2/spot/) để xem cách giảm chi phí.
+1. Thử nghiệm với các GPU server khác nhau. Tốc độ của chúng như thế nào?
+1. Thử nghiệm với các multi-GPU server. Bạn có thể mở rộng quy mô tốt đến mức nào?
+
+
+[Thảo luận](https://discuss.d2l.ai/t/423)

@@ -1,8 +1,8 @@
-# The `d2l` API Document
+# Tài liệu API `d2l`
 :label:`sec_d2l`
 
-This section displays classes and functions (sorted alphabetically) in the `d2l` package, showing where they are defined in the book so you can find more detailed implementations and explanations. 
-See also the source code on the [GitHub repository](https://github.com/d2l-ai/d2l-en/tree/master/d2l).
+Phần này hiển thị các class và function (được sắp xếp theo thứ tự bảng chữ cái) trong package `d2l`, đồng thời cho biết nơi chúng được định nghĩa trong sách để bạn có thể tìm thấy các phần triển khai và giải thích chi tiết hơn.  
+Xem thêm mã nguồn trong [kho lưu trữ GitHub](https://github.com/d2l-ai/d2l-en/tree/master/d2l).
 
 :begin_tab:`pytorch`
 
@@ -34,7 +34,7 @@ See also the source code on the [GitHub repository](https://github.com/d2l-ai/d2
 
 :end_tab:
 
-## Classes
+## Các class
 
 ```eval_rst 
 
@@ -151,7 +151,7 @@ See also the source code on the [GitHub repository](https://github.com/d2l-ai/d2
 ```
 
 
-## Functions
+## Các function
 
 ```eval_rst 
 
@@ -194,4 +194,3 @@ See also the source code on the [GitHub repository](https://github.com/d2l-ai/d2
 .. autofunction:: use_svg_display
 
 ```
-

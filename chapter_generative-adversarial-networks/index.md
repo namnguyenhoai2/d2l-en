@@ -1,4 +1,4 @@
-# Generative Adversarial Networks
+# Mạng đối sinh
 :label:`chap_gans`
 
 ```toc

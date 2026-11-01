@@ -1,31 +1,31 @@
-# AutoRec: Rating Prediction with Autoencoders
+# AutoRec: Dự đoán đánh giá bằng Autoencoder
 
-Although the matrix factorization model achieves decent performance on the rating prediction task, it is essentially a linear model. Thus, such models are not capable of capturing complex nonlinear and intricate relationships that may be predictive of users' preferences. In this section, we introduce a nonlinear neural network collaborative filtering model, AutoRec :cite:`Sedhain.Menon.Sanner.ea.2015`. It identifies collaborative filtering (CF) with an autoencoder architecture and aims to integrate nonlinear transformations into CF on the basis of explicit feedback. Neural networks have been proven to be capable of approximating any continuous function, making it suitable to address the limitation of matrix factorization and enrich the expressiveness of matrix factorization.
+Mặc dù mô hình phân rã ma trận đạt hiệu năng khá tốt trong tác vụ dự đoán đánh giá, về bản chất đây vẫn là một mô hình tuyến tính. Do đó, các mô hình này không có khả năng nắm bắt những mối quan hệ phức tạp, phi tuyến và tinh vi có thể dự đoán sở thích của người dùng. Trong phần này, chúng ta giới thiệu một mô hình neural network phi tuyến cho collaborative filtering, AutoRec :cite:`Sedhain.Menon.Sanner.ea.2015`. Mô hình này xác định collaborative filtering (CF) bằng kiến trúc autoencoder và hướng tới việc tích hợp các phép biến đổi phi tuyến vào CF dựa trên explicit feedback. Neural network đã được chứng minh là có khả năng xấp xỉ mọi hàm liên tục, khiến chúng phù hợp để khắc phục hạn chế của matrix factorization và tăng cường khả năng biểu đạt của matrix factorization.
 
-On the one hand, AutoRec has the same structure as an autoencoder which consists of an input layer, a hidden layer, and a reconstruction (output) layer.  An autoencoder is a neural network that learns to copy its input to its output in order to code the inputs into the hidden (and usually low-dimensional) representations. In AutoRec, instead of explicitly embedding users/items into low-dimensional space, it uses the column/row of the interaction matrix as input, then reconstructs the interaction matrix in the output layer.
+Một mặt, AutoRec có cùng cấu trúc với một autoencoder, gồm một input layer, một hidden layer và một reconstruction layer (output layer). Autoencoder là một neural network học cách sao chép input sang output để mã hóa input thành các biểu diễn trong hidden layer (thường có số chiều thấp). Trong AutoRec, thay vì embedding người dùng/item một cách rõ ràng vào không gian có số chiều thấp, mô hình sử dụng cột/hàng của interaction matrix làm input, sau đó tái tạo interaction matrix tại output layer.
 
-On the other hand, AutoRec differs from a traditional autoencoder: rather than learning the hidden representations, AutoRec focuses on learning/reconstructing the output layer. It uses a partially observed interaction matrix as input, aiming to reconstruct a completed rating matrix. In the meantime, the missing entries of the input are filled in the output layer via reconstruction for the purpose of recommendation.
+Mặt khác, AutoRec khác với autoencoder truyền thống: thay vì học các biểu diễn ẩn, AutoRec tập trung vào việc học/tái tạo output layer. Mô hình sử dụng một interaction matrix được quan sát một phần làm input, nhằm tái tạo một rating matrix hoàn chỉnh. Đồng thời, các phần tử bị thiếu trong input được điền vào output layer thông qua quá trình tái tạo để phục vụ mục đích recommendation.
 
-There are two variants of AutoRec: user-based and item-based. For brevity, here we only introduce the item-based AutoRec. User-based AutoRec can be derived accordingly.
+Có hai biến thể của AutoRec: user-based và item-based. Để ngắn gọn, ở đây chúng ta chỉ giới thiệu item-based AutoRec. User-based AutoRec có thể được suy ra tương tự.
 
 
-## Model
+## Mô hình
 
-Let $\mathbf{R}_{*i}$ denote the $i^\textrm{th}$ column of the rating matrix, where unknown ratings are set to zeros by default. The neural architecture is defined as:
+Gọi $\mathbf{R}_{*i}$ là cột thứ $i^\textrm{th}$ của rating matrix, trong đó các đánh giá chưa biết được mặc định đặt thành 0. Kiến trúc neural được định nghĩa như sau:
 
 $$
 h(\mathbf{R}_{*i}) = f(\mathbf{W} \cdot g(\mathbf{V} \mathbf{R}_{*i} + \mu) + b)
 $$
 
-where $f(\cdot)$ and $g(\cdot)$ represent activation functions, $\mathbf{W}$ and $\mathbf{V}$ are weight matrices, $\mu$ and $b$ are biases. Let $h( \cdot )$ denote the whole network of AutoRec. The output $h(\mathbf{R}_{*i})$ is the reconstruction of the $i^\textrm{th}$ column of the rating matrix.
+trong đó $f(\cdot)$ và $g(\cdot)$ biểu diễn các activation function, $\mathbf{W}$ và $\mathbf{V}$ là các weight matrix, còn $\mu$ và $b$ là các bias. Gọi $h( \cdot )$ là toàn bộ network của AutoRec. Output $h(\mathbf{R}_{*i})$ là phần tái tạo của cột thứ $i^\textrm{th}$ trong rating matrix.
 
-The following objective function aims to minimize the reconstruction error:
+Hàm mục tiêu sau đây nhằm tối thiểu hóa sai số tái tạo:
 
 $$
 \underset{\mathbf{W},\mathbf{V},\mu, b}{\mathrm{argmin}} \sum_{i=1}^M{\parallel \mathbf{R}_{*i} - h(\mathbf{R}_{*i})\parallel_{\mathcal{O}}^2} +\lambda(\| \mathbf{W} \|_F^2 + \| \mathbf{V}\|_F^2)
 $$
 
-where $\| \cdot \|_{\mathcal{O}}$ means only the contribution of observed ratings are considered, that is, only weights that are associated with observed inputs are updated during back-propagation.
+trong đó $\| \cdot \|_{\mathcal{O}}$ nghĩa là chỉ tính phần đóng góp của các đánh giá đã quan sát, tức là chỉ các trọng số liên kết với các input đã quan sát mới được cập nhật trong quá trình back-propagation.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -37,9 +37,9 @@ import mxnet as mx
 npx.set_np()
 ```
 
-## Implementing the Model
+## Triển khai mô hình
 
-A typical autoencoder consists of an encoder and a decoder. The encoder projects the input to hidden representations and the decoder maps the hidden layer to the reconstruction layer. We follow this practice and create the encoder and decoder with fully connected layers. The activation of encoder is set to `sigmoid` by default and no activation is applied for decoder. Dropout is included after the encoding transformation to reduce over-fitting. The gradients of unobserved inputs are masked out to ensure that only observed ratings contribute to the model learning process.
+Một autoencoder điển hình gồm encoder và decoder. Encoder ánh xạ input thành các biểu diễn ẩn, còn decoder ánh xạ hidden layer tới reconstruction layer. Chúng ta tuân theo cách làm này và tạo encoder, decoder bằng các fully connected layer. Activation của encoder mặc định được đặt là `sigmoid` và decoder không áp dụng activation nào. Dropout được thêm vào sau phép biến đổi encoding để giảm over-fitting. Gradient của các input chưa được quan sát sẽ bị mask để đảm bảo rằng chỉ các đánh giá đã quan sát mới đóng góp vào quá trình học của mô hình.
 
 ```{.python .input  n=2}
 #@tab mxnet
@@ -60,9 +60,9 @@ class AutoRec(nn.Block):
             return pred
 ```
 
-## Reimplementing the Evaluator
+## Triển khai lại Evaluator
 
-Since the input and output have been changed, we need to reimplement the evaluation function, while we still use RMSE as the accuracy measure.
+Do input và output đã thay đổi, chúng ta cần triển khai lại hàm đánh giá, trong khi vẫn sử dụng RMSE làm thước đo độ chính xác.
 
 ```{.python .input  n=3}
 #@tab mxnet
@@ -78,9 +78,9 @@ def evaluator(network, inter_matrix, test_data, devices):
     return float(rmse)
 ```
 
-## Training and Evaluating the Model
+## Huấn luyện và đánh giá mô hình
 
-Now, let's train and evaluate AutoRec on the MovieLens dataset. We can clearly see that the test RMSE is lower than the matrix factorization model, confirming the effectiveness of neural networks in the rating prediction task.
+Bây giờ, hãy huấn luyện và đánh giá AutoRec trên tập dữ liệu MovieLens. Chúng ta có thể thấy rõ rằng RMSE trên tập kiểm tra thấp hơn so với mô hình matrix factorization, qua đó xác nhận hiệu quả của neural network trong tác vụ dự đoán đánh giá.
 
 ```{.python .input  n=4}
 #@tab mxnet
@@ -109,19 +109,19 @@ d2l.train_recsys_rating(net, train_iter, test_iter, loss, trainer, num_epochs,
                         devices, evaluator, inter_mat=test_inter_mat)
 ```
 
-## Summary
+## Tóm tắt
 
-* We can frame the matrix factorization algorithm with autoencoders, while integrating non-linear layers and dropout regularization.
-* Experiments on the MovieLens 100K dataset show that AutoRec achieves superior performance than matrix factorization.
+* Chúng ta có thể biểu diễn thuật toán matrix factorization bằng autoencoder, đồng thời tích hợp các layer phi tuyến và regularization bằng dropout.
+* Các thử nghiệm trên tập dữ liệu MovieLens 100K cho thấy AutoRec đạt hiệu năng vượt trội hơn matrix factorization.
 
 
 
-## Exercises
+## Bài tập
 
-* Vary the hidden dimension of AutoRec to see its impact on the model performance.
-* Try to add more hidden layers. Is it helpful to improve the model performance?
-* Can you find a better combination of decoder and encoder activation functions?
+* Thay đổi hidden dimension của AutoRec để xem ảnh hưởng của nó tới hiệu năng mô hình.
+* Hãy thử thêm nhiều hidden layer hơn. Điều này có giúp cải thiện hiệu năng mô hình không?
+* Bạn có thể tìm được sự kết hợp tốt hơn giữa activation function của decoder và encoder không?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/401)
+[Thảo luận](https://discuss.d2l.ai/t/401)
 :end_tab:

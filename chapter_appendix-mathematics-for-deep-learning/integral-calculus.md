@@ -1,12 +1,12 @@
-# Integral Calculus
+# Tích phân
 :label:`sec_integral_calculus`
 
-Differentiation only makes up half of the content of a traditional calculus education.  The other pillar, integration, starts out seeming a rather disjoint question, "What is the area underneath this curve?"  While seemingly unrelated, integration is tightly intertwined with the differentiation via what is known as the *fundamental theorem of calculus*.
+Phép vi phân chỉ chiếm một nửa nội dung của chương trình giải tích truyền thống. Trụ cột còn lại, phép tích phân, thoạt đầu dường như là một câu hỏi khá rời rạc: “Diện tích bên dưới đường cong này là bao nhiêu?” Mặc dù có vẻ không liên quan, phép tích phân gắn bó chặt chẽ với phép vi phân thông qua điều được gọi là *định lý cơ bản của giải tích*.
 
-At the level of machine learning we discuss in this book, we will not need a deep understanding of integration. However, we will provide a brief introduction to lay the groundwork for any further applications we will encounter later on.
+Ở mức độ machine learning được trình bày trong cuốn sách này, chúng ta không cần hiểu sâu về phép tích phân. Tuy nhiên, chúng tôi sẽ giới thiệu ngắn gọn để đặt nền tảng cho bất kỳ ứng dụng nào khác mà chúng ta sẽ gặp về sau.
 
-## Geometric Interpretation
-Suppose that we have a function $f(x)$.  For simplicity, let's assume that $f(x)$ is non-negative (never takes a value less than zero).  What we want to try and understand is: what is the area contained between $f(x)$ and the $x$-axis?
+## Diễn giải hình học
+Giả sử chúng ta có một hàm $f(x)$. Để đơn giản, hãy giả sử rằng $f(x)$ không âm (không bao giờ nhận giá trị nhỏ hơn 0). Điều chúng ta muốn tìm hiểu là: diện tích nằm giữa $f(x)$ và trục $x$ là bao nhiêu?
 
 ```{.python .input}
 #@tab mxnet
@@ -60,7 +60,7 @@ d2l.plt.fill_between(x.numpy(), f.numpy())
 d2l.plt.show()
 ```
 
-In most cases, this area will be infinite or undefined (consider the area under $f(x) = x^{2}$), so people will often talk about the area between a pair of ends, say $a$ and $b$.
+Trong hầu hết các trường hợp, diện tích này sẽ là vô hạn hoặc không xác định (hãy xét diện tích bên dưới $f(x) = x^{2}$), vì vậy người ta thường nói về diện tích giữa một cặp đầu mút, chẳng hạn $a$ và $b$.
 
 ```{.python .input}
 #@tab mxnet
@@ -95,19 +95,19 @@ d2l.plt.fill_between(x.numpy()[50:250], f.numpy()[50:250])
 d2l.plt.show()
 ```
 
-We will denote this area by the integral symbol below:
+Chúng ta sẽ ký hiệu diện tích này bằng ký hiệu tích phân dưới đây:
 
 $$
 \textrm{Area}(\mathcal{A}) = \int_a^b f(x) \;dx.
 $$
 
-The inner variable is a dummy variable, much like the index of a sum in a $\sum$, and so this can be equivalently written with any inner value we like:
+Biến bên trong là một biến giả, tương tự như chỉ số của một tổng trong $\sum$, vì vậy ta có thể viết tương đương bằng bất kỳ biến bên trong nào:
 
 $$
 \int_a^b f(x) \;dx = \int_a^b f(z) \;dz.
 $$
 
-There is a traditional way to try and understand how we might try to approximate such integrals: we can imagine taking the region in-between $a$ and $b$ and chopping it into $N$ vertical slices.  If $N$ is large, we can approximate the area of each slice by a rectangle, and then add up the areas to get the total area under the curve.  Let's take a look at an example doing this in code.  We will see how to get the true value in a later section.
+Có một cách truyền thống để tìm hiểu cách xấp xỉ các tích phân như vậy: ta có thể hình dung việc lấy vùng nằm giữa $a$ và $b$, rồi chia nó thành $N$ lát cắt dọc. Nếu $N$ lớn, ta có thể xấp xỉ diện tích của mỗi lát cắt bằng một hình chữ nhật, sau đó cộng diện tích của chúng lại để được tổng diện tích bên dưới đường cong. Hãy xem một ví dụ thực hiện điều này bằng code. Chúng ta sẽ thấy cách lấy được giá trị chính xác trong phần sau.
 
 ```{.python .input}
 #@tab mxnet
@@ -172,180 +172,181 @@ d2l.plt.show()
 f'approximation: {approx}, truth: {true}'
 ```
 
-The issue is that while it can be done numerically, we can do this approach analytically for only the simplest functions like
+Vấn đề là mặc dù có thể thực hiện bằng phương pháp số, ta chỉ có thể thực hiện cách tiếp cận này một cách giải tích đối với những hàm đơn giản nhất, chẳng hạn
 
 $$
 \int_a^b x \;dx.
 $$
 
-Anything somewhat more complex like our example from the code above
+Bất kỳ hàm nào phức tạp hơn một chút, chẳng hạn như ví dụ trong đoạn code trên
 
 $$
 \int_a^b \frac{x}{1+x^{2}} \;dx.
 $$
 
-is beyond what we can solve with such a direct method.
+đều vượt quá khả năng giải bằng phương pháp trực tiếp như vậy.
 
-We will instead take a different approach.  We will work intuitively with the notion of the area, and learn the main computational tool used to find integrals: the *fundamental theorem of calculus*.   This will be the basis for our study of integration.
+Thay vào đó, chúng ta sẽ tiếp cận theo một cách khác. Chúng ta sẽ làm việc một cách trực quan với khái niệm diện tích và tìm hiểu công cụ tính toán chính được dùng để tìm tích phân: *định lý cơ bản của giải tích*. Đây sẽ là nền tảng cho việc nghiên cứu phép tích phân của chúng ta.
 
-## The Fundamental Theorem of Calculus
+## Định lý cơ bản của giải tích
 
-To dive deeper into the theory of integration, let's introduce a function
+Để tìm hiểu sâu hơn về lý thuyết tích phân, hãy giới thiệu một hàm
 
 $$
 F(x) = \int_0^x f(y) dy.
 $$
 
-This function measures the area between $0$ and $x$ depending on how we change $x$.  Notice that this is everything we need since
+Hàm này đo diện tích giữa $0$ và $x$ tùy theo cách chúng ta thay đổi $x$. Lưu ý rằng đây là tất cả những gì chúng ta cần, vì
 
 $$
 \int_a^b f(x) \;dx = F(b) - F(a).
 $$
 
-This is a mathematical encoding of the fact that we can measure the area out to the far end-point and then subtract off the area to the near end point as indicated in :numref:`fig_area-subtract`.
+Đây là cách biểu diễn bằng toán học cho thực tế rằng ta có thể đo diện tích đến điểm đầu mút xa rồi trừ đi diện tích đến điểm đầu mút gần, như được minh họa trong :numref:`fig_area-subtract`.
 
-![Visualizing why we may reduce the problem of computing the area under a curve between two points to computing the area to the left of a point.](../img/sub-area.svg)
+![Hình dung lý do tại sao ta có thể chuyển bài toán tính diện tích bên dưới một đường cong giữa hai điểm thành bài toán tính diện tích bên trái một điểm.](../img/sub-area.svg)
 :label:`fig_area-subtract`
 
-Thus, we can figure out what the integral over any interval is by figuring out what $F(x)$ is.
+Do đó, ta có thể tìm tích phân trên bất kỳ khoảng nào bằng cách xác định $F(x)$.
 
-To do so, let's consider an experiment.  As we often do in calculus, let's imagine what happens when we shift the value by a tiny bit.  From the comment above, we know that
+Để làm vậy, hãy xét một thí nghiệm. Như thường làm trong giải tích, hãy hình dung điều gì xảy ra khi ta dịch chuyển giá trị một lượng rất nhỏ. Từ nhận xét trên, ta biết rằng
 
 $$
 F(x+\epsilon) - F(x) = \int_x^{x+\epsilon} f(y) \; dy.
 $$
 
-This tells us that the function changes by the area under a tiny sliver of a function.
+Điều này cho biết hàm thay đổi một lượng bằng diện tích bên dưới một lát rất mỏng của hàm.
 
-This is the point at which we make an approximation.  If we look at a tiny sliver of area like this, it looks like this area is close to the rectangular area with height the value of $f(x)$ and the base width $\epsilon$.  Indeed, one can show that as $\epsilon \rightarrow 0$ this approximation becomes better and better.  Thus we can conclude:
+Đây là lúc chúng ta đưa ra một phép xấp xỉ. Nếu nhìn vào một lát diện tích rất mỏng như thế này, ta thấy diện tích đó gần với diện tích hình chữ nhật có chiều cao bằng giá trị của $f(x)$ và chiều rộng đáy bằng $\epsilon$. Thật vậy, có thể chứng minh rằng khi $\epsilon \rightarrow 0$, phép xấp xỉ này ngày càng chính xác hơn. Vì vậy, ta có thể kết luận:
 
 $$
 F(x+\epsilon) - F(x) \approx \epsilon f(x).
 $$
 
-However, we can now notice: this is exactly the pattern we expect if we were computing the derivative of $F$!  Thus we see the following rather surprising fact:
+Tuy nhiên, bây giờ ta nhận thấy: đây chính xác là dạng mà ta kỳ vọng khi tính đạo hàm của $F$! Do đó, ta thấy một sự thật khá đáng ngạc nhiên sau:
 
 $$
 \frac{dF}{dx}(x) = f(x).
 $$
 
-This is the *fundamental theorem of calculus*.  We may write it in expanded form as
+Đây chính là *định lý cơ bản của giải tích*. Ta có thể viết nó dưới dạng khai triển như sau:
 $$\frac{d}{dx}\int_0^x  f(y) \; dy = f(x).$$
 :eqlabel:`eq_ftc`
 
-It takes the concept of finding areas (*a priori* rather hard), and reduces it to a statement derivatives (something much more completely understood).  One last comment that we must make is that this does not tell us exactly what $F(x)$ is.  Indeed $F(x) + C$ for any $C$ has the same derivative.  This is a fact-of-life in the theory of integration.  Thankfully, notice that when working with definite integrals, the constants drop out, and thus are irrelevant to the outcome.
+Định lý này lấy khái niệm tìm diện tích (*a priori* vốn khá khó) và rút gọn nó thành một mệnh đề về đạo hàm (thứ đã được hiểu rõ hơn nhiều). Một nhận xét cuối cùng cần nêu là định lý này không cho ta biết chính xác $F(x)$ là gì. Thật vậy, $F(x) + C$ với mọi $C$ đều có cùng đạo hàm. Đây là một thực tế không thể tránh khỏi trong lý thuyết tích phân. May mắn là khi làm việc với các tích phân xác định, các hằng số sẽ triệt tiêu và do đó không ảnh hưởng đến kết quả.
 
 $$
 \int_a^b f(x) \; dx = (F(b) + C) - (F(a) + C) = F(b) - F(a).
 $$
 
-This may seem like abstract non-sense, but let's take a moment to appreciate that it has given us a whole new perspective on computing integrals.  Our goal is no-longer to do some sort of chop-and-sum process to try and recover the area, rather we need only find a function whose derivative is the function we have!  This is incredible since we can now list many rather difficult integrals by just reversing the table from :numref:`sec_derivative_table`.  For instance, we know that the derivative of $x^{n}$ is $nx^{n-1}$.  Thus, we can say using the fundamental theorem :eqref:`eq_ftc` that
+Điều này có vẻ như một sự trừu tượng vô nghĩa, nhưng hãy dành chút thời gian để nhận ra rằng nó đã đem lại cho chúng ta một góc nhìn hoàn toàn mới về việc tính tích phân. Mục tiêu của chúng ta không còn là thực hiện một quy trình kiểu chia nhỏ rồi cộng lại để tìm diện tích; thay vào đó, ta chỉ cần tìm một hàm có đạo hàm chính là hàm đã cho! Điều này thật đáng kinh ngạc, vì giờ đây ta có thể liệt kê nhiều tích phân khá khó bằng cách đảo ngược bảng từ :numref:`sec_derivative_table`. Chẳng hạn, ta biết đạo hàm của $x^{n}$ là $nx^{n-1}$. Do đó, sử dụng định lý cơ bản :eqref:`eq_ftc`, ta có thể viết
 
 $$
 \int_0^{x} ny^{n-1} \; dy = x^n - 0^n = x^n.
 $$
 
-Similarly, we know that the derivative of $e^{x}$ is itself, so that means
+Tương tự, ta biết đạo hàm của $e^{x}$ chính là nó, nên
 
 $$
 \int_0^{x} e^{x} \; dx = e^{x} - e^{0} = e^x - 1.
 $$
 
-In this way, we can develop the entire theory of integration leveraging ideas from differential calculus freely.  Every integration rule derives from this one fact.
+Theo cách này, ta có thể xây dựng toàn bộ lý thuyết tích phân bằng cách tự do vận dụng các ý tưởng từ giải tích vi phân. Mọi quy tắc tích phân đều bắt nguồn từ một sự thật duy nhất này.
 
-## Change of Variables
+## Đổi biến
 :label:`subsec_integral_example`
 
-Just as with differentiation, there are a number of rules which make the computation of integrals more tractable.  In fact, every rule of differential calculus (like the product rule, sum rule, and chain rule) has a corresponding rule for integral calculus (integration by parts, linearity of integration, and the change of variables formula respectively).  In this section, we will dive into what is arguably the most important from the list: the change of variables formula.
+Cũng như với phép vi phân, có một số quy tắc giúp việc tính tích phân trở nên dễ thực hiện hơn. Trên thực tế, mọi quy tắc của giải tích vi phân (chẳng hạn quy tắc tích, quy tắc tổng và quy tắc chuỗi) đều có một quy tắc tương ứng trong giải tích tích phân (lần lượt là tích phân từng phần, tính tuyến tính của phép tích phân và công thức đổi biến). Trong phần này, chúng ta sẽ tìm hiểu quy tắc được cho là quan trọng nhất trong danh sách: công thức đổi biến.
 
-First, suppose that we have a function which is itself an integral:
+Trước hết, giả sử ta có một hàm bản thân nó là một tích phân:
 
 $$
 F(x) = \int_0^x f(y) \; dy.
 $$
 
-Let's suppose that we want to know how this function looks when we compose it with another to obtain $F(u(x))$.  By the chain rule, we know
+Giả sử ta muốn biết hàm này có dạng như thế nào khi hợp thành với một hàm khác để thu được $F(u(x))$. Theo quy tắc chuỗi, ta biết
 
 $$
 \frac{d}{dx}F(u(x)) = \frac{dF}{du}(u(x))\cdot \frac{du}{dx}.
 $$
 
-We can turn this into a statement about integration by using the fundamental theorem :eqref:`eq_ftc` as above.  This gives
+Ta có thể chuyển điều này thành một mệnh đề về tích phân bằng cách sử dụng định lý cơ bản :eqref:`eq_ftc` như trên. Ta được
 
 $$
 F(u(x)) - F(u(0)) = \int_0^x \frac{dF}{du}(u(y))\cdot \frac{du}{dy} \;dy.
 $$
 
-Recalling that $F$ is itself an integral gives that the left hand side may be rewritten to be
+Nhớ rằng $F$ bản thân là một tích phân, nên vế trái có thể được viết lại thành
 
 $$
 \int_{u(0)}^{u(x)} f(y) \; dy = \int_0^x \frac{dF}{du}(u(y))\cdot \frac{du}{dy} \;dy.
 $$
 
-Similarly, recalling that $F$ is an integral allows us to recognize that $\frac{dF}{dx} = f$ using the fundamental theorem :eqref:`eq_ftc`, and thus we may conclude
+Tương tự, việc nhớ rằng $F$ là một tích phân cho phép ta nhận ra rằng $\frac{dF}{dx} = f$ bằng cách sử dụng định lý cơ bản :eqref:`eq_ftc`, và do đó ta có thể kết luận
 
 $$\int_{u(0)}^{u(x)} f(y) \; dy = \int_0^x f(u(y))\cdot \frac{du}{dy} \;dy.$$
 :eqlabel:`eq_change_var`
 
-This is the *change of variables* formula.
+Đây là công thức *đổi biến*.
 
-For a more intuitive derivation, consider what happens when we take an integral of $f(u(x))$ between $x$ and $x+\epsilon$. For a small $\epsilon$, this integral is approximately $\epsilon f(u(x))$, the area of the associated rectangle.  Now, let's compare this with the integral of $f(y)$ from $u(x)$ to $u(x+\epsilon)$.  We know that $u(x+\epsilon) \approx u(x) + \epsilon \frac{du}{dx}(x)$, so the area of this rectangle is approximately $\epsilon \frac{du}{dx}(x)f(u(x))$.  Thus, to make the area of these two rectangles to agree, we need to multiply the first one by $\frac{du}{dx}(x)$ as is illustrated in :numref:`fig_rect-transform`.
+Để có một cách suy ra trực quan hơn, hãy xét điều xảy ra khi ta lấy tích phân của $f(u(x))$ từ $x$ đến $x+\epsilon$. Với một $\epsilon$ nhỏ, tích phân này xấp xỉ $\epsilon f(u(x))$, tức là diện tích của hình chữ nhật tương ứng. Bây giờ, hãy so sánh điều này với tích phân của $f(y)$ từ $u(x)$ đến $u(x+\epsilon)$. Ta biết rằng $u(x+\epsilon) \approx u(x) + \epsilon \frac{du}{dx}(x)$, vì vậy diện tích của hình chữ nhật này xấp xỉ $\epsilon \frac{du}{dx}(x)f(u(x))$. Do đó, để diện tích của hai hình chữ nhật này bằng nhau, ta cần nhân hình chữ nhật thứ nhất với $\frac{du}{dx}(x)$, như được minh họa trong :numref:`fig_rect-transform`.
 
-![Visualizing the transformation of a single thin rectangle under the change of variables.](../img/rect-trans.svg)
+![Hình dung sự biến đổi của một hình chữ nhật mỏng đơn lẻ dưới phép đổi biến.](../img/rect-trans.svg)
 :label:`fig_rect-transform`
 
-This tells us that
+Điều này cho ta
 
 $$
 \int_x^{x+\epsilon} f(u(y))\frac{du}{dy}(y)\;dy = \int_{u(x)}^{u(x+\epsilon)} f(y) \; dy.
 $$
 
-This is the change of variables formula expressed for a single small rectangle.
+Đây là công thức đổi biến được biểu diễn cho một hình chữ nhật nhỏ đơn lẻ.
 
-If $u(x)$ and $f(x)$ are properly chosen, this can allow for the computation of incredibly complex integrals.  For instance, if we even chose $f(y) = 1$ and $u(x) = e^{-x^{2}}$ (which means $\frac{du}{dx}(x) = -2xe^{-x^{2}}$), this can show for instance that
+Nếu $u(x)$ và $f(x)$ được chọn phù hợp, công thức này có thể cho phép tính những tích phân cực kỳ phức tạp. Chẳng hạn, nếu ta chọn $f(y) = 1$ và $u(x) = e^{-x^{2}}$ (điều này có nghĩa là $\frac{du}{dx}(x) = -2xe^{-x^{2}}$), ta có thể chỉ ra, chẳng hạn, rằng
 
 $$
 e^{-1} - 1 = \int_{e^{-0}}^{e^{-1}} 1 \; dy = -2\int_0^{1} ye^{-y^2}\;dy,
 $$
 
-and thus by rearranging that
+và do đó, bằng cách sắp xếp lại, ta có
 
 $$
 \int_0^{1} ye^{-y^2}\; dy = \frac{1-e^{-1}}{2}.
 $$
 
-## A Comment on Sign Conventions
+## Nhận xét về quy ước dấu
 
-Keen-eyed readers will observe something strange about the computations above.  Namely, computations like
+Những độc giả tinh ý sẽ nhận thấy một điều kỳ lạ trong các phép tính trên. Cụ thể, những phép tính như
 
 $$
 \int_{e^{-0}}^{e^{-1}} 1 \; dy = e^{-1} -1 < 0,
 $$
 
-can produce negative numbers.  When thinking about areas, it can be strange to see a negative value, and so it is worth digging into what the convention is.
+có thể cho ra các số âm. Khi nghĩ về diện tích, việc thấy một giá trị âm có thể gây khó hiểu, vì vậy ta nên tìm hiểu kỹ hơn về quy ước này.
 
-Mathematicians take the notion of signed areas.  This manifests itself in two ways.  First, if we consider a function $f(x)$ which is sometimes less than zero, then the area will also be negative.  So for instance
+Các nhà toán học sử dụng khái niệm diện tích có dấu. Điều này thể hiện theo hai cách. Thứ nhất, nếu xét một hàm $f(x)$ đôi khi nhỏ hơn không, thì diện tích cũng sẽ âm. Chẳng hạn,
 
 $$
 \int_0^{1} (-1)\;dx = -1.
 $$
 
-Similarly, integrals which progress from right to left, rather than left to right are also taken to be negative areas
+Tương tự, các tích phân tiến từ phải sang trái thay vì từ trái sang phải cũng được xem là các diện tích âm:
 
 $$
 \int_0^{-1} 1\; dx = -1.
 $$
 
-The standard area (from left to right of a positive function) is always positive.  Anything obtained by flipping it (say flipping over the $x$-axis to get the integral of a negative number, or flipping over the $y$-axis to get an integral in the wrong order) will produce a negative area.  And indeed, flipping twice will give a pair of negative signs that cancel out to have positive area
+Diện tích thông thường (từ trái sang phải của một hàm dương) luôn dương. Bất cứ điều gì có được bằng cách lật nó (chẳng hạn lật qua trục $x$ để lấy tích phân của một số âm, hoặc lật qua trục $y$ để lấy tích phân theo thứ tự ngược) sẽ tạo ra một diện tích âm. Và đúng vậy, lật hai lần sẽ tạo ra hai dấu âm triệt tiêu lẫn nhau, cho diện tích dương:
 
 $$
 \int_0^{-1} (-1)\;dx =  1.
 $$
 
-If this discussion sounds familiar, it is!  In :numref:`sec_geometry-linear-algebraic-ops` we discussed how the determinant represented the signed area in much the same way.
+Nếu phần thảo luận này nghe có vẻ quen thuộc thì đúng là như vậy! Trong :numref:`sec_geometry-linear-algebraic-ops`, chúng ta đã thảo luận về cách định thức biểu diễn diện tích có dấu theo cách tương tự.
 
-## Multiple Integrals
-In some cases, we will need to work in higher dimensions.  For instance, suppose that we have a function of two variables, like $f(x, y)$ and we want to know the volume under $f$ when $x$ ranges over $[a, b]$ and $y$ ranges over $[c, d]$.
+## Tích phân nhiều lớp
+
+Trong một số trường hợp, chúng ta sẽ cần làm việc trong các không gian nhiều chiều hơn. Chẳng hạn, giả sử ta có một hàm của hai biến, như $f(x, y)$, và muốn biết thể tích dưới $f$ khi $x$ chạy trên $[a, b]$ còn $y$ chạy trên $[c, d]$.
 
 ```{.python .input}
 #@tab mxnet
@@ -408,79 +409,80 @@ ax.set_zlim(0, 1)
 ax.dist = 12
 ```
 
-We write this as
+Ta viết điều này như sau:
 
 $$
 \int_{[a, b]\times[c, d]} f(x, y)\;dx\;dy.
 $$
 
-Suppose that we wish to compute this integral.  My claim is that we can do this by iteratively computing first the integral in $x$ and then shifting to the integral in $y$, that is to say
+Giả sử ta muốn tính tích phân này. Tôi khẳng định rằng ta có thể thực hiện bằng cách tính lần lượt: trước hết tính tích phân theo $x$, sau đó chuyển sang tích phân theo $y$, tức là
 
 $$
 \int_{[a, b]\times[c, d]} f(x, y)\;dx\;dy = \int_c^{d} \left(\int_a^{b} f(x, y) \;dx\right) \; dy.
 $$
 
-Let's see why this is.
+Hãy xem tại sao điều này đúng.
 
-Consider the figure above where we have split the function into $\epsilon \times \epsilon$ squares which we will index with integer coordinates $i, j$.  In this case, our integral is approximately
+Xét hình minh họa ở trên, trong đó ta chia hàm thành các hình vuông $\epsilon \times \epsilon$ được đánh chỉ số bằng các tọa độ nguyên $i, j$. Khi đó, tích phân của ta xấp xỉ
 
 $$
 \sum_{i, j} \epsilon^{2} f(\epsilon i, \epsilon j).
 $$
 
-Once we discretize the problem, we may add up the values on these squares in whatever order we like, and not worry about changing the values.  This is illustrated in :numref:`fig_sum-order`.  In particular, we can say that
+Sau khi rời rạc hóa bài toán, ta có thể cộng các giá trị trên những hình vuông này theo bất kỳ thứ tự nào mà không cần lo lắng về việc thay đổi kết quả. Điều này được minh họa trong :numref:`fig_sum-order`. Cụ thể, ta có thể viết
 
 $$
  \sum _ {j} \epsilon \left(\sum_{i} \epsilon f(\epsilon i, \epsilon j)\right).
 $$
 
-![Illustrating how to decompose a sum over many squares as a sum over first the columns (1), then adding the column sums together (2).](../img/sum-order.svg)
+![Minh họa cách phân rã một tổng trên nhiều hình vuông thành tổng theo các cột trước (1), sau đó cộng các tổng của từng cột lại với nhau (2).](../img/sum-order.svg)
 :label:`fig_sum-order`
 
-The sum on the inside is precisely the discretization of the integral
+Tổng ở bên trong chính là phép rời rạc hóa của tích phân
 
 $$
 G(\epsilon j) = \int _a^{b} f(x, \epsilon j) \; dx.
 $$
 
-Finally, notice that if we combine these two expressions we get
+Cuối cùng, hãy lưu ý rằng khi kết hợp hai biểu thức này, ta được
 
 $$
 \sum _ {j} \epsilon G(\epsilon j) \approx \int _ {c}^{d} G(y) \; dy = \int _ {[a, b]\times[c, d]} f(x, y)\;dx\;dy.
 $$
 
-Thus putting it all together, we have that
+Như vậy, gộp tất cả lại, ta có
 
 $$
 \int _ {[a, b]\times[c, d]} f(x, y)\;dx\;dy = \int _ c^{d} \left(\int _ a^{b} f(x, y) \;dx\right) \; dy.
 $$
 
-Notice that, once discretized, all we did was rearrange the order in which we added a list of numbers.  This may make it seem like it is nothing, however this result (called *Fubini's Theorem*) is not always true!  For the type of mathematics encountered when doing machine learning (continuous functions), there is no concern, however it is possible to create examples where it fails (for example the function $f(x, y) = xy(x^2-y^2)/(x^2+y^2)^3$ over the rectangle $[0,2]\times[0,1]$).
+Lưu ý rằng sau khi rời rạc hóa, tất cả những gì ta làm chỉ là sắp xếp lại thứ tự cộng một danh sách các số. Điều này có thể khiến ta nghĩ rằng kết quả này không có gì đặc biệt, nhưng kết quả này (được gọi là *Định lý Fubini*) không phải lúc nào cũng đúng! Đối với loại toán học thường gặp trong machine learning (các hàm liên tục), không có gì đáng lo ngại. Tuy nhiên, có thể xây dựng những ví dụ mà định lý thất bại (chẳng hạn hàm $f(x, y) = xy(x^2-y^2)/(x^2+y^2)^3$ trên hình chữ nhật $[0,2]\times[0,1]$).
 
-Note that the choice to do the integral in $x$ first, and then the integral in $y$ was arbitrary.  We could have equally well chosen to do $y$ first and then $x$ to see
+Lưu ý rằng việc chọn tính tích phân theo $x$ trước rồi theo $y$ là tùy ý. Ta cũng có thể chọn tính theo $y$ trước rồi theo $x$ để được
 
 $$
 \int _ {[a, b]\times[c, d]} f(x, y)\;dx\;dy = \int _ a^{b} \left(\int _ c^{d} f(x, y) \;dy\right) \; dx.
 $$
 
-Often times, we will condense down to vector notation, and say that for $U = [a, b]\times [c, d]$ this is
+Thông thường, ta sẽ rút gọn bằng ký hiệu vector và nói rằng với $U = [a, b]\times [c, d]$, biểu thức này là
 
 $$
 \int _ U f(\mathbf{x})\;d\mathbf{x}.
 $$
 
-## Change of Variables in Multiple Integrals
-As with single variables in :eqref:`eq_change_var`, the ability to change variables inside a higher dimensional integral is a key tool.  Let's summarize the result without derivation.
+## Đổi biến trong tích phân nhiều lớp
 
-We need a function that reparametrizes our domain of integration.  We can take this to be $\phi : \mathbb{R}^n \rightarrow \mathbb{R}^n$, that is any function which takes in $n$ real variables and returns another $n$.  To keep the expressions clean, we will assume that $\phi$ is *injective* which is to say it never folds over itself ($\phi(\mathbf{x}) = \phi(\mathbf{y}) \implies \mathbf{x} = \mathbf{y}$).
+Cũng như với biến đơn trong :eqref:`eq_change_var`, khả năng đổi biến trong một tích phân nhiều chiều là một công cụ quan trọng. Hãy tóm tắt kết quả mà không dẫn xuất.
 
-In this case, we can say that
+Ta cần một hàm tái tham số hóa miền tích phân. Ta có thể chọn $\phi : \mathbb{R}^n \rightarrow \mathbb{R}^n$, tức là một hàm nhận vào $n$ biến thực và trả về một bộ gồm $n$ biến thực khác. Để các biểu thức gọn hơn, ta giả sử $\phi$ là *đơn ánh* (*injective*), nghĩa là nó không bao giờ tự gấp lên chính nó ($\phi(\mathbf{x}) = \phi(\mathbf{y}) \implies \mathbf{x} = \mathbf{y}$).
+
+Trong trường hợp này, ta có thể viết
 
 $$
 \int _ {\phi(U)} f(\mathbf{x})\;d\mathbf{x} = \int _ {U} f(\phi(\mathbf{x})) \left|\det(D\phi(\mathbf{x}))\right|\;d\mathbf{x}.
 $$
 
-where $D\phi$ is the *Jacobian* of $\phi$, which is the matrix of partial derivatives of $\boldsymbol{\phi} = (\phi_1(x_1, \ldots, x_n), \ldots, \phi_n(x_1, \ldots, x_n))$,
+trong đó $D\phi$ là *Jacobian* của $\phi$, tức ma trận các đạo hàm riêng của $\boldsymbol{\phi} = (\phi_1(x_1, \ldots, x_n), \ldots, \phi_n(x_1, \ldots, x_n))$,
 
 $$
 D\boldsymbol{\phi} = \begin{bmatrix}
@@ -490,23 +492,23 @@ D\boldsymbol{\phi} = \begin{bmatrix}
 \end{bmatrix}.
 $$
 
-Looking closely, we see that this is similar to the single variable chain rule :eqref:`eq_change_var`, except we have replaced the term $\frac{du}{dx}(x)$ with $\left|\det(D\phi(\mathbf{x}))\right|$.  Let's see how we can to interpret this term.  Recall that the $\frac{du}{dx}(x)$ term existed to say how much we stretched our $x$-axis by applying $u$.  The same process in higher dimensions is to determine how much we stretch the area (or volume, or hyper-volume) of a little square (or little *hyper-cube*) by applying $\boldsymbol{\phi}$.  If $\boldsymbol{\phi}$ was the multiplication by a matrix, then we know how the determinant already gives the answer.
+Quan sát kỹ, ta thấy điều này tương tự quy tắc chain rule cho một biến :eqref:`eq_change_var`, ngoại trừ việc ta thay số hạng $\frac{du}{dx}(x)$ bằng $\left|\det(D\phi(\mathbf{x}))\right|$. Hãy xem cách diễn giải số hạng này. Nhớ lại rằng số hạng $\frac{du}{dx}(x)$ cho biết ta kéo giãn trục $x$ bao nhiêu khi áp dụng $u$. Trong các chiều cao hơn, quy trình tương tự là xác định ta kéo giãn diện tích (hoặc thể tích, hay siêu thể tích) của một hình vuông nhỏ (hoặc một *hyper-cube* nhỏ) bao nhiêu khi áp dụng $\boldsymbol{\phi}$. Nếu $\boldsymbol{\phi}$ là phép nhân với một ma trận, thì ta đã biết định thức cho ta câu trả lời như thế nào.
 
-With some work, one can show that the *Jacobian* provides the best approximation to a multivariable function $\boldsymbol{\phi}$ at a point by a matrix in the same way we could approximate by lines or planes with derivatives and gradients. Thus the determinant of the Jacobian exactly mirrors the scaling factor we identified in one dimension.
+Với một chút nỗ lực, ta có thể chứng minh rằng *Jacobian* cung cấp xấp xỉ tốt nhất cho một hàm nhiều biến $\boldsymbol{\phi}$ tại một điểm bằng một ma trận, tương tự như cách ta có thể xấp xỉ bằng các đường thẳng hoặc mặt phẳng nhờ các đạo hàm và gradient. Vì vậy, định thức của Jacobian chính xác phản ánh hệ số co giãn mà ta đã xác định trong một chiều.
 
-It takes some work to fill in the details to this, so do not worry if they are not clear now.  Let's see at least one example we will make use of later on.  Consider the integral
+Việc bổ sung đầy đủ các chi tiết đòi hỏi một chút công sức, vì vậy đừng lo nếu hiện giờ chúng chưa rõ ràng. Hãy xem ít nhất một ví dụ mà sau này ta sẽ sử dụng. Xét tích phân
 
 $$
 \int _ {-\infty}^{\infty} \int _ {-\infty}^{\infty} e^{-x^{2}-y^{2}} \;dx\;dy.
 $$
 
-Playing with this integral directly will get us no-where, but if we change variables, we can make significant progress.  If we let $\boldsymbol{\phi}(r, \theta) = (r \cos(\theta),  r\sin(\theta))$ (which is to say that $x = r \cos(\theta)$, $y = r \sin(\theta)$), then we can apply the change of variable formula to see that this is the same thing as
+Tính trực tiếp tích phân này sẽ không đưa ta đến đâu, nhưng nếu đổi biến, ta có thể tiến triển đáng kể. Nếu đặt $\boldsymbol{\phi}(r, \theta) = (r \cos(\theta),  r\sin(\theta))$ (nghĩa là $x = r \cos(\theta)$, $y = r \sin(\theta)$), thì ta có thể áp dụng công thức đổi biến để thấy rằng tích phân này tương đương với
 
 $$
 \int _ 0^\infty \int_0 ^ {2\pi} e^{-r^{2}} \left|\det(D\mathbf{\phi}(\mathbf{x}))\right|\;d\theta\;dr,
 $$
 
-where
+trong đó
 
 $$
 \left|\det(D\mathbf{\phi}(\mathbf{x}))\right| = \left|\det\begin{bmatrix}
@@ -515,37 +517,37 @@ $$
 \end{bmatrix}\right| = r(\cos^{2}(\theta) + \sin^{2}(\theta)) = r.
 $$
 
-Thus, the integral is
+Do đó, tích phân là
 
 $$
 \int _ 0^\infty \int _ 0 ^ {2\pi} re^{-r^{2}} \;d\theta\;dr = 2\pi\int _ 0^\infty re^{-r^{2}} \;dr = \pi,
 $$
 
-where the final equality follows by the same computation that we used in section :numref:`subsec_integral_example`.
+trong đó đẳng thức cuối cùng được suy ra bằng phép tính tương tự như phép tính ta đã sử dụng trong phần :numref:`subsec_integral_example`.
 
-We will meet this integral again when we study continuous random variables in :numref:`sec_random_variables`.
+Ta sẽ gặp lại tích phân này khi nghiên cứu các biến ngẫu nhiên liên tục trong :numref:`sec_random_variables`.
 
-## Summary
+## Tóm tắt
 
-* The theory of integration allows us to answer questions about areas or volumes.
-* The fundamental theorem of calculus allows us to leverage knowledge about derivatives to compute areas via the observation that the derivative of the area up to some point is given by the value of the function being integrated.
-* Integrals in higher dimensions can be computed by iterating single variable integrals.
+* Lý thuyết tích phân cho phép chúng ta trả lời các câu hỏi về diện tích hoặc thể tích.
+* Định lý cơ bản của giải tích cho phép ta tận dụng kiến thức về đạo hàm để tính diện tích, thông qua nhận xét rằng đạo hàm của diện tích tính đến một điểm nào đó bằng giá trị của hàm đang được tích phân.
+* Các tích phân trong không gian nhiều chiều có thể được tính bằng cách lặp lại các tích phân một biến.
 
-## Exercises
-1. What is $\int_1^2 \frac{1}{x} \;dx$?
-2. Use the change of variables formula to integrate $\int_0^{\sqrt{\pi}}x\sin(x^2)\;dx$.
-3. What is $\int_{[0,1]^2} xy \;dx\;dy$?
-4. Use the change of variables formula to compute $\int_0^2\int_0^1xy(x^2-y^2)/(x^2+y^2)^3\;dy\;dx$ and $\int_0^1\int_0^2f(x, y) = xy(x^2-y^2)/(x^2+y^2)^3\;dx\;dy$ to see they are different.
+## Bài tập
+1. $\int_1^2 \frac{1}{x} \;dx$ bằng bao nhiêu?
+2. Sử dụng công thức đổi biến để tính $\int_0^{\sqrt{\pi}}x\sin(x^2)\;dx$.
+3. $\int_{[0,1]^2} xy \;dx\;dy$ bằng bao nhiêu?
+4. Sử dụng công thức đổi biến để tính $\int_0^2\int_0^1xy(x^2-y^2)/(x^2+y^2)^3\;dy\;dx$ và $\int_0^1\int_0^2f(x, y) = xy(x^2-y^2)/(x^2+y^2)^3\;dx\;dy$ để thấy rằng chúng khác nhau.
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/414)
+[Thảo luận](https://discuss.d2l.ai/t/414)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1092)
+[Thảo luận](https://discuss.d2l.ai/t/1092)
 :end_tab:
 
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1093)
+[Thảo luận](https://discuss.d2l.ai/t/1093)
 :end_tab:

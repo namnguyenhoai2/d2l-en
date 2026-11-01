@@ -1,45 +1,43 @@
-# Information Theory
+# Lý thuyết thông tin
 :label:`sec_information_theory`
 
-The universe is overflowing with information. Information provides a common language across disciplinary rifts: from Shakespeare's Sonnet to researchers' paper on Cornell ArXiv, from Van Gogh's printing Starry Night to Beethoven's music Symphony No. 5, from the first programming language Plankalkül to the state-of-the-art machine learning algorithms. Everything must follow the rules of information theory, no matter the format. With information theory, we can measure and compare how much information is present in different signals. In this section, we will investigate the fundamental concepts of information theory and applications of information theory in machine learning.
+Vũ trụ tràn ngập thông tin. Thông tin cung cấp một ngôn ngữ chung vượt qua những ranh giới giữa các lĩnh vực: từ Sonnet của Shakespeare đến bài báo của các nhà nghiên cứu trên Cornell ArXiv, từ bức tranh Starry Night của Van Gogh đến bản giao hưởng Symphony No. 5 của Beethoven, từ ngôn ngữ lập trình đầu tiên Plankalkül đến các thuật toán machine learning hiện đại nhất. Mọi thứ đều phải tuân theo các quy tắc của lý thuyết thông tin, bất kể định dạng. Với lý thuyết thông tin, chúng ta có thể đo lường và so sánh lượng thông tin hiện diện trong các tín hiệu khác nhau. Trong phần này, chúng ta sẽ tìm hiểu các khái niệm nền tảng của lý thuyết thông tin và những ứng dụng của lý thuyết thông tin trong machine learning.
 
-Before we get started, let's outline the relationship between machine learning and information theory. Machine learning aims to extract interesting signals from data and make critical predictions.  On the other hand, information theory studies encoding, decoding, transmitting, and manipulating information. As a result, information theory provides fundamental language for discussing the information processing in machine learned systems. For example, many machine learning applications use the cross-entropy loss as described in :numref:`sec_softmax`.  This loss can be directly derived from information theoretic considerations.
+Trước khi bắt đầu, hãy phác thảo mối quan hệ giữa machine learning và lý thuyết thông tin. Machine learning nhằm trích xuất các tín hiệu thú vị từ dữ liệu và đưa ra những dự đoán quan trọng. Mặt khác, lý thuyết thông tin nghiên cứu việc mã hóa, giải mã, truyền và thao tác với thông tin. Vì vậy, lý thuyết thông tin cung cấp ngôn ngữ nền tảng để thảo luận về quá trình xử lý thông tin trong các hệ thống machine learning. Ví dụ, nhiều ứng dụng machine learning sử dụng cross-entropy loss như được mô tả trong :numref:`sec_softmax`. Loss này có thể được suy ra trực tiếp từ các xét trên lý thuyết thông tin.
 
+## Thông tin
 
-## Information
+Hãy bắt đầu với “linh hồn” của lý thuyết thông tin: thông tin. *Thông tin* có thể được mã hóa trong bất kỳ thứ gì bằng một chuỗi cụ thể gồm một hoặc nhiều định dạng mã hóa. Giả sử chúng ta tự đặt cho mình nhiệm vụ cố gắng định nghĩa một khái niệm về thông tin. Điểm khởi đầu của chúng ta có thể là gì?
 
-Let's start with the "soul" of information theory: information. *Information* can be encoded in anything with a particular sequence of one or more encoding formats. Suppose that we task ourselves with trying to define a notion of information.  What could be our starting point?
+Hãy xem xét thí nghiệm tưởng tượng sau. Chúng ta có một người bạn sở hữu một bộ bài. Người bạn đó sẽ xáo trộn bộ bài, lật một số lá bài và nói cho chúng ta biết các nhận định về những lá bài đó. Chúng ta sẽ cố gắng đánh giá lượng thông tin trong từng nhận định.
 
-Consider the following thought experiment.  We have a friend with a deck of cards.  They will shuffle the deck, flip over some cards, and tell us statements about the cards.  We will try to assess the information content of each statement.
+Đầu tiên, người bạn lật một lá bài và nói: “Tôi thấy một lá bài.” Điều này hoàn toàn không cung cấp thông tin nào cho chúng ta. Chúng ta vốn đã chắc chắn rằng điều này xảy ra, vì vậy chúng ta kỳ vọng lượng thông tin phải bằng không.
 
-First, they flip over a card and tell us, "I see a card."  This provides us with no information at all.  We were already certain that this was the case so we hope the information should be zero.
+Tiếp theo, người bạn lật một lá bài và nói: “Tôi thấy một lá cơ.” Điều này cung cấp cho chúng ta một ít thông tin, nhưng thực tế chỉ có $4$ chất bài khác nhau có thể xuất hiện, mỗi chất có khả năng như nhau, nên chúng ta không ngạc nhiên trước kết quả này. Chúng ta kỳ vọng rằng, bất kể thước đo thông tin là gì, sự kiện này phải có lượng thông tin thấp.
 
-Next, they flip over a card and say, "I see a heart."  This provides us some information, but in reality there are only $4$ different suits that were possible, each equally likely, so we are not surprised by this outcome.  We hope that whatever the measure of information, this event should have low information content.
+Tiếp theo, người bạn lật một lá bài và nói: “Đây là lá $3$ bích.” Đây là nhiều thông tin hơn. Quả thực, có $52$ kết quả có khả năng xảy ra như nhau, và người bạn đã cho chúng ta biết kết quả nào đã xảy ra. Đây phải là một lượng thông tin trung bình.
 
-Next, they flip over a card and say, "This is the $3$ of spades."  This is more information.  Indeed there were $52$ equally likely possible outcomes, and our friend told us which one it was.  This should be a medium amount of information.
+Hãy đưa điều này đến cực hạn logic. Giả sử cuối cùng người bạn lật mọi lá bài trong bộ bài và đọc toàn bộ thứ tự của bộ bài đã được xáo trộn. Có $52!$ thứ tự khác nhau của bộ bài, một lần nữa tất cả đều có khả năng như nhau, vì vậy chúng ta cần rất nhiều thông tin để biết đó là thứ tự nào.
 
-Let's take this to the logical extreme.  Suppose that finally they flip over every card from the deck and read off the entire sequence of the shuffled deck.  There are $52!$ different orders to the deck, again all equally likely, so we need a lot of information to know which one it is.
+Bất kỳ khái niệm nào về thông tin mà chúng ta xây dựng cũng phải phù hợp với trực giác này. Quả thực, trong các phần tiếp theo, chúng ta sẽ học cách tính rằng những sự kiện này lần lượt có lượng thông tin bằng $0\textrm{ bits}$, $2\textrm{ bits}$, $~5.7\textrm{ bits}$ và $~225.6\textrm{ bits}$.
 
-Any notion of information we develop must conform to this intuition.  Indeed, in the next sections we will learn how to compute that these events have $0\textrm{ bits}$, $2\textrm{ bits}$, $~5.7\textrm{ bits}$, and $~225.6\textrm{ bits}$ of information respectively.
+Nếu đọc qua các thí nghiệm tưởng tượng này, chúng ta nhận thấy một ý tưởng tự nhiên. Là điểm khởi đầu, thay vì quan tâm đến tri thức, chúng ta có thể dựa trên ý tưởng rằng thông tin biểu thị mức độ bất ngờ hoặc khả năng trừu tượng của sự kiện. Ví dụ, nếu muốn mô tả một sự kiện bất thường, chúng ta cần rất nhiều thông tin. Với một sự kiện phổ biến, chúng ta có thể không cần nhiều thông tin.
 
-If we read through these thought experiments, we see a natural idea.  As a starting point, rather than caring about the knowledge, we may build off the idea that information represents the degree of surprise or the abstract possibility of the event. For example, if we want to describe an unusual event, we need a lot information. For a common event, we may not need much information.
+Năm 1948, Claude E. Shannon công bố *A Mathematical Theory of Communication* :cite:`Shannon.1948`, đặt nền móng cho lý thuyết thông tin. Trong bài viết của mình, Shannon lần đầu tiên giới thiệu khái niệm entropy thông tin. Chúng ta sẽ bắt đầu hành trình từ đây.
 
-In 1948, Claude E. Shannon published *A Mathematical Theory of Communication* :cite:`Shannon.1948` establishing the theory of information.  In his article, Shannon introduced the concept of information entropy for the first time. We will begin our journey here.
+### Thông tin tự thân
 
+Vì thông tin thể hiện khả năng trừu tượng của một sự kiện, làm thế nào chúng ta ánh xạ khả năng đó sang số bit? Shannon đã giới thiệu thuật ngữ *bit* làm đơn vị thông tin; thuật ngữ này vốn do John Tukey tạo ra. Vậy “bit” là gì và tại sao chúng ta sử dụng nó để đo thông tin? Trong lịch sử, một thiết bị truyền tín hiệu cổ chỉ có thể gửi hoặc nhận hai loại mã: $0$ và $1$. Quả thực, mã nhị phân vẫn được sử dụng phổ biến trên mọi máy tính kỹ thuật số hiện đại. Theo cách này, mọi thông tin đều được mã hóa bằng một chuỗi $0$ và $1$. Do đó, một chuỗi chữ số nhị phân có độ dài $n$ chứa $n$ bit thông tin.
 
-### Self-information
-
-Since information embodies the abstract possibility of an event, how do we map the possibility to the number of bits? Shannon introduced the terminology *bit* as the unit of information, which was originally created by John Tukey. So what is a "bit" and why do we use it to measure information? Historically, an antique transmitter can only send or receive two types of code: $0$ and $1$.  Indeed, binary encoding is still in common use on all modern digital computers. In this way, any information is encoded by a series of $0$ and $1$. And hence, a series of binary digits of length $n$ contains $n$ bits of information.
-
-Now, suppose that for any series of codes, each $0$ or $1$ occurs with a probability of $\frac{1}{2}$. Hence, an event $X$ with a series of codes of length $n$, occurs with a probability of $\frac{1}{2^n}$. At the same time, as we mentioned before, this series contains $n$ bits of information. So, can we generalize to a mathematical function which can transfer the probability $p$ to the number of bits? Shannon gave the answer by defining *self-information*
+Bây giờ, giả sử rằng trong bất kỳ chuỗi mã nào, mỗi $0$ hoặc $1$ xuất hiện với xác suất $\frac{1}{2}$. Vì vậy, một sự kiện $X$ với chuỗi mã có độ dài $n$ xảy ra với xác suất $\frac{1}{2^n}$. Đồng thời, như đã đề cập trước đó, chuỗi này chứa $n$ bit thông tin. Vậy chúng ta có thể khái quát thành một hàm toán học chuyển xác suất $p$ thành số bit hay không? Shannon đã đưa ra câu trả lời bằng cách định nghĩa *thông tin tự thân*
 
 $$I(X) = - \log_2 (p),$$
 
-as the *bits* of information we have received for this event $X$. Note that we will always use base-2 logarithms in this section. For the sake of simplicity, the rest of this section will omit the subscript 2 in the logarithm notation, i.e., $\log(.)$ always refers to $\log_2(.)$. For example, the code "0010" has a self-information
+là số *bit* thông tin mà chúng ta nhận được từ sự kiện $X$ này. Lưu ý rằng trong phần này, chúng ta luôn sử dụng logarithm cơ số 2. Để đơn giản, phần còn lại của phần này sẽ bỏ chỉ số 2 trong ký hiệu logarithm, tức là $\log(.)$ luôn có nghĩa là $\log_2(.)$. Ví dụ, mã “0010” có thông tin tự thân
 
 $$I(\textrm{"0010"}) = - \log (p(\textrm{"0010"})) = - \log \left( \frac{1}{2^4} \right) = 4 \textrm{ bits}.$$
 
-We can calculate self information as shown below. Before that, let's first import all the necessary packages in this section.
+Chúng ta có thể tính thông tin tự thân như bên dưới. Trước hết, hãy import tất cả các package cần thiết trong phần này.
 
 ```{.python .input}
 #@tab mxnet
@@ -88,33 +86,32 @@ self_information(1 / 64)
 
 ## Entropy
 
-As self-information only measures the information of a single discrete event, we need a more generalized measure for any random variable of either discrete or continuous distribution.
+Vì thông tin tự thân chỉ đo thông tin của một sự kiện rời rạc đơn lẻ, chúng ta cần một thước đo tổng quát hơn cho mọi biến ngẫu nhiên có phân phối rời rạc hoặc liên tục.
 
+### Động lực hình thành entropy
 
-### Motivating Entropy
+Hãy cố gắng nói cụ thể hơn về điều chúng ta mong muốn. Đây sẽ là một phát biểu không chính thức về những điều được gọi là *tiên đề của entropy Shannon*. Hóa ra tập hợp các phát biểu hợp lẽ thường sau đây buộc chúng ta phải đi đến một định nghĩa duy nhất về thông tin. Một phiên bản chính thức của các tiên đề này, cùng với một số tiên đề khác, có thể được tìm thấy trong :citet:`Csiszar.2008`.
 
-Let's try to get specific about what we want.  This will be an informal statement of what are known as the *axioms of Shannon entropy*.  It will turn out that the following collection of common-sense statements force us to a unique definition of information.  A formal version of these axioms, along with several others may be found in :citet:`Csiszar.2008`.
+1. Thông tin chúng ta thu được khi quan sát một biến ngẫu nhiên không phụ thuộc vào cách chúng ta gọi tên các phần tử, cũng như không phụ thuộc vào sự hiện diện của các phần tử bổ sung có xác suất bằng không.
+2. Thông tin chúng ta thu được khi quan sát hai biến ngẫu nhiên không lớn hơn tổng thông tin thu được khi quan sát riêng từng biến. Nếu chúng độc lập, thì lượng thông tin này chính xác bằng tổng đó.
+3. Thông tin thu được khi quan sát các sự kiện (gần như) chắc chắn là (gần như) bằng không.
 
-1.  The information we gain by observing a random variable does not depend on what we call the elements, or the presence of additional elements which have probability zero.
-2.  The information we gain by observing two random variables is no more than the sum of the information we gain by observing them separately.  If they are independent, then it is exactly the sum.
-3.  The information gained when observing (nearly) certain events is (nearly) zero.
+Mặc dù việc chứng minh điều này nằm ngoài phạm vi của tài liệu, điều quan trọng là phải biết rằng điều này xác định duy nhất dạng mà entropy phải có. Điểm không xác định duy nhất mà các tiên đề này cho phép nằm ở việc lựa chọn các đơn vị cơ bản; lựa chọn này thường được chuẩn hóa bằng cách sử dụng quy ước đã thấy trước đó, theo đó thông tin do một lần tung đồng xu công bằng cung cấp bằng một bit.
 
-While proving this fact is beyond the scope of our text, it is important to know that this uniquely determines the form that entropy must take.  The only ambiguity that these allow is in the choice of fundamental units, which is most often normalized by making the choice we saw before that the information provided by a single fair coin flip is one bit.
+### Định nghĩa
 
-### Definition
-
-For any random variable $X$ that follows a probability distribution $P$ with a probability density function (p.d.f.) or a probability mass function (p.m.f.) $p(x)$, we measure the expected amount of information through *entropy* (or *Shannon entropy*)
+Với mọi biến ngẫu nhiên $X$ tuân theo phân phối xác suất $P$ có hàm mật độ xác suất (p.d.f.) hoặc hàm khối lượng xác suất (p.m.f.) $p(x)$, chúng ta đo lượng thông tin kỳ vọng thông qua *entropy* (hay *entropy Shannon*)
 
 $$H(X) = - E_{x \sim P} [\log p(x)].$$
 :eqlabel:`eq_ent_def`
 
-To be specific, if $X$ is discrete, $$H(X) = - \sum_i p_i \log p_i \textrm{, where } p_i = P(X_i).$$
+Cụ thể, nếu $X$ là biến rời rạc, $$H(X) = - \sum_i p_i \log p_i \textrm{, where } p_i = P(X_i).$$
 
-Otherwise, if $X$ is continuous, we also refer entropy as *differential entropy*
+Ngược lại, nếu $X$ là biến liên tục, chúng ta cũng gọi entropy là *entropy vi phân*
 
 $$H(X) = - \int_x p(x) \log p(x) \; dx.$$
 
-We can define entropy as below.
+Chúng ta có thể định nghĩa entropy như bên dưới.
 
 ```{.python .input}
 #@tab mxnet
@@ -146,60 +143,60 @@ def entropy(p):
 entropy(tf.constant([0.1, 0.5, 0.1, 0.3]))
 ```
 
-### Interpretations
+### Diễn giải
 
-You may be curious: in the entropy definition :eqref:`eq_ent_def`, why do we use an expectation of a negative logarithm? Here are some intuitions.
+Bạn có thể thắc mắc: trong định nghĩa entropy :eqref:`eq_ent_def`, tại sao chúng ta sử dụng kỳ vọng của một logarithm âm? Dưới đây là một số trực giác.
 
-First, why do we use a *logarithm* function $\log$? Suppose that $p(x) = f_1(x) f_2(x) \ldots, f_n(x)$, where each component function $f_i(x)$ is independent from each other. This means that each $f_i(x)$ contributes independently to the total information obtained from $p(x)$. As discussed above, we want the entropy formula to be additive over independent random variables. Luckily, $\log$ can naturally turn a product of probability distributions to a summation of the individual terms.
+Đầu tiên, tại sao chúng ta sử dụng hàm *logarithm* $\log$? Giả sử rằng $p(x) = f_1(x) f_2(x) \ldots, f_n(x)$, trong đó mỗi hàm thành phần $f_i(x)$ độc lập với các hàm khác. Điều này có nghĩa là mỗi $f_i(x)$ đóng góp độc lập vào tổng thông tin thu được từ $p(x)$. Như đã thảo luận ở trên, chúng ta muốn công thức entropy có tính cộng đối với các biến ngẫu nhiên độc lập. May mắn là $\log$ có thể tự nhiên chuyển tích của các phân phối xác suất thành tổng của các số hạng riêng lẻ.
 
-Next, why do we use a *negative* $\log$? Intuitively, more frequent events should contain less information than less common events, since we often gain more information from an unusual case than from an ordinary one. However, $\log$ is monotonically increasing with the probabilities, and indeed negative for all values in $[0, 1]$.  We need to construct a monotonically decreasing relationship between the probability of events and their entropy, which will ideally be always positive (for nothing we observe should force us to forget what we have known). Hence, we add a negative sign in front of $\log$ function.
+Tiếp theo, tại sao chúng ta sử dụng $\log$ *âm*? Theo trực giác, các sự kiện xảy ra thường xuyên hơn phải chứa ít thông tin hơn các sự kiện ít phổ biến, vì chúng ta thường thu được nhiều thông tin hơn từ một trường hợp bất thường so với một trường hợp thông thường. Tuy nhiên, $\log$ là hàm đơn điệu tăng theo xác suất và thực tế là âm với mọi giá trị trong $[0, 1]$. Chúng ta cần xây dựng một mối quan hệ đơn điệu giảm giữa xác suất của các sự kiện và entropy của chúng; lý tưởng nhất, mối quan hệ này luôn dương (không có điều gì chúng ta quan sát được buộc chúng ta phải quên những gì mình đã biết). Vì vậy, chúng ta thêm dấu âm trước hàm $\log$.
 
-Last, where does the *expectation* function come from? Consider a random variable $X$. We can interpret the self-information ($-\log(p)$) as the amount of *surprise* we have at seeing a particular outcome.  Indeed, as the probability approaches zero, the surprise becomes infinite.  Similarly, we can interpret the entropy as the average amount of surprise from observing $X$. For example, imagine that a slot machine system emits statistical independently symbols ${s_1, \ldots, s_k}$ with probabilities ${p_1, \ldots, p_k}$ respectively. Then the entropy of this system equals to the average self-information from observing each output, i.e.,
+Cuối cùng, hàm *kỳ vọng* xuất hiện từ đâu? Hãy xét một biến ngẫu nhiên $X$. Chúng ta có thể diễn giải thông tin tự thân ($-\log(p)$) là mức độ *bất ngờ* khi thấy một kết quả cụ thể. Quả thực, khi xác suất tiến gần đến 0, sự bất ngờ trở nên vô hạn. Tương tự, chúng ta có thể diễn giải entropy là mức độ bất ngờ trung bình khi quan sát $X$. Ví dụ, hãy tưởng tượng một hệ thống máy đánh bạc phát ra các ký hiệu ${s_1, \ldots, s_k}$ một cách độc lập về mặt thống kê với các xác suất lần lượt là ${p_1, \ldots, p_k}$. Khi đó, entropy của hệ thống này bằng thông tin tự thân trung bình khi quan sát từng đầu ra, tức là
 
 $$H(S) = \sum_i {p_i \cdot I(s_i)} = - \sum_i {p_i \cdot \log p_i}.$$
 
 
 
-### Properties of Entropy
+### Các tính chất của Entropy
 
-By the above examples and interpretations, we can derive the following properties of entropy :eqref:`eq_ent_def`. Here, we refer to $X$ as an event and $P$ as the probability distribution of $X$.
+Dựa trên các ví dụ và cách diễn giải trên, ta có thể suy ra các tính chất sau của entropy :eqref:`eq_ent_def`. Ở đây, ta gọi $X$ là một biến cố và $P$ là phân phối xác suất của $X$.
 
-* $H(X) \geq 0$ for all discrete $X$ (entropy can be negative for continuous $X$).
+* $H(X) \geq 0$ với mọi $X$ rời rạc (entropy có thể âm đối với $X$ liên tục).
 
-* If $X \sim P$ with a p.d.f. or a p.m.f. $p(x)$, and we try to estimate $P$ by a new probability distribution $Q$ with a p.d.f. or a p.m.f. $q(x)$, then $$H(X) = - E_{x \sim P} [\log p(x)] \leq  - E_{x \sim P} [\log q(x)], \textrm{ with equality if and only if } P = Q.$$  Alternatively, $H(X)$ gives a lower bound of the average number of bits needed to encode symbols drawn from $P$.
+* Nếu $X \sim P$ với hàm mật độ xác suất hoặc hàm khối xác suất $p(x)$, và ta cố gắng ước lượng $P$ bằng một phân phối xác suất mới $Q$ với hàm mật độ xác suất hoặc hàm khối xác suất $q(x)$, thì $$H(X) = - E_{x \sim P} [\log p(x)] \leq  - E_{x \sim P} [\log q(x)], \textrm{ with equality if and only if } P = Q.$$ Nói cách khác, $H(X)$ cho một cận dưới của số bit trung bình cần thiết để mã hóa các ký hiệu được lấy từ $P$.
 
-* If $X \sim P$, then $x$ conveys the maximum amount of information if it spreads evenly among all possible outcomes. Specifically, if the probability distribution $P$ is discrete with $k$-class $\{p_1, \ldots, p_k \}$, then $$H(X) \leq \log(k), \textrm{ with equality if and only if } p_i = \frac{1}{k}, \forall i.$$ If $P$ is a continuous random variable, then the story becomes much more complicated.  However, if we additionally impose that $P$ is supported on a finite interval (with all values between $0$ and $1$), then $P$ has the highest entropy if it is the uniform distribution on that interval.
-
-
-## Mutual Information
-
-Previously we defined entropy of a single random variable $X$, how about the entropy of a pair random variables $(X, Y)$?  We can think of these techniques as trying to answer the following type of question, "What information is contained in $X$ and $Y$ together compared to each separately?  Is there redundant information, or is it all unique?"
-
-For the following discussion, we always use $(X, Y)$ as a pair of random variables that follows a joint probability distribution $P$ with a p.d.f. or a p.m.f. $p_{X, Y}(x, y)$, while $X$ and $Y$ follow probability distribution $p_X(x)$ and $p_Y(y)$, respectively.
+* Nếu $X \sim P$, thì $x$ truyền đạt lượng thông tin tối đa khi nó được phân bố đồng đều giữa tất cả các kết quả có thể xảy ra. Cụ thể, nếu phân phối xác suất $P$ là rời rạc với $\{p_1, \ldots, p_k \}$ lớp, thì $$H(X) \leq \log(k), \textrm{ with equality if and only if } p_i = \frac{1}{k}, \forall i.$$ Nếu $P$ là một biến ngẫu nhiên liên tục, vấn đề sẽ phức tạp hơn nhiều. Tuy nhiên, nếu ta áp đặt thêm rằng $P$ có miền xác định là một khoảng hữu hạn (với mọi giá trị nằm giữa $0$ và $1$), thì $P$ có entropy cao nhất khi là phân phối đều trên khoảng đó.
 
 
-### Joint Entropy
+## Thông tin tương hỗ
 
-Similar to entropy of a single random variable :eqref:`eq_ent_def`, we define the *joint entropy* $H(X, Y)$ of a pair random variables $(X, Y)$ as
+Trước đây, ta đã định nghĩa entropy của một biến ngẫu nhiên đơn $X$; vậy entropy của một cặp biến ngẫu nhiên $(X, Y)$ thì sao? Ta có thể xem các kỹ thuật này như một nỗ lực nhằm trả lời dạng câu hỏi sau: “Thông tin nào được chứa trong $X$ và $Y$ khi xét cùng nhau so với khi xét riêng từng biến? Có thông tin dư thừa hay tất cả đều là thông tin riêng biệt?”
+
+Trong phần thảo luận sau, ta luôn sử dụng $(X, Y)$ làm một cặp biến ngẫu nhiên tuân theo một phân phối xác suất kết hợp $P$ với hàm mật độ xác suất hoặc hàm khối xác suất $p_{X, Y}(x, y)$, trong khi $X$ và $Y$ lần lượt tuân theo các phân phối xác suất $p_X(x)$ và $p_Y(y)$.
+
+
+### Entropy kết hợp
+
+Tương tự như entropy của một biến ngẫu nhiên đơn :eqref:`eq_ent_def`, ta định nghĩa *entropy kết hợp* $H(X, Y)$ của một cặp biến ngẫu nhiên $(X, Y)$ như sau:
 
 $$H(X, Y) = -E_{(x, y) \sim P} [\log p_{X, Y}(x, y)]. $$
 :eqlabel:`eq_joint_ent_def`
 
-Precisely, on the one hand, if $(X, Y)$ is a pair of discrete random variables, then
+Cụ thể, một mặt, nếu $(X, Y)$ là một cặp biến ngẫu nhiên rời rạc, thì
 
 $$H(X, Y) = - \sum_{x} \sum_{y} p_{X, Y}(x, y) \log p_{X, Y}(x, y).$$
 
-On the other hand, if $(X, Y)$ is a pair of continuous random variables, then we define the *differential joint entropy* as
+Mặt khác, nếu $(X, Y)$ là một cặp biến ngẫu nhiên liên tục, ta định nghĩa *entropy kết hợp vi phân* như sau:
 
 $$H(X, Y) = - \int_{x, y} p_{X, Y}(x, y) \ \log p_{X, Y}(x, y) \;dx \;dy.$$
 
-We can think of :eqref:`eq_joint_ent_def` as telling us the total randomness in the pair of random variables.  As a pair of extremes, if $X = Y$ are two identical random variables, then the information in the pair is exactly the information in one and we have $H(X, Y) = H(X) = H(Y)$.  On the other extreme, if $X$ and $Y$ are independent then $H(X, Y) = H(X) + H(Y)$.  Indeed we will always have that the information contained in a pair of random variables is no smaller than the entropy of either random variable and no more than the sum of both.
+Ta có thể hiểu :eqref:`eq_joint_ent_def` là đại lượng cho biết tổng mức độ ngẫu nhiên trong cặp biến ngẫu nhiên. Xét hai trường hợp cực đoan: nếu $X = Y$ là hai biến ngẫu nhiên giống hệt nhau, thì thông tin trong cặp này chính xác bằng thông tin trong một biến và ta có $H(X, Y) = H(X) = H(Y)$. Ở thái cực ngược lại, nếu $X$ và $Y$ độc lập thì $H(X, Y) = H(X) + H(Y)$. Thực tế, ta luôn có thông tin chứa trong một cặp biến ngẫu nhiên không nhỏ hơn entropy của mỗi biến riêng lẻ và không lớn hơn tổng entropy của cả hai biến.
 
 $$
 H(X), H(Y) \le H(X, Y) \le H(X) + H(Y).
 $$
 
-Let's implement joint entropy from scratch.
+Bây giờ, hãy triển khai entropy kết hợp từ đầu.
 
 ```{.python .input}
 #@tab mxnet
@@ -234,34 +231,34 @@ def joint_entropy(p_xy):
 joint_entropy(tf.constant([[0.1, 0.5], [0.1, 0.3]]))
 ```
 
-Notice that this is the same *code* as before, but now we interpret it differently as working on the joint distribution of the two random variables.
+Lưu ý rằng đây là cùng một *đoạn code* như trước, nhưng giờ ta diễn giải nó theo cách khác: đoạn code này hoạt động trên phân phối kết hợp của hai biến ngẫu nhiên.
 
 
-### Conditional Entropy
+### Entropy có điều kiện
 
-The joint entropy defined above the amount of information contained in a pair of random variables.  This is useful, but oftentimes it is not what we care about.  Consider the setting of machine learning.  Let's take $X$ to be the random variable (or vector of random variables) that describes the pixel values of an image, and $Y$ to be the random variable which is the class label.  $X$ should contain substantial information---a natural image is a complex thing.  However, the information contained in $Y$ once the image has been show should be low.  Indeed, the image of a digit should already contain the information about what digit it is unless the digit is illegible.  Thus, to continue to extend our vocabulary of information theory, we need to be able to reason about the information content in a random variable conditional on another.
+Entropy kết hợp được định nghĩa ở trên biểu thị lượng thông tin chứa trong một cặp biến ngẫu nhiên. Điều này hữu ích, nhưng thường không phải là điều ta quan tâm. Hãy xét bối cảnh machine learning. Ta coi $X$ là biến ngẫu nhiên (hoặc vector gồm các biến ngẫu nhiên) mô tả các giá trị pixel của một hình ảnh, và $Y$ là biến ngẫu nhiên biểu thị nhãn lớp. $X$ chứa một lượng thông tin đáng kể---một hình ảnh tự nhiên là một đối tượng phức tạp. Tuy nhiên, thông tin chứa trong $Y$ sau khi hình ảnh đã được hiển thị sẽ thấp. Thực tế, hình ảnh của một chữ số vốn đã chứa thông tin về chữ số đó, trừ khi chữ số không thể đọc được. Vì vậy, để tiếp tục mở rộng vốn từ của lý thuyết thông tin, ta cần có khả năng suy luận về lượng thông tin trong một biến ngẫu nhiên khi biết một biến khác.
 
-In the probability theory, we saw the definition of the *conditional probability* to measure the relationship between variables. We now want to analogously define the *conditional entropy* $H(Y \mid X)$.  We can write this as
+Trong lý thuyết xác suất, ta đã thấy định nghĩa của *xác suất có điều kiện* để đo lường mối quan hệ giữa các biến. Tương tự, giờ ta muốn định nghĩa *entropy có điều kiện* $H(Y \mid X)$. Ta có thể viết như sau:
 
 $$ H(Y \mid X) = - E_{(x, y) \sim P} [\log p(y \mid x)],$$
 :eqlabel:`eq_cond_ent_def`
 
-where $p(y \mid x) = \frac{p_{X, Y}(x, y)}{p_X(x)}$ is the conditional probability. Specifically, if $(X, Y)$ is a pair of discrete random variables, then
+trong đó $p(y \mid x) = \frac{p_{X, Y}(x, y)}{p_X(x)}$ là xác suất có điều kiện. Cụ thể, nếu $(X, Y)$ là một cặp biến ngẫu nhiên rời rạc, thì
 
 $$H(Y \mid X) = - \sum_{x} \sum_{y} p(x, y) \log p(y \mid x).$$
 
-If $(X, Y)$ is a pair of continuous random variables, then the *differential conditional entropy* is similarly defined as
+Nếu $(X, Y)$ là một cặp biến ngẫu nhiên liên tục, thì *entropy có điều kiện vi phân* được định nghĩa tương tự như sau:
 
 $$H(Y \mid X) = - \int_x \int_y p(x, y) \ \log p(y \mid x) \;dx \;dy.$$
 
 
-It is now natural to ask, how does the *conditional entropy* $H(Y \mid X)$ relate to the entropy $H(X)$ and the joint entropy $H(X, Y)$?  Using the definitions above, we can express this cleanly:
+Giờ đây, câu hỏi tự nhiên là entropy có điều kiện $H(Y \mid X)$ liên hệ thế nào với entropy $H(X)$ và entropy kết hợp $H(X, Y)$? Dựa trên các định nghĩa ở trên, ta có thể biểu diễn mối quan hệ này một cách rõ ràng:
 
 $$H(Y \mid X) = H(X, Y) - H(X).$$
 
-This has an intuitive interpretation: the information in $Y$ given $X$ ($H(Y \mid X)$) is the same as the information in both $X$ and $Y$ together ($H(X, Y)$) minus the information already contained in $X$.  This gives us the information in $Y$ which is not also represented in $X$.
+Điều này có cách diễn giải trực quan: thông tin trong $Y$ khi đã biết $X$ ($H(Y \mid X)$) bằng thông tin trong cả $X$ và $Y$ khi xét cùng nhau ($H(X, Y)$) trừ đi thông tin đã có trong $X$. Như vậy, ta thu được phần thông tin trong $Y$ không được biểu diễn đồng thời trong $X$.
 
-Now, let's implement conditional entropy :eqref:`eq_cond_ent_def` from scratch.
+Bây giờ, hãy triển khai entropy có điều kiện :eqref:`eq_cond_ent_def` từ đầu.
 
 ```{.python .input}
 #@tab mxnet
@@ -301,35 +298,35 @@ conditional_entropy(tf.constant([[0.1, 0.5], [0.2, 0.3]]),
                     tf.constant([0.2, 0.8]))
 ```
 
-### Mutual Information
+### Thông tin tương hỗ
 
-Given the previous setting of random variables $(X, Y)$, you may wonder: "Now that we know how much information is contained in $Y$ but not in $X$, can we similarly ask how much information is shared between $X$ and $Y$?" The answer will be the *mutual information* of $(X, Y)$, which we will write as $I(X, Y)$.
+Với bối cảnh các biến ngẫu nhiên $(X, Y)$ như trên, có thể bạn sẽ thắc mắc: “Giờ ta đã biết lượng thông tin chứa trong $Y$ nhưng không có trong $X$, liệu ta có thể hỏi tương tự rằng có bao nhiêu thông tin được chia sẻ giữa $X$ và $Y$ không?” Câu trả lời là *thông tin tương hỗ* của $(X, Y)$, được ký hiệu là $I(X, Y)$.
 
-Rather than diving straight into the formal definition, let's practice our intuition by first trying to derive an expression for the mutual information entirely based on terms we have constructed before.  We wish to find the information shared between two random variables.  One way we could try to do this is to start with all the information contained in both $X$ and $Y$ together, and then we take off the parts that are not shared.  The information contained in both $X$ and $Y$ together is written as $H(X, Y)$.  We want to subtract from this the information contained in $X$ but not in $Y$, and the information contained in $Y$ but not in $X$.  As we saw in the previous section, this is given by $H(X \mid Y)$ and $H(Y \mid X)$ respectively.  Thus, we have that the mutual information should be
+Thay vì đi thẳng vào định nghĩa hình thức, trước hết hãy rèn luyện trực giác bằng cách cố gắng suy ra một biểu thức cho thông tin tương hỗ hoàn toàn dựa trên các thành phần mà ta đã xây dựng trước đó. Ta muốn tìm thông tin được chia sẻ giữa hai biến ngẫu nhiên. Một cách để thực hiện là bắt đầu với toàn bộ thông tin chứa trong cả $X$ và $Y$, sau đó loại bỏ những phần không được chia sẻ. Thông tin chứa trong cả $X$ và $Y$ được viết là $H(X, Y)$. Ta muốn trừ khỏi đại lượng này thông tin chứa trong $X$ nhưng không có trong $Y$, và thông tin chứa trong $Y$ nhưng không có trong $X$. Như đã thấy trong phần trước, lần lượt đó là $H(X \mid Y)$ và $H(Y \mid X)$. Do đó, thông tin tương hỗ phải là
 
 $$
 I(X, Y) = H(X, Y) - H(Y \mid X) - H(X \mid Y).
 $$
 
-Indeed, this is a valid definition for the mutual information.  If we expand out the definitions of these terms and combine them, a little algebra shows that this is the same as
+Đây thực sự là một định nghĩa hợp lệ của thông tin tương hỗ. Nếu khai triển các định nghĩa của những thành phần này và kết hợp chúng, một chút biến đổi đại số cho thấy biểu thức trên cũng chính là
 
 $$I(X, Y) = E_{x} E_{y} \left\{ p_{X, Y}(x, y) \log\frac{p_{X, Y}(x, y)}{p_X(x) p_Y(y)} \right\}. $$
 :eqlabel:`eq_mut_ent_def`
 
 
-We can summarize all of these relationships in image :numref:`fig_mutual_information`.  It is an excellent test of intuition to see why the following statements are all also equivalent to $I(X, Y)$.
+Ta có thể tóm tắt tất cả các mối quan hệ này trong image :numref:`fig_mutual_information`. Đây là một cách kiểm tra trực giác rất tốt: hãy xem vì sao các phát biểu sau cũng tương đương với $I(X, Y)$.
 
 * $H(X) - H(X \mid Y)$
 * $H(Y) - H(Y \mid X)$
 * $H(X) + H(Y) - H(X, Y)$
 
-![Mutual information's relationship with joint entropy and conditional entropy.](../img/mutual-information.svg)
+![Mối quan hệ giữa thông tin tương hỗ với entropy kết hợp và entropy có điều kiện.](../img/mutual-information.svg)
 :label:`fig_mutual_information`
 
 
-In many ways we can think of the mutual information :eqref:`eq_mut_ent_def` as principled extension of correlation coefficient we saw in :numref:`sec_random_variables`.  This allows us to ask not only for linear relationships between variables, but for the maximum information shared between the two random variables of any kind.
+Theo nhiều cách, ta có thể xem thông tin tương hỗ :eqref:`eq_mut_ent_def` như một mở rộng có cơ sở lý thuyết của hệ số tương quan mà ta đã thấy trong :numref:`sec_random_variables`. Điều này cho phép ta không chỉ tìm hiểu các mối quan hệ tuyến tính giữa các biến, mà còn tìm hiểu lượng thông tin tối đa được chia sẻ giữa hai biến ngẫu nhiên dưới bất kỳ dạng quan hệ nào.
 
-Now, let's implement mutual information from scratch.
+Bây giờ, hãy triển khai thông tin tương hỗ từ đầu.
 
 ```{.python .input}
 #@tab mxnet
@@ -370,48 +367,46 @@ mutual_information(tf.constant([[0.1, 0.5], [0.1, 0.3]]),
                    tf.constant([0.2, 0.8]), tf.constant([[0.75, 0.25]]))
 ```
 
-### Properties of Mutual Information
+### Các tính chất của thông tin tương hỗ
 
-Rather than memorizing the definition of mutual information :eqref:`eq_mut_ent_def`, you only need to keep in mind its notable properties:
+Thay vì ghi nhớ định nghĩa của thông tin tương hỗ :eqref:`eq_mut_ent_def`, bạn chỉ cần ghi nhớ các tính chất đáng chú ý sau:
 
-* Mutual information is symmetric, i.e., $I(X, Y) = I(Y, X)$.
-* Mutual information is non-negative, i.e., $I(X, Y) \geq 0$.
-* $I(X, Y) = 0$ if and only if $X$ and $Y$ are independent. For example, if $X$ and $Y$ are independent, then knowing $Y$ does not give any information about $X$ and vice versa, so their mutual information is zero.
-* Alternatively, if $X$ is an invertible function of $Y$, then $Y$ and $X$ share all information and $$I(X, Y) = H(Y) = H(X).$$
+* Thông tin tương hỗ có tính đối xứng, tức là $I(X, Y) = I(Y, X)$.
+* Thông tin tương hỗ không âm, tức là $I(X, Y) \geq 0$.
+* $I(X, Y) = 0$ khi và chỉ khi $X$ và $Y$ độc lập. Ví dụ, nếu $X$ và $Y$ độc lập, thì việc biết $Y$ không cung cấp thông tin nào về $X$ và ngược lại, nên thông tin tương hỗ của chúng bằng không.
+* Nói cách khác, nếu $X$ là một hàm khả nghịch của $Y$, thì $Y$ và $X$ chia sẻ toàn bộ thông tin và $$I(X, Y) = H(Y) = H(X).$$
 
-### Pointwise Mutual Information
+### Thông tin tương hỗ điểm
 
-When we worked with entropy at the beginning of this chapter, we were able to provide an interpretation of $-\log(p_X(x))$ as how *surprised* we were with the particular outcome.  We may give a similar interpretation to the logarithmic term in the mutual information, which is often referred to as the *pointwise mutual information*:
+Khi làm việc với entropy ở phần đầu chương này, ta đã có thể diễn giải $-\log(p_X(x))$ là mức độ *bất ngờ* của ta trước một kết quả cụ thể. Ta có thể đưa ra cách diễn giải tương tự cho số hạng logarithm trong thông tin tương hỗ; số hạng này thường được gọi là *thông tin tương hỗ điểm*:
 
 $$\textrm{pmi}(x, y) = \log\frac{p_{X, Y}(x, y)}{p_X(x) p_Y(y)}.$$
 :eqlabel:`eq_pmi_def`
 
-We can think of :eqref:`eq_pmi_def` as measuring how much more or less likely the specific combination of outcomes $x$ and $y$ are compared to what we would expect for independent random outcomes.  If it is large and positive, then these two specific outcomes occur much more frequently than they would compared to random chance (*note*: the denominator is $p_X(x) p_Y(y)$ which is the probability of the two outcomes were independent), whereas if it is large and negative it represents the two outcomes happening far less than we would expect by random chance.
+Ta có thể hiểu :eqref:`eq_pmi_def` là phép đo mức độ kết hợp cụ thể của các kết quả $x$ và $y$ có khả năng xảy ra nhiều hơn hoặc ít hơn bao nhiêu so với kỳ vọng đối với các kết quả ngẫu nhiên độc lập. Nếu giá trị này lớn và dương, thì hai kết quả cụ thể này xảy ra thường xuyên hơn nhiều so với khi xảy ra một cách ngẫu nhiên (*lưu ý*: mẫu số là $p_X(x) p_Y(y)$, tức xác suất để hai kết quả xảy ra độc lập), còn nếu giá trị này lớn và âm, thì nó biểu thị rằng hai kết quả xảy ra ít hơn nhiều so với kỳ vọng do ngẫu nhiên.
 
-This allows us to interpret the mutual information :eqref:`eq_mut_ent_def` as the average amount that we were surprised to see two outcomes occurring together compared to what we would expect if they were independent.
+Điều này cho phép ta diễn giải thông tin tương hỗ :eqref:`eq_mut_ent_def` là mức độ trung bình mà ta ngạc nhiên khi thấy hai kết quả xảy ra cùng nhau, so với mức ta kỳ vọng nếu chúng độc lập.
 
-### Applications of Mutual Information
+### Các ứng dụng của thông tin tương hỗ
 
-Mutual information may be a little abstract in it pure definition, so how does it related to machine learning? In natural language processing, one of the most difficult problems is the *ambiguity resolution*, or the issue of the meaning of a word being unclear from context. For example, recently a headline in the news reported that "Amazon is on fire". You may wonder whether the company Amazon has a building on fire, or the Amazon rain forest is on fire.
+Định nghĩa thuần túy của thông tin tương hỗ có thể hơi trừu tượng, vậy nó liên quan thế nào đến machine learning? Trong xử lý ngôn ngữ tự nhiên, một trong những bài toán khó nhất là *giải quyết nhập nhằng* (ambiguity resolution), tức vấn đề không thể xác định rõ nghĩa của một từ chỉ dựa vào ngữ cảnh. Ví dụ, gần đây một tiêu đề trên báo đưa tin rằng "Amazon is on fire". Bạn có thể tự hỏi liệu công ty Amazon có một tòa nhà đang cháy, hay rừng Amazon đang cháy.
 
-In this case, mutual information can help us resolve this ambiguity. We first find the group of words that each has a relatively large mutual information with the company Amazon, such as e-commerce, technology, and online. Second, we find another group of words that each has a relatively large mutual information with the Amazon rain forest, such as rain, forest, and tropical. When we need to disambiguate "Amazon", we can compare which group has more occurrence in the context of the word Amazon.  In this case the article would go on to describe the forest, and make the context clear.
+Trong trường hợp này, thông tin tương hỗ có thể giúp ta giải quyết sự nhập nhằng. Trước tiên, ta tìm nhóm các từ mà mỗi từ có thông tin tương hỗ tương đối lớn với công ty Amazon, chẳng hạn như e-commerce, technology và online. Tiếp theo, ta tìm một nhóm khác gồm các từ mà mỗi từ có thông tin tương hỗ tương đối lớn với rừng Amazon, chẳng hạn như rain, forest và tropical. Khi cần phân biệt nghĩa của "Amazon", ta có thể so sánh nhóm nào xuất hiện nhiều hơn trong ngữ cảnh của từ Amazon. Trong trường hợp này, bài viết sẽ tiếp tục mô tả khu rừng, qua đó làm rõ ngữ cảnh.
 
+## Độ phân kỳ Kullback–Leibler
 
-## Kullback–Leibler Divergence
+Như đã thảo luận trong :numref:`sec_linear-algebra`, ta có thể sử dụng các chuẩn để đo khoảng cách giữa hai điểm trong không gian có số chiều bất kỳ. Ta cũng muốn thực hiện một nhiệm vụ tương tự với các phân phối xác suất. Có nhiều cách để thực hiện việc này, nhưng lý thuyết thông tin cung cấp một trong những cách tốt nhất. Bây giờ, ta sẽ tìm hiểu về *độ phân kỳ Kullback–Leibler (KL)*, một phương pháp đo xem hai phân phối có gần nhau hay không.
 
-As what we have discussed in :numref:`sec_linear-algebra`, we can use norms to measure distance between two points in space of any dimensionality.  We would like to be able to do a similar task with probability distributions.  There are many ways to go about this, but information theory provides one of the nicest.  We now explore the *Kullback–Leibler (KL) divergence*, which provides a way to measure if two distributions are close together or not.
+### Định nghĩa
 
-
-### Definition
-
-Given a random variable $X$ that follows the probability distribution $P$ with a p.d.f. or a p.m.f. $p(x)$, and we estimate $P$ by another probability distribution $Q$ with a p.d.f. or a p.m.f. $q(x)$. Then the *Kullback–Leibler (KL) divergence* (or *relative entropy*) between $P$ and $Q$ is
+Cho một biến ngẫu nhiên $X$ tuân theo phân phối xác suất $P$ với p.d.f. hoặc p.m.f. $p(x)$, và ta ước lượng $P$ bằng một phân phối xác suất khác $Q$ với p.d.f. hoặc p.m.f. $q(x)$. Khi đó, *độ phân kỳ Kullback–Leibler (KL)* (hay *entropy tương đối*) giữa $P$ và $Q$ là
 
 $$D_{\textrm{KL}}(P\|Q) = E_{x \sim P} \left[ \log \frac{p(x)}{q(x)} \right].$$
 :eqlabel:`eq_kl_def`
 
-As with the pointwise mutual information :eqref:`eq_pmi_def`, we can again provide an interpretation of the logarithmic term:  $-\log \frac{q(x)}{p(x)} = -\log(q(x)) - (-\log(p(x)))$ will be large and positive if we see $x$ far more often under $P$ than we would expect for $Q$, and large and negative if we see the outcome far less than expected.  In this way, we can interpret it as our *relative* surprise at observing the outcome compared to how surprised we would be observing it from our reference distribution.
+Tương tự như thông tin tương hỗ từng điểm :eqref:`eq_pmi_def`, ta có thể diễn giải thêm về số hạng logarit: $-\log \frac{q(x)}{p(x)} = -\log(q(x)) - (-\log(p(x)))$ sẽ lớn và dương nếu ta quan sát thấy $x$ thường xuyên hơn nhiều dưới $P$ so với kỳ vọng dưới $Q$, và lớn và âm nếu ta quan sát thấy kết quả này ít hơn nhiều so với kỳ vọng. Theo cách này, ta có thể diễn giải nó là mức độ ngạc nhiên *tương đối* của ta khi quan sát kết quả, so với mức độ ngạc nhiên nếu quan sát kết quả đó từ phân phối tham chiếu.
 
-Let's implement the KL divergence from Scratch.
+Hãy triển khai độ phân kỳ KL từ đầu.
 
 ```{.python .input}
 #@tab mxnet
@@ -437,26 +432,26 @@ def kl_divergence(p, q):
     return tf.abs(out).numpy()
 ```
 
-### KL Divergence Properties
+### Các tính chất của độ phân kỳ KL
 
-Let's take a look at some properties of the KL divergence :eqref:`eq_kl_def`.
+Hãy cùng xem xét một số tính chất của độ phân kỳ KL :eqref:`eq_kl_def`.
 
-* KL divergence is non-symmetric, i.e., there are $P,Q$ such that $$D_{\textrm{KL}}(P\|Q) \neq D_{\textrm{KL}}(Q\|P).$$
-* KL divergence is non-negative, i.e., $$D_{\textrm{KL}}(P\|Q) \geq 0.$$ Note that the equality holds only when $P = Q$.
-* If there exists an $x$ such that $p(x) > 0$ and $q(x) = 0$, then $D_{\textrm{KL}}(P\|Q) = \infty$.
-* There is a close relationship between KL divergence and mutual information. Besides the relationship shown in :numref:`fig_mutual_information`, $I(X, Y)$ is also numerically equivalent with the following terms:
+* Độ phân kỳ KL không đối xứng, tức là tồn tại $P,Q$ sao cho $$D_{\textrm{KL}}(P\|Q) \neq D_{\textrm{KL}}(Q\|P).$$
+* Độ phân kỳ KL không âm, tức là $$D_{\textrm{KL}}(P\|Q) \geq 0.$$ Lưu ý rằng đẳng thức chỉ xảy ra khi $P = Q$.
+* Nếu tồn tại một $x$ sao cho $p(x) > 0$ và $q(x) = 0$, thì $D_{\textrm{KL}}(P\|Q) = \infty$.
+* Có mối quan hệ chặt chẽ giữa độ phân kỳ KL và thông tin tương hỗ. Ngoài mối quan hệ được thể hiện trong :numref:`fig_mutual_information`, $I(X, Y)$ cũng tương đương về mặt số học với các số hạng sau:
     1. $D_{\textrm{KL}}(P(X, Y)  \ \| \ P(X)P(Y))$;
     1. $E_Y \{ D_{\textrm{KL}}(P(X \mid Y) \ \| \ P(X)) \}$;
     1. $E_X \{ D_{\textrm{KL}}(P(Y \mid X) \ \| \ P(Y)) \}$.
 
-  For the first term, we interpret mutual information as the KL divergence between $P(X, Y)$ and the product of $P(X)$ and $P(Y)$, and thus is a measure of how different the joint distribution is from the distribution if they were independent. For the second term, mutual information tells us the average reduction in uncertainty about $Y$ that results from learning the value of the $X$'s distribution. Similarly to the third term.
+  Với số hạng thứ nhất, ta diễn giải thông tin tương hỗ là độ phân kỳ KL giữa $P(X, Y)$ và tích của $P(X)$ với $P(Y)$, do đó đây là phép đo mức độ khác biệt giữa phân phối đồng thời và phân phối trong trường hợp chúng độc lập. Với số hạng thứ hai, thông tin tương hỗ cho biết mức giảm trung bình của độ bất định về $Y$ sau khi biết giá trị của phân phối $X$. Tương tự đối với số hạng thứ ba.
 
 
-### Example
+### Ví dụ
 
-Let's go through a toy example to see the non-symmetry explicitly.
+Hãy xem qua một ví dụ đơn giản để thấy rõ tính không đối xứng.
 
-First, let's generate and sort three tensors of length $10,000$: an objective tensor $p$ which follows a normal distribution $N(0, 1)$, and two candidate tensors $q_1$ and $q_2$ which follow normal distributions $N(-1, 1)$ and $N(1, 1)$ respectively.
+Trước tiên, hãy tạo và sắp xếp ba tensor có độ dài $10,000$: một tensor mục tiêu $p$ tuân theo phân phối chuẩn $N(0, 1)$, và hai tensor ứng viên $q_1$ và $q_2$ tuân theo các phân phối chuẩn lần lượt là $N(-1, 1)$ và $N(1, 1)$.
 
 ```{.python .input}
 #@tab mxnet
@@ -498,7 +493,7 @@ q1 = tf.sort(q1)
 q2 = tf.sort(q2)
 ```
 
-Since $q_1$ and $q_2$ are symmetric with respect to the y-axis (i.e., $x=0$), we expect a similar value of KL divergence between $D_{\textrm{KL}}(p\|q_1)$ and $D_{\textrm{KL}}(p\|q_2)$. As you can see below, there is only a less than 3% off between $D_{\textrm{KL}}(p\|q_1)$ and $D_{\textrm{KL}}(p\|q_2)$.
+Vì $q_1$ và $q_2$ đối xứng qua trục y (tức là $x=0$), ta kỳ vọng giá trị độ phân kỳ KL giữa $D_{\textrm{KL}}(p\|q_1)$ và $D_{\textrm{KL}}(p\|q_2)$ sẽ tương tự nhau. Như bạn có thể thấy bên dưới, độ chênh lệch giữa $D_{\textrm{KL}}(p\|q_1)$ và $D_{\textrm{KL}}(p\|q_2)$ chưa đến 3%.
 
 ```{.python .input}
 #@tab all
@@ -509,7 +504,7 @@ similar_percentage = abs(kl_pq1 - kl_pq2) / ((kl_pq1 + kl_pq2) / 2) * 100
 kl_pq1, kl_pq2, similar_percentage
 ```
 
-In contrast, you may find that $D_{\textrm{KL}}(q_2 \|p)$ and $D_{\textrm{KL}}(p \| q_2)$ are off a lot, with around 40% off as shown below.
+Ngược lại, bạn có thể thấy rằng $D_{\textrm{KL}}(q_2 \|p)$ và $D_{\textrm{KL}}(p \| q_2)$ chênh lệch khá nhiều, khoảng 40% như minh họa bên dưới.
 
 ```{.python .input}
 #@tab all
@@ -521,9 +516,9 @@ kl_q2p, differ_percentage
 
 ## Cross-Entropy
 
-If you are curious about applications of information theory in deep learning, here is a quick example. We define the true distribution $P$ with probability distribution $p(x)$, and the estimated distribution $Q$ with probability distribution $q(x)$, and we will use them in the rest of this section.
+Nếu bạn quan tâm đến các ứng dụng của lý thuyết thông tin trong deep learning, sau đây là một ví dụ ngắn. Ta định nghĩa phân phối thực $P$ với phân phối xác suất $p(x)$ và phân phối ước lượng $Q$ với phân phối xác suất $q(x)$, rồi sử dụng chúng trong phần còn lại của mục này.
 
-Say we need to solve a binary classification problem based on given $n$ data examples {$x_1, \ldots, x_n$}. Assume that we encode $1$ and $0$ as the positive and negative class label $y_i$ respectively, and our neural network is parametrized by $\theta$. If we aim to find a best $\theta$ so that $\hat{y}_i= p_{\theta}(y_i \mid x_i)$, it is natural to apply the maximum log-likelihood approach as was seen in :numref:`sec_maximum_likelihood`. To be specific, for true labels $y_i$ and predictions $\hat{y}_i= p_{\theta}(y_i \mid x_i)$, the probability to be classified as positive is $\pi_i= p_{\theta}(y_i = 1 \mid x_i)$. Hence, the log-likelihood function would be
+Giả sử ta cần giải một bài toán phân loại nhị phân dựa trên $n$ ví dụ dữ liệu đã cho {$x_1, \ldots, x_n$}. Giả sử ta mã hóa $1$ và $0$ lần lượt là nhãn lớp dương và âm $y_i$, còn neural network của ta được tham số hóa bởi $\theta$. Nếu mục tiêu là tìm $\theta$ tốt nhất sao cho $\hat{y}_i= p_{\theta}(y_i \mid x_i)$, thì việc áp dụng phương pháp maximum log-likelihood như đã trình bày trong :numref:`sec_maximum_likelihood` là tự nhiên. Cụ thể, với các nhãn thực $y_i$ và các dự đoán $\hat{y}_i= p_{\theta}(y_i \mid x_i)$, xác suất được phân loại là lớp dương là $\pi_i= p_{\theta}(y_i = 1 \mid x_i)$. Do đó, hàm log-likelihood sẽ là
 
 $$
 \begin{aligned}
@@ -533,24 +528,24 @@ l(\theta) &= \log L(\theta) \\
 \end{aligned}
 $$
 
-Maximizing the log-likelihood function $l(\theta)$ is identical to minimizing $- l(\theta)$, and hence we can find the best $\theta$ from here. To generalize the above loss to any distributions, we also called $-l(\theta)$ the *cross-entropy loss* $\textrm{CE}(y, \hat{y})$, where $y$ follows the true distribution $P$ and $\hat{y}$ follows the estimated distribution $Q$.
+Tối đa hóa hàm log-likelihood $l(\theta)$ tương đương với tối thiểu hóa $- l(\theta)$, vì vậy từ đây ta có thể tìm được $\theta$ tốt nhất. Để tổng quát hóa loss ở trên cho mọi phân phối, ta cũng gọi $-l(\theta)$ là *cross-entropy loss* $\textrm{CE}(y, \hat{y})$, trong đó $y$ tuân theo phân phối thực $P$ và $\hat{y}$ tuân theo phân phối ước lượng $Q$.
 
-This was all derived by working from the maximum likelihood point of view.  However, if we look closely we can see that terms like $\log(\pi_i)$ have entered into our computation which is a solid indication that we can understand the expression from an information theoretic point of view.
+Tất cả điều này được suy ra từ góc nhìn maximum likelihood. Tuy nhiên, nếu xem xét kỹ, ta có thể thấy các số hạng như $\log(\pi_i)$ đã xuất hiện trong phép tính, đây là dấu hiệu rõ ràng cho thấy ta có thể hiểu biểu thức này từ góc nhìn lý thuyết thông tin.
 
 
-### Formal Definition
+### Định nghĩa hình thức
 
-Like KL divergence, for a random variable $X$, we can also measure the divergence between the estimating distribution $Q$ and the true distribution $P$ via *cross-entropy*,
+Tương tự độ phân kỳ KL, với một biến ngẫu nhiên $X$, ta cũng có thể đo độ phân kỳ giữa phân phối ước lượng $Q$ và phân phối thực $P$ thông qua *cross-entropy*,
 
 $$\textrm{CE}(P, Q) = - E_{x \sim P} [\log(q(x))].$$
 :eqlabel:`eq_ce_def`
 
-By using properties of entropy discussed above, we can also interpret it as the summation of the entropy $H(P)$ and the KL divergence between $P$ and $Q$, i.e.,
+Bằng cách sử dụng các tính chất của entropy đã thảo luận ở trên, ta cũng có thể diễn giải nó là tổng của entropy $H(P)$ và độ phân kỳ KL giữa $P$ và $Q$, tức là
 
 $$\textrm{CE} (P, Q) = H(P) + D_{\textrm{KL}}(P\|Q).$$
 
 
-We can implement the cross-entropy loss as below.
+Ta có thể triển khai cross-entropy loss như bên dưới.
 
 ```{.python .input}
 #@tab mxnet
@@ -575,7 +570,7 @@ def cross_entropy(y_hat, y):
     return tf.reduce_mean(ce).numpy()
 ```
 
-Now define two tensors for the labels and predictions, and calculate the cross-entropy loss of them.
+Bây giờ, hãy định nghĩa hai tensor cho các nhãn và dự đoán, rồi tính cross-entropy loss của chúng.
 
 ```{.python .input}
 #@tab mxnet
@@ -601,44 +596,44 @@ preds = tf.constant([[0.3, 0.6, 0.1], [0.2, 0.3, 0.5]])
 cross_entropy(preds, labels)
 ```
 
-### Properties
+### Các tính chất
 
-As alluded in the beginning of this section, cross-entropy :eqref:`eq_ce_def` can be used to define a loss function in the optimization problem. It turns out that the following are equivalent:
+Như đã đề cập ở phần đầu của mục này, cross-entropy :eqref:`eq_ce_def` có thể được dùng để định nghĩa một hàm loss trong bài toán tối ưu hóa. Kết quả là các mục tiêu sau tương đương:
 
-1. Maximizing predictive probability of $Q$ for distribution $P$, (i.e., $E_{x
+1. Tối đa hóa xác suất dự đoán của $Q$ đối với phân phối $P$, (tức là $E_{x
 \sim P} [\log (q(x))]$);
-1. Minimizing cross-entropy $\textrm{CE} (P, Q)$;
-1. Minimizing the KL divergence $D_{\textrm{KL}}(P\|Q)$.
+1. Tối thiểu hóa cross-entropy $\textrm{CE} (P, Q)$;
+1. Tối thiểu hóa độ phân kỳ KL $D_{\textrm{KL}}(P\|Q)$.
 
-The definition of cross-entropy indirectly proves the equivalent relationship between objective 2 and objective 3, as long as the entropy of true data $H(P)$ is constant.
+Định nghĩa cross-entropy gián tiếp chứng minh mối quan hệ tương đương giữa mục tiêu 2 và mục tiêu 3, miễn là entropy của dữ liệu thực $H(P)$ không đổi.
 
 
-### Cross-Entropy as An Objective Function of Multi-class Classification
+### Cross-Entropy với vai trò Hàm Mục tiêu của Phân loại Đa lớp
 
-If we dive deep into the classification objective function with cross-entropy loss $\textrm{CE}$, we will find minimizing $\textrm{CE}$ is equivalent to maximizing the log-likelihood function $L$.
+Nếu đi sâu vào hàm mục tiêu phân loại với cross-entropy loss $\textrm{CE}$, ta sẽ thấy việc tối thiểu hóa $\textrm{CE}$ tương đương với việc tối đa hóa hàm log-likelihood $L$.
 
-To begin with, suppose that we are given a dataset with $n$ examples, and it can be classified into $k$-classes. For each data example $i$, we represent any $k$-class label $\mathbf{y}_i = (y_{i1}, \ldots, y_{ik})$ by *one-hot encoding*. To be specific, if the  example $i$ belongs to class $j$, then we set the $j$-th entry to $1$, and all other components to $0$, i.e.,
+Trước hết, giả sử chúng ta có một dataset gồm $n$ mẫu và dataset đó có thể được phân loại thành $k$ lớp. Với mỗi mẫu dữ liệu $i$, chúng ta biểu diễn mọi nhãn thuộc $k$ lớp $\mathbf{y}_i = (y_{i1}, \ldots, y_{ik})$ bằng phương pháp *one-hot encoding*. Cụ thể, nếu mẫu $i$ thuộc lớp $j$, chúng ta đặt phần tử thứ $j$ bằng $1$ và tất cả các thành phần còn lại bằng $0$, tức là
 
 $$ y_{ij} = \begin{cases}1 & j \in J; \\ 0 &\textrm{otherwise.}\end{cases}$$
 
-For instance, if a multi-class classification problem contains three classes $A$, $B$, and $C$, then the labels $\mathbf{y}_i$ can be encoded in {$A: (1, 0, 0); B: (0, 1, 0); C: (0, 0, 1)$}.
+Ví dụ, nếu một bài toán phân loại đa lớp gồm ba lớp $A$, $B$ và $C$, thì các nhãn $\mathbf{y}_i$ có thể được mã hóa trong {$A: (1, 0, 0); B: (0, 1, 0); C: (0, 0, 1)$}.
 
 
-Assume that our neural network is parametrized by $\theta$. For true label vectors $\mathbf{y}_i$ and predictions $$\hat{\mathbf{y}}_i= p_{\theta}(\mathbf{y}_i \mid \mathbf{x}_i) = \sum_{j=1}^k y_{ij} p_{\theta} (y_{ij}  \mid  \mathbf{x}_i).$$
+Giả sử mạng neural của chúng ta được tham số hóa bởi $\theta$. Với các vector nhãn thực $\mathbf{y}_i$ và các dự đoán $$\hat{\mathbf{y}}_i= p_{\theta}(\mathbf{y}_i \mid \mathbf{x}_i) = \sum_{j=1}^k y_{ij} p_{\theta} (y_{ij}  \mid  \mathbf{x}_i).$$
 
-Hence, the *cross-entropy loss* would be
+Do đó, *hàm mất mát cross-entropy* sẽ là
 
 $$
 \textrm{CE}(\mathbf{y}, \hat{\mathbf{y}}) = - \sum_{i=1}^n \mathbf{y}_i \log \hat{\mathbf{y}}_i
  = - \sum_{i=1}^n \sum_{j=1}^k y_{ij} \log{p_{\theta} (y_{ij}  \mid  \mathbf{x}_i)}.\\
 $$
 
-On the other side, we can also approach the problem through maximum likelihood estimation. To begin with, let's quickly introduce a $k$-class multinoulli distribution. It is an extension of the Bernoulli distribution from binary class to multi-class. If a random variable $\mathbf{z} = (z_{1}, \ldots, z_{k})$ follows a $k$-class *multinoulli distribution* with probabilities $\mathbf{p} =$ ($p_{1}, \ldots, p_{k}$), i.e., $$p(\mathbf{z}) = p(z_1, \ldots, z_k) = \textrm{Multi} (p_1, \ldots, p_k), \textrm{ where } \sum_{i=1}^k p_i = 1,$$ then the joint probability mass function(p.m.f.) of $\mathbf{z}$ is
+Mặt khác, chúng ta cũng có thể tiếp cận bài toán thông qua phương pháp ước lượng hợp lý cực đại. Trước hết, hãy cùng giới thiệu nhanh về phân phối multinoulli $k$ lớp. Đây là phần mở rộng của phân phối Bernoulli từ lớp nhị phân sang nhiều lớp. Nếu một biến ngẫu nhiên $\mathbf{z} = (z_{1}, \ldots, z_{k})$ tuân theo một *phân phối multinoulli* $k$ lớp với các xác suất $\mathbf{p} =$ ($p_{1}, \ldots, p_{k}$), tức là $$p(\mathbf{z}) = p(z_1, \ldots, z_k) = \textrm{Multi} (p_1, \ldots, p_k), \textrm{ where } \sum_{i=1}^k p_i = 1,$$ thì hàm khối xác suất chung (p.m.f.) của $\mathbf{z}$ là
 $$\mathbf{p}^\mathbf{z} = \prod_{j=1}^k p_{j}^{z_{j}}.$$
 
 
-It can be seen that the label of each data example, $\mathbf{y}_i$, is following a $k$-class multinoulli distribution with probabilities $\boldsymbol{\pi} =$ ($\pi_{1}, \ldots, \pi_{k}$). Therefore, the joint p.m.f. of each data example $\mathbf{y}_i$ is  $\mathbf{\pi}^{\mathbf{y}_i} = \prod_{j=1}^k \pi_{j}^{y_{ij}}.$
-Hence, the log-likelihood function would be
+Có thể thấy rằng nhãn của mỗi mẫu dữ liệu, $\mathbf{y}_i$, tuân theo một phân phối multinoulli $k$ lớp với các xác suất $\boldsymbol{\pi} =$ ($\pi_{1}, \ldots, \pi_{k}$). Do đó, p.m.f. chung của mỗi mẫu dữ liệu $\mathbf{y}_i$ là $\mathbf{\pi}^{\mathbf{y}_i} = \prod_{j=1}^k \pi_{j}^{y_{ij}}.$
+Do đó, hàm log-likelihood sẽ là
 
 $$
 \begin{aligned}
@@ -650,10 +645,10 @@ l(\theta)
 \end{aligned}
 $$
 
-Since in maximum likelihood estimation, we maximizing the objective function $l(\theta)$ by having $\pi_{j} = p_{\theta} (y_{ij}  \mid  \mathbf{x}_i)$. Therefore, for any multi-class classification, maximizing the above log-likelihood function $l(\theta)$ is equivalent to minimizing the CE loss $\textrm{CE}(y, \hat{y})$.
+Trong phương pháp ước lượng hợp lý cực đại, chúng ta cực đại hóa hàm mục tiêu $l(\theta)$ bằng cách đặt $\pi_{j} = p_{\theta} (y_{ij}  \mid  \mathbf{x}_i)$. Vì vậy, đối với mọi bài toán phân loại đa lớp, việc cực đại hóa hàm log-likelihood $l(\theta)$ ở trên tương đương với việc tối thiểu hóa hàm mất mát CE $\textrm{CE}(y, \hat{y})$.
 
 
-To test the above proof, let's apply the built-in measure `NegativeLogLikelihood`. Using the same `labels` and `preds` as in the earlier example, we will get the same numerical loss as the previous example up to the 5 decimal place.
+Để kiểm chứng chứng minh trên, hãy áp dụng measure tích hợp sẵn `NegativeLogLikelihood`. Sử dụng cùng `labels` và `preds` như trong ví dụ trước, chúng ta sẽ nhận được giá trị loss bằng với ví dụ trước, với độ chính xác đến 5 chữ số thập phân.
 
 ```{.python .input}
 #@tab mxnet
@@ -687,33 +682,33 @@ loss = nll_loss(tf.math.log(preds), labels)
 loss
 ```
 
-## Summary
+## Tóm tắt
 
-* Information theory is a field of study about encoding, decoding, transmitting, and manipulating information.
-* Entropy is the unit to measure how much information is presented in different signals.
-* KL divergence can also measure the divergence between two distributions.
-* Cross-entropy can be viewed as an objective function of multi-class classification. Minimizing cross-entropy loss is equivalent to maximizing the log-likelihood function.
+* Information theory là một lĩnh vực nghiên cứu về mã hóa, giải mã, truyền tải và thao tác với thông tin.
+* Entropy là đơn vị dùng để đo lượng thông tin được biểu diễn trong các tín hiệu khác nhau.
+* KL divergence cũng có thể đo độ phân kỳ giữa hai phân phối.
+* Cross-entropy có thể được xem là một hàm mục tiêu của bài toán phân loại đa lớp. Việc tối thiểu hóa hàm mất mát cross-entropy tương đương với việc cực đại hóa hàm log-likelihood.
 
 
-## Exercises
+## Bài tập
 
-1. Verify that the card examples from the first section indeed have the claimed entropy.
-1. Show that the KL divergence $D(p\|q)$ is nonnegative for all distributions $p$ and $q$. Hint: use Jensen's inequality, i.e., use the fact that $-\log x$ is a convex function.
-1. Let's compute the entropy from a few data sources:
-    * Assume that you are watching the output generated by a monkey at a typewriter. The monkey presses any of the $44$ keys of the typewriter at random (you can assume that it has not discovered any special keys or the shift key yet). How many bits of randomness per character do you observe?
-    * Being unhappy with the monkey, you replaced it by a drunk typesetter. It is able to generate words, albeit not coherently. Instead, it picks a random word out of a vocabulary of $2,000$ words. Let's assume that the average length of a word is $4.5$ letters in English. How many bits of randomness per character do you observe now?
-    * Still being unhappy with the result, you replace the typesetter by a high quality language model. The language model can currently obtain a perplexity as low as $15$ points per word. The character *perplexity* of a language model is defined as the inverse of the geometric mean of a set of probabilities, each probability is corresponding to a character in the word. To be specific, if the length of a given word is $l$, then  $\textrm{PPL}(\textrm{word}) = \left[\prod_i p(\textrm{character}_i)\right]^{ -\frac{1}{l}} = \exp \left[ - \frac{1}{l} \sum_i{\log p(\textrm{character}_i)} \right].$  Assume that the test word has 4.5 letters, how many bits of randomness per character do you observe now?
-1. Explain intuitively why $I(X, Y) = H(X) - H(X \mid Y)$.  Then, show this is true by expressing both sides as an expectation with respect to the joint distribution.
-1. What is the KL Divergence between the two Gaussian distributions $\mathcal{N}(\mu_1, \sigma_1^2)$ and $\mathcal{N}(\mu_2, \sigma_2^2)$?
+1. Xác minh rằng các ví dụ về những lá bài trong phần đầu tiên thực sự có entropy như đã nêu.
+1. Chứng minh rằng KL divergence $D(p\|q)$ không âm với mọi phân phối $p$ và $q$. Gợi ý: sử dụng bất đẳng thức Jensen, tức là sử dụng thực tế rằng $-\log x$ là một hàm lồi.
+1. Hãy tính entropy từ một vài nguồn dữ liệu:
+    * Giả sử bạn đang quan sát đầu ra do một con khỉ tạo ra trên máy đánh chữ. Con khỉ nhấn ngẫu nhiên một trong $44$ phím của máy đánh chữ (bạn có thể giả sử rằng nó vẫn chưa phát hiện ra các phím đặc biệt hoặc phím shift). Bạn quan sát được bao nhiêu bit ngẫu nhiên trên mỗi ký tự?
+    * Vì không hài lòng với con khỉ, bạn thay nó bằng một người sắp chữ say rượu. Người này có thể tạo ra các từ, dù không mạch lạc. Thay vào đó, người này chọn ngẫu nhiên một từ trong từ vựng gồm $2,000$ từ. Giả sử độ dài trung bình của một từ là $4.5$ chữ cái trong tiếng Anh. Bây giờ bạn quan sát được bao nhiêu bit ngẫu nhiên trên mỗi ký tự?
+    * Vì vẫn không hài lòng với kết quả, bạn thay người sắp chữ bằng một language model chất lượng cao. Hiện tại, language model có thể đạt perplexity thấp tới $15$ điểm trên mỗi từ. *Perplexity* theo ký tự của một language model được định nghĩa là nghịch đảo của trung bình nhân của một tập hợp các xác suất, trong đó mỗi xác suất tương ứng với một ký tự trong từ. Cụ thể, nếu độ dài của một từ cho trước là $l$, thì  $\textrm{PPL}(\textrm{word}) = \left[\prod_i p(\textrm{character}_i)\right]^{ -\frac{1}{l}} = \exp \left[ - \frac{1}{l} \sum_i{\log p(\textrm{character}_i)} \right].$  Giả sử từ kiểm thử có 4.5 chữ cái, bây giờ bạn quan sát được bao nhiêu bit ngẫu nhiên trên mỗi ký tự?
+1. Giải thích một cách trực quan tại sao $I(X, Y) = H(X) - H(X \mid Y)$. Sau đó, chứng minh điều này bằng cách biểu diễn cả hai vế dưới dạng một kỳ vọng theo phân phối chung.
+1. KL Divergence giữa hai phân phối Gaussian $\mathcal{N}(\mu_1, \sigma_1^2)$ và $\mathcal{N}(\mu_2, \sigma_2^2)$ là bao nhiêu?
 
 :begin_tab:`mxnet`
-[Discussions](https://discuss.d2l.ai/t/420)
+[Thảo luận](https://discuss.d2l.ai/t/420)
 :end_tab:
 
 :begin_tab:`pytorch`
-[Discussions](https://discuss.d2l.ai/t/1104)
+[Thảo luận](https://discuss.d2l.ai/t/1104)
 :end_tab:
 
 :begin_tab:`tensorflow`
-[Discussions](https://discuss.d2l.ai/t/1105)
+[Thảo luận](https://discuss.d2l.ai/t/1105)
 :end_tab:
